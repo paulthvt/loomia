@@ -122,12 +122,22 @@ end $$;
 revoke execute on function public.seed_workflows(text, date) from public, anon;
 grant execute on function public.seed_workflows(text, date) to authenticated;
 
--- Accounts seeded before #140: their New customer workflow, if still as
--- seeded, gets the same loyalty step. The label is the user's now and stays.
+-- Accounts seeded before #140: their New customer workflow, if its last
+-- step is still as seeded, gets the same loyalty step, renamed like the new
+-- seed so a tick still means a setup. Past entries keep their text; steps
+-- the user renamed or moved are left alone.
 update public.workflow_step s
-  set loyalty_setup = true
+  set loyalty_setup = true,
+      label = case s.label
+        when 'Suggest a refill routine' then 'Set up a refill routine'
+        else 'Mettre en place un réassort régulier'
+      end
   from public.workflow w
   where w.id = s.workflow_id
     and w.stage = 'customer'
     and w.name in ('New customer', 'Nouveau client')
-    and s.label in ('Suggest a refill routine', 'Proposer un réassort régulier');
+    and s.label in ('Suggest a refill routine', 'Proposer un réassort régulier')
+    and s.position = (
+      select max(last.position) from public.workflow_step last
+      where last.workflow_id = s.workflow_id
+    );
