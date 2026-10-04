@@ -64,10 +64,11 @@ void main() {
     required DateTime now,
     List<Due>? due,
     GoalsMonth? goals,
+    Size size = const Size(390, 1400),
   }) {
     goalsTaps = 0;
     ritualTaps = 0;
-    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     return tester.pumpWidget(
@@ -139,5 +140,41 @@ void main() {
     expect(find.text('Anna'), findsOneWidget);
     expect(find.textContaining('to go'), findsNothing);
     expect(find.textContaining('Close September'), findsNothing);
+  });
+
+  testWidgets('desktop: the volume card and the card on the side', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      now: DateTime(2026, 9, 29, 9),
+      goals: _goals(),
+      size: const Size(1440, 900),
+    );
+
+    expect(find.text('1,800 PV to go · 1 day left'), findsNothing);
+    expect(find.text('Own volume'), findsOneWidget);
+    final priority = tester.getTopLeft(find.text('PRIORITY')).dx;
+    expect(
+      tester.getTopLeft(find.text('Own volume')).dx,
+      greaterThan(priority + 600),
+    );
+    expect(
+      tester.getTopLeft(find.text('Close September, plan October')).dx,
+      greaterThan(priority + 600),
+    );
+    await tester.tap(find.text('Own volume'));
+    expect(goalsTaps, 1);
+  });
+
+  testWidgets('desktop, nothing for the side: main stays put', (tester) async {
+    await pump(
+      tester,
+      now: DateTime(2026, 9, 15, 9),
+      size: const Size(1440, 900),
+    );
+
+    expect(find.text('Anna'), findsOneWidget);
+    expect(find.text('Own volume'), findsNothing);
   });
 }
