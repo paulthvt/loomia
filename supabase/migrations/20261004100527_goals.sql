@@ -55,9 +55,10 @@ create policy month_plan_select_own on public.month_plan
   for select to authenticated using (owner_id = (select auth.uid()));
 create policy month_plan_insert_own on public.month_plan
   for insert to authenticated with check (owner_id = (select auth.uid()));
+-- A closed month never moves: close_month only updates open rows.
 create policy month_plan_update_own on public.month_plan
   for update to authenticated
-  using (owner_id = (select auth.uid()))
+  using (owner_id = (select auth.uid()) and closed_at is null)
   with check (owner_id = (select auth.uid()));
 create policy month_plan_delete_own on public.month_plan
   for delete to authenticated using (owner_id = (select auth.uid()));

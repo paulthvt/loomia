@@ -2,7 +2,7 @@
 -- frozen close. Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(18);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -172,6 +172,16 @@ select is(
 select is(
   public.loyalty_forecast('2026-11-01'), 2,
   'November: the walk reaches Nov 5, and the late one is still to do'
+);
+
+-- 18: a closed month never moves, not even its targets.
+update public.month_plan set own_volume_target = 9, own_volume_actual = 9
+  where month = '2026-10-01';
+select results_eq(
+  $$ select own_volume_target, own_volume_actual from public.month_plan
+     where month = '2026-10-01' $$,
+  $$ values (500::numeric, 180.50::numeric) $$,
+  'a closed month is not edited'
 );
 
 select * from finish();
