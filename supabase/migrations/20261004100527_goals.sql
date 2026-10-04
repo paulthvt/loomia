@@ -64,3 +64,90 @@ create policy month_plan_delete_own on public.month_plan
 
 revoke all on public.month_plan from anon, authenticated;
 grant select, insert, update, delete on public.month_plan to authenticated;
+
+-- One row: what the month did so far. Dates the user picked (orders, steps)
+-- are read against p_month; instants (people added, stage entries) against
+-- the device's local month, [p_starts, p_ends).
+create function public.month_progress(
+  p_month date, p_starts timestamptz, p_ends timestamptz
+) returns table (
+  own_volume numeric, prospects int, customers int, team_members int,
+  loyalty int
+)
+language sql stable security invoker set search_path = '' as $$
+  with bounds as (
+    select p_month as first_day, (p_month + interval '1 month')::date as next_month
+  ),
+  joined as (
+    select a.person_id, a.stage from public.activity a
+      where a.kind = 'stage'
+        and a.created_at >= p_starts and a.created_at < p_ends
+    union
+    select p.id, p.first_stage from public.person p
+      where p.created_at >= p_starts and p.created_at < p_ends
+  )
+  select
+    (select coalesce(sum(a.amount), 0) from public.activity a, bounds b
+      where a.kind = 'order'
+        and a.happened_on >= b.first_day and a.happened_on < b.next_month),
+    (select count(*)::int from public.person p
+      where p.first_stage = 'prospect'
+        and p.created_at >= p_starts and p.created_at < p_ends),
+    (select count(distinct j.person_id)::int from joined j
+      where j.stage = 'customer'),
+    (select count(distinct j.person_id)::int from joined j
+      where j.stage = 'team'),
+    (select count(*)::int from public.activity a, bounds b
+      where a.kind = 'step' and a.loyalty_setup
+        and a.happened_on >= b.first_day and a.happened_on < b.next_month)
+$$;
+
+revoke execute on function public.month_progress(date, timestamptz, timestamptz)
+  from public, anon;
+grant execute on function public.month_progress(date, timestamptz, timestamptz)
+  to authenticated;
+
+-- Freezes the month's progress with the two actuals only the company knows.
+-- A month closes once; one with no plan gets a record of actuals only.
+create function public.close_month(
+  p_month date, p_starts timestamptz, p_ends timestamptz,
+  p_team_volume_actual numeric, p_level_actual text
+) returns public.month_plan
+language plpgsql security invoker set search_path = '' as $$
+declare
+  done record;
+  closed public.month_plan;
+begin
+  select * into done from public.month_progress(p_month, p_starts, p_ends);
+  insert into public.month_plan as m (
+    month, own_volume_actual, prospects_actual, customers_actual,
+    team_members_actual, loyalty_actual, team_volume_actual, level_actual,
+    closed_at
+  ) values (
+    p_month, done.own_volume, done.prospects, done.customers,
+    done.team_members, done.loyalty, p_team_volume_actual,
+    nullif(trim(p_level_actual), ''), now()
+  )
+  on conflict (owner_id, month) do update set
+    own_volume_actual = excluded.own_volume_actual,
+    prospects_actual = excluded.prospects_actual,
+    customers_actual = excluded.customers_actual,
+    team_members_actual = excluded.team_members_actual,
+    loyalty_actual = excluded.loyalty_actual,
+    team_volume_actual = excluded.team_volume_actual,
+    level_actual = excluded.level_actual,
+    closed_at = excluded.closed_at
+  where m.closed_at is null
+  returning * into closed;
+  if closed.id is null then
+    raise exception 'month % already closed', p_month using errcode = 'P0001';
+  end if;
+  return closed;
+end $$;
+
+revoke execute on function
+  public.close_month(date, timestamptz, timestamptz, numeric, text)
+  from public, anon;
+grant execute on function
+  public.close_month(date, timestamptz, timestamptz, numeric, text)
+  to authenticated;
