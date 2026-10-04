@@ -267,6 +267,16 @@ void main() {
       expect(saved.why, 'More time with my kids');
     });
 
+    testWidgets('a picked rank reads like the typed fields', (tester) async {
+      await edit(tester, member(currentLevel: 'Executive'), account: doterra);
+
+      final context = tester.element(labeled('Rank now'));
+      final rank = tester.widget<DropdownButton<String?>>(
+        find.byType(DropdownButton<String?>).first,
+      );
+      expect(rank.style, Theme.of(context).textTheme.bodyLarge);
+    });
+
     testWidgets('Other: levels are typed, the volume has no unit', (
       tester,
     ) async {

@@ -283,6 +283,9 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
             )
           : DropdownButtonFormField<String?>(
               initialValue: value,
+              // Defaults to titleMedium; the text fields around it are
+              // bodyLarge.
+              style: Theme.of(context).textTheme.bodyLarge,
               items: [
                 DropdownMenuItem(child: Text(l10n.editLevelNone)),
                 for (final name in [
