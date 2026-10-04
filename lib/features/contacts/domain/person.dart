@@ -34,6 +34,10 @@ class Person {
     this.address,
     this.notes,
     this.why,
+    this.currentLevel,
+    this.targetLevel,
+    this.targetLevelBy,
+    this.monthlyVolumeTarget,
     this.ownGoal,
     this.timeAvailable,
     this.wouldLoveTo,
@@ -73,6 +77,21 @@ class Person {
   /// Why they started. This and the five after it are a team member's own
   /// profile, in their words; shown while they are on the team.
   final String? why;
+
+  /// Their rank or level now, as the user picked or typed it. This and the
+  /// three after it are what the member said in conversation, never read
+  /// from their book (#67), never summed or compared.
+  final String? currentLevel;
+
+  /// The rank they are aiming for.
+  final String? targetLevel;
+
+  /// The month they aim to reach [targetLevel] by: local midnight on the
+  /// first of that month. Only with a [targetLevel].
+  final DateTime? targetLevelBy;
+
+  /// The volume they aim for each month, in the business model's unit.
+  final double? monthlyVolumeTarget;
 
   /// Their own goal, not one set for them.
   final String? ownGoal;
@@ -118,6 +137,10 @@ class Person {
     address: address,
     notes: notes,
     why: why,
+    currentLevel: currentLevel,
+    targetLevel: targetLevel,
+    targetLevelBy: targetLevelBy,
+    monthlyVolumeTarget: monthlyVolumeTarget,
     ownGoal: ownGoal,
     timeAvailable: timeAvailable,
     wouldLoveTo: wouldLoveTo,

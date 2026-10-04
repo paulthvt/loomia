@@ -15,4 +15,24 @@ enum BusinessModel {
 
   /// What goes in the metadata: null removes the key.
   String? get stored => this == other ? null : name;
+
+  /// A team member's possible ranks, lowest first, as the company writes them
+  /// (proper nouns, never translated). Empty when Loomia does not know the
+  /// company's ladder: the user types the level instead.
+  List<String> get levels => switch (this) {
+    other => const [],
+    doterra => const [
+      'Manager',
+      'Director',
+      'Executive',
+      'Elite',
+      'Premier',
+      'Silver',
+      'Gold',
+      'Platinum',
+      'Diamond',
+      'Blue Diamond',
+      'Presidential Diamond',
+    ],
+  };
 }

@@ -22,4 +22,21 @@ void main() {
       expect(BusinessModel.parse(model.stored), model);
     }
   });
+
+  test("dōTERRA's ranks, lowest first; Other has none", () {
+    expect(BusinessModel.doterra.levels, [
+      'Manager',
+      'Director',
+      'Executive',
+      'Elite',
+      'Premier',
+      'Silver',
+      'Gold',
+      'Platinum',
+      'Diamond',
+      'Blue Diamond',
+      'Presidential Diamond',
+    ]);
+    expect(BusinessModel.other.levels, isEmpty);
+  });
 }

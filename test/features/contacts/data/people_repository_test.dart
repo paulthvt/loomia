@@ -64,6 +64,32 @@ void main() {
       expect(person.stuckOn, isNull);
     });
 
+    test("reads a team member's rank and volume", () {
+      final person = personFromRow(
+        _row({
+          'stage': 'team',
+          'prospect_status': null,
+          'current_level': 'Executive',
+          'target_level': 'Elite',
+          'target_level_by': '2027-03-01',
+          'monthly_volume_target': 100,
+        }),
+      );
+
+      expect(person.currentLevel, 'Executive');
+      expect(person.targetLevel, 'Elite');
+      expect(person.targetLevelBy, DateTime(2027, 3));
+      expect(person.monthlyVolumeTarget, 100.0);
+    });
+
+    test('reads no rank and no volume as null', () {
+      final person = personFromRow(_row());
+      expect(person.currentLevel, isNull);
+      expect(person.targetLevel, isNull);
+      expect(person.targetLevelBy, isNull);
+      expect(person.monthlyVolumeTarget, isNull);
+    });
+
     test('reads blank text as null', () {
       final person = personFromRow(_row());
       expect(person.email, isNull);
@@ -106,6 +132,10 @@ void main() {
         notes: 'Met at the market',
         stuckOn: ' ',
         ownGoal: 'Pay for the holidays',
+        currentLevel: ' ',
+        targetLevel: 'Elite',
+        targetLevelBy: DateTime(2027, 3),
+        monthlyVolumeTarget: 99.5,
       ),
     );
 
@@ -126,7 +156,24 @@ void main() {
       'would_love_to': null,
       'strengths': null,
       'stuck_on': null,
+      'current_level': null,
+      'target_level': 'Elite',
+      'target_level_by': '2027-03-01',
+      'monthly_volume_target': 99.5,
     });
+  });
+
+  test('personToRow writes no month when there is none', () {
+    final row = personToRow(
+      Person(
+        id: 'p1',
+        name: 'Claire',
+        stage: Stage.team,
+        stageSince: DateTime.utc(2026, 3, 4),
+      ),
+    );
+    expect(row['target_level_by'], isNull);
+    expect(row['monthly_volume_target'], isNull);
   });
 
   test('draftToRow writes the name, stage and channels', () {
