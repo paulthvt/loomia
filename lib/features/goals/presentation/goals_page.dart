@@ -7,6 +7,7 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
@@ -266,6 +267,7 @@ class GoalsView extends StatelessWidget {
       const SizedBox(height: AppSpacing.md),
       FilledButton.tonalIcon(
         onPressed: onLogOrder,
+        style: AppTheme.tonal(context),
         icon: const Icon(Icons.add_rounded),
         label: Text(l10n.goalLogOwnOrder),
       ),
