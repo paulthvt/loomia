@@ -142,10 +142,12 @@ class TeamView extends StatelessWidget {
                       )
                     : const EdgeInsets.all(AppSpacing.md),
                 children: [
-                  LoomiaTopBar(
-                    title: l10n.teamTitle,
-                    large: desktop,
-                    action: accountAction,
+                  ContentColumns.aligned(
+                    LoomiaTopBar(
+                      title: l10n.teamTitle,
+                      large: desktop,
+                      action: accountAction,
+                    ),
                   ),
                   ...switch (people) {
                     // `.value` survives a failed refresh, so the rows stay.

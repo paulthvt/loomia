@@ -4,8 +4,9 @@ import 'package:material_ui/material_ui.dart';
 
 /// Desktop's two columns (`docs/design/responsive-design.md`): [main] up to
 /// [mainMax], [side] fixed at [sideWidth], top-aligned, the pair centred.
-/// A narrower window shrinks [main], never [side]. Below desktop, [main]
-/// then [side] in one column.
+/// A narrower window shrinks [main], never [side]; once [main] would fall
+/// under [mainMin] (a contact pane on a laptop), the two stack instead.
+/// Below desktop, [main] then [side] in one column.
 class ContentColumns extends StatelessWidget {
   const ContentColumns({
     required this.main,
@@ -20,6 +21,24 @@ class ContentColumns extends StatelessWidget {
 
   static const double mainMax = 624;
 
+  /// Under this, the main column stops shrinking and the two stack.
+  static const double mainMin = 300;
+
+  /// [child] at the width of the centred pair: a top bar that lines up with
+  /// the columns below it. Below desktop, [child] as it is.
+  static Widget aligned(Widget child, {double sideWidth = 400}) => Builder(
+    builder: (context) => context.screenSize.isDesktop
+        ? Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: mainMax + AppSpacing.xl + sideWidth,
+              ),
+              child: SizedBox(width: double.infinity, child: child),
+            ),
+          )
+        : child,
+  );
+
   @override
   Widget build(BuildContext context) {
     Widget column(List<Widget> children) => Column(
@@ -27,6 +46,17 @@ class ContentColumns extends StatelessWidget {
       children: children,
     );
     if (!context.screenSize.isDesktop) return column([...main, ...side]);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < mainMin + AppSpacing.xl + sideWidth) {
+          return column([...main, ...side]);
+        }
+        return _row(column);
+      },
+    );
+  }
+
+  Widget _row(Widget Function(List<Widget> children) column) {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(

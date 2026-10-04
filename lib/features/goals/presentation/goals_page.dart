@@ -133,12 +133,14 @@ class GoalsView extends StatelessWidget {
                       )
                     : const EdgeInsets.all(AppSpacing.md),
                 children: [
-                  LoomiaTopBar(
-                    eyebrow: l10n.goalsDaysLeft(daysLeft, today),
-                    title: l10n.goalsTitle,
-                    large: desktop,
-                    action: accountAction,
-                    gap: AppSpacing.sm,
+                  ContentColumns.aligned(
+                    LoomiaTopBar(
+                      eyebrow: l10n.goalsDaysLeft(daysLeft, today),
+                      title: l10n.goalsTitle,
+                      large: desktop,
+                      action: accountAction,
+                      gap: AppSpacing.sm,
+                    ),
                   ),
                   // Desktop's dashboard has it in the side column.
                   if (showRitual &&

@@ -17,11 +17,9 @@ void main() {
     lastContactOn: talked,
   );
 
-  testWidgets('desktop: roster left, summary and check-ins right', (
-    tester,
-  ) async {
+  Future<void> pumpAt(WidgetTester tester, Size size) async {
     tester.view
-      ..physicalSize = const Size(1440, 900)
+      ..physicalSize = size
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -42,6 +40,12 @@ void main() {
         ),
       ),
     );
+  }
+
+  testWidgets('desktop: roster left, summary and check-ins right', (
+    tester,
+  ) async {
+    await pumpAt(tester, const Size(1440, 900));
 
     final everyone = tester.getTopLeft(find.text('EVERYONE')).dx;
     expect(
@@ -51,6 +55,17 @@ void main() {
     expect(
       tester.getTopLeft(find.textContaining('people on your team')).dx,
       greaterThan(everyone + 600),
+    );
+  });
+
+  testWidgets('a wide window: the title lines up with the roster', (
+    tester,
+  ) async {
+    await pumpAt(tester, const Size(1920, 900));
+
+    expect(
+      tester.getTopLeft(find.text('Team').first).dx,
+      moreOrLessEquals(tester.getTopLeft(find.text('EVERYONE')).dx, epsilon: 1),
     );
   });
 }

@@ -241,12 +241,17 @@ class _TodayViewState extends State<TodayView> {
         ),
       if (ritual != null)
         RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
-      ...checkInItems(
-        l10n,
-        widget.checkIns,
-        onOpen: widget.onOpen,
-        onCheckIn: widget.onCheckIn ?? (_) {},
-      ),
+      // One group: its rows keep their own 12px rhythm.
+      if (widget.checkIns.isNotEmpty)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: checkInItems(
+            l10n,
+            widget.checkIns,
+            onOpen: widget.onOpen,
+            onCheckIn: widget.onCheckIn ?? (_) {},
+          ),
+        ),
     ];
 
     final content = switch (widget.due) {
@@ -280,12 +285,14 @@ class _TodayViewState extends State<TodayView> {
                       )
                     : const EdgeInsets.all(AppSpacing.md),
                 children: [
-                  LoomiaTopBar(
-                    eyebrow: l10n.todayDate(widget.now),
-                    title: greeting(l10n, widget.now, widget.firstName),
-                    large: desktop,
-                    action: widget.accountAction,
-                    gap: AppSpacing.sm,
+                  ContentColumns.aligned(
+                    LoomiaTopBar(
+                      eyebrow: l10n.todayDate(widget.now),
+                      title: greeting(l10n, widget.now, widget.firstName),
+                      large: desktop,
+                      action: widget.accountAction,
+                      gap: AppSpacing.sm,
+                    ),
                   ),
                   if (desktop)
                     ContentColumns(

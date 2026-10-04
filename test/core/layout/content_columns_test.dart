@@ -67,4 +67,77 @@ void main() {
     );
     expect(tester.getSize(find.byKey(_side)).width, 390);
   });
+
+  testWidgets('too narrow for both: main then side, never an overflow', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(1440, 900)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              // A contact pane on a 1200px window.
+              width: 448,
+              child: SingleChildScrollView(
+                child: ContentColumns(
+                  sideWidth: 340,
+                  main: [SizedBox(key: _main, height: 100)],
+                  side: [SizedBox(key: _side, height: 50)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byKey(_main)).width, 448);
+    expect(
+      tester.getTopLeft(find.byKey(_side)).dy,
+      greaterThan(tester.getTopLeft(find.byKey(_main)).dy),
+    );
+  });
+
+  testWidgets('aligned: a header lines up with the centred columns', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(1920, 900)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                ContentColumns.aligned(
+                  const SizedBox(key: Key('header'), height: 20),
+                ),
+                const ContentColumns(
+                  main: [SizedBox(key: _main, height: 100)],
+                  side: [SizedBox(key: _side, height: 50)],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getTopLeft(find.byKey(const Key('header'))).dx,
+      tester.getTopLeft(find.byKey(_main)).dx,
+    );
+    expect(
+      tester.getTopRight(find.byKey(const Key('header'))).dx,
+      tester.getTopRight(find.byKey(_side)).dx,
+    );
+  });
 }
