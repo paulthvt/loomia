@@ -63,6 +63,7 @@ class WorkflowRepository {
     required int days,
     String? note,
     required num position,
+    bool loyaltySetup = false,
   }) => guardPeople(() async {
     await _client.from('workflow_step').insert({
       'workflow_id': workflowId,
@@ -70,6 +71,7 @@ class WorkflowRepository {
       'label': label,
       'days': days,
       'note': note,
+      'loyalty_setup': loyaltySetup,
     });
   });
 
@@ -78,10 +80,16 @@ class WorkflowRepository {
     required String label,
     required int days,
     String? note,
+    required bool loyaltySetup,
   }) => guardPeople(() async {
     await _client
         .from('workflow_step')
-        .update({'label': label, 'days': days, 'note': note})
+        .update({
+          'label': label,
+          'days': days,
+          'note': note,
+          'loyalty_setup': loyaltySetup,
+        })
         .eq('id', stepId);
   });
 
@@ -117,6 +125,7 @@ Workflow workflowFromRow(Map<String, dynamic> row) => Workflow(
         label: step['label'] as String,
         days: step['days'] as int,
         note: step['note'] as String?,
+        loyaltySetup: step['loyalty_setup'] as bool,
       ),
   ],
 );

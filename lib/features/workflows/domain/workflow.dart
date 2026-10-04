@@ -8,6 +8,7 @@ class WorkflowStep {
     required this.label,
     required this.days,
     this.note,
+    this.loyaltySetup = false,
   });
 
   final String id;
@@ -17,6 +18,9 @@ class WorkflowStep {
   final String label;
   final int days;
   final String? note;
+
+  /// Ticking it counts one loyalty setup (an LRP for dōTERRA) for the month.
+  final bool loyaltySetup;
 }
 
 /// A user's list of steps for one stage. Their own data once seeded.

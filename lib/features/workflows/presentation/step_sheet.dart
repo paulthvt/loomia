@@ -47,6 +47,7 @@ Future<void> showStepSheet(
                   label: draft.label,
                   days: draft.days,
                   note: draft.note,
+                  loyaltySetup: step.loyaltySetup,
                 ),
         ),
         onRemove: step == null

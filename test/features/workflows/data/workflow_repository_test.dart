@@ -16,6 +16,7 @@ void main() {
         'label': 'Send the samples',
         'days': 1,
         'note': null,
+        'loyalty_setup': true,
       },
       {
         'id': 's1',
@@ -23,6 +24,7 @@ void main() {
         'label': 'Send a first message',
         'days': 0,
         'note': 'Keep it short',
+        'loyalty_setup': false,
       },
     ],
   };
@@ -35,6 +37,12 @@ void main() {
     expect([for (final s in workflow.steps) s.id], ['s1', 's2']);
     expect(workflow.steps.last.position, 2.5);
     expect(workflow.steps.first.note, 'Keep it short');
+  });
+
+  test('reads which step is a loyalty setup', () {
+    final workflow = workflowFromRow(row());
+
+    expect([for (final s in workflow.steps) s.loyaltySetup], [false, true]);
   });
 
   test('an unknown stage is an unknown failure', () {
