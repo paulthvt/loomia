@@ -152,8 +152,9 @@ class _Gallery extends StatelessWidget {
         const SectionHeader(title: 'Goal card'),
         const GoalCard(
           title: 'New conversations',
-          value: 24,
-          target: 40,
+          value: '24',
+          suffix: 'of 40',
+          progress: 24 / 40,
           pace: 'Slightly behind pace',
           behindPace: true,
           timeLeft: '11 days left',

@@ -3,6 +3,7 @@ import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
+import 'package:loomia/features/goals/presentation/goals_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
 import 'package:loomia/features/team/presentation/team_page.dart';
 import 'package:material_ui/material_ui.dart';
@@ -146,5 +147,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TeamPage), findsOneWidget);
+  });
+
+  testWidgets('mobile: Goals is the fourth tab and opens Goals', (
+    tester,
+  ) async {
+    await pumpLoomia(tester, size: const Size(390, 844));
+
+    await tester.tap(find.text('Goals'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GoalsPage), findsOneWidget);
+    final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(bar.selectedIndex, 3);
+  });
+
+  testWidgets('desktop: the sidebar opens Goals', (tester) async {
+    await pumpLoomia(tester, size: const Size(1440, 900));
+
+    await tester.tap(find.text('Goals'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GoalsPage), findsOneWidget);
   });
 }

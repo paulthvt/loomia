@@ -161,6 +161,18 @@ Pace is stated, never judged. Nothing is red, nothing is compared to another
 person, and the largest numeral on the screen is smaller than the screen title
 (guardrail #4).
 
+**Built** ([#142](https://github.com/paulthvt/loomia/issues/142)): the Goals
+tab (Today · Contacts · Team · Goals, and in the sidebar), one 624px column on
+every size. No plan this month: "What are you aiming for this month?" and
+`Plan September`. With a plan: the own-volume card (bar, percent and days
+left when there is a target; pace from day 4), four tiles, the declared row
+when there is a level or team volume, the pace card, `Change the plan`, and
+`PAST MONTHS`. Planning is `/goals/plan`, full screen, for the current month:
+each field starts from the saved plan, else from the last 3 closed months,
+and loyalty from the forecast. Own orders and the month's orders list are
+[#165](https://github.com/paulthvt/loomia/issues/165); closing a month is
+[#143](https://github.com/paulthvt/loomia/issues/143).
+
 ## 6. Auth — welcome, sign in, register, reset
 
 Added 2026-09-23 for [#21](https://github.com/paulthvt/loomia/issues/21). Full

@@ -23,6 +23,13 @@ abstract final class Routes {
   static const String team = '/team';
   static const String teamName = 'team';
 
+  static const String goals = '/goals';
+  static const String goalsName = 'goals';
+
+  /// Full screen, outside the tabs: this month's plan.
+  static const String goalsPlan = '/goals/plan';
+  static const String goalsPlanName = 'goalsPlan';
+
   static const String settings = '/settings';
   static const String settingsName = 'settings';
 

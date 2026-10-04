@@ -32,7 +32,7 @@ class AppShell extends StatelessWidget {
     if (!size.usesSideNavigation) {
       if (location.startsWith(Routes.settings)) return child;
       final l10n = AppLocalizations.of(context);
-      const tabs = [Routes.today, Routes.contacts, Routes.team];
+      const tabs = [Routes.today, Routes.contacts, Routes.team, Routes.goals];
       final selected = tabs.lastIndexWhere(
         (path) => path == Routes.today
             ? location == Routes.today
@@ -56,6 +56,10 @@ class AppShell extends StatelessWidget {
             NavigationDestination(
               icon: const Icon(Icons.diversity_3_outlined),
               label: l10n.navTeam,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.flag_outlined),
+              label: l10n.navGoals,
             ),
           ],
         ),
@@ -147,6 +151,13 @@ class _Sidebar extends ConsumerWidget {
                   selected: location.startsWith(Routes.team),
                   expanded: expanded,
                   onTap: () => context.go(Routes.team),
+                ),
+                _SidebarItem(
+                  icon: const Icon(Icons.flag_outlined),
+                  label: l10n.navGoals,
+                  selected: location.startsWith(Routes.goals),
+                  expanded: expanded,
+                  onTap: () => context.go(Routes.goals),
                 ),
                 const Spacer(),
                 if (account != null)
