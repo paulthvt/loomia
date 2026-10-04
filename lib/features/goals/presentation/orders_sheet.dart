@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/activity_item.dart';
+import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -20,18 +21,24 @@ import 'package:material_ui/material_ui.dart';
 Future<void> showOrders(BuildContext context, DateTime month) =>
     LoomiaDialog.show<void>(context, (_) => _Orders(month));
 
-class _Orders extends ConsumerWidget {
+class _Orders extends ConsumerStatefulWidget {
   const _Orders(this.month);
 
   final DateTime month;
 
-  Future<void> _delete(
-    BuildContext context,
-    WidgetRef ref,
-    MonthOrder entry,
-  ) async {
+  @override
+  ConsumerState<_Orders> createState() => _OrdersState();
+}
+
+class _OrdersState extends ConsumerState<_Orders> {
+  /// The last delete's failure, shown in the sheet: on a phone a snack bar
+  /// would sit under it.
+  PeopleFailure? _failure;
+
+  DateTime get month => widget.month;
+
+  Future<void> _delete(MonthOrder entry) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final container = ProviderScope.containerOf(context, listen: false);
     final confirmed = await confirmDestructive(
       context,
@@ -39,12 +46,11 @@ class _Orders extends ConsumerWidget {
       action: l10n.historyDeleteConfirm,
     );
     if (!confirmed) return;
+    if (mounted) setState(() => _failure = null);
     try {
       await container.read(activityRepositoryProvider).delete(entry.order.id);
     } on PeopleFailure catch (failure) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
-      );
+      if (mounted) setState(() => _failure = failure);
       return;
     }
     refreshOrders(container);
@@ -59,8 +65,9 @@ class _Orders extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final failure = _failure;
     final material = MaterialLocalizations.of(context);
     final colors = LoomiaColors.of(context);
     final model =
@@ -81,46 +88,53 @@ class _Orders extends ConsumerWidget {
           child: Text(material.closeButtonLabel),
         ),
       ],
-      child: switch (orders) {
-        AsyncValue(value: final entries?) when entries.isEmpty => muted(
-          l10n.ordersEmpty,
-        ),
-        AsyncValue(value: final entries?) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final (index, entry) in entries.indexed)
-              Row(
-                children: [
-                  Expanded(
-                    child: ActivityItem(
-                      title: activityTitle(l10n, entry.order, model),
-                      meta: l10n.historyMeta(
-                        dayLabel(l10n, entry.order.day, day),
-                        entry.personName ?? l10n.ordersOwn,
-                      ),
-                      showRailLine: index < entries.length - 1,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: l10n.ordersRemove,
-                    onPressed: () => _delete(context, ref, entry),
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                ],
-              ),
-          ],
-        ),
-        AsyncError() => Row(
-          children: [
-            Expanded(child: muted(l10n.ordersLoadFailed)),
-            TextButton(
-              onPressed: () => ref.invalidate(ordersProvider(month)),
-              child: Text(l10n.contactsRetry),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
+          switch (orders) {
+            AsyncValue(value: final entries?) when entries.isEmpty => muted(
+              l10n.ordersEmpty,
             ),
-          ],
-        ),
-        _ => const Center(child: CircularProgressIndicator()),
-      },
+            AsyncValue(value: final entries?) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (index, entry) in entries.indexed)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ActivityItem(
+                          title: activityTitle(l10n, entry.order, model),
+                          meta: l10n.historyMeta(
+                            dayLabel(l10n, entry.order.day, day),
+                            entry.personName ?? l10n.ordersOwn,
+                          ),
+                          showRailLine: index < entries.length - 1,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: l10n.ordersRemove,
+                        onPressed: () => _delete(entry),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            AsyncError() => Row(
+              children: [
+                Expanded(child: muted(l10n.ordersLoadFailed)),
+                TextButton(
+                  onPressed: () => ref.invalidate(ordersProvider(month)),
+                  child: Text(l10n.contactsRetry),
+                ),
+              ],
+            ),
+            _ => const Center(child: CircularProgressIndicator()),
+          },
+        ],
+      ),
     );
   }
 }

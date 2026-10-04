@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -97,7 +99,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Order · 80 PV'), findsOneWidget);
-    expect(find.byType(SnackBar), findsOneWidget);
+    // Inside the sheet: on a phone a snack bar would sit under it.
+    expect(
+      find.descendant(
+        of: find.byType(LoomiaDialog),
+        matching: find.byType(FormError),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('no orders yet', (tester) async {
