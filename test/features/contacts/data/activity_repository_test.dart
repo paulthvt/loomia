@@ -104,4 +104,48 @@ void main() {
       },
     );
   });
+
+  test('an own order has no person', () {
+    final order = activityFromRow(
+      _row({'person_id': null, 'kind': 'order', 'text': null, 'amount': 80}),
+    );
+
+    expect(order.personId, isNull);
+    expect(order.amount, 80);
+  });
+
+  test("a month's order carries its person's name, or none", () {
+    final theirs = monthOrderFromRow(
+      _row({
+        'kind': 'order',
+        'amount': 100,
+        'person': {'name': 'Marie Dupont'},
+      }),
+    );
+    final own = monthOrderFromRow(
+      _row({
+        'person_id': null,
+        'kind': 'order',
+        'text': null,
+        'amount': 80,
+        'person': null,
+      }),
+    );
+
+    expect(theirs.personName, 'Marie Dupont');
+    expect(theirs.order.amount, 100);
+    expect(own.personName, isNull);
+  });
+
+  test('activityDraftToRow: an own order writes no person', () {
+    final row = activityDraftToRow(null, (
+      kind: ActivityKind.order,
+      happenedOn: DateTime(2026, 9, 19),
+      text: '',
+      amount: 100,
+    ));
+
+    expect(row['person_id'], isNull);
+    expect(row['amount'], 100);
+  });
 }

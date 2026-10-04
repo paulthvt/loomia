@@ -36,14 +36,18 @@ class Activity {
                        ? kind == ActivityKind.order && amount != null
                        : text.trim().isNotEmpty) &&
                    (amount == null ||
-                       (kind == ActivityKind.order && amount > 0)),
+                       (kind == ActivityKind.order && amount > 0)) &&
+                   (personId != null ||
+                       (kind == ActivityKind.order && amount != null)),
          'A stage entry has a stage only; any other has no stage and non-blank '
          'text, except an order, which needs text or an amount; only an order '
-         'has an amount',
+         'has an amount; only an own order has no person',
        );
 
   final String id;
-  final String personId;
+
+  /// Null on the user's own order, which has an amount (Goals).
+  final String? personId;
   final ActivityKind kind;
 
   /// The calendar day it happened, as local midnight.
@@ -79,6 +83,10 @@ typedef ActivityDraft = ({
   String text,
   double? amount,
 });
+
+/// An order in a month's list: the entry and whose it is (null: the user's
+/// own).
+typedef MonthOrder = ({Activity order, String? personName});
 
 /// An order's amount as typed, read the way [locale] writes numbers: at most
 /// two decimals (the column is numeric(12,2)), spaces ignored. Null for

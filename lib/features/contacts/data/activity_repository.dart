@@ -36,6 +36,35 @@ class ActivityRepository {
         return activityFromRow(row);
       });
 
+  /// The user's own order, with no person. Needs an amount (the database
+  /// refuses one without).
+  Future<Activity> addOwnOrder(ActivityDraft draft) => guardPeople(() async {
+    assert(
+      draft.kind == ActivityKind.order && draft.amount != null,
+      'An own order needs an amount',
+    );
+    final row = await _client
+        .from(_table)
+        .insert(activityDraftToRow(null, draft))
+        .select()
+        .single();
+    return activityFromRow(row);
+  });
+
+  /// Every order in [month], contacts' and own, latest day first, then
+  /// latest made.
+  Future<List<MonthOrder>> ordersIn(DateTime month) => guardPeople(() async {
+    final rows = await _client
+        .from(_table)
+        .select('*, person(name)')
+        .eq('kind', ActivityKind.order.name)
+        .gte('happened_on', dayColumn(DateTime(month.year, month.month)))
+        .lt('happened_on', dayColumn(DateTime(month.year, month.month + 1)))
+        .order('happened_on', ascending: false)
+        .order('created_at', ascending: false);
+    return rows.map(monthOrderFromRow).toList();
+  });
+
   Future<void> delete(String id) =>
       guardPeople(() => _client.from(_table).delete().eq('id', id));
 }
@@ -48,7 +77,7 @@ Activity activityFromRow(Map<String, dynamic> row) {
   final stage = row['stage'] as String?;
   return Activity(
     id: row['id'] as String,
-    personId: row['person_id'] as String,
+    personId: row['person_id'] as String?,
     kind:
         ActivityKind.values.asNameMap()[row['kind']] ??
         (throw PeopleFailure.unknown),
@@ -63,7 +92,7 @@ Activity activityFromRow(Map<String, dynamic> row) {
   );
 }
 
-Map<String, dynamic> activityDraftToRow(String personId, ActivityDraft draft) {
+Map<String, dynamic> activityDraftToRow(String? personId, ActivityDraft draft) {
   assert(
     draft.kind.byUser,
     'Only the database writes stage entries; step entries come from complete_step',
@@ -81,3 +110,8 @@ Map<String, dynamic> activityDraftToRow(String personId, ActivityDraft draft) {
     'amount': draft.amount,
   };
 }
+
+MonthOrder monthOrderFromRow(Map<String, dynamic> row) => (
+  order: activityFromRow(row),
+  personName: (row['person'] as Map<String, dynamic>?)?['name'] as String?,
+);

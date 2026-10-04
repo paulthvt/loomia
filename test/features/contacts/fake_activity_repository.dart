@@ -55,6 +55,38 @@ class FakeActivityRepository implements ActivityRepository {
     return activity;
   }
 
+  /// Person id to name, for [ordersIn].
+  final Map<String, String> names = {};
+
+  @override
+  Future<Activity> addOwnOrder(ActivityDraft draft) async {
+    await _record('addOwnOrder()');
+    final text = draft.text.trim();
+    final activity = Activity(
+      id: 'a-${_next++}',
+      personId: null,
+      kind: ActivityKind.order,
+      happenedOn: draft.happenedOn,
+      text: text.isEmpty ? null : text,
+      amount: draft.amount,
+      createdAt: DateTime.utc(2026, 9, 28, 12),
+    );
+    store.add(activity);
+    return activity;
+  }
+
+  @override
+  Future<List<MonthOrder>> ordersIn(DateTime month) async {
+    await _record('ordersIn(${month.year}-${month.month})');
+    return [
+      for (final entry in store.reversed)
+        if (entry.kind == ActivityKind.order &&
+            entry.happenedOn.year == month.year &&
+            entry.happenedOn.month == month.month)
+          (order: entry, personName: names[entry.personId]),
+    ]..sort((a, b) => b.order.happenedOn.compareTo(a.order.happenedOn));
+  }
+
   @override
   Future<void> delete(String id) async {
     await _record('delete($id)');
