@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/theme_preview.dart';
 import 'package:loomia/core/ui/ui_preview.dart';
 import 'package:loomia/features/contacts/presentation/contacts_preview.dart';
+import 'package:loomia/features/goals/presentation/goals_preview.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_preview.dart';
 import 'package:loomia/features/team/presentation/team_preview.dart';
 import 'package:loomia/features/today/presentation/today_preview.dart';
@@ -32,6 +33,11 @@ void main() {
     'team_mobile_light': (const Size(390, 844), teamMobileLight),
     'team_mobile_dark': (const Size(390, 844), teamMobileDark),
     'team_desktop_light': (const Size(1440, 900), teamDesktopLight),
+    'goals_mobile_light': (const Size(390, 844), goalsMobileLight),
+    'goals_mobile_dark': (const Size(390, 844), goalsMobileDark),
+    'goals_desktop_light': (const Size(1440, 900), goalsDesktopLight),
+    'goals_empty_light': (const Size(390, 844), goalsEmptyLight),
+    'goals_plan_light': (const Size(390, 844), goalsPlanLight),
     'contacts_mobile_light': (const Size(390, 844), contactsMobileLight),
     'contacts_mobile_dark': (const Size(390, 844), contactsMobileDark),
     'contact_mobile_light': (const Size(390, 844), contactMobileLight),
