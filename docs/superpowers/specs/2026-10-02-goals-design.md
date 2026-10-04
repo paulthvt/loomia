@@ -70,12 +70,18 @@ contacts, goals, onboarding and settings all read it. Widgets read
 | level | Level (free text) | Rank (list below, or free text) |
 | loyalty | Loyalty orders | LRPs |
 
-Rank list (dōTERRA): Consultant, Manager, Director, Executive, Elite, Premier,
-Silver, Gold, Platinum, Diamond, Blue Diamond, Presidential Diamond. The list
-and the terms above **must be checked against current official dōTERRA
-documentation before implementing**. They were written from memory. Rank names
-are proper nouns and are not translated. The stored value is the label. A label
-missing from the list (the company renamed a rank) is shown as stored.
+Rank list (dōTERRA), confirmed by the user on 2026-10-04: Manager, Director,
+Executive, Elite, Premier, Silver, Gold, Platinum, Diamond, Blue Diamond,
+Presidential Diamond. There is no Consultant rank. Rank names are proper nouns
+and are not translated. The stored value is the label. A label missing from the
+list (the company renamed a rank) is shown as stored.
+
+For reference only — **not used by the app** (rank requirements are not
+built, see the decisions table): Manager 500 PV, Director 1 000, Executive
+2 000, Elite 3 000, Premier 5 000 with 2 Executive branches, Silver 9 000 with
+3 Elite branches, Gold 15 000 with 3 Premier branches, Platinum 27 000 with
+3 Silver branches, Diamond 4 Silver branches, Blue Diamond 5 Gold branches,
+Presidential Diamond 6 Platinum branches.
 
 The app shows dōTERRA words only because the user picked dōTERRA. Other stays
 fully neutral, and no copy says "MLM".
