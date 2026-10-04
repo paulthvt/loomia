@@ -6,7 +6,7 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
-import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
@@ -21,6 +21,7 @@ import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
+import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -125,7 +126,10 @@ class TeamView extends StatelessWidget {
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _column),
+            // Desktop: ContentColumns caps and centres the two columns.
+            constraints: BoxConstraints(
+              maxWidth: desktop ? double.infinity : _column,
+            ),
             child: RefreshIndicator(
               onRefresh: onRefresh,
               child: ListView(
@@ -145,10 +149,14 @@ class TeamView extends StatelessWidget {
                   ),
                   ...switch (people) {
                     // `.value` survives a failed refresh, so the rows stay.
-                    AsyncValue(value: final book?) => _team(l10n, [
-                      for (final person in book)
-                        if (person.stage == Stage.team) person,
-                    ]),
+                    AsyncValue(value: final book?) => _layout(
+                      l10n,
+                      desktop,
+                      _team(l10n, [
+                        for (final person in book)
+                          if (person.stage == Stage.team) person,
+                      ]),
+                    ),
                     AsyncError() => [
                       EmptyState(
                         icon: Icons.cloud_off_outlined,
@@ -169,8 +177,14 @@ class TeamView extends StatelessWidget {
     );
   }
 
-  List<Widget> _team(AppLocalizations l10n, List<Person> team) {
-    if (team.isEmpty) {
+  /// Mobile: summary, check-ins, roster. Desktop: the roster, with the
+  /// summary and check-ins beside it.
+  List<Widget> _layout(
+    AppLocalizations l10n,
+    bool desktop,
+    ({List<Widget> summary, List<Widget> checks, List<Widget> roster})? parts,
+  ) {
+    if (parts == null) {
       return [
         EmptyState(
           icon: Icons.diversity_3_outlined,
@@ -179,52 +193,56 @@ class TeamView extends StatelessWidget {
         ),
       ];
     }
-    final due = checkIns(team, today);
+    final (:summary, :checks, :roster) = parts;
+    if (desktop) {
+      return [
+        ContentColumns(
+          main: roster,
+          side: [
+            ...summary,
+            if (checks.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.lg),
+              ...checks,
+            ],
+          ],
+        ),
+      ];
+    }
     return [
-      _Summary(team: team, checkIns: due.length),
-      if (due.isNotEmpty) ...[
+      ...summary,
+      if (checks.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.lg),
-        SectionHeader(title: l10n.teamSectionCheckIn),
-        for (final (index, checkIn) in due.indexed) ...[
-          if (index > 0) const SizedBox(height: AppSpacing.ms),
-          ActionItem(
-            name: checkIn.person.name,
-            reason: _reason(l10n, checkIn),
-            chip: DateChip(switch (checkIn.reason) {
-              CheckInReason.isNew => l10n.teamChipNew,
-              CheckInReason.quiet => l10n.teamChipQuiet(checkIn.days ~/ 7),
-            }),
-            onOpen: () => onOpen(checkIn.person),
-            onResolve: () => onCheckIn(checkIn.person),
-            resolveLabel: l10n.logTitle(firstName(checkIn.person)),
-          ),
-        ],
+        ...checks,
       ],
       const SizedBox(height: AppSpacing.lg),
-      SectionHeader(
-        title: l10n.teamSectionEveryone,
-        actionLabel: '${team.length}',
-      ),
-      for (final person in team)
-        ContactRow(
-          name: person.name,
-          subtitle: rosterLabel(l10n, person, today),
-          trailing: LoomiaChip(label: stageLabel(l10n, person.stage)),
-          onTap: () => onOpen(person),
-        ),
+      ...roster,
     ];
   }
 
-  String _reason(AppLocalizations l10n, CheckIn checkIn) {
-    final (:person, :reason, :since, :days) = checkIn;
-    return switch (reason) {
-      CheckInReason.isNew when days <= 0 => l10n.teamReasonNewToday,
-      CheckInReason.isNew when days < 7 => l10n.teamReasonNewDays(days),
-      CheckInReason.isNew => l10n.teamReasonNewWeeks(days ~/ 7),
-      CheckInReason.quiet when person.lastContactOn == null =>
-        l10n.teamReasonQuietNothing(since),
-      CheckInReason.quiet => l10n.teamReasonQuiet(since),
-    };
+  /// The team's three parts, or null when there is nobody on it.
+  ({List<Widget> summary, List<Widget> checks, List<Widget> roster})? _team(
+    AppLocalizations l10n,
+    List<Person> team,
+  ) {
+    if (team.isEmpty) return null;
+    final due = checkIns(team, today);
+    return (
+      summary: [_Summary(team: team, checkIns: due.length)],
+      checks: checkInItems(l10n, due, onOpen: onOpen, onCheckIn: onCheckIn),
+      roster: [
+        SectionHeader(
+          title: l10n.teamSectionEveryone,
+          actionLabel: '${team.length}',
+        ),
+        for (final person in team)
+          ContactRow(
+            name: person.name,
+            subtitle: rosterLabel(l10n, person, today),
+            trailing: LoomiaChip(label: stageLabel(l10n, person.stage)),
+            onTap: () => onOpen(person),
+          ),
+      ],
+    );
   }
 }
 
