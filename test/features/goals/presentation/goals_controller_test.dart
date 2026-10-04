@@ -69,4 +69,40 @@ void main() {
       throwsA(PeopleFailure.network),
     );
   });
+
+  test('closing loads the month to close and the next forecast', () async {
+    final goals = FakeGoalsRepository(
+      plans: [MonthPlan(month: DateTime(2026, 9), ownVolumeTarget: 2800)],
+      progressValue: const Progress(
+        ownVolume: 2650,
+        prospects: 7,
+        customers: 5,
+        teamMembers: 1,
+        loyalty: 2,
+      ),
+      forecastValue: 3,
+    );
+    final c = container(goals);
+    final key = (email: null, day: DateTime(2026, 9, 29));
+    c.listen(closingProvider(key), (_, _) {});
+
+    final closing = (await c.read(closingProvider(key).future))!;
+
+    expect(closing.ritual.closes, isTrue);
+    expect(closing.closing?.ownVolumeTarget, 2800);
+    expect(closing.done?.ownVolume, 2650);
+    expect(closing.forecast, 3);
+    expect(
+      goals.calls,
+      containsAll(['progress(2026-09)', 'forecast(2026-10)']),
+    );
+  });
+
+  test('closing outside the window is null', () async {
+    final c = container(FakeGoalsRepository());
+    final key = (email: null, day: DateTime(2026, 9, 15));
+    c.listen(closingProvider(key), (_, _) {});
+
+    expect(await c.read(closingProvider(key).future), isNull);
+  });
 }

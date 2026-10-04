@@ -30,6 +30,10 @@ abstract final class Routes {
   static const String goalsPlan = '/goals/plan';
   static const String goalsPlanName = 'goalsPlan';
 
+  /// Full screen, outside the tabs: close a month, then plan the next.
+  static const String goalsClose = '/goals/close';
+  static const String goalsCloseName = 'goalsClose';
+
   static const String settings = '/settings';
   static const String settingsName = 'settings';
 

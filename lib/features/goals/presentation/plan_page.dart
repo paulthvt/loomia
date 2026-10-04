@@ -73,10 +73,14 @@ class PlanForm extends StatefulWidget {
     required this.model,
     required this.onSave,
     required this.onSaved,
+    this.step,
     super.key,
   });
 
   final GoalsMonth month;
+
+  /// In the close-and-plan flow: which step this is.
+  final int? step;
   final BusinessModel model;
 
   /// Throws `PeopleFailure`; the form stays, with what was typed.
@@ -239,9 +243,17 @@ class _PlanFormState extends State<PlanForm> {
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           LoomiaTopBar(
+            eyebrow: switch (widget.step) {
+              final step? => l10n.closeStep(step, 2),
+              null => null,
+            },
             title: l10n.planTitle(widget.month.month),
             gap: AppSpacing.sm,
           ),
+          if (widget.step case final step?) ...[
+            StepBar(step: step),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Text(
             firstTime ? l10n.planIntroFirst : l10n.planIntro,
             style: Theme.of(context).textTheme.bodyLarge
@@ -291,30 +303,11 @@ class _PlanFormState extends State<PlanForm> {
                 _teamVolume,
                 _suggested.teamVolume,
               ),
-              LabeledField(
+              LevelField(
                 label: l10n.planLevel(model.name),
-                child: model.levels.isEmpty
-                    ? TextFormField(
-                        initialValue: _level,
-                        textCapitalization: TextCapitalization.words,
-                        onChanged: (typed) => _level = typed,
-                      )
-                    : DropdownButtonFormField<String?>(
-                        initialValue: _level,
-                        isExpanded: true,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        items: [
-                          DropdownMenuItem(child: Text(l10n.editLevelNone)),
-                          for (final name in [
-                            ...model.levels,
-                            if (_level case final saved?
-                                when !model.levels.contains(saved))
-                              saved,
-                          ])
-                            DropdownMenuItem(value: name, child: Text(name)),
-                        ],
-                        onChanged: (picked) => _level = picked,
-                      ),
+                model: model,
+                value: _level,
+                onChanged: (value) => _level = value,
               ),
             ],
           ),
@@ -330,6 +323,88 @@ class _PlanFormState extends State<PlanForm> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The rank picker for dōTERRA, typed words for Other. A stored label the
+/// list lacks (a renamed rank) stays a choice.
+class LevelField extends StatelessWidget {
+  const LevelField({
+    required this.label,
+    required this.model,
+    required this.value,
+    required this.onChanged,
+    this.helper,
+    super.key,
+  });
+
+  final String label;
+  final BusinessModel model;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+  final String? helper;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final decoration = InputDecoration(helperText: helper);
+    return LabeledField(
+      label: label,
+      child: model.levels.isEmpty
+          ? TextFormField(
+              initialValue: value,
+              textCapitalization: TextCapitalization.words,
+              decoration: decoration,
+              onChanged: onChanged,
+            )
+          : DropdownButtonFormField<String?>(
+              initialValue: value,
+              isExpanded: true,
+              style: Theme.of(context).textTheme.bodyLarge,
+              decoration: decoration,
+              items: [
+                DropdownMenuItem(child: Text(l10n.editLevelNone)),
+                for (final name in [
+                  ...model.levels,
+                  if (value case final saved?
+                      when !model.levels.contains(saved))
+                    saved,
+                ])
+                  DropdownMenuItem(value: name, child: Text(name)),
+              ],
+              onChanged: onChanged,
+            ),
+    );
+  }
+}
+
+/// Where the close-and-plan flow is: one segment per step, done ones filled.
+class StepBar extends StatelessWidget {
+  const StepBar({required this.step, this.total = 2, super.key});
+
+  /// From 1.
+  final int step;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
+    return Row(
+      spacing: AppSpacing.xs,
+      children: [
+        for (var index = 1; index <= total; index++)
+          Expanded(
+            child: Container(
+              height: AppSpacing.xs,
+              decoration: BoxDecoration(
+                color: index <= step ? scheme.primary : colors.secondaryTrack,
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

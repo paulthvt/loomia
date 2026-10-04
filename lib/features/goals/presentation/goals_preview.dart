@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
+import 'package:loomia/features/goals/presentation/close_form.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/goals/presentation/goals_page.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
@@ -46,6 +47,32 @@ Widget goalsPlanLight() => _app(
         model: BusinessModel.doterra,
         onSave: (_) async {},
         onSaved: () {},
+      ),
+    ),
+  ),
+);
+
+@Preview(group: 'Goals', name: 'Close — light', size: Size(390, 844))
+Widget goalsCloseLight() => _app(
+  AppTheme.light,
+  Scaffold(
+    body: SafeArea(
+      child: CloseForm(
+        closing: (
+          ritual: (close: _september, plan: DateTime(2026, 10), closes: true),
+          closing: _month.plan,
+          done: const Progress(
+            ownVolume: 2650,
+            prospects: 7,
+            customers: 5,
+            teamMembers: 2,
+            loyalty: 3,
+          ),
+          forecast: 3,
+          plans: _past,
+        ),
+        model: BusinessModel.doterra,
+        onClose: ({teamVolume, level}) async {},
       ),
     ),
   ),
@@ -123,6 +150,7 @@ Widget _goals(ThemeData theme, GoalsMonth month) => _app(
     onRefresh: () async {},
     onLogOrder: () {},
     onOrders: () {},
+    onRitual: () {},
   ),
 );
 

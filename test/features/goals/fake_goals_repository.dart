@@ -73,10 +73,36 @@ class FakeGoalsRepository implements GoalsRepository {
     return forecastValue;
   }
 
+  /// Like `close_month`: the month's progress frozen into its plan, or into
+  /// a new record when it had none.
   @override
   Future<MonthPlan> close(
     DateTime month, {
     double? teamVolume,
     String? level,
-  }) => throw UnimplementedError('close is #143');
+  }) async {
+    await _record('close(${_month(month)})');
+    final plan =
+        store.where((saved) => saved.month == month).firstOrNull ??
+        MonthPlan(month: month);
+    final closed = MonthPlan(
+      month: month,
+      ownVolumeTarget: plan.ownVolumeTarget,
+      teamVolumeTarget: plan.teamVolumeTarget,
+      levelTarget: plan.levelTarget,
+      prospectsTarget: plan.prospectsTarget,
+      customersTarget: plan.customersTarget,
+      teamMembersTarget: plan.teamMembersTarget,
+      loyaltyTarget: plan.loyaltyTarget,
+      loyaltyForecast: plan.loyaltyForecast,
+      actual: progressValue,
+      teamVolumeActual: teamVolume,
+      levelActual: level,
+      closedAt: DateTime(month.year, month.month + 1),
+    );
+    store
+      ..remove(plan)
+      ..add(closed);
+    return closed;
+  }
 }
