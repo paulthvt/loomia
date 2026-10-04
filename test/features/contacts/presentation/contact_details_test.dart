@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
 import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
@@ -462,5 +463,25 @@ void main() {
     expect(message.height, call.height, reason: 'no label wraps');
     expect(call.top, greaterThan(message.bottom));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('desktop: the facts column is 340 wide, beside the next step', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      _person(),
+      size: const Size(1440, 900),
+    );
+
+    final facts = find.ancestor(
+      of: find.text('WHAT YOU KNOW'),
+      matching: find.byType(SectionHeader),
+    );
+    expect(tester.getSize(facts).width, 340);
+    expect(
+      tester.getTopLeft(find.text('WHERE IT STANDS')).dx,
+      lessThan(tester.getTopLeft(facts).dx),
+    );
   });
 }

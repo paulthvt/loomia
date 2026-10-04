@@ -3,6 +3,7 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/fact_row.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
@@ -46,7 +47,7 @@ typedef _Action = ({
 /// what you know. A pure view; the page owns saving and navigation.
 class ContactDetails extends StatelessWidget {
   /// WHAT YOU KNOW's column on desktop, beside the rest.
-  static const double _factsWidth = 272;
+  static const double _factsWidth = 340;
 
   const ContactDetails({
     required this.person,
@@ -429,28 +430,14 @@ class ContactDetails extends StatelessWidget {
             ? [
                 header,
                 const SizedBox(height: AppSpacing.lg),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: spaced([
-                          whereItStands,
-                          [?nextStep],
-                          [?history],
-                        ]),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    SizedBox(
-                      width: _factsWidth,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: spaced([aimingFor, whatYouKnow]),
-                      ),
-                    ),
-                  ],
+                ContentColumns(
+                  sideWidth: _factsWidth,
+                  main: spaced([
+                    whereItStands,
+                    [?nextStep],
+                    [?history],
+                  ]),
+                  side: spaced([aimingFor, whatYouKnow]),
                 ),
               ]
             : spaced([
