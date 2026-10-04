@@ -53,6 +53,7 @@ Widget workflowStepLight() => _app(
     alignment: Alignment.bottomCenter,
     child: StepForm(
       model: BusinessModel.other,
+      offersLoyalty: _samples.stage != Stage.prospect,
       number: 2,
       step: _samples.steps[1],
       onSave: (_) async {},

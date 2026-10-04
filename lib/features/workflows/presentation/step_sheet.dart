@@ -9,6 +9,7 @@ import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
@@ -33,6 +34,7 @@ Future<void> showStepSheet(
     (_) => Consumer(
       builder: (context, ref, _) => StepForm(
         model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
+        offersLoyalty: workflow.stage != Stage.prospect,
         number: (index ?? workflow.steps.length) + 1,
         step: step,
         onSave: (draft) => editWorkflows(
@@ -71,6 +73,7 @@ Future<void> showStepSheet(
 class StepForm extends StatefulWidget {
   const StepForm({
     required this.model,
+    required this.offersLoyalty,
     required this.number,
     required this.onSave,
     this.step,
@@ -80,6 +83,9 @@ class StepForm extends StatefulWidget {
 
   /// Words for the loyalty switch's hint.
   final BusinessModel model;
+
+  /// A prospect is no customer yet, so their steps never set up loyalty.
+  final bool offersLoyalty;
 
   /// From 1. Step 1 counts from the start, the others from the one before.
   final int number;
@@ -238,13 +244,16 @@ class _StepFormState extends State<StepForm> {
             ),
             // A plain switch row, like the editor's default switch, not the
             // outlined box of the Figma frame: one switch style in the app.
-            SwitchListTile(
-              value: _loyalty,
-              title: Text(l10n.stepLoyalty),
-              subtitle: Text(l10n.stepLoyaltyHint(widget.model.name)),
-              contentPadding: EdgeInsets.zero,
-              onChanged: _saving ? null : (on) => setState(() => _loyalty = on),
-            ),
+            if (widget.offersLoyalty)
+              SwitchListTile(
+                value: _loyalty,
+                title: Text(l10n.stepLoyalty),
+                subtitle: Text(l10n.stepLoyaltyHint(widget.model.name)),
+                contentPadding: EdgeInsets.zero,
+                onChanged: _saving
+                    ? null
+                    : (on) => setState(() => _loyalty = on),
+              ),
           ],
         ),
       ),
