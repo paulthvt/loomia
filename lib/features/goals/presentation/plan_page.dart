@@ -45,7 +45,10 @@ class PlanPage extends ConsumerWidget {
           AsyncValue(value: final value?) => PlanForm(
             month: value,
             model: account?.businessModel ?? BusinessModel.other,
-            onSave: (plan) => savePlan(ref, plan),
+            onSave: (plan) => savePlan(
+              ProviderScope.containerOf(context, listen: false),
+              plan,
+            ),
             onSaved: onSaved ?? () => backOr(context, Routes.goals),
           ),
           AsyncError() => EmptyState(

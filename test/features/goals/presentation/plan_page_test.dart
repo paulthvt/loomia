@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
@@ -9,6 +11,7 @@ import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/goals/data/goals_repository.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
+import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -209,5 +212,61 @@ void main() {
 
     expect(goals.store.single.levelTarget, 'Gold');
     expect(find.textContaining('PV'), findsNothing);
+  });
+
+  testWidgets('going back while saving still saves and reloads', (
+    tester,
+  ) async {
+    goals = FakeGoalsRepository();
+    final auth = FakeAuthRepository()
+      ..session = true
+      ..account = const Account(firstName: 'Pauline', email: 'p@example.com');
+    tester.view.physicalSize = const Size(390, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    addTearDown(auth.dispose);
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(auth),
+        goalsRepositoryProvider.overrideWithValue(goals),
+      ],
+    );
+    addTearDown(container.dispose);
+    // Goals stays listened to, as the tab under the pushed page does.
+    container.listen(goalsProvider('p@example.com'), (_, _) {});
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          localizationsDelegates: localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => PlanPage(onSaved: () {}),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    goals.gate = Completer<void>();
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await tester.pumpAndSettle();
+    goals.gate!.complete();
+    goals.gate = null;
+    await tester.pumpAndSettle();
+
+    expect(goals.store, hasLength(1));
+    expect(goals.calls.where((call) => call == 'plans()'), hasLength(2));
   });
 }

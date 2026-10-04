@@ -41,7 +41,9 @@ Future<GoalsMonth> _load(Ref ref) async {
 }
 
 /// Saves [plan]'s targets, then reloads the tab. Throws `PeopleFailure`.
-Future<void> savePlan(WidgetRef ref, MonthPlan plan) async {
-  await ref.read(goalsRepositoryProvider).saveTargets(plan);
-  ref.invalidate(goalsProvider);
+/// Takes the container, not a widget's ref: the page may be gone by the time
+/// the save lands (back during a save), and the tab must still reload.
+Future<void> savePlan(ProviderContainer container, MonthPlan plan) async {
+  await container.read(goalsRepositoryProvider).saveTargets(plan);
+  container.invalidate(goalsProvider);
 }
