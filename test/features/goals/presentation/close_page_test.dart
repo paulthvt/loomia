@@ -95,13 +95,9 @@ void main() {
     expect(done, 1);
   });
 
-  testWidgets('closed, next not planned: straight to the plan', (
-    tester,
-  ) async {
+  testWidgets('closed, next not planned: straight to the plan', (tester) async {
     goals = FakeGoalsRepository(
-      plans: [
-        MonthPlan(month: september, closedAt: DateTime(2026, 9, 30)),
-      ],
+      plans: [MonthPlan(month: september, closedAt: DateTime(2026, 9, 30))],
     );
     await open(tester, DateTime(2026, 9, 30));
 

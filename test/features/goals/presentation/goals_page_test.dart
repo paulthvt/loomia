@@ -32,6 +32,7 @@ GoalsMonth month({
 var plans = 0;
 var retries = 0;
 var orders = 0;
+var rituals = 0;
 var logs = 0;
 
 /// [GoalsView] alone, on a fixed day, counting Plan and Try again taps.
@@ -44,6 +45,7 @@ Future<void> pumpGoals(
   plans = 0;
   retries = 0;
   orders = 0;
+  rituals = 0;
   logs = 0;
   return tester.pumpWidget(
     MaterialApp(
@@ -58,6 +60,7 @@ Future<void> pumpGoals(
         onRetry: () => retries++,
         onLogOrder: () => logs++,
         onOrders: () => orders++,
+        onRitual: () => rituals++,
         onRefresh: () async {},
       ),
     ),
@@ -240,5 +243,45 @@ void main() {
     await tester.scrollUntilVisible(find.text('Log my own order'), 200);
     await tester.tap(find.text('Log my own order'));
     expect(logs, 1);
+  });
+
+  testWidgets('the last days: a card to close and plan', (tester) async {
+    await pumpGoals(
+      tester,
+      AsyncData(month(plan: full, progress: progress)),
+      day: DateTime(2026, 9, 29),
+    );
+
+    expect(find.text('Close September, plan October'), findsOneWidget);
+    await tester.tap(find.text('Start'));
+    expect(rituals, 1);
+  });
+
+  testWidgets('mid-month: no card', (tester) async {
+    await pumpGoals(tester, AsyncData(month(plan: full, progress: progress)));
+
+    expect(find.textContaining('Close September'), findsNothing);
+  });
+
+  testWidgets('closed: the plan no longer changes', (tester) async {
+    await pumpGoals(
+      tester,
+      AsyncData(
+        month(
+          plan: MonthPlan(
+            month: _september,
+            ownVolumeTarget: 2800,
+            actual: progress,
+            closedAt: DateTime(2026, 9, 29),
+          ),
+          progress: progress,
+        ),
+      ),
+      day: DateTime(2026, 9, 29),
+    );
+
+    expect(find.text('Change the plan'), findsNothing);
+    // Closed, October not planned yet: the card offers October alone.
+    expect(find.text('Plan October'), findsOneWidget);
   });
 }

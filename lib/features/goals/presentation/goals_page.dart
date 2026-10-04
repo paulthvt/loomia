@@ -23,6 +23,7 @@ import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/goals/presentation/orders_sheet.dart';
+import 'package:loomia/features/goals/presentation/ritual_card.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -48,6 +49,7 @@ class GoalsPage extends ConsumerWidget {
           showLogOwnOrder(context, onSaved: () => refreshOrders(container)),
         );
       },
+      onRitual: () => context.push(Routes.goalsClose),
       onOrders: () =>
           unawaited(showOrders(context, DateTime(today().year, today().month))),
       // With a sidebar, Settings is its account block instead.
@@ -70,6 +72,7 @@ class GoalsView extends StatelessWidget {
     required this.onRefresh,
     required this.onLogOrder,
     required this.onOrders,
+    required this.onRitual,
     this.accountAction,
     super.key,
   });
@@ -88,6 +91,9 @@ class GoalsView extends StatelessWidget {
 
   /// Opens the month's orders: the volume card's tap.
   final VoidCallback onOrders;
+
+  /// Opens /goals/close.
+  final VoidCallback onRitual;
   final Widget? accountAction;
 
   /// Per `docs/design/responsive-design.md`, as on Today.
@@ -98,6 +104,13 @@ class GoalsView extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final desktop = context.screenSize.isDesktop;
     final daysLeft = DateTime(today.year, today.month + 1, 0).day - today.day;
+    final ritual = switch (month) {
+      AsyncData(:final value) => pendingRitual(today, value.plans),
+      _ => null,
+    };
+    // Planning this month alone is the empty state's job.
+    final showRitual =
+        ritual != null && (ritual.closes || month.value?.month != ritual.plan);
 
     return Scaffold(
       body: SafeArea(
@@ -123,6 +136,10 @@ class GoalsView extends StatelessWidget {
                     action: accountAction,
                     gap: AppSpacing.sm,
                   ),
+                  if (showRitual) ...[
+                    RitualCard(ritual: ritual, onStart: onRitual),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                   ...switch (month) {
                     AsyncData(:final value) when value.plan == null => [
                       EmptyState(
@@ -272,10 +289,14 @@ class GoalsView extends StatelessWidget {
         label: Text(l10n.goalLogOwnOrder),
       ),
       const SizedBox(height: AppSpacing.sm),
-      Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: TextButton(onPressed: onPlan, child: Text(l10n.goalChangePlan)),
-      ),
+      if (!plan.closed)
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton(
+            onPressed: onPlan,
+            child: Text(l10n.goalChangePlan),
+          ),
+        ),
       if (past.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.md),
         SectionHeader(title: l10n.goalPastMonths),
