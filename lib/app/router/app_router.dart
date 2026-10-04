@@ -15,6 +15,7 @@ import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/import_contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/workflow_timeline_page.dart';
 import 'package:loomia/features/goals/presentation/goals_page.dart';
+import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
 import 'package:loomia/features/team/presentation/team_page.dart';
@@ -152,6 +153,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.start,
         name: Routes.startName,
         builder: (context, state) => const FirstRunPage(),
+      ),
+      GoRoute(
+        path: Routes.goalsPlan,
+        name: Routes.goalsPlanName,
+        builder: (context, state) => const PlanPage(),
       ),
       GoRoute(
         path: Routes.importContacts,
