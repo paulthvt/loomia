@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
+import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/domain/activity.dart' show parseAmount;
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
@@ -89,6 +92,36 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
   bool _saving = false;
   PeopleFailure? _failure;
 
+  // A team member's rank and volume: picked or typed, kept as they are when
+  // this form does not ask for them.
+  late String? _levelNow = widget.person.currentLevel;
+  late String? _aimingFor = widget.person.targetLevel;
+  late DateTime? _by = widget.person.targetLevelBy;
+  // Plain digits and a dot: parseAmount reads them back in every language
+  // (French reads a dot as the decimal too). No context here, so dispose can
+  // create it safely.
+  late final _volume = TextEditingController(
+    text: switch (widget.person.monthlyVolumeTarget) {
+      final double volume when volume % 1 == 0 => volume.toInt().toString(),
+      final double volume => volume.toString(),
+      null => '',
+    },
+  );
+
+  Future<void> _pickBy() async {
+    final now = today();
+    final thisMonth = DateTime(now.year, now.month);
+    final initial = _by ?? thisMonth;
+    final by = await pickMonth(
+      context,
+      initial: initial,
+      // A saved month in the past stays reachable.
+      first: initial.isBefore(thisMonth) ? initial : thisMonth,
+      last: DateTime(thisMonth.year + 10, thisMonth.month),
+    );
+    if (by != null && mounted) setState(() => _by = by);
+  }
+
   String? _initial(_Field field) {
     final p = widget.person;
     return switch (field) {
@@ -128,12 +161,16 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
     for (final controller in _controllers.values) {
       controller.dispose();
     }
+    _volume.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
     final p = widget.person;
+    final volume = _asks(_Field.why)
+        ? parseAmount(_volume.text, AppLocalizations.of(context).localeName)
+        : p.monthlyVolumeTarget;
     setState(() {
       _saving = true;
       _failure = null;
@@ -157,6 +194,11 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
               address: _text(_Field.address),
               notes: _text(_Field.notes),
               why: _text(_Field.why),
+              currentLevel: _levelNow,
+              targetLevel: _aimingFor,
+              // The database refuses a month with nothing to aim for.
+              targetLevelBy: _aimingFor == null ? null : _by,
+              monthlyVolumeTarget: volume,
               ownGoal: _text(_Field.ownGoal),
               timeAvailable: _text(_Field.timeAvailable),
               wouldLoveTo: _text(_Field.wouldLoveTo),
@@ -180,6 +222,8 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
     final l10n = AppLocalizations.of(context);
     final material = MaterialLocalizations.of(context);
     final failure = _failure;
+    final model =
+        ref.watch(accountProvider)?.businessModel ?? BusinessModel.other;
     final labels = {
       _Field.name: l10n.addPersonName,
       _Field.phone: l10n.factPhone,
@@ -199,6 +243,7 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
     };
 
     Widget input(_Field field) => LabeledField(
+      key: ValueKey(field),
       label: labels[field]!,
       child: TextFormField(
         controller: _controllers[field],
@@ -219,6 +264,102 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
             : null,
       ),
     );
+
+    // dōTERRA picks from its ranks; Other types its own words. A stored
+    // label the list lacks (a renamed rank) stays a choice.
+    Widget level(
+      String label,
+      String? value,
+      List<String> choices,
+      ValueChanged<String?> onChanged,
+    ) => LabeledField(
+      // A new key when the choices change, so the dropdown restarts from
+      // [value] instead of keeping one it no longer offers.
+      key: ValueKey((label, choices.length)),
+      label: label,
+      child: model.levels.isEmpty
+          ? TextFormField(
+              initialValue: value,
+              textCapitalization: TextCapitalization.words,
+              onChanged: (typed) =>
+                  onChanged(typed.trim().isEmpty ? null : typed.trim()),
+            )
+          : DropdownButtonFormField<String?>(
+              initialValue: value,
+              // Defaults to titleMedium; the text fields around it are
+              // bodyLarge.
+              style: Theme.of(context).textTheme.bodyLarge,
+              items: [
+                DropdownMenuItem(child: Text(l10n.editLevelNone)),
+                for (final name in [
+                  ...choices,
+                  if (value != null && !choices.contains(value)) value,
+                ])
+                  DropdownMenuItem(value: name, child: Text(name)),
+              ],
+              onChanged: onChanged,
+            ),
+    );
+
+    // Nobody aims for a rank they already hold: only the ranks above the
+    // current one, or all of them when it is unknown.
+    List<String> above(String? rank) {
+      final index = model.levels.indexOf(rank ?? '');
+      return model.levels.sublist(index + 1);
+    }
+
+    final rankAndVolume = [
+      level(
+        l10n.factLevelNow(model.name),
+        _levelNow,
+        model.levels,
+        (value) => setState(() {
+          _levelNow = value;
+          if (_aimingFor != null &&
+              model.levels.contains(_aimingFor) &&
+              !above(value).contains(_aimingFor)) {
+            _aimingFor = null;
+          }
+        }),
+      ),
+      level(
+        l10n.factAimingFor,
+        _aimingFor,
+        above(_levelNow),
+        (value) => setState(() => _aimingFor = value),
+      ),
+      if (_aimingFor != null)
+        LabeledField(
+          key: const ValueKey('by'),
+          label: l10n.editBy,
+          child: InkWell(
+            onTap: _pickBy,
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                suffixIcon: Icon(Icons.calendar_today_outlined),
+              ),
+              child: Text(switch (_by) {
+                final DateTime by => material.formatMonthYear(by),
+                null => '',
+              }),
+            ),
+          ),
+        ),
+      LabeledField(
+        key: const ValueKey('volume'),
+        label: l10n.editEachMonth(model.name),
+        child: TextFormField(
+          controller: _volume,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          validator: (value) {
+            final typed = (value ?? '').trim();
+            return typed.isEmpty || parseAmount(typed, l10n.localeName) != null
+                ? null
+                : l10n.logAmountInvalid;
+          },
+        ),
+      ),
+    ];
 
     return Form(
       key: _form,
@@ -265,7 +406,10 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: AppSpacing.ms,
                 children: [
-                  for (final field in fields.where(_asks)) input(field),
+                  for (final field in fields.where(_asks)) ...[
+                    input(field),
+                    if (field == _Field.why) ...rankAndVolume,
+                  ],
                 ],
               ),
             ],

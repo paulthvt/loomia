@@ -19,7 +19,7 @@ Future<DateTime?> pickDay(
   DateTime? first,
   required DateTime last,
 }) async {
-  final picked = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
+  final picked = _wheel
       ? await showCupertinoModalPopup<DateTime>(
           context: context,
           builder: (_) => _Wheel(initial: initial, first: first, last: last),
@@ -35,8 +35,46 @@ Future<DateTime?> pickDay(
       : DateTime(picked.year, picked.month, picked.day);
 }
 
+/// The first of a month between [first] and [last], as local midnight; null
+/// when dismissed. A month-and-year wheel on iOS; elsewhere the Material
+/// calendar opened on its years, of which only the month is kept.
+Future<DateTime?> pickMonth(
+  BuildContext context, {
+  required DateTime initial,
+  required DateTime first,
+  required DateTime last,
+}) async {
+  final picked = _wheel
+      ? await showCupertinoModalPopup<DateTime>(
+          context: context,
+          builder: (_) => _Wheel(
+            mode: CupertinoDatePickerMode.monthYear,
+            initial: initial,
+            first: first,
+            last: last,
+          ),
+        )
+      : await showDatePicker(
+          context: context,
+          initialDate: initial,
+          firstDate: first,
+          lastDate: last,
+          initialDatePickerMode: DatePickerMode.year,
+        );
+  return picked == null ? null : DateTime(picked.year, picked.month);
+}
+
+bool get _wheel => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
 class _Wheel extends StatefulWidget {
-  const _Wheel({required this.initial, this.first, required this.last});
+  const _Wheel({
+    this.mode = CupertinoDatePickerMode.date,
+    required this.initial,
+    this.first,
+    required this.last,
+  });
+
+  final CupertinoDatePickerMode mode;
 
   final DateTime initial;
   final DateTime? first;
@@ -67,7 +105,7 @@ class _WheelState extends State<_Wheel> {
               // UIKit's standard picker height.
               height: 216,
               child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.date,
+                mode: widget.mode,
                 initialDateTime: widget.initial,
                 minimumDate: widget.first,
                 maximumDate: widget.last,

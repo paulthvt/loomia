@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -107,6 +108,7 @@ class ContactPane extends ConsumerWidget {
 
     return ContactDetails(
       person: person,
+      model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
       onStatus: (status) => unawaited(
         writePeople(context, ref, (people) => people.setStatus(person, status)),
       ),

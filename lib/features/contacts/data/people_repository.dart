@@ -166,6 +166,14 @@ Person personFromRow(Map<String, dynamic> row) {
     address: _text(row['address']),
     notes: _text(row['notes']),
     why: _text(row['why']),
+    currentLevel: _text(row['current_level']),
+    targetLevel: _text(row['target_level']),
+    targetLevelBy: switch (row['target_level_by']) {
+      // A bare date parses as local midnight.
+      final String by => DateTime.parse(by),
+      _ => null,
+    },
+    monthlyVolumeTarget: (row['monthly_volume_target'] as num?)?.toDouble(),
     ownGoal: _text(row['own_goal']),
     timeAvailable: _text(row['time_available']),
     wouldLoveTo: _text(row['would_love_to']),
@@ -219,6 +227,13 @@ Map<String, dynamic> personToRow(Person person) => {
   'would_love_to': _text(person.wouldLoveTo),
   'strengths': _text(person.strengths),
   'stuck_on': _text(person.stuckOn),
+  'current_level': _text(person.currentLevel),
+  'target_level': _text(person.targetLevel),
+  'target_level_by': switch (person.targetLevelBy) {
+    final DateTime by => dayColumn(by),
+    null => null,
+  },
+  'monthly_volume_target': person.monthlyVolumeTarget,
 };
 
 Map<String, dynamic> draftToRow(PersonDraft draft) => {

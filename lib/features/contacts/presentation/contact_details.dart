@@ -1,6 +1,7 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/fact_row.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
@@ -49,6 +50,7 @@ class ContactDetails extends StatelessWidget {
 
   const ContactDetails({
     required this.person,
+    required this.model,
     required this.onStatus,
     required this.onEdit,
     required this.onDelete,
@@ -66,6 +68,9 @@ class ContactDetails extends StatelessWidget {
   });
 
   final Person person;
+
+  /// Which words a team member's rank and volume use.
+  final BusinessModel model;
 
   /// The tapped status, or null when the selected one was tapped again.
   final ValueChanged<ProspectStatus?> onStatus;
@@ -365,10 +370,34 @@ class ContactDetails extends StatelessWidget {
       ];
     }
 
-    // Their own aims, in their words: nothing to rank or compare.
+    // Their own aims, in their words: nothing to rank or compare. A rank is a
+    // fact they told you, never summed or shown elsewhere.
     final aimingFor = person.stage == Stage.team
         ? factsSection(l10n.contactSectionAimingFor, EditPart.aims, [
             (l10n.factWhy, person.why, null),
+            (l10n.factLevelNow(model.name), person.currentLevel, null),
+            (
+              l10n.factAimingFor,
+              switch ((person.targetLevel, person.targetLevelBy)) {
+                (final String level, final DateTime by) => l10n.factAimingForBy(
+                  level,
+                  by,
+                ),
+                (final level, _) => level,
+              },
+              null,
+            ),
+            (
+              l10n.factEachMonth,
+              switch (person.monthlyVolumeTarget) {
+                final double amount => l10n.factEachMonthValue(
+                  model.name,
+                  amount,
+                ),
+                null => null,
+              },
+              null,
+            ),
             (l10n.factOwnGoal, person.ownGoal, null),
             (l10n.factTimeAvailable, person.timeAvailable, null),
             (l10n.factWouldLoveTo, person.wouldLoveTo, null),

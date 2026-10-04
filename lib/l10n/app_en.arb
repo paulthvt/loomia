@@ -677,6 +677,52 @@
   "@factWhy": {
     "description": "Label of why a team member started, in their words. Also the edit form field."
   },
+  "factLevelNow": "{model, select, doterra{Rank now} other{Level now}}",
+  "@factLevelNow": {
+    "description": "Label of a team member's rank or level today, as the user picked or typed it. dōTERRA says rank. Also the edit form field.",
+    "placeholders": {
+      "model": { "type": "String" }
+    }
+  },
+  "factAimingFor": "Aiming for",
+  "@factAimingFor": {
+    "description": "Label of the rank or level a team member is aiming for. Also the edit form field."
+  },
+  "factAimingForBy": "{level} by {month}",
+  "@factAimingForBy": {
+    "description": "Value of Aiming for when they set a month, e.g. 'Elite by March 2027'. The level is a rank name, never translated.",
+    "placeholders": {
+      "level": { "type": "String" },
+      "month": { "type": "DateTime", "format": "yMMMM" }
+    }
+  },
+  "factEachMonth": "Each month",
+  "@factEachMonth": {
+    "description": "Label of the volume a team member aims for each month."
+  },
+  "factEachMonthValue": "{model, select, doterra{Aims for {amount} PV} other{Aims for {amount}}}",
+  "@factEachMonthValue": {
+    "description": "Value of Each month, e.g. 'Aims for 100 PV'. PV is not translated. Other: the number alone.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "amount": { "type": "num", "format": "decimalPattern" }
+    }
+  },
+  "editBy": "By",
+  "@editBy": {
+    "description": "Edit form field under Aiming for: the month they aim to reach it by. Opens a month picker."
+  },
+  "editEachMonth": "{model, select, doterra{Each month (PV)} other{Each month}}",
+  "@editEachMonth": {
+    "description": "Edit form field: the volume a team member aims for each month. dōTERRA shows the unit, PV, not translated.",
+    "placeholders": {
+      "model": { "type": "String" }
+    }
+  },
+  "editLevelNone": "Not set",
+  "@editLevelNone": {
+    "description": "First choice of the rank pickers: no rank picked."
+  },
   "factOwnGoal": "Their own goal",
   "@factOwnGoal": {
     "description": "Label of the goal a team member set for themselves, not one set for them. Also the edit form field."

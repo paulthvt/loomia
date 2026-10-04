@@ -231,7 +231,13 @@ No reply), `NEXT STEP` with the workflow name and position ("Samples · 3 of 5")
 `WHAT YOU KNOW` (FactRows, with Edit) and `HISTORY` (with Add). A team member
 also has `WHAT THEY ARE AIMING FOR` above `WHAT YOU KNOW`: their why, own goal,
 time they have, what they would love to do, strengths and where they are stuck,
-in their words. There is no rank and no volume.
+in their words. After their why come "Rank now", "Aiming for" ("Elite by
+March 2027") and "Each month" ("Aims for 100 PV"); Other reads "Level now" and
+a bare number ([#139](https://github.com/paulthvt/loomia/issues/139)). They
+are what the member said, typed by the user: never on the Team tab, never
+summed or compared. The edit sheet picks a rank from the company's list (free
+text for Other), aims only above the rank now, a month for "By" once there is
+a target, and a number.
 
 **Edit details** (from ⋯) is grouped as the page is: Name, then
 `WHAT THEY ARE AIMING FOR` (team only), then `WHAT YOU KNOW`. A section's own

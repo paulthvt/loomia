@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
 import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
@@ -49,6 +50,7 @@ Future<_Calls> _pump(
   Person person, {
   Size size = const Size(800, 600),
   String? workflowName,
+  BusinessModel model = BusinessModel.other,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -63,6 +65,7 @@ Future<_Calls> _pump(
       home: Scaffold(
         body: ContactDetails(
           person: person,
+          model: model,
           onStatus: calls.statuses.add,
           onEdit: calls.edits.add,
           onDelete: () => calls.deletes++,
@@ -201,6 +204,92 @@ void main() {
     await tester.tap(find.text('Edit').last);
     // Each section edits its own facts.
     expect(calls.edits, [EditPart.aims, EditPart.facts]);
+  });
+
+  Person member({
+    Stage stage = Stage.team,
+    String? currentLevel = 'Executive',
+    DateTime? by,
+    double? volume = 100,
+  }) => Person(
+    id: 'p1',
+    name: 'Claire Martin',
+    stage: stage,
+    stageSince: DateTime.utc(2026, 3, 4),
+    why: 'More time with my kids',
+    ownGoal: 'Pay for the holidays',
+    currentLevel: currentLevel,
+    targetLevel: 'Elite',
+    targetLevelBy: by,
+    monthlyVolumeTarget: volume,
+  );
+
+  testWidgets('dōTERRA: rank now, aiming for by a month, PV each month', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      member(by: DateTime(2027, 3)),
+      model: BusinessModel.doterra,
+    );
+
+    expect(find.text('Rank now'), findsOneWidget);
+    expect(find.text('Executive'), findsOneWidget);
+    expect(find.text('Aiming for'), findsOneWidget);
+    expect(find.text('Elite by March 2027'), findsOneWidget);
+    expect(find.text('Each month'), findsOneWidget);
+    expect(find.text('Aims for 100 PV'), findsOneWidget);
+    // After their why, before their own goal.
+    double top(String text) => tester.getTopLeft(find.text(text)).dy;
+    expect(top('Their why'), lessThan(top('Rank now')));
+    expect(top('Rank now'), lessThan(top('Aiming for')));
+    expect(top('Aiming for'), lessThan(top('Each month')));
+    expect(top('Each month'), lessThan(top('Their own goal')));
+  });
+
+  testWidgets('Other: level now, a target with no month, a bare number', (
+    tester,
+  ) async {
+    await _pump(tester, member(volume: 99.5));
+
+    expect(find.text('Level now'), findsOneWidget);
+    expect(find.text('Rank now'), findsNothing);
+    expect(find.text('Elite'), findsOneWidget);
+    expect(find.text('Aims for 99.5'), findsOneWidget);
+  });
+
+  testWidgets('an unknown rank reads as stored', (tester) async {
+    await _pump(
+      tester,
+      member(currentLevel: 'Wellness Advocate'),
+      model: BusinessModel.doterra,
+    );
+
+    expect(find.text('Wellness Advocate'), findsOneWidget);
+  });
+
+  testWidgets('no rank and no volume: those rows are left out', (tester) async {
+    await _pump(
+      tester,
+      member(currentLevel: null, volume: null),
+      model: BusinessModel.doterra,
+    );
+
+    expect(find.text('Rank now'), findsNothing);
+    expect(find.text('Each month'), findsNothing);
+    expect(find.text('Aiming for'), findsOneWidget);
+  });
+
+  testWidgets('a customer shows no rank, even if saved', (tester) async {
+    await _pump(
+      tester,
+      member(stage: Stage.customer, by: DateTime(2027, 3)),
+      model: BusinessModel.doterra,
+    );
+
+    expect(find.text('Executive'), findsNothing);
+    expect(find.text('Elite by March 2027'), findsNothing);
+    expect(find.text('Aims for 100 PV'), findsNothing);
   });
 
   testWidgets('not on the team: no aims, even if saved', (tester) async {
