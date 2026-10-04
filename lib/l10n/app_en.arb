@@ -1303,6 +1303,17 @@
   "@stepNote": {
     "description": "Label of a step's optional note field."
   },
+  "stepLoyalty": "Counts as a loyalty setup",
+  "@stepLoyalty": {
+    "description": "Switch on a workflow step: ticking this step means the person set up a loyalty order (an LRP for dōTERRA). Goals counts these."
+  },
+  "stepLoyaltyHint": "{model, select, doterra{When you tick this step, it counts as one LRP for the month.} other{When you tick this step, it counts as one loyalty order for the month.}}",
+  "@stepLoyaltyHint": {
+    "description": "Under the loyalty switch on a workflow step. dōTERRA: LRP (Loyalty Rewards Program, not translated). Other: neutral words.",
+    "placeholders": {
+      "model": { "type": "String" }
+    }
+  },
   "stepRemove": "Remove this step",
   "@stepRemove": {
     "description": "Button in the step sheet. No confirmation: people on the step move on, and their history stays."

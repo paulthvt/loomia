@@ -3,19 +3,22 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
+import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// What the step sheet saves: a trimmed label, 0 to 365 days, and a trimmed
-/// note or null.
-typedef StepDraft = ({String label, int days, String? note});
+/// What the step sheet saves: a trimmed label, 0 to 365 days, a trimmed
+/// note or null, and whether ticking it counts a loyalty setup.
+typedef StepDraft = ({String label, int days, String? note, bool loyaltySetup});
 
 /// Edits the step at [index] of [workflow], or adds one at the end when
 /// [index] is null. The sheet reads its own `ref`, so it does not depend on
@@ -30,6 +33,8 @@ Future<void> showStepSheet(
     context,
     (_) => Consumer(
       builder: (context, ref, _) => StepForm(
+        model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
+        offersLoyalty: workflow.stage != Stage.prospect,
         number: (index ?? workflow.steps.length) + 1,
         step: step,
         onSave: (draft) => editWorkflows(
@@ -41,12 +46,14 @@ Future<void> showStepSheet(
                   days: draft.days,
                   note: draft.note,
                   position: positionAt(workflow.steps, workflow.steps.length),
+                  loyaltySetup: draft.loyaltySetup,
                 )
               : repository.updateStep(
                   step.id,
                   label: draft.label,
                   days: draft.days,
                   note: draft.note,
+                  loyaltySetup: draft.loyaltySetup,
                 ),
         ),
         onRemove: step == null
@@ -65,12 +72,20 @@ Future<void> showStepSheet(
 /// the preview shows.
 class StepForm extends StatefulWidget {
   const StepForm({
+    required this.model,
+    required this.offersLoyalty,
     required this.number,
     required this.onSave,
     this.step,
     this.onRemove,
     super.key,
   });
+
+  /// Words for the loyalty switch's hint.
+  final BusinessModel model;
+
+  /// A prospect is no customer yet, so their steps never set up loyalty.
+  final bool offersLoyalty;
 
   /// From 1. Step 1 counts from the start, the others from the one before.
   final int number;
@@ -94,6 +109,7 @@ class _StepFormState extends State<StepForm> {
     text: '${widget.step?.days ?? (widget.number == 1 ? 0 : 1)}',
   );
   late final _note = TextEditingController(text: widget.step?.note);
+  late bool _loyalty = widget.step?.loyaltySetup ?? false;
   bool _saving = false;
   PeopleFailure? _failure;
 
@@ -139,6 +155,7 @@ class _StepFormState extends State<StepForm> {
           label: _label.text.trim(),
           days: int.parse(_days.text),
           note: note.isEmpty ? null : note,
+          loyaltySetup: _loyalty,
         )),
       ),
     );
@@ -225,6 +242,18 @@ class _StepFormState extends State<StepForm> {
                 textCapitalization: TextCapitalization.sentences,
               ),
             ),
+            // A plain switch row, like the editor's default switch, not the
+            // outlined box of the Figma frame: one switch style in the app.
+            if (widget.offersLoyalty)
+              SwitchListTile(
+                value: _loyalty,
+                title: Text(l10n.stepLoyalty),
+                subtitle: Text(l10n.stepLoyaltyHint(widget.model.name)),
+                contentPadding: EdgeInsets.zero,
+                onChanged: _saving
+                    ? null
+                    : (on) => setState(() => _loyalty = on),
+              ),
           ],
         ),
       ),
