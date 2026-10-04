@@ -134,3 +134,6 @@ app.*.symbols
 # megabyte of generated diff in front of every copy change.
 lib/l10n/app_localizations*.dart
 l10n_missing.json
+
+# graphify knowledge graph (local, rebuilt by its git hooks)
+graphify-out/
