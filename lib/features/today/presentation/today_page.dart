@@ -55,6 +55,13 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     }
   }
 
+  /// The people, and this month's goals with them: a failed goals load has
+  /// no Try again of its own on Today.
+  Future<void> _refresh() {
+    ref.invalidate(goalsProvider(ref.read(accountProvider)?.email));
+    return refreshPeople(context, ref);
+  }
+
   @override
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
@@ -84,7 +91,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       // With a sidebar, Settings is its account block instead.
       accountAction: context.screenSize.usesSideNavigation
           ? IconButton(
-              onPressed: () => refreshPeople(context, ref),
+              onPressed: _refresh,
               tooltip: AppLocalizations.of(context).contactsRefresh,
               icon: const Icon(Icons.refresh_rounded),
             )
@@ -96,7 +103,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         if (people.hasError) ref.invalidate(book);
         if (workflows.hasError) ref.invalidate(lists);
       },
-      onRefresh: () => refreshPeople(context, ref),
+      onRefresh: _refresh,
       goals: ref.watch(goalsProvider(account?.email)).value,
       model: account?.businessModel ?? BusinessModel.other,
       onGoals: () => context.go(Routes.goals),
