@@ -904,6 +904,25 @@
   "@logNote": {
     "description": "Label of the text field in Log something when the kind is Order: optional once an amount is given. Other kinds keep logWhat."
   },
+  "logOwnOrderTitle": "Your own order",
+  "@logOwnOrderTitle": { "description": "Title of the sheet that logs an order of the user's own, from Goals: no person." },
+  "logOwnOrderAmountRequired": "Enter the amount.",
+  "@logOwnOrderAmountRequired": { "description": "Error under the amount of an own order, which can't be saved without one." },
+  "goalLogOwnOrder": "Log my own order",
+  "@goalLogOwnOrder": { "description": "Goals button: opens Your own order." },
+  "ordersTitle": "Orders in {month}",
+  "@ordersTitle": {
+    "description": "Title of the sheet listing this month's orders, opened from the own-volume card.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "ordersOwn": "Your own order",
+  "@ordersOwn": { "description": "In the month's orders, in place of a person's name: the user's own order." },
+  "ordersEmpty": "No orders yet this month.",
+  "@ordersEmpty": { "description": "The month's orders sheet when there is none." },
+  "ordersLoadFailed": "Couldn't load the orders.",
+  "@ordersLoadFailed": { "description": "The month's orders sheet when they can't be loaded." },
+  "ordersRemove": "Delete this order",
+  "@ordersRemove": { "description": "Tooltip and screen-reader label of the delete button on an order in the month's list." },
   "logAmountInvalid": "Use a number above 0, like 100 or 99.5.",
   "@logAmountInvalid": {
     "description": "Shown under the amount field when what was typed is not a positive number with at most two decimals."
@@ -968,7 +987,7 @@
   },
   "historyMeta": "{day} · {kind}",
   "@historyMeta": {
-    "description": "Line under a history entry: its day, then its kind, e.g. 'October 13 · Call'.",
+    "description": "Line under a history entry: its day, then its kind, e.g. 'October 13 · Call'. Also under an order in the month's orders: the day, then whose it is, e.g. 'September 2 · Marie Dupont'.",
     "placeholders": {
       "day": { "type": "String" },
       "kind": { "type": "String" }

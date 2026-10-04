@@ -121,6 +121,8 @@ Widget _goals(ThemeData theme, GoalsMonth month) => _app(
     onPlan: () {},
     onRetry: () {},
     onRefresh: () async {},
+    onLogOrder: () {},
+    onOrders: () {},
   ),
 );
 

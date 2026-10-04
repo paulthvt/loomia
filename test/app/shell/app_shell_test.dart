@@ -1,14 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/shell/app_shell.dart';
+import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
+import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
 import 'package:loomia/features/team/presentation/team_page.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../features/contacts/fake_activity_repository.dart';
 import '../../features/contacts/fake_people_repository.dart';
+import '../../features/goals/fake_goals_repository.dart';
 import '../app_harness.dart';
 
 final _marie = Person(
@@ -169,5 +173,38 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(GoalsPage), findsOneWidget);
+  });
+
+  testWidgets('an own order from Goals counts at once', (tester) async {
+    final now = DateTime.now();
+    final goals = FakeGoalsRepository(
+      plans: [MonthPlan(month: DateTime(now.year, now.month))],
+    );
+    final activities = FakeActivityRepository();
+    await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      goals: goals,
+      activities: activities,
+    );
+    await tester.tap(find.text('Goals'));
+    await tester.pumpAndSettle();
+    final loads = goals.calls.where((call) => call == 'plans()').length;
+
+    await tester.scrollUntilVisible(find.text('Log my own order'), 200);
+    await tester.tap(find.text('Log my own order'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.widgetWithText(LabeledField, 'Amount'),
+        matching: find.byType(TextFormField),
+      ),
+      '100',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(activities.store.single.personId, isNull);
+    expect(goals.calls.where((call) => call == 'plans()').length, loads + 1);
   });
 }
