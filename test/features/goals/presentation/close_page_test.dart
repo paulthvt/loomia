@@ -93,6 +93,9 @@ void main() {
 
     expect(goals.store.where((plan) => plan.month == october), hasLength(1));
     expect(done, 1);
+    // Leaving: the page doesn't reload into "Nothing to close" on its way out.
+    await tester.pumpAndSettle();
+    expect(find.text('Nothing to close or plan right now.'), findsNothing);
   });
 
   testWidgets('closed, next not planned: straight to the plan', (tester) async {

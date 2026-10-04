@@ -101,10 +101,9 @@ class _ClosePageState extends ConsumerState<ClosePage> {
               ],
             ),
             model: model,
-            onSave: (plan) async {
-              await savePlan(container, plan);
-              container.invalidate(closingProvider);
-            },
+            // savePlan reloads Goals. This page's own load dies with it:
+            // reloading it now would show "Nothing to close" on the way out.
+            onSave: (plan) => savePlan(container, plan),
             onSaved: _done,
           ),
           AsyncError() => EmptyState(
