@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/ui/pick_day.dart';
+import 'package:loomia/features/contacts/data/activity_repository.dart';
+import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/goals/data/goals_repository.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 
@@ -46,4 +48,19 @@ Future<GoalsMonth> _load(Ref ref) async {
 Future<void> savePlan(ProviderContainer container, MonthPlan plan) async {
   await container.read(goalsRepositoryProvider).saveTargets(plan);
   container.invalidate(goalsProvider);
+}
+
+/// [month]'s orders for the sheet the volume card opens.
+final ordersProvider = FutureProvider.autoDispose
+    .family<List<MonthOrder>, DateTime>(
+      (ref, month) => ref.watch(activityRepositoryProvider).ordersIn(month),
+      retry: (error, _) => null,
+    );
+
+/// After an order is added or removed: the month and its orders recount.
+/// The container, not a widget's ref: the sheet may be closing.
+void refreshOrders(ProviderContainer container) {
+  container
+    ..invalidate(goalsProvider)
+    ..invalidate(ordersProvider);
 }

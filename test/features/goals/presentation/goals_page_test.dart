@@ -31,6 +31,8 @@ GoalsMonth month({
 
 var plans = 0;
 var retries = 0;
+var orders = 0;
+var logs = 0;
 
 /// [GoalsView] alone, on a fixed day, counting Plan and Try again taps.
 Future<void> pumpGoals(
@@ -41,6 +43,8 @@ Future<void> pumpGoals(
 }) {
   plans = 0;
   retries = 0;
+  orders = 0;
+  logs = 0;
   return tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
@@ -52,6 +56,8 @@ Future<void> pumpGoals(
         model: model,
         onPlan: () => plans++,
         onRetry: () => retries++,
+        onLogOrder: () => logs++,
+        onOrders: () => orders++,
         onRefresh: () async {},
       ),
     ),
@@ -219,9 +225,20 @@ void main() {
       ),
     );
 
-    await tester.scrollUntilVisible(find.text('PAST MONTHS'), 200);
+    await tester.scrollUntilVisible(find.text('2,180 PV · Executive'), 200);
+    expect(find.text('PAST MONTHS'), findsOneWidget);
     expect(find.text('August 2026'), findsOneWidget);
     expect(find.text('2,410 of 2,500 PV · Elite reached'), findsOneWidget);
     expect(find.text('2,180 PV · Executive'), findsOneWidget);
+  });
+
+  testWidgets('the card opens the orders; the button logs one', (tester) async {
+    await pumpGoals(tester, AsyncData(month(plan: full, progress: progress)));
+
+    await tester.tap(find.text('Own volume'));
+    expect(orders, 1);
+    await tester.scrollUntilVisible(find.text('Log my own order'), 200);
+    await tester.tap(find.text('Log my own order'));
+    expect(logs, 1);
   });
 }

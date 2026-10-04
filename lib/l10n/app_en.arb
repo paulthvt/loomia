@@ -987,7 +987,7 @@
   },
   "historyMeta": "{day} · {kind}",
   "@historyMeta": {
-    "description": "Line under a history entry: its day, then its kind, e.g. 'October 13 · Call'.",
+    "description": "Line under a history entry: its day, then its kind, e.g. 'October 13 · Call'. Also under an order in the month's orders: the day, then whose it is, e.g. 'September 2 · Marie Dupont'.",
     "placeholders": {
       "day": { "type": "String" },
       "kind": { "type": "String" }
