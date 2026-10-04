@@ -6,6 +6,7 @@ import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -17,12 +18,24 @@ import 'package:material_ui/material_ui.dart';
 /// Log something with [person]: a sheet on mobile, a dialog elsewhere. Closes
 /// once the entry is saved.
 Future<void> showLogActivity(BuildContext context, Person person) =>
-    LoomiaDialog.show<void>(context, (_) => _LogActivityForm(person));
+    LoomiaDialog.show<void>(context, (_) => _LogActivityForm(person: person));
+
+/// The user's own order, from Goals: Order only, with an amount. [onSaved]
+/// runs once it is saved, before the sheet closes.
+Future<void> showLogOwnOrder(
+  BuildContext context, {
+  required VoidCallback onSaved,
+}) =>
+    LoomiaDialog.show<void>(context, (_) => _LogActivityForm(onSaved: onSaved));
 
 class _LogActivityForm extends ConsumerStatefulWidget {
-  const _LogActivityForm(this.person);
+  const _LogActivityForm({this.person, this.onSaved});
 
-  final Person person;
+  /// Null: the user's own order.
+  final Person? person;
+
+  /// Own order only: after the save, before the sheet closes.
+  final VoidCallback? onSaved;
 
   @override
   ConsumerState<_LogActivityForm> createState() => _LogActivityFormState();
@@ -32,7 +45,9 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
   final _form = GlobalKey<FormState>();
   final _text = TextEditingController();
   final _amount = TextEditingController();
-  ActivityKind _kind = ActivityKind.note;
+  late ActivityKind _kind = widget.person == null
+      ? ActivityKind.order
+      : ActivityKind.note;
   DateTime _day = today();
   bool _saving = false;
   PeopleFailure? _failure;
@@ -56,7 +71,7 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
       _failure = null;
     });
     try {
-      await ref.read(historyProvider(widget.person.id).notifier).add((
+      final ActivityDraft draft = (
         kind: _kind,
         happenedOn: _day,
         text: _text.text.trim(),
@@ -64,7 +79,14 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
         amount: _kind == ActivityKind.order
             ? parseAmount(_amount.text, AppLocalizations.of(context).localeName)
             : null,
-      ));
+      );
+      final person = widget.person;
+      if (person == null) {
+        await ref.read(activityRepositoryProvider).addOwnOrder(draft);
+        widget.onSaved?.call();
+      } else {
+        await ref.read(historyProvider(person.id).notifier).add(draft);
+      }
       if (mounted) Navigator.pop(context);
     } on PeopleFailure catch (failure) {
       if (mounted) {
@@ -79,7 +101,8 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
   @override
   Widget build(BuildContext context) {
     // Keeps the history alive while the sheet is open, whatever is under it.
-    ref.watch(historyProvider(widget.person.id));
+    final person = widget.person;
+    if (person != null) ref.watch(historyProvider(person.id));
     final l10n = AppLocalizations.of(context);
     final material = MaterialLocalizations.of(context);
     final failure = _failure;
@@ -92,7 +115,9 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
     return Form(
       key: _form,
       child: LoomiaDialog(
-        title: l10n.logTitle(firstName(widget.person)),
+        title: person == null
+            ? l10n.logOwnOrderTitle
+            : l10n.logTitle(firstName(person)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -114,18 +139,19 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
           spacing: AppSpacing.ms,
           children: [
             if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
-            Wrap(
-              spacing: AppSpacing.sm,
-              children: [
-                for (final kind in ActivityKind.values)
-                  if (kind.byUser)
-                    ChoiceChip(
-                      label: Text(kindLabel(l10n, kind)!),
-                      selected: _kind == kind,
-                      onSelected: (_) => setState(() => _kind = kind),
-                    ),
-              ],
-            ),
+            if (person != null)
+              Wrap(
+                spacing: AppSpacing.sm,
+                children: [
+                  for (final kind in ActivityKind.values)
+                    if (kind.byUser)
+                      ChoiceChip(
+                        label: Text(kindLabel(l10n, kind)!),
+                        selected: _kind == kind,
+                        onSelected: (_) => setState(() => _kind = kind),
+                      ),
+                ],
+              ),
             LabeledField(
               label: l10n.logWhen,
               child: InkWell(
@@ -170,8 +196,12 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
                     ),
                     validator: (value) {
                       final typed = (value ?? '').trim();
-                      return typed.isEmpty ||
-                              parseAmount(typed, l10n.localeName) != null
+                      if (typed.isEmpty) {
+                        return person == null
+                            ? l10n.logOwnOrderAmountRequired
+                            : null;
+                      }
+                      return parseAmount(typed, l10n.localeName) != null
                           ? null
                           : l10n.logAmountInvalid;
                     },

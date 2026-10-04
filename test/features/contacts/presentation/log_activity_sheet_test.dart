@@ -292,4 +292,70 @@ void main() {
     expect(saved.kind, ActivityKind.call);
     expect(saved.amount, isNull);
   });
+
+  group('your own order', () {
+    late int saved;
+
+    Future<void> openOwn(
+      WidgetTester tester, {
+      BusinessModel model = BusinessModel.doterra,
+    }) {
+      saved = 0;
+      return pumpFormHarness(
+        tester,
+        people: FakePeopleRepository(),
+        activities: activities,
+        account: Account(
+          firstName: 'Pauline',
+          email: 'p@example.com',
+          businessModel: model,
+        ),
+        open: (context) => showLogOwnOrder(context, onSaved: () => saved++),
+        result: (_) {},
+      );
+    }
+
+    testWidgets('an order, no kinds to pick, amount required', (tester) async {
+      await openOwn(tester);
+
+      expect(find.text('Your own order'), findsOneWidget);
+      expect(find.byType(ChoiceChip), findsNothing);
+      await save(tester);
+      expect(find.text('Enter the amount.'), findsOneWidget);
+      expect(activities.store, isEmpty);
+
+      await tester.enterText(field('Amount'), '100');
+      await tester.enterText(field('Note'), 'For the house');
+      await save(tester);
+
+      final order = activities.store.single;
+      expect(order.personId, isNull);
+      expect(order.kind, ActivityKind.order);
+      expect(order.amount, 100);
+      expect(order.text, 'For the house');
+      expect(saved, 1);
+      expect(find.text('Your own order'), findsNothing);
+    });
+
+    testWidgets('a failed save keeps the sheet and the amount', (tester) async {
+      await openOwn(tester);
+      activities.failWith = PeopleFailure.network;
+
+      await tester.enterText(field('Amount'), '100');
+      await save(tester);
+
+      expect(find.text('Your own order'), findsOneWidget);
+      expect(
+        tester.widget<TextFormField>(field('Amount')).controller!.text,
+        '100',
+      );
+      expect(saved, 0);
+    });
+
+    testWidgets('Other: no unit', (tester) async {
+      await openOwn(tester, model: BusinessModel.other);
+
+      expect(find.text('PV'), findsNothing);
+    });
+  });
 }
