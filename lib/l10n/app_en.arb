@@ -1495,8 +1495,11 @@
       "plan": { "type": "DateTime", "format": "MMMM" }
     }
   },
-  "ritualBody": "A few minutes: what the month did, then the numbers for the next one.",
-  "@ritualBody": { "description": "Under the close-and-plan card's title." },
+  "ritualBody": "See how the month went, then pick what you aim for in {plan}. About two minutes.",
+  "@ritualBody": {
+    "description": "Under the close-and-plan card's title, on Goals and Today.",
+    "placeholders": { "plan": { "type": "DateTime", "format": "MMMM" } }
+  },
   "ritualPlanBody": "Pick a few numbers before the month starts.",
   "@ritualPlanBody": { "description": "Under the card's title when only next month's plan is left." },
   "ritualStart": "Start",
@@ -1548,6 +1551,27 @@
   "@closeNothingBody": { "description": "Under 'Nothing to close or plan right now.'" },
   "closeBackToGoals": "Back to Goals",
   "@closeBackToGoals": { "description": "Button under 'Nothing to close or plan right now.'" },
+  "goalLineToGo": "{model, select, doterra{{amount} PV to go · {days, plural, =0{last day} =1{1 day left} other{{days} days left}}} other{{amount} to go · {days, plural, =0{last day} =1{1 day left} other{{days} days left}}}}",
+  "@goalLineToGo": {
+    "description": "Today, under the hero: own volume left to reach the month's plan, and days left after today. dōTERRA: PV, not translated.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "amount": { "type": "String" },
+      "days": { "type": "int" }
+    }
+  },
+  "goalLineOnPace": "{days, plural, =0{On pace · last day} =1{On pace · 1 day left} other{On pace · {days} days left}}",
+  "@goalLineOnPace": {
+    "description": "Today, under the hero: at this rate the month reaches its plan.",
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "goalLineReached": "{days, plural, =0{You reached what you planned · last day} =1{You reached what you planned · 1 day left} other{You reached what you planned · {days} days left}}",
+  "@goalLineReached": {
+    "description": "Today, under the hero: the month's own volume is at or over the plan. Never a celebration badge, a plain line.",
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "goalLineOpen": "Open Goals",
+  "@goalLineOpen": { "description": "Screen-reader hint of the goal line on Today: tapping it opens Goals." },
   "stepLoyalty": "Counts as a loyalty setup",
   "@stepLoyalty": {
     "description": "Switch on a workflow step: ticking this step means the person set up a loyalty order (an LRP for dōTERRA). Goals counts these."
