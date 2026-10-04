@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
@@ -129,124 +130,132 @@ class _CloseFormState extends State<CloseForm> {
     final teamTarget = plan.teamVolumeTarget;
     final levelTarget = plan.levelTarget;
 
-    return Form(
-      key: _form,
-      child: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          LoomiaTopBar(
-            eyebrow: l10n.closeStep(1, 2),
-            title: l10n.closeTitle(widget.closing.ritual.close),
-            gap: AppSpacing.sm,
-          ),
-          const StepBar(step: 1),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            l10n.closeIntro,
-            style: theme.textTheme.bodyLarge?.copyWith(color: colors.textMuted),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          if (failure != null) ...[
-            FormError(peopleFailureCopy(l10n, failure)),
-            const SizedBox(height: AppSpacing.ms),
-          ],
-          SectionHeader(title: l10n.planFromBook),
-          Card(
-            // Each objective reads on its own, its "Reached" with it.
-            semanticContainer: false,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                spacing: AppSpacing.md,
+    // One column at every width, centred and capped on wide screens.
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: ContentColumns.mainMax),
+        child: Form(
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
+              LoomiaTopBar(
+                eyebrow: l10n.closeStep(1, 2),
+                title: l10n.closeTitle(widget.closing.ritual.close),
+                gap: AppSpacing.sm,
+              ),
+              const StepBar(step: 1),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l10n.closeIntro,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colors.textMuted,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (failure != null) ...[
+                FormError(peopleFailureCopy(l10n, failure)),
+                const SizedBox(height: AppSpacing.ms),
+              ],
+              SectionHeader(title: l10n.planFromBook),
+              Card(
+                // Each objective reads on its own, its "Reached" with it.
+                semanticContainer: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    spacing: AppSpacing.md,
+                    children: [
+                      row(
+                        l10n.goalOwnVolume,
+                        volumeTarget == null
+                            ? l10n.closeVolumeAlone(
+                                model.name,
+                                number.format(done.ownVolume),
+                              )
+                            : l10n.closeVolumeOf(
+                                model.name,
+                                number.format(done.ownVolume),
+                                number.format(volumeTarget),
+                              ),
+                        done.ownVolume,
+                        volumeTarget,
+                      ),
+                      count(
+                        l10n.goalNewProspects,
+                        done.prospects,
+                        plan.prospectsTarget,
+                      ),
+                      count(
+                        l10n.goalNewCustomers,
+                        done.customers,
+                        plan.customersTarget,
+                      ),
+                      count(
+                        l10n.goalNewTeamMembers,
+                        done.teamMembers,
+                        plan.teamMembersTarget,
+                      ),
+                      count(
+                        l10n.goalLoyalty(model.name),
+                        done.loyalty,
+                        plan.loyaltyTarget,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SectionHeader(title: l10n.planFromCompany),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: AppSpacing.ms,
                 children: [
-                  row(
-                    l10n.goalOwnVolume,
-                    volumeTarget == null
-                        ? l10n.closeVolumeAlone(
-                            model.name,
-                            number.format(done.ownVolume),
-                          )
-                        : l10n.closeVolumeOf(
-                            model.name,
-                            number.format(done.ownVolume),
-                            number.format(volumeTarget),
-                          ),
-                    done.ownVolume,
-                    volumeTarget,
+                  LabeledField(
+                    label: l10n.planTeamVolume(model.name),
+                    child: TextFormField(
+                      controller: _teamVolume,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        helperText: teamTarget == null
+                            ? null
+                            : l10n.closePlanned(number.format(teamTarget)),
+                      ),
+                      validator: (value) {
+                        final typed = (value ?? '').trim();
+                        return typed.isEmpty ||
+                                parseAmount(typed, l10n.localeName) != null
+                            ? null
+                            : l10n.planNumberInvalid;
+                      },
+                    ),
                   ),
-                  count(
-                    l10n.goalNewProspects,
-                    done.prospects,
-                    plan.prospectsTarget,
-                  ),
-                  count(
-                    l10n.goalNewCustomers,
-                    done.customers,
-                    plan.customersTarget,
-                  ),
-                  count(
-                    l10n.goalNewTeamMembers,
-                    done.teamMembers,
-                    plan.teamMembersTarget,
-                  ),
-                  count(
-                    l10n.goalLoyalty(model.name),
-                    done.loyalty,
-                    plan.loyaltyTarget,
+                  LevelField(
+                    label: l10n.planLevel(model.name),
+                    model: model,
+                    value: _level,
+                    helper: levelTarget == null
+                        ? null
+                        : l10n.closeAimedFor(levelTarget),
+                    onChanged: (value) => _level = value,
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          SectionHeader(title: l10n.planFromCompany),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: AppSpacing.ms,
-            children: [
-              LabeledField(
-                label: l10n.planTeamVolume(model.name),
-                child: TextFormField(
-                  controller: _teamVolume,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    helperText: teamTarget == null
-                        ? null
-                        : l10n.closePlanned(number.format(teamTarget)),
-                  ),
-                  validator: (value) {
-                    final typed = (value ?? '').trim();
-                    return typed.isEmpty ||
-                            parseAmount(typed, l10n.localeName) != null
-                        ? null
-                        : l10n.planNumberInvalid;
-                  },
-                ),
-              ),
-              LevelField(
-                label: l10n.planLevel(model.name),
-                model: model,
-                value: _level,
-                helper: levelTarget == null
-                    ? null
-                    : l10n.closeAimedFor(levelTarget),
-                onChanged: (value) => _level = value,
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                onPressed: _saving ? null : _close,
+                child: _saving
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(l10n.closeNext),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton(
-            onPressed: _saving ? null : _close,
-            child: _saving
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(l10n.closeNext),
-          ),
-        ],
+        ),
       ),
     );
   }

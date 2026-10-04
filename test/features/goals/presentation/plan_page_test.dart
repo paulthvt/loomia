@@ -269,4 +269,15 @@ void main() {
     expect(goals.store, hasLength(1));
     expect(goals.calls.where((call) => call == 'plans()'), hasLength(2));
   });
+
+  testWidgets('desktop: the form is one centred column', (tester) async {
+    goals = FakeGoalsRepository();
+    await open(tester);
+    tester.view.physicalSize = const Size(1440, 900);
+    await tester.pumpAndSettle();
+
+    final box = tester.getRect(field('Own volume (PV)'));
+    expect(box.width, lessThanOrEqualTo(624));
+    expect(box.center.dx, moreOrLessEquals(720, epsilon: 2));
+  });
 }

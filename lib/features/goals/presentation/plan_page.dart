@@ -6,6 +6,7 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -237,91 +238,105 @@ class _PlanFormState extends State<PlanForm> {
           ),
         );
 
-    return Form(
-      key: _form,
-      child: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          LoomiaTopBar(
-            eyebrow: switch (widget.step) {
-              final step? => l10n.closeStep(step, 2),
-              null => null,
-            },
-            title: l10n.planTitle(widget.month.month),
-            gap: AppSpacing.sm,
-          ),
-          if (widget.step case final step?) ...[
-            StepBar(step: step),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          Text(
-            firstTime ? l10n.planIntroFirst : l10n.planIntro,
-            style: Theme.of(context).textTheme.bodyLarge
-                ?.copyWith(color: colors.textMuted),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          if (failure != null) ...[
-            FormError(peopleFailureCopy(l10n, failure)),
-            const SizedBox(height: AppSpacing.ms),
-          ],
-          SectionHeader(title: l10n.planFromBook),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: AppSpacing.ms,
+    // One column at every width, centred and capped on wide screens.
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: ContentColumns.mainMax),
+        child: Form(
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
             children: [
-              amount(
-                l10n.planOwnVolume(model.name),
-                _ownVolume,
-                _suggested.ownVolume,
+              LoomiaTopBar(
+                eyebrow: switch (widget.step) {
+                  final step? => l10n.closeStep(step, 2),
+                  null => null,
+                },
+                title: l10n.planTitle(widget.month.month),
+                gap: AppSpacing.sm,
               ),
-              count(l10n.goalNewProspects, _prospects, _suggested.prospects),
-              count(l10n.goalNewCustomers, _customers, _suggested.customers),
-              count(
-                l10n.goalNewTeamMembers,
-                _teamMembers,
-                _suggested.teamMembers,
-              ),
+              if (widget.step case final step?) ...[
+                StepBar(step: step),
+                const SizedBox(height: AppSpacing.md),
+              ],
               Text(
-                l10n.planLoyaltyForecast(
-                  model.name,
-                  widget.month.forecast,
-                  widget.month.month,
-                ),
-                style: Theme.of(context).textTheme.bodyLarge,
+                firstTime ? l10n.planIntroFirst : l10n.planIntro,
+                style: Theme.of(context).textTheme.bodyLarge
+                    ?.copyWith(color: colors.textMuted),
               ),
-              count(l10n.goalLoyalty(model.name), _loyalty, null),
+              const SizedBox(height: AppSpacing.lg),
+              if (failure != null) ...[
+                FormError(peopleFailureCopy(l10n, failure)),
+                const SizedBox(height: AppSpacing.ms),
+              ],
+              SectionHeader(title: l10n.planFromBook),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: AppSpacing.ms,
+                children: [
+                  amount(
+                    l10n.planOwnVolume(model.name),
+                    _ownVolume,
+                    _suggested.ownVolume,
+                  ),
+                  count(
+                    l10n.goalNewProspects,
+                    _prospects,
+                    _suggested.prospects,
+                  ),
+                  count(
+                    l10n.goalNewCustomers,
+                    _customers,
+                    _suggested.customers,
+                  ),
+                  count(
+                    l10n.goalNewTeamMembers,
+                    _teamMembers,
+                    _suggested.teamMembers,
+                  ),
+                  Text(
+                    l10n.planLoyaltyForecast(
+                      model.name,
+                      widget.month.forecast,
+                      widget.month.month,
+                    ),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  count(l10n.goalLoyalty(model.name), _loyalty, null),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SectionHeader(title: l10n.planFromCompany),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: AppSpacing.ms,
+                children: [
+                  amount(
+                    l10n.planTeamVolume(model.name),
+                    _teamVolume,
+                    _suggested.teamVolume,
+                  ),
+                  LevelField(
+                    label: l10n.planLevel(model.name),
+                    model: model,
+                    value: _level,
+                    onChanged: (value) => _level = value,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(material.saveButtonLabel),
+              ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          SectionHeader(title: l10n.planFromCompany),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: AppSpacing.ms,
-            children: [
-              amount(
-                l10n.planTeamVolume(model.name),
-                _teamVolume,
-                _suggested.teamVolume,
-              ),
-              LevelField(
-                label: l10n.planLevel(model.name),
-                model: model,
-                value: _level,
-                onChanged: (value) => _level = value,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(material.saveButtonLabel),
-          ),
-        ],
+        ),
       ),
     );
   }

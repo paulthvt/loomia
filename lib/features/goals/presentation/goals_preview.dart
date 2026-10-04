@@ -2,6 +2,9 @@ import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/close_form.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
@@ -51,6 +54,9 @@ Widget goalsPlanLight() => _app(
     ),
   ),
 );
+
+@Preview(group: 'Goals', name: 'Plan — desktop', size: Size(1440, 900))
+Widget goalsPlanDesktopLight() => goalsPlanLight();
 
 @Preview(group: 'Goals', name: 'Close — light', size: Size(390, 844))
 Widget goalsCloseLight() => _app(
@@ -139,20 +145,59 @@ final GoalsMonth _month = (
   plans: _past,
 );
 
-Widget _goals(ThemeData theme, GoalsMonth month) => _app(
-  theme,
-  GoalsView(
-    month: AsyncData(month),
-    today: _today,
-    model: BusinessModel.doterra,
-    onPlan: () {},
-    onRetry: () {},
-    onRefresh: () async {},
-    onLogOrder: () {},
-    onOrders: () {},
-    onRitual: () {},
+/// Desktop lists the month's orders, read through providers: the preview
+/// gives them sample ones.
+Widget _goals(ThemeData theme, GoalsMonth month) => ProviderScope(
+  overrides: [
+    accountProvider.overrideWithValue(
+      const Account(
+        firstName: 'Pauline',
+        email: 'p@example.com',
+        businessModel: BusinessModel.doterra,
+      ),
+    ),
+    ordersProvider.overrideWith((ref, _) async => _orders),
+  ],
+  child: _app(
+    theme,
+    GoalsView(
+      month: AsyncData(month),
+      today: _today,
+      model: BusinessModel.doterra,
+      onPlan: () {},
+      onRetry: () {},
+      onRefresh: () async {},
+      onLogOrder: () {},
+      onOrders: () {},
+      onRitual: () {},
+    ),
   ),
 );
+
+final _orders = <MonthOrder>[
+  (
+    order: Activity(
+      id: 'o1',
+      personId: 'p1',
+      kind: ActivityKind.order,
+      happenedOn: DateTime(2026, 9, 18),
+      amount: 100,
+      createdAt: DateTime.utc(2026, 9, 18, 12),
+    ),
+    personName: 'Marie Dupont',
+  ),
+  (
+    order: Activity(
+      id: 'o2',
+      personId: null,
+      kind: ActivityKind.order,
+      happenedOn: DateTime(2026, 9, 12),
+      amount: 80,
+      createdAt: DateTime.utc(2026, 9, 12, 12),
+    ),
+    personName: null,
+  ),
+];
 
 Widget _app(ThemeData theme, Widget home) => MaterialApp(
   debugShowCheckedModeBanner: false,

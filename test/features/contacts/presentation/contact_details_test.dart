@@ -468,11 +468,7 @@ void main() {
   testWidgets('desktop: the facts column is 340 wide, beside the next step', (
     tester,
   ) async {
-    await _pump(
-      tester,
-      _person(),
-      size: const Size(1440, 900),
-    );
+    await _pump(tester, _person(), size: const Size(1440, 900));
 
     final facts = find.ancestor(
       of: find.text('WHAT YOU KNOW'),
