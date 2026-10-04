@@ -302,7 +302,9 @@ anymore" and `Back to workflows`.
 
 **Step** — "Step 2" or "New step": What to do, Days after the previous step
 ("Days after starting" for step 1, 0 to 365) with a live "Comes due 3 days
-after you tick step 1." hint, an optional Note, a full-width `Save`, and
+after you tick step 1." hint, an optional Note, a "Counts as a loyalty setup"
+switch (an LRP for dōTERRA: ticking the step counts one for the month, kept
+even if the step is later renamed or removed), a full-width `Save`, and
 `Remove this step` centred under it, without a confirmation: people on it move
 on and their history stays. No Cancel: the sheet closes by dragging it down.
 

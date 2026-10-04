@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/step_sheet.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -21,10 +24,18 @@ void main() {
   });
 
   /// The sheet on Samples: [index] null adds a step.
-  Future<void> open(WidgetTester tester, {int? index}) => pumpFormHarness(
+  Future<void> open(
+    WidgetTester tester, {
+    int? index,
+    Account account = const Account(
+      firstName: 'Pauline',
+      email: 'p@example.com',
+    ),
+  }) => pumpFormHarness(
     tester,
     people: FakePeopleRepository(),
     workflows: workflows,
+    account: account,
     open: (context) =>
         showStepSheet(context, workflows.store.first, index: index),
     result: (_) {},
@@ -82,6 +93,93 @@ void main() {
 
     expect(writes('updateStep'), ['updateStep(samples-2, Send the kit, 3)']);
     expect(find.text('Step 2'), findsNothing);
+  });
+
+  group('loyalty setup', () {
+    const doterra = Account(
+      firstName: 'Pauline',
+      email: 'p@example.com',
+      businessModel: BusinessModel.doterra,
+    );
+
+    Future<void> toggle(WidgetTester tester) async {
+      await tester.ensureVisible(find.text('Counts as a loyalty setup'));
+      await tester.tap(find.text('Counts as a loyalty setup'));
+      await tester.pump();
+    }
+
+    Future<void> save(WidgetTester tester) async {
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+    }
+
+    WorkflowStep step(int index) => workflows.store.first.steps[index];
+
+    testWidgets('a new step can count as one', (tester) async {
+      await open(tester, account: doterra);
+
+      expect(
+        find.text(
+          'When you tick this step, it counts as one LRP for the month.',
+        ),
+        findsOneWidget,
+      );
+      await tester.enterText(field('What to do'), 'Set up their LRP');
+      await toggle(tester);
+      await save(tester);
+
+      expect(workflows.store.first.steps.last.loyaltySetup, isTrue);
+    });
+
+    testWidgets('a step is not one unless switched on', (tester) async {
+      await open(tester);
+
+      await tester.enterText(field('What to do'), 'Say thanks');
+      await save(tester);
+
+      expect(workflows.store.first.steps.last.loyaltySetup, isFalse);
+    });
+
+    testWidgets('switching it off is saved', (tester) async {
+      await open(tester, index: 1);
+      await toggle(tester);
+      await save(tester);
+      expect(step(1).loyaltySetup, isTrue);
+
+      await open(tester, index: 1);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isTrue,
+      );
+      await toggle(tester);
+      await save(tester);
+      expect(step(1).loyaltySetup, isFalse);
+    });
+
+    testWidgets('editing the label keeps it on', (tester) async {
+      await open(tester, index: 1);
+      await toggle(tester);
+      await save(tester);
+
+      await open(tester, index: 1);
+      await tester.enterText(field('What to do'), 'Send the kit');
+      await save(tester);
+
+      expect(step(1).label, 'Send the kit');
+      expect(step(1).loyaltySetup, isTrue);
+    });
+
+    testWidgets('Other: neutral words', (tester) async {
+      await open(tester);
+
+      expect(
+        find.text(
+          'When you tick this step, it counts as one loyalty order for the month.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('LRP'), findsNothing);
+    });
   });
 
   testWidgets('what to do is required', (tester) async {

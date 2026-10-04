@@ -1,6 +1,7 @@
 import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
@@ -51,6 +52,7 @@ Widget workflowStepLight() => _app(
   Align(
     alignment: Alignment.bottomCenter,
     child: StepForm(
+      model: BusinessModel.other,
       number: 2,
       step: _samples.steps[1],
       onSave: (_) async {},
