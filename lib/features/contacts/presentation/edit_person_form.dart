@@ -270,9 +270,12 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
     Widget level(
       String label,
       String? value,
+      List<String> choices,
       ValueChanged<String?> onChanged,
     ) => LabeledField(
-      key: ValueKey(label),
+      // A new key when the choices change, so the dropdown restarts from
+      // [value] instead of keeping one it no longer offers.
+      key: ValueKey((label, choices.length)),
       label: label,
       child: model.levels.isEmpty
           ? TextFormField(
@@ -289,8 +292,8 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
               items: [
                 DropdownMenuItem(child: Text(l10n.editLevelNone)),
                 for (final name in [
-                  ...model.levels,
-                  if (value != null && !model.levels.contains(value)) value,
+                  ...choices,
+                  if (value != null && !choices.contains(value)) value,
                 ])
                   DropdownMenuItem(value: name, child: Text(name)),
               ],
@@ -298,15 +301,31 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
             ),
     );
 
+    // Nobody aims for a rank they already hold: only the ranks above the
+    // current one, or all of them when it is unknown.
+    List<String> above(String? rank) {
+      final index = model.levels.indexOf(rank ?? '');
+      return model.levels.sublist(index + 1);
+    }
+
     final rankAndVolume = [
       level(
         l10n.factLevelNow(model.name),
         _levelNow,
-        (value) => _levelNow = value,
+        model.levels,
+        (value) => setState(() {
+          _levelNow = value;
+          if (_aimingFor != null &&
+              model.levels.contains(_aimingFor) &&
+              !above(value).contains(_aimingFor)) {
+            _aimingFor = null;
+          }
+        }),
       ),
       level(
         l10n.factAimingFor,
         _aimingFor,
+        above(_levelNow),
         (value) => setState(() => _aimingFor = value),
       ),
       if (_aimingFor != null)

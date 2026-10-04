@@ -334,6 +334,49 @@ void main() {
       expect(people.store['p2']!.currentLevel, 'Wellness Advocate');
     });
 
+    testWidgets('Aiming for offers only ranks above the current one', (
+      tester,
+    ) async {
+      await edit(tester, member(currentLevel: 'Premier'), account: doterra);
+
+      await tester.ensureVisible(labeled('Aiming for'));
+      await tester.tap(
+        find.descendant(
+          of: labeled('Aiming for'),
+          matching: find.byType(DropdownButtonFormField<String?>),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Silver'), findsWidgets);
+      expect(find.text('Executive'), findsNothing);
+      // Only the closed Rank now field still reads Premier.
+      expect(find.text('Premier'), findsOneWidget);
+    });
+
+    testWidgets('a rank now at or above the aim clears it and its month', (
+      tester,
+    ) async {
+      await edit(
+        tester,
+        member(
+          currentLevel: 'Executive',
+          targetLevel: 'Elite',
+          by: DateTime(2027, 3),
+        ),
+        account: doterra,
+      );
+
+      await pick(tester, 'Rank now', 'Premier');
+      expect(labeled('By'), findsNothing);
+      await save(tester);
+
+      final saved = people.store['p2']!;
+      expect(saved.currentLevel, 'Premier');
+      expect(saved.targetLevel, isNull);
+      expect(saved.targetLevelBy, isNull);
+    });
+
     testWidgets('"Not set" clears a rank', (tester) async {
       await edit(tester, member(currentLevel: 'Executive'), account: doterra);
 

@@ -236,7 +236,8 @@ March 2027") and "Each month" ("Aims for 100 PV"); Other reads "Level now" and
 a bare number ([#139](https://github.com/paulthvt/loomia/issues/139)). They
 are what the member said, typed by the user: never on the Team tab, never
 summed or compared. The edit sheet picks a rank from the company's list (free
-text for Other), a month for "By" once there is a target, and a number.
+text for Other), aims only above the rank now, a month for "By" once there is
+a target, and a number.
 
 **Edit details** (from ⋯) is grouped as the page is: Name, then
 `WHAT THEY ARE AIMING FOR` (team only), then `WHAT YOU KNOW`. A section's own
