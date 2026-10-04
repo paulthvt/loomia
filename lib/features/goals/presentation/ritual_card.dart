@@ -1,6 +1,4 @@
-import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
-import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -17,32 +15,35 @@ class RitualCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = LoomiaColors.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: AppSpacing.xs,
-          children: [
-            Text(
-              ritual.closes
-                  ? l10n.ritualCloseAndPlan(ritual.close, ritual.plan)
-                  : l10n.goalsPlanMonth(ritual.plan),
-              style: Theme.of(context).textTheme.titleMedium,
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.xs,
+        children: [
+          Text(
+            ritual.closes
+                ? l10n.ritualCloseAndPlan(ritual.close, ritual.plan)
+                : l10n.goalsPlanMonth(ritual.plan),
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: scheme.onSecondaryContainer,
             ),
-            Text(
-              ritual.closes ? l10n.ritualBody : l10n.ritualPlanBody,
-              style: AppTypography.caption.copyWith(color: colors.textMuted),
+          ),
+          Text(
+            ritual.closes ? l10n.ritualBody(ritual.plan) : l10n.ritualPlanBody,
+            style: AppTypography.caption.copyWith(
+              color: scheme.onSecondaryContainer,
             ),
-            const SizedBox(height: AppSpacing.xs),
-            FilledButton.tonal(
-              onPressed: onStart,
-              style: AppTheme.tonal(context),
-              child: Text(l10n.ritualStart),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          FilledButton(onPressed: onStart, child: Text(l10n.ritualStart)),
+        ],
       ),
     );
   }

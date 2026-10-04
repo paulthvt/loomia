@@ -56,8 +56,12 @@ size.
 Loading is a spinner; a failed load says "Couldn't load today." with Try
 again; nobody due is "You are up to date".
 
-Goal, stats, "You talked to" and the desktop right column are gone until
-their features exist (goals, activity summaries). Nothing on Today is sample
+Under the hero, one line for the month's own volume ("960 PV to go · 11 days
+left", "On pace · 11 days left", or "You reached what you planned"), which
+opens Goals; hidden without a plan or a volume target. From the last 3 days
+of a month to the 5th of the next, the close-and-plan card follows it
+([#144](https://github.com/paulthvt/loomia/issues/144)). Stats, "You talked
+to" and the desktop right column are gone until activity summaries exist. Nothing on Today is sample
 data.
 
 ## 2. Contacts

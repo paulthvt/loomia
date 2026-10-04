@@ -6,6 +6,8 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
+import 'package:loomia/features/goals/domain/month_plan.dart';
+import 'package:loomia/features/goals/presentation/goal_line.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -13,6 +15,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../app/app_harness.dart';
 import '../contacts/fake_people_repository.dart';
+import '../goals/fake_goals_repository.dart';
 import '../workflows/fake_workflow_repository.dart';
 
 const _phone = Size(390, 844);
@@ -240,5 +243,29 @@ void main() {
     expect(at(18, 0), 'Good evening, Pauline');
     expect(at(9, 0, ''), 'Good morning');
     expect(at(9, 0, '  '), 'Good morning');
+  });
+
+  testWidgets('pull to refresh also brings back a failed goals load', (
+    tester,
+  ) async {
+    final now = today();
+    final goals = FakeGoalsRepository(
+      plans: [
+        MonthPlan(month: DateTime(now.year, now.month), ownVolumeTarget: 2800),
+      ],
+    )..failWith = PeopleFailure.network;
+    await pumpLoomia(
+      tester,
+      size: _phone,
+      people: FakePeopleRepository([_on('p1', 'Anna')]),
+      goals: goals,
+    );
+    expect(find.byType(GoalLine), findsNothing);
+
+    goals.failWith = null;
+    await tester.fling(find.byType(ListView).first, const Offset(0, 400), 1000);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GoalLine), findsOneWidget);
   });
 }

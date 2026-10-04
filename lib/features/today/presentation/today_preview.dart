@@ -1,7 +1,10 @@
 import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/goals/domain/month_plan.dart';
+import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -15,21 +18,43 @@ import 'package:material_ui/material_ui.dart';
 /// due: a phone shows five and "And one more waiting", a desktop all six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
-Widget todayMobileLight() => _app(AppTheme.light, _book);
+Widget todayMobileLight() => _app(AppTheme.light, _book, goals: _goals);
 
 @Preview(group: 'Today', name: 'Mobile — dark', size: Size(390, 844))
-Widget todayMobileDark() => _app(AppTheme.dark, _book);
+Widget todayMobileDark() => _app(AppTheme.dark, _book, goals: _goals);
 
 @Preview(group: 'Today', name: 'Desktop — light', size: Size(1440, 900))
-Widget todayDesktopLight() => _app(AppTheme.light, _book);
+Widget todayDesktopLight() => _app(AppTheme.light, _book, goals: _goals);
 
 @Preview(group: 'Today', name: 'Desktop — dark', size: Size(1440, 900))
-Widget todayDesktopDark() => _app(AppTheme.dark, _book);
+Widget todayDesktopDark() => _app(AppTheme.dark, _book, goals: _goals);
 
 @Preview(group: 'Today', name: 'Empty — light', size: Size(390, 844))
 Widget todayEmptyLight() => _app(AppTheme.light, const []);
 
 final _now = DateTime(2026, 9, 29, 9);
+
+/// September planned and not closed: on the 29th, the line reads "150 PV to
+/// go · 1 day left" and the close-and-plan card shows, as in the Figma.
+final GoalsMonth _goals = (
+  month: DateTime(2026, 9),
+  plan: _september,
+  progress: const Progress(
+    ownVolume: 2650,
+    prospects: 5,
+    customers: 4,
+    teamMembers: 1,
+    loyalty: 2,
+  ),
+  forecast: 1,
+  plans: [_september],
+);
+
+final _september = MonthPlan(
+  month: DateTime(2026, 9),
+  ownVolumeTarget: 2800,
+  prospectsTarget: 8,
+);
 
 final _samples = Workflow(
   id: 'samples',
@@ -74,7 +99,7 @@ final _book = [
   _due('Nadia Roux', 1, DateTime(2026, 9, 29)),
 ];
 
-Widget _app(ThemeData theme, List<Due> due) {
+Widget _app(ThemeData theme, List<Due> due, {GoalsMonth? goals}) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
     // The preview is its own app: without the delegates, any component that
@@ -90,6 +115,8 @@ Widget _app(ThemeData theme, List<Due> due) {
       onOpen: (_) {},
       onRetry: () {},
       onRefresh: () async {},
+      goals: goals,
+      model: BusinessModel.doterra,
     ),
   );
 }

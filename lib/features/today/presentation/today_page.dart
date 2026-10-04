@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/empty_state.dart';
@@ -14,6 +17,10 @@ import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/goals/domain/goal_rules.dart';
+import 'package:loomia/features/goals/presentation/goal_line.dart';
+import 'package:loomia/features/goals/presentation/goals_controller.dart';
+import 'package:loomia/features/goals/presentation/ritual_card.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
@@ -48,6 +55,13 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     }
   }
 
+  /// The people, and this month's goals with them: a failed goals load has
+  /// no Try again of its own on Today.
+  Future<void> _refresh() {
+    ref.invalidate(goalsProvider(ref.read(accountProvider)?.email));
+    return refreshPeople(context, ref);
+  }
+
   @override
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
@@ -77,7 +91,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       // With a sidebar, Settings is its account block instead.
       accountAction: context.screenSize.usesSideNavigation
           ? IconButton(
-              onPressed: () => refreshPeople(context, ref),
+              onPressed: _refresh,
               tooltip: AppLocalizations.of(context).contactsRefresh,
               icon: const Icon(Icons.refresh_rounded),
             )
@@ -89,7 +103,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         if (people.hasError) ref.invalidate(book);
         if (workflows.hasError) ref.invalidate(lists);
       },
-      onRefresh: () => refreshPeople(context, ref),
+      onRefresh: _refresh,
+      goals: ref.watch(goalsProvider(account?.email)).value,
+      model: account?.businessModel ?? BusinessModel.other,
+      onGoals: () => context.go(Routes.goals),
+      onRitual: () => context.push(Routes.goalsClose),
     );
   }
 }
@@ -121,6 +139,10 @@ class TodayView extends StatefulWidget {
     required this.onRefresh,
     this.busy = const {},
     this.accountAction,
+    this.goals,
+    this.model = BusinessModel.other,
+    this.onGoals,
+    this.onRitual,
     super.key,
   });
 
@@ -143,6 +165,19 @@ class TodayView extends StatefulWidget {
   /// Top-bar entry to Settings, where there is no sidebar to hold it.
   final Widget? accountAction;
 
+  /// This month's goals; null while loading or failed, and then Today shows
+  /// nothing of them.
+  final GoalsMonth? goals;
+
+  /// For the goal line's unit.
+  final BusinessModel model;
+
+  /// The goal line's tap: opens Goals.
+  final VoidCallback? onGoals;
+
+  /// The close-and-plan card's Start: opens /goals/close.
+  final VoidCallback? onRitual;
+
   @override
   State<TodayView> createState() => _TodayViewState();
 }
@@ -158,6 +193,22 @@ class _TodayViewState extends State<TodayView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final desktop = context.screenSize.isDesktop;
+    final day = DateTime(widget.now.year, widget.now.month, widget.now.day);
+    final goals = widget.goals;
+    final ritual = goals == null ? null : pendingRitual(day, goals.plans);
+    final goalWidgets = [
+      if (goals != null && hasGoalLine(goals))
+        GoalLine(
+          month: goals,
+          today: day,
+          model: widget.model,
+          onTap: widget.onGoals ?? () {},
+        ),
+      if (ritual != null) ...[
+        const SizedBox(height: AppSpacing.md),
+        RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
+      ],
+    ];
 
     return Scaffold(
       body: SafeArea(
@@ -185,12 +236,24 @@ class _TodayViewState extends State<TodayView> {
                     gap: AppSpacing.sm,
                   ),
                   ...switch (widget.due) {
-                    AsyncData(:final value) when value.isEmpty => const [
-                      _UpToDate(),
+                    AsyncData(:final value) when value.isEmpty => [
+                      ...goalWidgets,
+                      const _UpToDate(),
                     ],
-                    AsyncData(:final value) => _due(l10n, value, desktop),
-                    AsyncError() => [_Failed(onRetry: widget.onRetry)],
-                    _ => const [Center(child: CircularProgressIndicator())],
+                    AsyncData(:final value) => _due(
+                      l10n,
+                      value,
+                      desktop,
+                      goalWidgets,
+                    ),
+                    AsyncError() => [
+                      ...goalWidgets,
+                      _Failed(onRetry: widget.onRetry),
+                    ],
+                    _ => [
+                      ...goalWidgets,
+                      const Center(child: CircularProgressIndicator()),
+                    ],
                   },
                 ],
               ),
@@ -201,7 +264,12 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
-  List<Widget> _due(AppLocalizations l10n, List<Due> due, bool desktop) {
+  List<Widget> _due(
+    AppLocalizations l10n,
+    List<Due> due,
+    bool desktop,
+    List<Widget> goalWidgets,
+  ) {
     final shown = _expanded ? due : due.take(desktop ? 6 : 5).toList();
     final now = widget.now;
     final day = DateTime(now.year, now.month, now.day);
@@ -210,6 +278,7 @@ class _TodayViewState extends State<TodayView> {
         eyebrow: l10n.todayTitle,
         headline: l10n.todayHeadline(due.length),
       ),
+      ...goalWidgets,
       SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
       SectionHeader(title: l10n.todaySectionPriority),
       for (final (index, row) in shown.indexed) ...[
