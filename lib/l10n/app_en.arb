@@ -1487,6 +1487,67 @@
   },
   "planNumberInvalid": "Use a number, or leave it empty.",
   "@planNumberInvalid": { "description": "Error under a planning field that holds something other than a number of 0 or more." },
+  "ritualCloseAndPlan": "Close {close}, plan {plan}",
+  "@ritualCloseAndPlan": {
+    "description": "Card title on Goals (and Today, later) in the last 3 days of a month and the first 5 of the next: look back on a month, then plan the next.",
+    "placeholders": {
+      "close": { "type": "DateTime", "format": "MMMM" },
+      "plan": { "type": "DateTime", "format": "MMMM" }
+    }
+  },
+  "ritualBody": "A few minutes: what the month did, then the numbers for the next one.",
+  "@ritualBody": { "description": "Under the close-and-plan card's title." },
+  "ritualPlanBody": "Pick a few numbers before the month starts.",
+  "@ritualPlanBody": { "description": "Under the card's title when only next month's plan is left." },
+  "ritualStart": "Start",
+  "@ritualStart": { "description": "Button of the close-and-plan card; opens the flow." },
+  "closeStep": "Step {step} of {total}",
+  "@closeStep": {
+    "description": "Eyebrow above the close-and-plan titles, shown uppercased.",
+    "placeholders": { "step": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "closeTitle": "How did {month} go?",
+  "@closeTitle": {
+    "description": "Title of step 1: looking back on a month. Never a verdict.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "closeIntro": "What Loomia counted, next to what you planned. Then add the two your company tells you.",
+  "@closeIntro": { "description": "Under the step 1 title." },
+  "closeOf": "{done} of {target}",
+  "@closeOf": {
+    "description": "Right of a counted objective in step 1, e.g. '7 of 8'.",
+    "placeholders": { "done": { "type": "String" }, "target": { "type": "String" } }
+  },
+  "closeVolumeOf": "{model, select, doterra{{done} of {target} PV} other{{done} of {target}}}",
+  "@closeVolumeOf": {
+    "description": "Right of own volume in step 1, e.g. '2,650 of 2,800 PV'. dōTERRA: PV, not translated.",
+    "placeholders": { "model": { "type": "String" }, "done": { "type": "String" }, "target": { "type": "String" } }
+  },
+  "closeVolumeAlone": "{model, select, doterra{{done} PV} other{{done}}}",
+  "@closeVolumeAlone": {
+    "description": "Right of own volume in step 1 when there was no target, e.g. '2,650 PV'.",
+    "placeholders": { "model": { "type": "String" }, "done": { "type": "String" } }
+  },
+  "closeReached": "Reached",
+  "@closeReached": { "description": "Screen-reader label of the check beside an objective that reached its plan." },
+  "closePlanned": "You planned {amount}",
+  "@closePlanned": {
+    "description": "Under the typed team volume: what the plan said.",
+    "placeholders": { "amount": { "type": "String" } }
+  },
+  "closeAimedFor": "You aimed for {level}",
+  "@closeAimedFor": {
+    "description": "Under the typed rank or level: what the plan said.",
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "closeNext": "Next",
+  "@closeNext": { "description": "Step 1 button: closes the month and goes to step 2." },
+  "closeNothing": "Nothing to close or plan right now.",
+  "@closeNothing": { "description": "The close-and-plan screen when the window is shut or both steps are done." },
+  "closeNothingBody": "The month-end look back opens in the last 3 days of a month.",
+  "@closeNothingBody": { "description": "Under 'Nothing to close or plan right now.'" },
+  "closeBackToGoals": "Back to Goals",
+  "@closeBackToGoals": { "description": "Button under 'Nothing to close or plan right now.'" },
   "stepLoyalty": "Counts as a loyalty setup",
   "@stepLoyalty": {
     "description": "Switch on a workflow step: ticking this step means the person set up a loyalty order (an LRP for dōTERRA). Goals counts these."

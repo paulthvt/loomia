@@ -29,6 +29,23 @@ Ritual? ritualWindow(DateTime today) {
   return null;
 }
 
+/// What the month-end window still asks: close [close] when it was planned
+/// and isn't closed, then plan [plan] if it has no plan.
+typedef PendingRitual = ({DateTime close, DateTime plan, bool closes});
+
+/// Null outside the window, or when both are done. A month never planned has
+/// nothing to look back on, so only the plan is asked.
+PendingRitual? pendingRitual(DateTime today, List<MonthPlan> plans) {
+  final window = ritualWindow(today);
+  if (window == null) return null;
+  MonthPlan? find(DateTime month) =>
+      plans.where((plan) => plan.month == month).firstOrNull;
+  final closing = find(window.close);
+  final closes = closing != null && !closing.closed;
+  if (!closes && find(window.plan) != null) return null;
+  return (close: window.close, plan: window.plan, closes: closes);
+}
+
 /// Targets to start from. Loyalty comes from the forecast instead, and the
 /// level is the user's own call.
 typedef Suggestion = ({

@@ -98,4 +98,51 @@ void main() {
       expect(result.teamVolume, 4501);
     });
   });
+
+  group('pendingRitual', () {
+    final september = DateTime(2026, 9);
+    final october = DateTime(2026, 10);
+    MonthPlan planned(DateTime month, {bool closed = false}) => MonthPlan(
+      month: month,
+      ownVolumeTarget: 100,
+      closedAt: closed ? DateTime(2026, 9, 29) : null,
+    );
+
+    test('outside the window: nothing', () {
+      expect(
+        pendingRitual(DateTime(2026, 9, 15), [planned(september)]),
+        isNull,
+      );
+    });
+
+    test('a planned month to close, then the next to plan', () {
+      expect(pendingRitual(DateTime(2026, 9, 29), [planned(september)]), (
+        close: september,
+        plan: october,
+        closes: true,
+      ));
+    });
+
+    test('never planned: nothing to close, only the plan', () {
+      expect(pendingRitual(DateTime(2026, 10, 2), const [])?.closes, isFalse);
+    });
+
+    test('closed, next not planned: only the plan', () {
+      final ritual = pendingRitual(DateTime(2026, 9, 30), [
+        planned(september, closed: true),
+      ]);
+      expect(ritual?.closes, isFalse);
+      expect(ritual?.plan, october);
+    });
+
+    test('closed and the next planned: nothing left', () {
+      expect(
+        pendingRitual(DateTime(2026, 10, 3), [
+          planned(september, closed: true),
+          planned(october),
+        ]),
+        isNull,
+      );
+    });
+  });
 }
