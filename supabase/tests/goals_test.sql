@@ -2,7 +2,7 @@
 -- frozen close. Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(17);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -147,6 +147,31 @@ select is(
      '2026-07-31 22:00+00', '2026-08-31 22:00+00', null, '')),
   0,
   'a month with no plan closes into a new record'
+);
+
+-- 16-17: the forecast walks due dates from each customer's current step.
+insert into public.workflow (id, stage, name) values
+  ('00000000-0000-0000-0000-0000000000f2', 'customer', 'Forecast');
+insert into public.workflow_step (workflow_id, position, label, days, loyalty_setup) values
+  ('00000000-0000-0000-0000-0000000000f2', 1, 'Thank them', 0, false),
+  ('00000000-0000-0000-0000-0000000000f2', 2, 'Check in', 14, false),
+  ('00000000-0000-0000-0000-0000000000f2', 3, 'Set up a refill routine', 21, true);
+insert into public.person (name, stage, workflow_id, at_position, last_tick, paused_at) values
+  -- Due Oct 1, Oct 15, then the loyalty step on Nov 5.
+  ('On step 1', 'customer', '00000000-0000-0000-0000-0000000000f2', 1, '2026-10-01', null),
+  -- Loyalty step due Sep 22: late, still to do.
+  ('Late', 'customer', '00000000-0000-0000-0000-0000000000f2', 3, '2026-09-01', null),
+  ('Paused', 'customer', '00000000-0000-0000-0000-0000000000f2', 3, '2026-09-01', now()),
+  ('Done', 'customer', '00000000-0000-0000-0000-0000000000f2', 1e9, '2026-09-01', null),
+  ('Not a customer', 'prospect', '00000000-0000-0000-0000-0000000000f2', 3, '2026-09-01', null);
+
+select is(
+  public.loyalty_forecast('2026-10-01'), 1,
+  'October: the late one only; paused, done and prospects never'
+);
+select is(
+  public.loyalty_forecast('2026-11-01'), 2,
+  'November: the walk reaches Nov 5, and the late one is still to do'
 );
 
 select * from finish();

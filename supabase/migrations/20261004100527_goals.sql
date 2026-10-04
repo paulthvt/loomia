@@ -151,3 +151,26 @@ revoke execute on function
 grant execute on function
   public.close_month(date, timestamptz, timestamptz, numeric, text)
   to authenticated;
+
+-- How many customers likely set up loyalty in p_month: those whose next
+-- loyalty step comes due before the month ends. Due dates are walked from
+-- the current step as due_on does: the last tick plus each step's days. A
+-- late step is still to do, so it counts in the month being planned.
+create function public.loyalty_forecast(p_month date) returns int
+language sql stable security invoker set search_path = '' as $$
+  select count(*)::int from public.person p
+  where p.stage = 'customer' and p.paused_at is null
+    and exists (
+      select 1 from (
+        select s.loyalty_setup,
+               p.last_tick + (sum(s.days) over (order by s.position))::int as due
+        from public.workflow_step s
+        where s.workflow_id = p.workflow_id and s.position >= p.at_position
+      ) walk
+      where walk.loyalty_setup
+        and walk.due < (p_month + interval '1 month')::date
+    )
+$$;
+
+revoke execute on function public.loyalty_forecast(date) from public, anon;
+grant execute on function public.loyalty_forecast(date) to authenticated;
