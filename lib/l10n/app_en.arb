@@ -1303,6 +1303,171 @@
   "@stepNote": {
     "description": "Label of a step's optional note field."
   },
+  "navGoals": "Goals",
+  "@navGoals": { "description": "Bottom bar and sidebar destination: the month's goals." },
+  "goalsTitle": "Goals",
+  "@goalsTitle": { "description": "Title of the Goals screen." },
+  "goalsDaysLeft": "{days, plural, =0{Last day of {month}} =1{1 day left in {month}} other{{days} days left in {month}}}",
+  "@goalsDaysLeft": {
+    "description": "Eyebrow above the Goals title, shown uppercased: the days left after today in this month, e.g. '11 days left in September'.",
+    "placeholders": {
+      "days": { "type": "int" },
+      "month": { "type": "DateTime", "format": "MMMM" }
+    }
+  },
+  "goalsLoadFailed": "Couldn't load your goals.",
+  "@goalsLoadFailed": { "description": "Goals screen, when the plan or the month's progress can't be loaded." },
+  "goalsEmptyTitle": "What are you aiming for this month?",
+  "@goalsEmptyTitle": { "description": "Goals screen with no plan for this month." },
+  "goalsEmptyBody": "Pick a few numbers for {month}. You can change them any time, and nothing here is compared with anyone.",
+  "@goalsEmptyBody": {
+    "description": "Under the empty Goals title. Reassures: the numbers are the user's own.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "goalsPlanMonth": "Plan {month}",
+  "@goalsPlanMonth": {
+    "description": "Button of the empty Goals screen; opens planning for this month.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "goalOwnVolume": "Own volume",
+  "@goalOwnVolume": { "description": "Goals card title: what the user sold and ordered this month (PV for dōTERRA)." },
+  "goalVolumeOf": "{model, select, doterra{of {target} PV} other{of {target}}}",
+  "@goalVolumeOf": {
+    "description": "After this month's volume on the Goals card, e.g. '1 840 of 2 800 PV'. dōTERRA: PV, not translated. Other: no unit.",
+    "placeholders": { "model": { "type": "String" }, "target": { "type": "String" } }
+  },
+  "goalVolumeAlone": "{model, select, doterra{PV this month} other{this month}}",
+  "@goalVolumeAlone": {
+    "description": "After this month's volume when there is no target, e.g. '1 840 PV this month'.",
+    "placeholders": { "model": { "type": "String" } }
+  },
+  "goalPercentPlanned": "{percent}% of what you planned",
+  "@goalPercentPlanned": {
+    "description": "Under the volume bar: how far the month is, against the user's own target.",
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "goalDaysLeft": "{days, plural, =0{Last day} =1{1 day left} other{{days} days left}}",
+  "@goalDaysLeft": {
+    "description": "Under the volume bar, on the right: days left in the month after today.",
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "goalOnPace": "On pace",
+  "@goalOnPace": { "description": "Volume card: at this rate the month reaches the target." },
+  "goalBehindPace": "Slightly behind pace",
+  "@goalBehindPace": { "description": "Volume card: at this rate the month falls short. A direction, never a verdict; no 'missed'." },
+  "goalNewProspects": "New prospects",
+  "@goalNewProspects": { "description": "Goals tile and plan field: people added as prospects this month. Shown uppercased on the tile." },
+  "goalNewCustomers": "New customers",
+  "@goalNewCustomers": { "description": "Goals tile and plan field: people who became customers this month." },
+  "goalNewTeamMembers": "New team members",
+  "@goalNewTeamMembers": { "description": "Goals tile and plan field: people who joined the user's team this month." },
+  "goalLoyalty": "{model, select, doterra{LRPs} other{Loyalty orders}}",
+  "@goalLoyalty": {
+    "description": "Goals tile and plan field: loyalty setups this month. dōTERRA: LRPs (Loyalty Rewards Program, not translated).",
+    "placeholders": { "model": { "type": "String" } }
+  },
+  "goalAimedFor": "of {target} you aimed for",
+  "@goalAimedFor": {
+    "description": "Under a count on a Goals tile, e.g. '5' then 'of 8 you aimed for'.",
+    "placeholders": { "target": { "type": "int" } }
+  },
+  "goalLoyaltyOf": "of {target}",
+  "@goalLoyaltyOf": {
+    "description": "Under the loyalty count, before the forecast, e.g. 'of 3 · 1 more likely'.",
+    "placeholders": { "target": { "type": "int" } }
+  },
+  "goalMoreLikely": "{count, plural, other{{count} more likely}}",
+  "@goalMoreLikely": {
+    "description": "Under the loyalty count: customers whose loyalty step comes due before the month ends. 'Likely', never a promise.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "goalAimingFor": "Aiming for {level}",
+  "@goalAimingFor": {
+    "description": "Goals declared row: the rank (dōTERRA) or level the user aims for this month.",
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "goalTeamVolume": "{model, select, doterra{OV {amount}} other{Team volume {amount}}}",
+  "@goalTeamVolume": {
+    "description": "Goals declared row: the team volume aimed for. dōTERRA: OV (organisational volume, not translated).",
+    "placeholders": { "model": { "type": "String" }, "amount": { "type": "String" } }
+  },
+  "goalDeclaredNote": "Your company counts these. You add where you landed when you close the month.",
+  "@goalDeclaredNote": { "description": "Under the declared row: these two aren't counted from the book." },
+  "goalPaceProjection": "{model, select, doterra{At this pace you finish the month at about {amount} PV.} other{At this pace you finish the month at about {amount}.}}",
+  "@goalPaceProjection": {
+    "description": "Pace card: where this month's volume ends at the current rate. Stated, never judged.",
+    "placeholders": { "model": { "type": "String" }, "amount": { "type": "String" } }
+  },
+  "goalPaceNote": "No pressure — the goal is yours to move.",
+  "@goalPaceNote": { "description": "Under the pace sentence." },
+  "goalChangePlan": "Change the plan",
+  "@goalChangePlan": { "description": "Goals screen: opens this month's plan to change it." },
+  "goalPastMonths": "Past months",
+  "@goalPastMonths": { "description": "Header above closed months on the Goals screen; shown in capitals." },
+  "goalPastMonth": "{month}",
+  "@goalPastMonth": {
+    "description": "A closed month's name in Past months, e.g. 'August 2026'.",
+    "placeholders": { "month": { "type": "DateTime", "format": "yMMMM" } }
+  },
+  "goalPastVolume": "{model, select, doterra{{actual} of {target} PV} other{{actual} of {target}}}",
+  "@goalPastVolume": {
+    "description": "A closed month's volume against its target, e.g. '2 410 of 2 500 PV'.",
+    "placeholders": { "model": { "type": "String" }, "actual": { "type": "String" }, "target": { "type": "String" } }
+  },
+  "goalPastVolumeAlone": "{model, select, doterra{{actual} PV} other{{actual}}}",
+  "@goalPastVolumeAlone": {
+    "description": "A closed month's volume with no target, e.g. '2 410 PV'.",
+    "placeholders": { "model": { "type": "String" }, "actual": { "type": "String" } }
+  },
+  "goalLevelReached": "{level} reached",
+  "@goalLevelReached": {
+    "description": "After a closed month's volume when the level typed at close is the one aimed for, e.g. 'Elite reached'.",
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "planTitle": "What are you aiming for in {month}?",
+  "@planTitle": {
+    "description": "Title of the planning screen.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "planIntro": "Each number starts from your last 3 months. Change any of them, or leave one empty.",
+  "@planIntro": { "description": "Under the planning title, when past months suggest numbers." },
+  "planIntroFirst": "Pick what you want to aim for. Leave any of them empty.",
+  "@planIntroFirst": { "description": "Under the planning title, the first time: no past month to suggest from." },
+  "planFromBook": "Counted from your book",
+  "@planFromBook": { "description": "Planning section header, shown in capitals: targets Loomia counts from contacts and orders." },
+  "planFromCompany": "From your company",
+  "@planFromCompany": { "description": "Planning section header, shown in capitals: targets the company computes, typed by the user." },
+  "planOwnVolume": "{model, select, doterra{Own volume (PV)} other{Own volume}}",
+  "@planOwnVolume": {
+    "description": "Planning field label. dōTERRA: PV, not translated.",
+    "placeholders": { "model": { "type": "String" } }
+  },
+  "planTeamVolume": "{model, select, doterra{OV} other{Team volume}}",
+  "@planTeamVolume": {
+    "description": "Planning field label: the team's volume. dōTERRA: OV, not translated.",
+    "placeholders": { "model": { "type": "String" } }
+  },
+  "planLevel": "{model, select, doterra{Rank} other{Level}}",
+  "@planLevel": {
+    "description": "Planning field label: the rank or level aimed for this month.",
+    "placeholders": { "model": { "type": "String" } }
+  },
+  "planSuggestion": "Your last 3 months: about {amount}",
+  "@planSuggestion": {
+    "description": "Under a planning field: the rounded mean of the last 3 closed months.",
+    "placeholders": { "amount": { "type": "String" } }
+  },
+  "planLoyaltyForecast": "{model, select, doterra{{count, plural, =0{No customer reaches their LRP step in {month}. How many do you aim for?} =1{1 customer reaches their LRP step in {month}. How many do you aim for?} other{{count} customers reach their LRP step in {month}. How many do you aim for?}}} other{{count, plural, =0{No customer reaches their loyalty step in {month}. How many do you aim for?} =1{1 customer reaches their loyalty step in {month}. How many do you aim for?} other{{count} customers reach their loyalty step in {month}. How many do you aim for?}}}}",
+  "@planLoyaltyForecast": {
+    "description": "Above the loyalty field: the forecast, then the question. dōTERRA: LRP, not translated.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "count": { "type": "int" },
+      "month": { "type": "DateTime", "format": "MMMM" }
+    }
+  },
+  "planNumberInvalid": "Use a number, or leave it empty.",
+  "@planNumberInvalid": { "description": "Error under a planning field that holds something other than a number of 0 or more." },
   "stepLoyalty": "Counts as a loyalty setup",
   "@stepLoyalty": {
     "description": "Switch on a workflow step: ticking this step means the person set up a loyalty order (an LRP for dōTERRA). Goals counts these."

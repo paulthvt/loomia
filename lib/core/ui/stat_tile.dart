@@ -7,7 +7,8 @@ import 'package:material_ui/material_ui.dart';
 /// At most one tinted pair per screen (`docs/design/components.md` #16).
 enum StatTone { plain, primary, secondary }
 
-/// A count plus the reason it matters. The note frames the number against the
+/// A count plus the reason it matters. The value stays below the 24px
+/// screen title (guardrail #4). The note frames the number against the
 /// user's own intent, never against other people (design principle #5).
 class StatTile extends StatelessWidget {
   const StatTile({
@@ -64,7 +65,7 @@ class StatTile extends StatelessWidget {
             style: AppTypography.overline.copyWith(color: subdued),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(value, style: AppTypography.numericLarge.copyWith(color: ink)),
+          Text(value, style: AppTypography.numeric.copyWith(color: ink)),
           if (noteText != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
