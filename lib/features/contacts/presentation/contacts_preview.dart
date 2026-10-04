@@ -1,6 +1,7 @@
 import 'package:flutter/widget_previews.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
@@ -133,6 +134,7 @@ Widget _list({String? selectedId, bool showRefresh = false}) => ContactList(
 /// The person, with no next step unless it is Marie's.
 Widget _details({Person? person}) => ContactDetails(
   person: person ?? _sample.first,
+  model: BusinessModel.other,
   onStatus: (_) {},
   onEdit: (_) {},
   onDelete: () {},
