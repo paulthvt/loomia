@@ -11,6 +11,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -117,7 +118,10 @@ class GoalsView extends StatelessWidget {
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _column),
+            // Desktop: ContentColumns caps and centres the two columns.
+            constraints: BoxConstraints(
+              maxWidth: desktop ? double.infinity : _column,
+            ),
             child: RefreshIndicator(
               onRefresh: onRefresh,
               child: ListView(
@@ -136,7 +140,9 @@ class GoalsView extends StatelessWidget {
                     action: accountAction,
                     gap: AppSpacing.sm,
                   ),
-                  if (showRitual) ...[
+                  // Desktop's dashboard has it in the side column.
+                  if (showRitual &&
+                      !(desktop && month.value?.plan != null)) ...[
                     RitualCard(ritual: ritual, onStart: onRitual),
                     const SizedBox(height: AppSpacing.md),
                   ],
@@ -150,7 +156,27 @@ class GoalsView extends StatelessWidget {
                         onAction: onPlan,
                       ),
                     ],
-                    AsyncData(:final value) => _dashboard(context, value),
+                    AsyncData(:final value) => switch (_dashboard(
+                      context,
+                      value,
+                      desktop,
+                    )) {
+                      (:final main, :final past) when desktop => [
+                        ContentColumns(
+                          main: main,
+                          side: [
+                            if (showRitual) ...[
+                              RitualCard(ritual: ritual, onStart: onRitual),
+                              const SizedBox(height: AppSpacing.lg),
+                            ],
+                            SectionHeader(title: l10n.ordersTitle(value.month)),
+                            OrdersList(month: value.month),
+                            ...past,
+                          ],
+                        ),
+                      ],
+                      (:final main, :final past) => [...main, ...past],
+                    },
                     AsyncError() => [
                       EmptyState(
                         icon: Icons.cloud_off_outlined,
@@ -171,7 +197,13 @@ class GoalsView extends StatelessWidget {
     );
   }
 
-  List<Widget> _dashboard(BuildContext context, GoalsMonth month) {
+  /// The month against its plan, and the closed months, apart: desktop
+  /// puts the closed months in the side column.
+  ({List<Widget> main, List<Widget> past}) _dashboard(
+    BuildContext context,
+    GoalsMonth month,
+    bool desktop,
+  ) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colors = LoomiaColors.of(context);
@@ -228,13 +260,14 @@ class GoalsView extends StatelessWidget {
         if (closed.closed && closed.month != month.month) closed,
     ];
 
-    return [
+    final main = <Widget>[
       volumeCard(
         context,
         month: month,
         today: today,
         model: model,
-        onTap: onOrders,
+        // Desktop lists the orders beside the card already.
+        onTap: desktop ? null : onOrders,
       ),
       const SizedBox(height: AppSpacing.md),
       pair(
@@ -284,6 +317,8 @@ class GoalsView extends StatelessWidget {
             child: Text(l10n.goalChangePlan),
           ),
         ),
+    ];
+    final pastWidgets = <Widget>[
       if (past.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.md),
         SectionHeader(title: l10n.goalPastMonths),
@@ -316,6 +351,7 @@ class GoalsView extends StatelessWidget {
         ),
       ],
     ];
+    return (main: main, past: pastWidgets);
   }
 
   /// "2 410 of 2 500 PV · Elite reached": the month's own volume against
