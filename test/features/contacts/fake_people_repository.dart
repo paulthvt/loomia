@@ -134,6 +134,10 @@ class FakePeopleRepository implements PeopleRepository {
       wouldLoveTo: person.wouldLoveTo,
       strengths: person.strengths,
       stuckOn: person.stuckOn,
+      currentLevel: person.currentLevel,
+      targetLevel: person.targetLevel,
+      targetLevelBy: person.targetLevelBy,
+      monthlyVolumeTarget: person.monthlyVolumeTarget,
       place: stored.place,
       pausedAt: stored.pausedAt,
     );
@@ -264,6 +268,10 @@ class FakePeopleRepository implements PeopleRepository {
       wouldLoveTo: before.wouldLoveTo,
       strengths: before.strengths,
       stuckOn: before.stuckOn,
+      currentLevel: before.currentLevel,
+      targetLevel: before.targetLevel,
+      targetLevelBy: before.targetLevelBy,
+      monthlyVolumeTarget: before.monthlyVolumeTarget,
       place: place,
       pausedAt: pausedAt,
     );

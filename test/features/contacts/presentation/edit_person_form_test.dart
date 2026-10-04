@@ -1,6 +1,10 @@
+import 'package:cupertino_ui/cupertino_ui.dart'
+    show CupertinoDatePicker, CupertinoDatePickerMode;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
@@ -156,6 +160,253 @@ void main() {
     expect(field('Needs'), findsOneWidget);
     expect(field('Name'), findsNothing);
     expect(field('Their why'), findsNothing);
+  });
+
+  group("a team member's rank and volume", () {
+    const doterra = Account(
+      firstName: 'Pauline',
+      email: 'p@example.com',
+      businessModel: BusinessModel.doterra,
+    );
+    final now = DateTime.now();
+    final thisMonth = DateTime(now.year, now.month);
+
+    Person member({
+      String? currentLevel,
+      String? targetLevel,
+      DateTime? by,
+      double? volume,
+    }) => Person(
+      id: 'p2',
+      name: 'Léa Martin',
+      stage: Stage.team,
+      stageSince: DateTime.utc(2026, 3, 4),
+      why: 'More time with my kids',
+      needs: 'Sleep',
+      currentLevel: currentLevel,
+      targetLevel: targetLevel,
+      targetLevelBy: by,
+      monthlyVolumeTarget: volume,
+    );
+
+    Future<void> edit(
+      WidgetTester tester,
+      Person person, {
+      Account account = const Account(
+        firstName: 'Pauline',
+        email: 'p@example.com',
+      ),
+      EditPart part = EditPart.everything,
+    }) {
+      people = FakePeopleRepository([person]);
+      return pumpFormHarness(
+        tester,
+        people: people,
+        account: account,
+        open: (context) => showEditPerson(context, person, part),
+        result: (_) {},
+      );
+    }
+
+    Finder labeled(String label) => find.widgetWithText(LabeledField, label);
+
+    Future<void> pick(WidgetTester tester, String label, String level) async {
+      await tester.ensureVisible(labeled(label));
+      await tester.tap(
+        find.descendant(
+          of: labeled(label),
+          matching: find.byType(DropdownButtonFormField<String?>),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // The menu opens on the picked rank; "Not set" may be scrolled above.
+      if (level == 'Not set') {
+        await tester.drag(find.byType(Scrollable).last, const Offset(0, 400));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text(level).last);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> save(WidgetTester tester) async {
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('dōTERRA: ranks from the list, a month, PV each month', (
+      tester,
+    ) async {
+      await edit(tester, member(), account: doterra);
+
+      double top(String label) => tester.getTopLeft(labeled(label)).dy;
+      expect(top('Their why'), lessThan(top('Rank now')));
+      expect(top('Rank now'), lessThan(top('Aiming for')));
+      expect(top('Aiming for'), lessThan(top('Each month (PV)')));
+      expect(top('Each month (PV)'), lessThan(top('Their own goal')));
+      // No month until there is something to aim for.
+      expect(labeled('By'), findsNothing);
+
+      await pick(tester, 'Rank now', 'Executive');
+      await pick(tester, 'Aiming for', 'Elite');
+      expect(labeled('By'), findsOneWidget);
+      await tester.ensureVisible(labeled('By'));
+      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.pumpAndSettle();
+      // The picker opens on this month; OK keeps it.
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(field('Each month (PV)'));
+      await tester.enterText(field('Each month (PV)'), '100');
+      await save(tester);
+
+      final saved = people.store['p2']!;
+      expect(saved.currentLevel, 'Executive');
+      expect(saved.targetLevel, 'Elite');
+      expect(saved.targetLevelBy, thisMonth);
+      expect(saved.monthlyVolumeTarget, 100);
+      expect(saved.why, 'More time with my kids');
+    });
+
+    testWidgets('Other: levels are typed, the volume has no unit', (
+      tester,
+    ) async {
+      await edit(tester, member());
+
+      expect(labeled('Rank now'), findsNothing);
+      await tester.ensureVisible(field('Level now'));
+      await tester.enterText(field('Level now'), 'Bronze');
+      await tester.enterText(field('Aiming for'), 'Silver');
+      await tester.pump();
+      expect(labeled('By'), findsOneWidget);
+      await tester.ensureVisible(field('Each month'));
+      await tester.enterText(field('Each month'), '250');
+      await save(tester);
+
+      final saved = people.store['p2']!;
+      expect(saved.currentLevel, 'Bronze');
+      expect(saved.targetLevel, 'Silver');
+      expect(saved.targetLevelBy, isNull);
+      expect(saved.monthlyVolumeTarget, 250);
+    });
+
+    testWidgets('clearing Aiming for drops By; a saved volume is kept', (
+      tester,
+    ) async {
+      await edit(
+        tester,
+        member(targetLevel: 'Elite', by: DateTime(2027, 3), volume: 99.5),
+      );
+
+      expect(find.text('March 2027'), findsOneWidget);
+      expect(find.text('99.5'), findsOneWidget);
+      await tester.ensureVisible(field('Aiming for'));
+      await tester.enterText(field('Aiming for'), '');
+      await tester.pump();
+      expect(labeled('By'), findsNothing);
+      await save(tester);
+
+      final saved = people.store['p2']!;
+      expect(saved.targetLevel, isNull);
+      expect(saved.targetLevelBy, isNull);
+      expect(saved.monthlyVolumeTarget, 99.5);
+    });
+
+    testWidgets('an unknown rank stays picked and is kept', (tester) async {
+      await edit(
+        tester,
+        member(currentLevel: 'Wellness Advocate'),
+        account: doterra,
+      );
+
+      expect(find.text('Wellness Advocate'), findsOneWidget);
+      await save(tester);
+
+      expect(people.store['p2']!.currentLevel, 'Wellness Advocate');
+    });
+
+    testWidgets('"Not set" clears a rank', (tester) async {
+      await edit(tester, member(currentLevel: 'Executive'), account: doterra);
+
+      await pick(tester, 'Rank now', 'Not set');
+      await save(tester);
+
+      expect(people.store['p2']!.currentLevel, isNull);
+    });
+
+    testWidgets('a past month opens the picker and is kept', (tester) async {
+      await edit(tester, member(targetLevel: 'Elite', by: DateTime(2020)));
+
+      await tester.ensureVisible(find.text('January 2020'));
+      await tester.tap(find.text('January 2020'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await save(tester);
+
+      expect(people.store['p2']!.targetLevelBy, DateTime(2020));
+    });
+
+    testWidgets('iOS: a month-and-year wheel that starts at a past month', (
+      tester,
+    ) async {
+      await edit(tester, member(targetLevel: 'Elite', by: DateTime(2020)));
+
+      await tester.ensureVisible(find.text('January 2020'));
+      await tester.tap(find.text('January 2020'));
+      await tester.pumpAndSettle();
+      final wheel = tester.widget<CupertinoDatePicker>(
+        find.byType(CupertinoDatePicker),
+      );
+      expect(wheel.mode, CupertinoDatePickerMode.monthYear);
+      expect(wheel.minimumDate, DateTime(2020));
+      expect(wheel.maximumDate, DateTime(thisMonth.year + 10, thisMonth.month));
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CupertinoDatePicker), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a bad volume is refused', (tester) async {
+      await edit(tester, member());
+
+      await tester.ensureVisible(field('Each month'));
+      await tester.enterText(field('Each month'), '0');
+      await save(tester);
+
+      expect(
+        find.text('Use a number above 0, like 100 or 99.5.'),
+        findsOneWidget,
+      );
+      expect(people.store['p2']!.monthlyVolumeTarget, isNull);
+    });
+
+    testWidgets('editing what you know keeps the rank and volume', (
+      tester,
+    ) async {
+      await edit(
+        tester,
+        member(
+          currentLevel: 'Executive',
+          targetLevel: 'Elite',
+          by: DateTime(2027, 3),
+          volume: 100,
+        ),
+        account: doterra,
+        part: EditPart.facts,
+      );
+
+      expect(labeled('Rank now'), findsNothing);
+      await tester.enterText(field('Needs'), 'Sleep, stress');
+      await save(tester);
+
+      final saved = people.store['p2']!;
+      expect(saved.needs, 'Sleep, stress');
+      expect(saved.currentLevel, 'Executive');
+      expect(saved.targetLevel, 'Elite');
+      expect(saved.targetLevelBy, DateTime(2027, 3));
+      expect(saved.monthlyVolumeTarget, 100);
+    });
   });
 
   testWidgets('the whole form is grouped as the page is', (tester) async {
