@@ -37,6 +37,18 @@ void main() {
     expect(sources, english);
   });
 
+  test('strings accepts flat and {text} replies, rejects anything else', () {
+    expect(
+      strings({
+        'a': 'Salut',
+        'b': {'text': 'Ciao'},
+      }),
+      {'a': 'Salut', 'b': 'Ciao'},
+    );
+    expect(strings({'a': 1}), isNull);
+    expect(strings(['a']), isNull);
+  });
+
   group('check', () {
     final englishArb = <String, dynamic>{
       'n': '{count, plural, =1{One person} other{{count} people}}',
