@@ -43,13 +43,14 @@ void main() {
     );
   });
 
-  testWidgets('a wide window: the pair stops at its cap, on the left', (
+  testWidgets('a wide window: main fills it, side at the far edge', (
     tester,
   ) async {
     await _pump(tester, 1920);
 
     expect(tester.getTopLeft(find.byKey(_main)).dx, 0);
-    expect(tester.getTopRight(find.byKey(_side)).dx, ContentColumns.pairMax);
+    expect(tester.getSize(find.byKey(_main)).width, 1920 - 432);
+    expect(tester.getTopRight(find.byKey(_side)).dx, 1920);
   });
 
   testWidgets('a narrow desktop shrinks main, never side', (tester) async {
