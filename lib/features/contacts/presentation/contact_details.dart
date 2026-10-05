@@ -432,6 +432,8 @@ class ContactDetails extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 ContentColumns(
                   sideWidth: _factsWidth,
+                  // The pane bounds it already: fill it, as in the frame.
+                  maxWidth: double.infinity,
                   main: spaced([
                     whereItStands,
                     [?nextStep],

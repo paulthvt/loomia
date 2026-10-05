@@ -18,6 +18,8 @@ Desktop only (`context.screenSize.isDesktop`, ≥ 1024px). Mobile and tablet don
 
 ## Layout: `ContentColumns`
 
+**Revised after testing (2026-10-05):** the main column takes the rest of the width (no 624px cap), the pair starts at the sidebar's edge as in the frames, and stops at 1096px on Today, Goals and Team; the contact pane fills its width. The side column stays fixed, not a ratio: its cards are drawn for one width.
+
 One widget in `lib/core/layout/content_columns.dart`:
 
 - `ContentColumns({required List<Widget> main, required List<Widget> side, double sideWidth = 400})`.

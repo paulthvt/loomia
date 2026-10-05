@@ -54,9 +54,11 @@ Desktop is designed, not enlarged:
 - **Sidebar** 248px on `surface/sunken`: wordmark, four destinations, account
   pinned to the bottom.
 - **Two-column content** on Today, Goals and Team (#171), one shared layout,
-  `ContentColumns`: the main column up to 624px, a 400px side column, 32px
-  apart, the pair centred; a narrower window shrinks the main column, never
-  the side. Today: hero and PRIORITY, beside the own-volume card, the
+  `ContentColumns`: a fixed 400px side column, 32px apart, and the main
+  column taking the rest, from the sidebar's edge. The pair stops at 1096px
+  (its width at a 1440 window) and a wider window leaves the space after it;
+  a narrower one shrinks the main column, never the side, and below a 300px
+  main column the two stack. Today: hero and PRIORITY, beside the own-volume card, the
   close-and-plan card and WORTH A CHECK-IN. Goals: the dashboard, beside the
   close-and-plan card, the month's orders and PAST MONTHS. Team: EVERYONE,
   beside the summary and WORTH A CHECK-IN. Planning and closing are one
@@ -74,8 +76,8 @@ Desktop is designed, not enlarged:
 - **Keyboard**: `/` or `Cmd/Ctrl+K` focuses search, `↑/↓` moves the list
   selection, `Enter` opens, `Esc` closes a dialog or clears search. Focus-visible
   is a 2px `state/focus` ring with 2px offset, on every focusable element.
-- Max content width 1440; beyond that the layout centres rather than adding a
-  third column — a third column would need a third thing worth showing, and there
+- Max content width 1440; beyond that the space stays empty after the
+  content rather than adding a third column — a third column would need a third thing worth showing, and there
   isn't one.
 
 ---

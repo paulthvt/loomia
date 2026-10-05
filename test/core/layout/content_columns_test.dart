@@ -25,13 +25,14 @@ Future<void> _pump(WidgetTester tester, double width) {
 }
 
 void main() {
-  testWidgets('desktop: side to the right at 400, main at most 624', (
+  testWidgets('desktop: side fixed at 400, main takes the rest', (
     tester,
   ) async {
-    await _pump(tester, 1440);
+    // Under the pair's cap: main gets everything the side leaves.
+    await _pump(tester, 1060);
 
     expect(tester.getSize(find.byKey(_side)).width, 400);
-    expect(tester.getSize(find.byKey(_main)).width, 624);
+    expect(tester.getSize(find.byKey(_main)).width, 1060 - 432);
     expect(
       tester.getTopLeft(find.byKey(_side)).dx,
       greaterThan(tester.getTopRight(find.byKey(_main)).dx),
@@ -42,19 +43,20 @@ void main() {
     );
   });
 
-  testWidgets('a wide window centres the pair', (tester) async {
+  testWidgets('a wide window: the pair stops at its cap, on the left', (
+    tester,
+  ) async {
     await _pump(tester, 1920);
 
-    final left = tester.getTopLeft(find.byKey(_main)).dx;
-    final right = 1920 - tester.getTopRight(find.byKey(_side)).dx;
-    expect(left, moreOrLessEquals(right, epsilon: 1));
+    expect(tester.getTopLeft(find.byKey(_main)).dx, 0);
+    expect(tester.getTopRight(find.byKey(_side)).dx, ContentColumns.pairMax);
   });
 
   testWidgets('a narrow desktop shrinks main, never side', (tester) async {
     await _pump(tester, 1024);
 
     expect(tester.getSize(find.byKey(_side)).width, 400);
-    expect(tester.getSize(find.byKey(_main)).width, lessThan(624));
+    expect(tester.getSize(find.byKey(_main)).width, 1024 - 432);
     expect(tester.takeException(), isNull);
   });
 
