@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.1.3](https://github.com/paulthvt/loomia/compare/v0.1.2...v0.1.3) (2026-10-05)
+
+
+### ✨ Features
+
+* **contacts:** a team member's rank and volume ([#160](https://github.com/paulthvt/loomia/issues/160)) ([cfebca0](https://github.com/paulthvt/loomia/commit/cfebca09e4144c4c0d6ece9786e05c00ca9c3fc2))
+* **contacts:** amount on orders ([#158](https://github.com/paulthvt/loomia/issues/158)) ([66ff855](https://github.com/paulthvt/loomia/commit/66ff85542a2d0f8e55d9243af25650137be8344a))
+* **goals:** close the month and plan the next ([#169](https://github.com/paulthvt/loomia/issues/169)) ([4e901a0](https://github.com/paulthvt/loomia/commit/4e901a03974af49a60479de6c7b51248f1d1ac03))
+* **goals:** Goals tab ([#166](https://github.com/paulthvt/loomia/issues/166)) ([2b575c2](https://github.com/paulthvt/loomia/commit/2b575c273a3af6419e2fc51c0c4a7a175831bcbb))
+* **goals:** log my own order and this month's orders ([#167](https://github.com/paulthvt/loomia/issues/167)) ([fd29495](https://github.com/paulthvt/loomia/commit/fd29495298bcc48549d752684af8e296f76d7eec))
+* **goals:** month plans and progress in the database ([#164](https://github.com/paulthvt/loomia/issues/164)) ([ee19285](https://github.com/paulthvt/loomia/commit/ee1928513159e010a3ca8e0e5b0cf01874354639))
+* **goals:** rank first, and picking it prefills OV ([#174](https://github.com/paulthvt/loomia/issues/174)) ([5e294f2](https://github.com/paulthvt/loomia/commit/5e294f2b7cd71c806e07ef7a7dbce173a33498c4))
+* **layout:** two columns on desktop for Today, Goals, Team and the contact page ([#173](https://github.com/paulthvt/loomia/issues/173)) ([3ebfc83](https://github.com/paulthvt/loomia/commit/3ebfc8398904a7ecd30f6c7fba8f44401c931a2c))
+* **onboarding:** ask which company the user works with ([#156](https://github.com/paulthvt/loomia/issues/156)) ([4f7eb16](https://github.com/paulthvt/loomia/commit/4f7eb160c8a7e12e373193d99b8af078f193af82))
+* **today:** goal pace line and close-the-month card ([#170](https://github.com/paulthvt/loomia/issues/170)) ([810f79e](https://github.com/paulthvt/loomia/commit/810f79ef7d37108a88ef22b345caa992323df39b))
+* **workflows:** mark a step as a loyalty setup ([#163](https://github.com/paulthvt/loomia/issues/163)) ([9cf0853](https://github.com/paulthvt/loomia/commit/9cf08539b9fe662e1c435f021f496c380b05088c))
+
+
+### 🐛 Bug Fixes
+
+* **l10n:** accept {text} replies from the fallback Gemini model ([#175](https://github.com/paulthvt/loomia/issues/175)) ([786eb8c](https://github.com/paulthvt/loomia/commit/786eb8cbee0547cf9ce098932a166fe16a50d689))
+* **l10n:** review French copy ([#177](https://github.com/paulthvt/loomia/issues/177)) ([1b7af56](https://github.com/paulthvt/loomia/commit/1b7af56d9a05a7abfd382dbfa732e36da493dcc7))
+* **shell:** keep the side rail usable on a landscape phone ([#132](https://github.com/paulthvt/loomia/issues/132)) ([7325a35](https://github.com/paulthvt/loomia/commit/7325a353762b67526e5860dd37647bf6d665692d))
+
+
+### 🔧 Miscellaneous
+
+* **deps:** lock file maintenance ([#172](https://github.com/paulthvt/loomia/issues/172)) ([0055599](https://github.com/paulthvt/loomia/commit/0055599757ac4269eae1e415eb573516be9ef9f8))
+* **l10n:** sync translations ([#157](https://github.com/paulthvt/loomia/issues/157)) ([8634898](https://github.com/paulthvt/loomia/commit/8634898b02a8c56222b783aec464b26bafc18ed5))
+* **l10n:** sync translations ([#168](https://github.com/paulthvt/loomia/issues/168)) ([08e6ebb](https://github.com/paulthvt/loomia/commit/08e6ebb339c5de4092fa301018c88aa5191ad7db))
+* **l10n:** sync translations ([#176](https://github.com/paulthvt/loomia/issues/176)) ([9c28511](https://github.com/paulthvt/loomia/commit/9c285114be83d10561a22a023cdfde48211f733f))
+* **supabase:** CI guard that every public table has RLS ([#135](https://github.com/paulthvt/loomia/issues/135)) ([9f7328d](https://github.com/paulthvt/loomia/commit/9f7328dc5c6c497fcf47c3e17f2a065d1cdbd9ec))
+* **tooling:** set up graphify knowledge graph for Claude Code ([#162](https://github.com/paulthvt/loomia/issues/162)) ([43a8d12](https://github.com/paulthvt/loomia/commit/43a8d12f41240c39490e3e7811fa250f0b2367e0))
+
 ## [0.1.2](https://github.com/paulthvt/loomia/compare/v0.1.1...v0.1.2) (2026-10-01)
 
 
