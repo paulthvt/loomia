@@ -36,8 +36,9 @@ Rules:
   space rules may be approximated with a normal space).
 - Each string comes with a description of where it appears. Use it.
 
-Reply with a single JSON object mapping every key you were given to its
-translation. No other text.''';
+Reply with a single flat JSON object mapping every key you were given to its
+translated text as a plain string, e.g. {"key": "translation"}, not
+{"key": {"text": "translation"}}. No other text.''';
 
 Future<void> main() async {
   final key = Platform.environment['GEMINI_API_KEY'];
@@ -180,11 +181,28 @@ Future<Map<String, String>> _translate(
         '${const JsonEncoder.withIndent('  ').convert(input)}',
     what: locale,
   );
-  try {
-    return Map<String, String>.from(reply! as Map);
-  } on Object {
+  final result = strings(reply);
+  if (result == null) {
     fail('$locale: reply is not a JSON object of strings:\n$reply');
   }
+  return result;
+}
+
+/// [reply] as key → translation. Lighter models echo the input shape and
+/// answer `{"key": {"text": "..."}}`, so that is unwrapped too. Null if neither.
+Map<String, String>? strings(Object? reply) {
+  if (reply is! Map) return null;
+  final result = <String, String>{};
+  for (final MapEntry(:key, :value) in reply.entries) {
+    final text = switch (value) {
+      String() => value,
+      {'text': final String text} => text,
+      _ => null,
+    };
+    if (key is! String || text == null) return null;
+    result[key] = text;
+  }
+  return result;
 }
 
 Map<String, dynamic> _readJson(String path) =>
