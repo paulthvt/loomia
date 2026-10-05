@@ -35,4 +35,23 @@ enum BusinessModel {
       'Presidential Diamond',
     ],
   };
+
+  /// The team volume (OV for dōTERRA) a rank usually needs, as the company
+  /// states it: a planning prefill, never a rule Loomia checks. Ranks whose
+  /// requirement is branches only have none.
+  // ponytail: copied from the compensation plan by hand (2026-10-05); move to
+  // the database if the company changes it more than once a year.
+  Map<String, double> get levelVolumes => switch (this) {
+    other => const {},
+    doterra => const {
+      'Manager': 500,
+      'Director': 1000,
+      'Executive': 2000,
+      'Elite': 3000,
+      'Premier': 5000,
+      'Silver': 9000,
+      'Gold': 15000,
+      'Platinum': 27000,
+    },
+  };
 }

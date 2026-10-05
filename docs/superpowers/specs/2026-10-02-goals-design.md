@@ -76,8 +76,10 @@ Presidential Diamond. There is no Consultant rank. Rank names are proper nouns
 and are not translated. The stored value is the label. A label missing from the
 list (the company renamed a rank) is shown as stored.
 
-For reference only — **not used by the app** (rank requirements are not
-built, see the decisions table): Manager 500 PV, Director 1 000, Executive
+Used only as a planning prefill (revised 2026-10-05): picking a rank when
+planning fills the team volume (OV) with what it usually needs, and the user
+can change it; nothing checks or judges a rank. Diamond and above need
+branches only and prefill nothing. The figures are OV: Manager 500 OV, Director 1 000, Executive
 2 000, Elite 3 000, Premier 5 000 with 2 Executive branches, Silver 9 000 with
 3 Elite branches, Gold 15 000 with 3 Premier branches, Platinum 27 000 with
 3 Silver branches, Diamond 4 Silver branches, Blue Diamond 5 Gold branches,

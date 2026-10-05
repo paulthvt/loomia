@@ -39,4 +39,18 @@ void main() {
     ]);
     expect(BusinessModel.other.levels, isEmpty);
   });
+
+  test(
+    'dōTERRA: the OV each rank usually needs, where the ladder says one',
+    () {
+      final volumes = BusinessModel.doterra.levelVolumes;
+      expect(volumes['Manager'], 500);
+      expect(volumes['Elite'], 3000);
+      expect(volumes['Platinum'], 27000);
+      // From Diamond on, only branches count: no volume to suggest.
+      expect(volumes['Diamond'], isNull);
+      expect(BusinessModel.doterra.levels, containsAll(volumes.keys));
+      expect(BusinessModel.other.levelVolumes, isEmpty);
+    },
+  );
 }
