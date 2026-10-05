@@ -38,6 +38,7 @@ void main() {
     'goals_desktop_light': (const Size(1440, 900), goalsDesktopLight),
     'goals_empty_light': (const Size(390, 844), goalsEmptyLight),
     'goals_plan_light': (const Size(390, 844), goalsPlanLight),
+    'goals_plan_desktop_light': (const Size(1440, 900), goalsPlanDesktopLight),
     'goals_close_light': (const Size(390, 844), goalsCloseLight),
     'contacts_mobile_light': (const Size(390, 844), contactsMobileLight),
     'contacts_mobile_dark': (const Size(390, 844), contactsMobileDark),

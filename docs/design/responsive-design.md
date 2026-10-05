@@ -53,14 +53,18 @@ Desktop is designed, not enlarged:
 
 - **Sidebar** 248px on `surface/sunken`: wordmark, four destinations, account
   pinned to the bottom.
-- **Two-column content** on Today: 624px left (hero + priority) and 400px right
-  (goal, stat pair, team nudge, recent). Both columns are real content, not a
-  stretched mobile column with margins. In Flutter the right column is fixed at
-  400px and the left takes the remaining width, so a narrowed window shrinks the
-  actions instead of overflowing; at the 1400px max content width the left lands
-  on 624px.
+- **Two-column content** on Today, Goals and Team (#171), one shared layout,
+  `ContentColumns`: a fixed 400px side column, 32px apart, and the main
+  column taking all the rest, from the sidebar's edge: a wider window gives
+  the main column more room, a narrower one shrinks it, never the side, and
+  below a 300px main column the two stack. Today: hero and PRIORITY, beside the own-volume card, the
+  close-and-plan card and WORTH A CHECK-IN. Goals: the dashboard, beside the
+  close-and-plan card, the month's orders and PAST MONTHS. Team: EVERYONE,
+  beside the summary and WORTH A CHECK-IN. Planning and closing are one
+  centred 624px column.
 - **List + detail** on Contacts: 440px list column with a right hairline, then a
-  752px detail pane that itself splits into 384 + 272. Selecting a row updates the
+  752px detail pane split by the same layout: next step and history, beside
+  a 340px column for what they are aiming for and what you know. Selecting a row updates the
   pane; no navigation happens.
 - **Density up, not size up**: rows keep their height but the chip moves to a
   fixed right column so names align; the sidebar item is 44px where the mobile nav
@@ -71,8 +75,7 @@ Desktop is designed, not enlarged:
 - **Keyboard**: `/` or `Cmd/Ctrl+K` focuses search, `↑/↓` moves the list
   selection, `Enter` opens, `Esc` closes a dialog or clears search. Focus-visible
   is a 2px `state/focus` ring with 2px offset, on every focusable element.
-- Max content width 1440; beyond that the layout centres rather than adding a
-  third column — a third column would need a third thing worth showing, and there
+- No third column, however wide the window — a third column would need a third thing worth showing, and there
   isn't one.
 
 ---

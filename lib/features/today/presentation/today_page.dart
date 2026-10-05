@@ -7,6 +7,7 @@ import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
@@ -15,12 +16,16 @@ import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
+import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/presentation/goal_line.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/goals/presentation/ritual_card.dart';
+import 'package:loomia/features/goals/presentation/volume_card.dart';
+import 'package:loomia/features/team/domain/check_in.dart';
+import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
@@ -108,6 +113,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       model: account?.businessModel ?? BusinessModel.other,
       onGoals: () => context.go(Routes.goals),
       onRitual: () => context.push(Routes.goalsClose),
+      checkIns: checkIns([
+        for (final person in people.value ?? const <Person>[])
+          if (person.stage == Stage.team) person,
+      ], today()),
+      onCheckIn: (person) => unawaited(showLogActivity(context, person)),
     );
   }
 }
@@ -143,6 +153,8 @@ class TodayView extends StatefulWidget {
     this.model = BusinessModel.other,
     this.onGoals,
     this.onRitual,
+    this.checkIns = const [],
+    this.onCheckIn,
     super.key,
   });
 
@@ -178,6 +190,12 @@ class TodayView extends StatefulWidget {
   /// The close-and-plan card's Start: opens /goals/close.
   final VoidCallback? onRitual;
 
+  /// Team members worth a check-in: the desktop side column shows them.
+  final List<CheckIn> checkIns;
+
+  /// A check-in row's button: opens Log something.
+  final void Function(Person person)? onCheckIn;
+
   @override
   State<TodayView> createState() => _TodayViewState();
 }
@@ -196,26 +214,65 @@ class _TodayViewState extends State<TodayView> {
     final day = DateTime(widget.now.year, widget.now.month, widget.now.day);
     final goals = widget.goals;
     final ritual = goals == null ? null : pendingRitual(day, goals.plans);
-    final goalWidgets = [
+    final goalWidgets = desktop
+        ? const <Widget>[]
+        : [
+            if (goals != null && hasGoalLine(goals))
+              GoalLine(
+                month: goals,
+                today: day,
+                model: widget.model,
+                onTap: widget.onGoals ?? () {},
+              ),
+            if (ritual != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
+            ],
+          ];
+    // Desktop: the month and the team beside the priority list.
+    final side = [
       if (goals != null && hasGoalLine(goals))
-        GoalLine(
+        volumeCard(
+          context,
           month: goals,
           today: day,
           model: widget.model,
-          onTap: widget.onGoals ?? () {},
+          onTap: widget.onGoals,
         ),
-      if (ritual != null) ...[
-        const SizedBox(height: AppSpacing.md),
+      if (ritual != null)
         RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
-      ],
+      // One group: its rows keep their own 12px rhythm.
+      if (widget.checkIns.isNotEmpty)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: checkInItems(
+            l10n,
+            widget.checkIns,
+            onOpen: widget.onOpen,
+            onCheckIn: widget.onCheckIn ?? (_) {},
+          ),
+        ),
     ];
+
+    final content = switch (widget.due) {
+      AsyncData(:final value) when value.isEmpty => [
+        ...goalWidgets,
+        const _UpToDate(),
+      ],
+      AsyncData(:final value) => _due(l10n, value, desktop, goalWidgets),
+      AsyncError() => [...goalWidgets, _Failed(onRetry: widget.onRetry)],
+      _ => [...goalWidgets, const Center(child: CircularProgressIndicator())],
+    };
 
     return Scaffold(
       body: SafeArea(
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _column),
+            // Desktop: ContentColumns caps and centres the two columns.
+            constraints: BoxConstraints(
+              maxWidth: desktop ? double.infinity : _column,
+            ),
             child: RefreshIndicator(
               onRefresh: widget.onRefresh,
               child: ListView(
@@ -228,33 +285,27 @@ class _TodayViewState extends State<TodayView> {
                       )
                     : const EdgeInsets.all(AppSpacing.md),
                 children: [
-                  LoomiaTopBar(
-                    eyebrow: l10n.todayDate(widget.now),
-                    title: greeting(l10n, widget.now, widget.firstName),
-                    large: desktop,
-                    action: widget.accountAction,
-                    gap: AppSpacing.sm,
-                  ),
-                  ...switch (widget.due) {
-                    AsyncData(:final value) when value.isEmpty => [
-                      ...goalWidgets,
-                      const _UpToDate(),
-                    ],
-                    AsyncData(:final value) => _due(
-                      l10n,
-                      value,
-                      desktop,
-                      goalWidgets,
+                  ContentColumns.aligned(
+                    LoomiaTopBar(
+                      eyebrow: l10n.todayDate(widget.now),
+                      title: greeting(l10n, widget.now, widget.firstName),
+                      large: desktop,
+                      action: widget.accountAction,
+                      gap: AppSpacing.sm,
                     ),
-                    AsyncError() => [
-                      ...goalWidgets,
-                      _Failed(onRetry: widget.onRetry),
-                    ],
-                    _ => [
-                      ...goalWidgets,
-                      const Center(child: CircularProgressIndicator()),
-                    ],
-                  },
+                  ),
+                  if (desktop)
+                    ContentColumns(
+                      main: content,
+                      side: [
+                        for (final (index, piece) in side.indexed) ...[
+                          if (index > 0) const SizedBox(height: AppSpacing.md),
+                          piece,
+                        ],
+                      ],
+                    )
+                  else
+                    ...content,
                 ],
               ),
             ),
