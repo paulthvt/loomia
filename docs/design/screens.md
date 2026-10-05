@@ -173,7 +173,8 @@ left when there is a target; pace from day 4), four tiles, the declared row
 when there is a level or team volume, the pace card, `Change the plan`, and
 `PAST MONTHS`. Planning is `/goals/plan`, full screen, for the current month:
 each field starts from the saved plan, else from the last 3 closed months,
-and loyalty from the forecast. `Log my own order` opens Your own order (an amount, no
+and loyalty from the forecast; picking a rank prefills OV with what it usually
+needs, unless the user typed their own. `Log my own order` opens Your own order (an amount, no
 person), and tapping the volume card lists the month's orders, contacts' and
 own, each deletable ([#165](https://github.com/paulthvt/loomia/issues/165)).
 From the last 3 days of a month to the 5th of the next, a card at the top

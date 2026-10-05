@@ -1485,6 +1485,15 @@
       "month": { "type": "DateTime", "format": "MMMM" }
     }
   },
+  "planLevelVolume": "{model, select, doterra{{level} usually needs {amount} OV} other{{level} usually needs {amount}}}",
+  "@planLevelVolume": {
+    "description": "Under the team volume field once a rank is picked: the volume that rank usually needs, which prefilled the field. 'Usually', never a rule. dōTERRA: OV, not translated.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "level": { "type": "String" },
+      "amount": { "type": "String" }
+    }
+  },
   "planNumberInvalid": "Use a number, or leave it empty.",
   "@planNumberInvalid": { "description": "Error under a planning field that holds something other than a number of 0 or more." },
   "ritualCloseAndPlan": "Close {close}, plan {plan}",

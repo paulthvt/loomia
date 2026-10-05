@@ -132,6 +132,10 @@ class _PlanFormState extends State<PlanForm> {
     text: _plain(_saved?.teamVolumeTarget ?? _suggested.teamVolume),
   );
   late String? _level = _saved?.levelTarget;
+
+  /// What the last rank pick wrote in the team volume, to tell it from a
+  /// number the user typed.
+  String? _prefilled;
   bool _saving = false;
   PeopleFailure? _failure;
 
@@ -157,6 +161,21 @@ class _PlanFormState extends State<PlanForm> {
 
   static int? _count(TextEditingController controller) =>
       int.tryParse(controller.text);
+
+  /// A picked rank prefills the team volume with what it usually needs,
+  /// unless the field holds a number the user typed. Always a prefill: the
+  /// field stays theirs to change.
+  void _pickLevel(String? level) {
+    setState(() {
+      _level = level;
+      final volume = widget.model.levelVolumes[level];
+      final current = _teamVolume.text.trim();
+      if (volume != null && (current.isEmpty || current == _prefilled)) {
+        _teamVolume.text = _plain(volume);
+        _prefilled = _teamVolume.text;
+      }
+    });
+  }
 
   Future<void> _save() async {
     if (_saving || !_form.currentState!.validate()) return;
@@ -203,26 +222,29 @@ class _PlanFormState extends State<PlanForm> {
     final failure = _failure;
     final firstTime = widget.month.plans.every((plan) => !plan.closed);
 
-    Widget amount(String label, TextEditingController controller, num? hint) =>
-        LabeledField(
-          label: label,
-          child: TextFormField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              helperText: hint == null
-                  ? null
-                  : l10n.planSuggestion(number.format(hint)),
-            ),
-            validator: (value) {
-              final typed = (value ?? '').trim();
-              return typed.isEmpty ||
-                      parseAmount(typed, l10n.localeName) != null
-                  ? null
-                  : l10n.planNumberInvalid;
-            },
-          ),
-        );
+    Widget amount(
+      String label,
+      TextEditingController controller,
+      num? hint, {
+      String? helper,
+    }) => LabeledField(
+      label: label,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(
+          helperText:
+              helper ??
+              (hint == null ? null : l10n.planSuggestion(number.format(hint))),
+        ),
+        validator: (value) {
+          final typed = (value ?? '').trim();
+          return typed.isEmpty || parseAmount(typed, l10n.localeName) != null
+              ? null
+              : l10n.planNumberInvalid;
+        },
+      ),
+    );
     Widget count(String label, TextEditingController controller, int? hint) =>
         LabeledField(
           label: label,
@@ -311,16 +333,25 @@ class _PlanFormState extends State<PlanForm> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: AppSpacing.ms,
                 children: [
-                  amount(
-                    l10n.planTeamVolume(model.name),
-                    _teamVolume,
-                    _suggested.teamVolume,
-                  ),
+                  // The rank first: picking it can prefill the volume.
                   LevelField(
                     label: l10n.planLevel(model.name),
                     model: model,
                     value: _level,
-                    onChanged: (value) => _level = value,
+                    onChanged: _pickLevel,
+                  ),
+                  amount(
+                    l10n.planTeamVolume(model.name),
+                    _teamVolume,
+                    _suggested.teamVolume,
+                    helper: switch (model.levelVolumes[_level]) {
+                      final volume? => l10n.planLevelVolume(
+                        model.name,
+                        _level!,
+                        number.format(volume),
+                      ),
+                      null => null,
+                    },
                   ),
                 ],
               ),

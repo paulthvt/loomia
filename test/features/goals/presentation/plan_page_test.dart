@@ -280,4 +280,70 @@ void main() {
     expect(box.width, lessThanOrEqualTo(624));
     expect(box.center.dx, moreOrLessEquals(720, epsilon: 2));
   });
+
+  group('rank then OV', () {
+    Future<void> pickRank(WidgetTester tester, String rank) async {
+      await tester.tap(find.byType(DropdownButtonFormField<String?>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(rank).last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the rank comes first, and picking it prefills OV', (
+      tester,
+    ) async {
+      goals = FakeGoalsRepository();
+      await open(tester);
+
+      expect(
+        tester.getTopLeft(find.widgetWithText(LabeledField, 'Rank')).dy,
+        lessThan(tester.getTopLeft(find.widgetWithText(LabeledField, 'OV')).dy),
+      );
+      await pickRank(tester, 'Elite');
+      expect(text(tester, 'OV'), '3000');
+      expect(find.text('Elite usually needs 3,000 OV'), findsOneWidget);
+
+      // Another rank moves the prefill with it.
+      await pickRank(tester, 'Premier');
+      expect(text(tester, 'OV'), '5000');
+      await save(tester);
+      expect(goals.store.single.teamVolumeTarget, 5000);
+      expect(goals.store.single.levelTarget, 'Premier');
+    });
+
+    testWidgets('a number you typed stays yours', (tester) async {
+      goals = FakeGoalsRepository();
+      await open(tester);
+
+      await tester.enterText(field('OV'), '4200');
+      await pickRank(tester, 'Elite');
+
+      expect(text(tester, 'OV'), '4200');
+    });
+
+    testWidgets('a rank with no volume leaves OV alone', (tester) async {
+      goals = FakeGoalsRepository();
+      await open(tester);
+
+      await pickRank(tester, 'Elite');
+      await pickRank(tester, 'Diamond');
+
+      expect(text(tester, 'OV'), '3000');
+      expect(find.textContaining('usually needs'), findsNothing);
+    });
+
+    testWidgets('a cleared prefill stays cleared until another pick', (
+      tester,
+    ) async {
+      goals = FakeGoalsRepository();
+      await open(tester);
+
+      await pickRank(tester, 'Elite');
+      await tester.enterText(field('OV'), '');
+      await save(tester);
+
+      expect(goals.store.single.teamVolumeTarget, isNull);
+      expect(goals.store.single.levelTarget, 'Elite');
+    });
+  });
 }
