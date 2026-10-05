@@ -24,4 +24,17 @@ void main() {
 
     expect(offending, isEmpty, reason: 'use tu, ton, ta, tes');
   });
+
+  test('French uses the typographic apostrophe', () {
+    final arb = jsonDecode(
+      File('lib/l10n/app_fr.arb').readAsStringSync(),
+    ) as Map<String, dynamic>;
+    final offending = {
+      for (final MapEntry(:key, :value) in arb.entries)
+        if (!key.startsWith('@') && value is String && value.contains("'"))
+          key: value,
+    };
+
+    expect(offending, isEmpty, reason: "use ’, not '");
+  });
 }

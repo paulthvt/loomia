@@ -34,6 +34,8 @@ Rules:
   it needs them.
 - Keep punctuation conventions of the target language (e.g. French non-breaking
   space rules may be approximated with a normal space).
+- Keep the text natural in the target language rather than word for word, and
+  avoid gendered words where a neutral phrasing exists.
 - Each string comes with a description of where it appears. Use it.
 
 Reply with a single flat JSON object mapping every key you were given to its
@@ -79,7 +81,11 @@ Future<void> main() async {
       final reply = await _translate(client, key, locale, englishArb, keys);
       final errors = check(englishArb, keys, reply);
       if (errors.isNotEmpty) fail('$locale:\n  ${errors.join('\n  ')}');
-      translated.addAll(reply);
+      translated.addAll(
+        locale == 'fr'
+            ? reply.map((k, v) => MapEntry(k, v.replaceAll("'", '’')))
+            : reply,
+      );
     }
 
     final merged = merge(locale, english, target, translated);
