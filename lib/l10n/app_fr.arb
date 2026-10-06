@@ -200,6 +200,7 @@
   "activityKindStep": "Étape",
   "logWhen": "Quand",
   "logWhenToday": "Aujourd’hui, {date}",
+  "editActivityTitle": "Modifier",
   "logWhat": "Ce qui s’est passé",
   "logWhatRequired": "Dis ce qui s’est passé.",
   "logAmount": "Montant",
