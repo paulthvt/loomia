@@ -15,16 +15,21 @@ import 'package:loomia/features/workflows/presentation/workflows_controller.dart
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Picks what [person] follows next: a sheet on mobile, a dialog elsewhere.
-/// Saving starts the picked workflow from its first step, even the current
-/// one. Closes once saved.
-Future<void> showChangeWorkflow(BuildContext context, Person person) =>
-    LoomiaDialog.show<void>(context, (_) => _ChangeWorkflow(person));
+/// Picks what [people] follow next, in one write: a sheet on mobile, a dialog
+/// elsewhere. Saving starts the picked workflow from its first step, even the
+/// current one. Closes once saved, and completes with whether it was. They
+/// must all be in the same stage: the workflows offered are that stage's.
+Future<bool> showChangeWorkflow(
+  BuildContext context,
+  List<Person> people,
+) async =>
+    await LoomiaDialog.show<bool>(context, (_) => _ChangeWorkflow(people)) ??
+    false;
 
 class _ChangeWorkflow extends ConsumerStatefulWidget {
-  const _ChangeWorkflow(this.person);
+  const _ChangeWorkflow(this.people);
 
-  final Person person;
+  final List<Person> people;
 
   @override
   ConsumerState<_ChangeWorkflow> createState() => _ChangeWorkflowState();
@@ -36,20 +41,28 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
   bool _saving = false;
   PeopleFailure? _failure;
 
+  Stage get _stage => widget.people.first.stage;
+
+  /// The workflow they all follow, if they follow the same one.
+  String? get _shared {
+    final ids = {for (final person in widget.people) person.place?.workflowId};
+    return ids.length == 1 ? ids.single : null;
+  }
+
   FollowWith? _follow(List<Workflow> workflows, DateTime today) {
     if (_picked case (:final follow)) return follow;
     final suggested =
-        findWorkflow(workflows, widget.person.place?.workflowId) ??
-        defaultFor(workflows, widget.person.stage);
+        findWorkflow(workflows, _shared) ?? defaultFor(workflows, _stage);
     return suggested == null
         ? null
         : (workflow: suggested, firstDue: firstDueDefault(suggested, today));
   }
 
   Future<void> _save(FollowWith? follow) async {
-    // Close without writing if the user hasn't picked anything.
-    if (_picked == null) {
-      Navigator.pop(context);
+    // Close without writing when nothing was picked and they all already
+    // follow what is shown.
+    if (_picked == null && follow?.workflow.id == _shared) {
+      Navigator.pop(context, true);
       return;
     }
     setState(() {
@@ -59,8 +72,8 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
     try {
       await ref
           .read(peopleProvider(ref.read(accountProvider)?.email).notifier)
-          .setWorkflow(widget.person, follow);
-      if (mounted) Navigator.pop(context);
+          .setWorkflow(widget.people, follow);
+      if (mounted) Navigator.pop(context, true);
     } on PeopleFailure catch (failure) {
       if (mounted) {
         setState(() {
@@ -82,7 +95,10 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
     final follow = _follow(workflows, now);
 
     return LoomiaDialog(
-      title: l10n.changeWorkflowTitle(firstName(widget.person)),
+      title: switch (widget.people) {
+        [final person] => l10n.changeWorkflowTitle(firstName(person)),
+        final people => l10n.changeWorkflowTitleMany(people.length),
+      },
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -105,7 +121,7 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
         children: [
           if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
           FollowWithField(
-            workflows: forStage(workflows, widget.person.stage),
+            workflows: forStage(workflows, _stage),
             value: follow,
             today: now,
             onChanged: (next) => setState(() => _picked = (follow: next)),

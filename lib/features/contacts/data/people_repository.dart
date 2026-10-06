@@ -55,19 +55,25 @@ class PeopleRepository {
   Future<Person> update(Person person) =>
       _write(person.id, personToRow(person));
 
-  Future<void> delete(String id) =>
-      guardPeople(() => _client.from(_table).delete().eq('id', id));
+  /// One request: all of them are deleted, or none.
+  Future<void> delete(List<String> ids) =>
+      guardPeople(() => _client.from(_table).delete().inFilter('id', ids));
 
-  /// Writes the stage and the workflow that follows it, in one update; a null
-  /// [place] is "nothing for now". The database sets [Person.stageSince],
-  /// clears a leaving prospect's status and any pause, and records the change
-  /// in the history; the returned person is the row as it left it.
-  Future<Person> setStage(String id, Stage stage, {WorkflowPlace? place}) =>
-      _write(id, {'stage': stage.name, ...placeToRow(place)});
+  /// Writes the stage and the workflow that follows it, in one update for all
+  /// of [ids]; a null [place] is "nothing for now". The database sets
+  /// [Person.stageSince], clears a leaving prospect's status and any pause,
+  /// and records each change in the history; the returned people are the
+  /// rows as it left them.
+  Future<List<Person>> setStage(
+    List<String> ids,
+    Stage stage, {
+    WorkflowPlace? place,
+  }) => _writeAll(ids, {'stage': stage.name, ...placeToRow(place)});
 
-  /// Change workflow. Picking what comes next also ends a pause.
-  Future<Person> setPlace(String id, WorkflowPlace? place) =>
-      _write(id, {...placeToRow(place), 'paused_at': null});
+  /// Change workflow, for all of [ids] in one update. Picking what comes next
+  /// also ends a pause.
+  Future<List<Person>> setPlace(List<String> ids, WorkflowPlace? place) =>
+      _writeAll(ids, {...placeToRow(place), 'paused_at': null});
 
   /// [notNow] also sets a prospect's status to Not now.
   Future<Person> pause(String id, DateTime at, {required bool notNow}) =>
@@ -109,6 +115,19 @@ class PeopleRepository {
             .single();
         return personFromRow(row);
       });
+
+  /// Rows deleted meanwhile are simply not returned.
+  Future<List<Person>> _writeAll(
+    List<String> ids,
+    Map<String, dynamic> values,
+  ) => guardPeople(() async {
+    final rows = await _client
+        .from(_table)
+        .update(values)
+        .inFilter('id', ids)
+        .select(_columns);
+    return rows.map(personFromRow).toList();
+  });
 }
 
 final peopleRepositoryProvider = Provider<PeopleRepository>(

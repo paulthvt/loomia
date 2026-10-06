@@ -77,9 +77,9 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
       onResume: () =>
           unawaited(_run((people) => people.resume(person, today()))),
       onNotNow: () => unawaited(_run((people) => people.pause(person))),
-      onFollowWith: () => unawaited(showChangeWorkflow(context, person)),
+      onFollowWith: () => unawaited(showChangeWorkflow(context, [person])),
       onBecameCustomer: () =>
-          unawaited(showChangeStage(context, person, Stage.customer)),
+          unawaited(showChangeStage(context, [person], Stage.customer)),
     );
   }
 }

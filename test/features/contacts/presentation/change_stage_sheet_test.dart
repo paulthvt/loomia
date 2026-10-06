@@ -23,7 +23,7 @@ void main() {
     return pumpFormHarness(
       tester,
       people: people,
-      open: (context) => showChangeStage(context, person, stage),
+      open: (context) => showChangeStage(context, [person], stage),
       result: (_) {},
     );
   }
@@ -134,5 +134,28 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('several people move in one write', (tester) async {
+    final nina = Person(
+      id: 'p2',
+      name: 'Nina Roux',
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026, 3, 4),
+    );
+    people = FakePeopleRepository([_sarah(), nina]);
+    await pumpFormHarness(
+      tester,
+      people: people,
+      open: (context) => showChangeStage(context, [_sarah(), nina], Stage.team),
+      result: (_) {},
+    );
+
+    expect(find.text('These 2 are now on your team'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Move to team'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls, contains('setStage(p1, p2, team)'));
+    expect(people.store['p2']!.stage, Stage.team);
   });
 }

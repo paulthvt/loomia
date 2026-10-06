@@ -127,6 +127,9 @@ Widget _list({String? selectedId, bool showRefresh = false}) => ContactList(
   onOpen: (_) {},
   onAdd: () {},
   onRefresh: () async {},
+  onMove: (_, _) async => false,
+  onChangeWorkflow: (_) async => false,
+  onDelete: (_) async => false,
   selectedId: selectedId,
   showRefresh: showRefresh,
 );

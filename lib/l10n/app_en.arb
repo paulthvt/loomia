@@ -1768,5 +1768,77 @@
   "importReadErrorBody": "Your phone didn't answer. Try again in a moment.",
   "@importReadErrorBody": {
     "description": "Body under the could-not-read-contacts title."
+  },
+  "contactsSelect": "Select",
+  "@contactsSelect": {
+    "description": "Button with a checklist icon at the top of the Contacts list, where there is a mouse, that starts picking several people to act on at once. On touch screens a long press does the same."
+  },
+  "contactsSelected": "{count} selected",
+  "@contactsSelected": {
+    "description": "Title of the Contacts list while several people are picked, with how many.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "contactsSelectAll": "Select all",
+  "@contactsSelectAll": {
+    "description": "Text button in the Contacts list header while picking several people: picks everyone the search and filter show."
+  },
+  "contactsStopSelecting": "Stop selecting",
+  "@contactsStopSelecting": {
+    "description": "Tooltip of the ✕ button in the Contacts list header while picking several people: ends the picking, unpicking everyone."
+  },
+  "contactsMoveSelected": "Move to…",
+  "@contactsMoveSelected": {
+    "description": "Action, while several people are picked on Contacts (in the bar at the bottom on a phone, a button elsewhere), that asks which stage to move them to."
+  },
+  "contactsDeleteSelected": "Delete",
+  "@contactsDeleteSelected": {
+    "description": "Destructive action, while several people are picked on Contacts, that deletes them after a confirmation."
+  },
+  "contactsDeleteManyTitle": "Delete {count} people?",
+  "@contactsDeleteManyTitle": {
+    "description": "Title of the confirmation before deleting several people at once, with how many (always two or more).",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "changeStageManyToProspect": "{count, plural, other{These {count} are prospects again}}",
+  "@changeStageManyToProspect": {
+    "description": "Title of the sheet confirming a move of several people (always two or more) back to prospects.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "changeStageManyToCustomer": "{count, plural, other{These {count} are now customers}}",
+  "@changeStageManyToCustomer": {
+    "description": "Title of the sheet confirming a move of several people (always two or more) to customers.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "changeStageManyToTeam": "{count, plural, other{These {count} are now on your team}}",
+  "@changeStageManyToTeam": {
+    "description": "Title of the sheet confirming a move of several people (always two or more) to the user's team.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "changeStageWorkflowsEnd": "Their workflows end here.",
+  "@changeStageWorkflowsEnd": {
+    "description": "Added to the Change stage body when several people move at once and some were following a workflow."
+  },
+  "changeWorkflowTitleMany": "{count, plural, other{Change the workflow for {count} people}}",
+  "@changeWorkflowTitleMany": {
+    "description": "Title of the sheet that picks one workflow for several people at once (always two or more).",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "contactsWorkflowSelected": "Workflow",
+  "@contactsWorkflowSelected": {
+    "description": "Short label of the button, while several people are picked on Contacts with a mouse, that changes the workflow they all follow. The phone's bottom bar says 'Change workflow'."
+  },
+  "contactsMoveManyTitle": "{count, plural, =1{Move one person to…} other{Move {count} people to…}}",
+  "@contactsMoveManyTitle": {
+    "description": "Title of the sheet, while several people are picked on Contacts, that lists the stages they can move to.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "contactsMoveManyBody": "Next, you pick what they follow there.",
+  "@contactsMoveManyBody": {
+    "description": "Body of the sheet listing the stages several picked people can move to: picking a stage opens the Change stage sheet, with its workflow choice. Gender-neutral."
+  },
+  "contactsMovePartly": "{moving, plural, =1{1 of {total} moves, the others are there already} other{{moving} of {total} move, the others are there already}}",
+  "@contactsMovePartly": {
+    "description": "Under a stage in the Move to… sheet, when some of the picked people are already in that stage and only the others move.",
+    "placeholders": { "moving": { "type": "int" }, "total": { "type": "int" } }
   }
 }

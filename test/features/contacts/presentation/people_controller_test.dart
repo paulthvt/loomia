@@ -116,9 +116,26 @@ void main() {
     final world = _world([_person('1', 'Anne'), _person('2', 'Bruno')]);
     await world.container.read(_book(world.container).future);
 
-    await world.container.read(_book(world.container).notifier).remove('1');
+    await world.container.read(_book(world.container).notifier).remove(['1']);
 
     expect(_names(world.container), ['Bruno']);
+  });
+
+  test('remove drops everyone given, in one call', () async {
+    final world = _world([
+      _person('1', 'Anne'),
+      _person('2', 'Bruno'),
+      _person('3', 'Chloé'),
+    ]);
+    await world.container.read(_book(world.container).future);
+
+    await world.container.read(_book(world.container).notifier).remove([
+      '1',
+      '3',
+    ]);
+
+    expect(_names(world.container), ['Bruno']);
+    expect(world.people.calls.last, 'delete(1, 3)');
   });
 
   test('a failed save rethrows and keeps the list', () async {
@@ -133,7 +150,7 @@ void main() {
       throwsA(PeopleFailure.network),
     );
     await expectLater(
-      world.container.read(_book(world.container).notifier).remove('1'),
+      world.container.read(_book(world.container).notifier).remove(['1']),
       throwsA(PeopleFailure.network),
     );
 
@@ -300,7 +317,7 @@ void main() {
       await world.container.read(historyProvider('p1').future);
       final marie = world.container.read(book).value!.single;
 
-      await world.container.read(book.notifier).moveTo(marie, Stage.customer);
+      await world.container.read(book.notifier).moveTo([marie], Stage.customer);
 
       final moved = world.container.read(book).value!.single;
       expect(moved.stage, Stage.customer);
@@ -312,6 +329,25 @@ void main() {
     },
   );
 
+  test('moveTo moves everyone given in one call', () async {
+    final world = _world([
+      _person('p1', 'Marie'),
+      _person('p2', 'Nina', stage: Stage.customer),
+      _person('p3', 'Olga'),
+    ]);
+    final book = _book(world.container);
+    await world.container.read(book.future);
+    final [marie, nina, _] = world.container.read(book).value!;
+
+    await world.container.read(book.notifier).moveTo([marie, nina], Stage.team);
+
+    expect(
+      [for (final person in world.container.read(book).value!) person.stage],
+      [Stage.team, Stage.team, Stage.prospect],
+    );
+    expect(world.people.calls.last, 'setStage(p1, p2, team)');
+  });
+
   test('a failed moveTo rethrows and changes nothing', () async {
     final world = _world([_person('p1', 'Marie')]);
     final book = _book(world.container);
@@ -320,7 +356,7 @@ void main() {
     world.people.failWith = PeopleFailure.network;
 
     await expectLater(
-      world.container.read(book.notifier).moveTo(marie, Stage.team),
+      world.container.read(book.notifier).moveTo([marie], Stage.team),
       throwsA(PeopleFailure.network),
     );
     expect(world.container.read(book).value!.single.stage, Stage.prospect);
@@ -408,7 +444,7 @@ void main() {
     await world.container
         .read(book.notifier)
         .moveTo(
-          marie,
+          [marie],
           Stage.customer,
           follow: (workflow: customer, firstDue: DateTime(2026, 10, 1)),
         );
@@ -429,7 +465,7 @@ void main() {
     await world.container.read(book.future);
     final marie = world.container.read(book).value!.single;
 
-    await world.container.read(book.notifier).moveTo(marie, Stage.team);
+    await world.container.read(book.notifier).moveTo([marie], Stage.team);
 
     expect(world.container.read(book).value!.single.place, isNull);
   });
@@ -441,14 +477,30 @@ void main() {
     final marie = world.container.read(book).value!.single;
     final health = FakeWorkflowRepository.samples()[1];
 
-    await world.container.read(book.notifier).setWorkflow(marie, (
-      workflow: health,
-      firstDue: day,
-    ));
+    await world.container
+        .read(book.notifier)
+        .setWorkflow([marie], (workflow: health, firstDue: day));
 
     final changed = world.container.read(book).value!.single;
     expect(changed.place?.workflowId, 'health');
     expect(changed.pausedAt, isNull);
+  });
+
+  test('setWorkflow changes everyone given in one call', () async {
+    final world = _world([_person('p1', 'Marie'), _person('p2', 'Nina')]);
+    final book = _book(world.container);
+    await world.container.read(book.future);
+    final both = world.container.read(book).value!;
+
+    await world.container.read(book.notifier).setWorkflow(both, (
+      workflow: samples,
+      firstDue: day,
+    ));
+
+    expect([
+      for (final person in world.container.read(book).value!) person.place,
+    ], everyElement(isNotNull));
+    expect(world.people.calls.last, 'setPlace(p1, p2, samples)');
   });
 
   test('setWorkflow to nothing clears the place', () async {
@@ -457,7 +509,7 @@ void main() {
     await world.container.read(book.future);
     final marie = world.container.read(book).value!.single;
 
-    await world.container.read(book.notifier).setWorkflow(marie, null);
+    await world.container.read(book.notifier).setWorkflow([marie], null);
 
     expect(world.container.read(book).value!.single.place, isNull);
     expect(world.people.calls.last, 'setPlace(p1, none)');
@@ -558,8 +610,8 @@ void main() {
       () => notifier.completeStep(marie, progress, day),
       () => notifier.pause(marie),
       () => notifier.resume(marie, day),
-      () => notifier.setWorkflow(marie, null),
-      () => notifier.moveTo(marie, Stage.customer),
+      () => notifier.setWorkflow([marie], null),
+      () => notifier.moveTo([marie], Stage.customer),
       () => notifier.add(
         (
           name: 'Bruno',

@@ -24,7 +24,7 @@ void main() {
     return pumpFormHarness(
       tester,
       people: people,
-      open: (context) => showChangeWorkflow(context, person),
+      open: (context) => showChangeWorkflow(context, [person]),
       result: (_) {},
     );
   }
@@ -102,5 +102,33 @@ void main() {
 
     expect(people.calls, isNot(contains(startsWith('setPlace('))));
     expect(find.text("Change Sarah's workflow"), findsNothing);
+  });
+
+  testWidgets('several people: the default, saved for all', (tester) async {
+    final nina = Person(
+      id: 'p2',
+      name: 'Nina Roux',
+      stage: Stage.prospect,
+      stageSince: DateTime.utc(2026, 3, 4),
+      place: (
+        workflowId: 'health',
+        atPosition: 1,
+        lastTick: DateTime(2026, 9, 28),
+      ),
+    );
+    people = FakePeopleRepository([_sarah(), nina]);
+    await pumpFormHarness(
+      tester,
+      people: people,
+      open: (context) => showChangeWorkflow(context, [_sarah(), nina]),
+      result: (_) {},
+    );
+
+    expect(find.text('Change the workflow for 2 people'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    // They followed different workflows: Save without picking still writes.
+    expect(people.calls, contains('setPlace(p1, p2, samples)'));
   });
 }
