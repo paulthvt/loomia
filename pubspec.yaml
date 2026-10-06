@@ -30,6 +30,9 @@ dependencies:
   # Material widgets and localizations. Since Flutter 3.47 they live here, not in
   # the framework, whose flutter/material.dart is frozen. Brings cupertino_ui.
   material_ui: ^1.4.0
+  # Reads the app's own version at runtime for the Settings footer. Already
+  # resolved transitively (sentry/supabase); direct because lib/ imports it.
+  package_info_plus: ^10.2.2
   # Reports uncaught errors from release builds. Uncaught Dart exceptions don't
   # crash the app, so Play vitals never sees them. Chosen over Crashlytics
   # because it covers Web and needs no Firebase (#47).
