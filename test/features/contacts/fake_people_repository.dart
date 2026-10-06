@@ -181,6 +181,19 @@ class FakePeopleRepository implements PeopleRepository {
   }
 
   @override
+  Future<Person> setStageSince(String id, DateTime at) async {
+    await _record('setStageSince($id)');
+    final moved = _with(
+      store[id]!,
+      stageSince: at.toUtc(),
+      place: store[id]!.place,
+      pausedAt: store[id]!.pausedAt,
+    );
+    activities?.moveLatestStage(id, at);
+    return moved;
+  }
+
+  @override
   Future<List<Person>> setPlace(List<String> ids, WorkflowPlace? place) async {
     await _record(
       'setPlace(${ids.join(', ')}, ${place?.workflowId ?? 'none'})',

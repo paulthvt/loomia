@@ -17,7 +17,8 @@ enum ActivityKind {
   bool get byUser => this != stage && this != step;
 }
 
-/// One thing in a person's history. Never edited, only deleted.
+/// One thing in a person's history. Its text, day and amount can be edited;
+/// a stage entry's day is the person's [Person.stageSince].
 class Activity {
   Activity({
     required this.id,
