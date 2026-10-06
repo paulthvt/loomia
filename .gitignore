@@ -137,3 +137,6 @@ l10n_missing.json
 
 # graphify knowledge graph (local, rebuilt by its git hooks)
 graphify-out/
+
+# wrangler local cache
+.wrangler/

@@ -7,7 +7,8 @@
 #   3. Merging that PR runs this workflow again; release-please sees its own PR
 #      merged and cuts the tag + GitHub Release.
 #   4. A signed AAB + APK are built, attached to that release, and the AAB goes
-#      to the Play internal testing track. The release stays a GitHub
+#      to the Play internal testing track; the web build becomes a Cloudflare
+#      version on the internal preview URL. The release stays a GitHub
 #      pre-release until promote.yaml ships the same build further.
 #   5. tool/release_notes.dart turns the release body into store notes, attached
 #      as release-notes.json: the one text every store and track shows.
@@ -160,3 +161,12 @@ jobs:
           track: internal
           status: completed
           whatsNewDirectory: ${{ steps.notes.outputs.dir }}
+
+      # Web's internal testing: a version on the internal preview URL, not
+      # live. promote.yaml to production deploys this exact version.
+      - name: Upload web to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: npx --yes wrangler@4.147.0 versions upload --tag "$TAG" --message "$TAG" --preview-alias internal

@@ -197,6 +197,18 @@ first on a personal developer account (12 testers opted in for 14 days).
 
 versionCode comes from the tag: `major*10000 + minor*100 + patch`.
 
+### Web
+
+The web build follows the same path on Cloudflare (`wrangler.jsonc`, a Worker
+with static assets only). Each release uploads a version tagged with the
+release, served at the `internal` preview URL
+(`https://internal-loomia.<account>.workers.dev`) but not live. Promote to
+`production` makes that exact version live on `loomia.thevenot.me`. Rolling
+back is `npx wrangler rollback`.
+
+Auth links from the preview URL land on the live site: it is not in
+`additional_redirect_urls`, so Supabase falls back to the Site URL.
+
 ### Release notes
 
 `tool/release_notes.dart` turns the Features, Bug Fixes and Performance entries
@@ -254,6 +266,22 @@ A Gemini failure, or a release with nothing user-facing, ships without notes.
    gh secret set ANDROID_KEY_PASSWORD
    gh secret set PLAY_SERVICE_ACCOUNT_JSON < service-account.json
    ```
+
+5. **Cloudflare.** Create an API token from the *Edit Cloudflare Workers*
+   template, limited to your account and the `thevenot.me` zone, then:
+
+   ```bash
+   gh secret set CLOUDFLARE_API_TOKEN
+   gh secret set CLOUDFLARE_ACCOUNT_ID   # dashboard → Workers & Pages, right column
+   ```
+
+   The Worker must exist before a version can be uploaded to it, so deploy once
+   by hand: `flutter build web --release && npx wrangler deploy`. Then in
+   Workers & Pages → `loomia` → *Settings → Domains & Routes*, add the custom
+   domain `loomia.thevenot.me` (Cloudflare creates the DNS record and
+   certificate). Moving to another domain later: add the new custom domain,
+   update `site_url` and `additional_redirect_urls` in `supabase/config.toml`,
+   remove the old one.
 
 ## Tracking work
 

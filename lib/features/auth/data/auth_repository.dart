@@ -20,9 +20,10 @@ class AuthRepository {
 
   GoTrueClient get _auth => _client.auth;
 
-  /// On web the browser already knows where it came from; the custom scheme is
-  /// for Android and iOS only.
-  String? get _redirect => kIsWeb ? null : SupabaseConfig.redirectUrl;
+  /// On web, back to the origin the user is on (localhost, preview or live),
+  /// which must be in `additional_redirect_urls`; the custom scheme is for
+  /// Android and iOS only.
+  String get _redirect => kIsWeb ? Uri.base.origin : SupabaseConfig.redirectUrl;
 
   bool get hasSession => _auth.currentSession != null;
 
