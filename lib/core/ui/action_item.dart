@@ -1,5 +1,6 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -18,6 +19,7 @@ class ActionItem extends StatelessWidget {
     this.onOpen,
     this.onResolve,
     this.resolveLabel,
+    this.resolved = false,
     super.key,
   });
 
@@ -40,6 +42,9 @@ class ActionItem extends StatelessWidget {
   /// Label of the resolve button. Defaults to the localized "Mark as done".
   final String? resolveLabel;
 
+  /// The tick is in flight: the ring stays filled and takes no second tap.
+  final bool resolved;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,34 +66,42 @@ class ActionItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.lg),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LoomiaAvatar(name: name),
-              const SizedBox(width: AppSpacing.ms),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title ?? name, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(reason, style: theme.textTheme.bodySmall),
-                    if (chipWidget != null) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      chipWidget,
+          // Intrinsic height so the ring can centre on the card while the
+          // avatar and text stay top-aligned.
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LoomiaAvatar(name: name),
+                const SizedBox(width: AppSpacing.ms),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title ?? name, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(reason, style: theme.textTheme.bodySmall),
+                      if (chipWidget != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        chipWidget,
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              if (onResolve != null) ...[
-                const SizedBox(width: AppSpacing.sm),
-                IconButton(
-                  onPressed: onResolve,
-                  tooltip: label,
-                  icon: const Icon(Icons.check_rounded),
-                ),
+                if (onResolve != null) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  Center(
+                    child: IconButton(
+                      onPressed: resolved ? null : onResolve,
+                      isSelected: resolved,
+                      tooltip: label,
+                      style: AppTheme.resolveRing(context),
+                      icon: const Icon(Icons.check_rounded),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

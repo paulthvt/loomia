@@ -89,7 +89,7 @@ void main() {
     expect(find.text('You are up to date'), findsOneWidget);
   });
 
-  testWidgets('a tick in flight hides that button: one step, not two', (
+  testWidgets('a tick in flight takes no second tap: one step, not two', (
     tester,
   ) async {
     final people = FakePeopleRepository([_on('p1', 'Anna')]);
@@ -98,7 +98,8 @@ void main() {
 
     await tester.tap(find.byTooltip(_markFirst));
     await tester.pump();
-    expect(find.byTooltip(_markFirst), findsNothing);
+    await tester.tap(find.byTooltip(_markFirst));
+    await tester.pump();
     people.gate!.complete();
     people.gate = null;
     await tester.pumpAndSettle();
