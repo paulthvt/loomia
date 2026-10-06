@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.0](https://github.com/paulthvt/loomia/compare/v0.1.3...0.2.0) (2026-10-06)
+
+
+### ✨ Features
+
+* **contacts:** edit history entries ([#189](https://github.com/paulthvt/loomia/issues/189)) ([f4f6406](https://github.com/paulthvt/loomia/commit/f4f6406f29ff47aadcd2a71741d97358f7bd1294))
+* **contacts:** pick several people to move, change workflow or delete ([#186](https://github.com/paulthvt/loomia/issues/186)) ([9b9a08b](https://github.com/paulthvt/loomia/commit/9b9a08b8e34ef3975162913238c4f051f1aa8adf))
+* **contacts:** set when an imported stage began ([#184](https://github.com/paulthvt/loomia/issues/184)) ([6134580](https://github.com/paulthvt/loomia/commit/6134580fe852b8d72ec48b8c423528496803fbe0))
+* **settings:** show the app version ([#194](https://github.com/paulthvt/loomia/issues/194)) ([d034ad5](https://github.com/paulthvt/loomia/commit/d034ad5aedc601d379533d232a259799f1885c1d))
+* **ui:** make the resolve check an empty ring that fills on tap ([#192](https://github.com/paulthvt/loomia/issues/192)) ([50a0f32](https://github.com/paulthvt/loomia/commit/50a0f3237f7b81f28f92850020dd4cd5c5e3cd36))
+* **web:** deploy to Cloudflare on release ([#181](https://github.com/paulthvt/loomia/issues/181)) ([377c7c7](https://github.com/paulthvt/loomia/commit/377c7c73f2104cee90f9c1bd008ddd874f59cbba))
+
+
+### 🔧 Miscellaneous
+
+* **l10n:** sync translations ([#185](https://github.com/paulthvt/loomia/issues/185)) ([9de275a](https://github.com/paulthvt/loomia/commit/9de275ae5a9c466f7e7e31a58d839339c7acbe22))
+* **l10n:** sync translations ([#191](https://github.com/paulthvt/loomia/issues/191)) ([c8a6e28](https://github.com/paulthvt/loomia/commit/c8a6e281b0c5761d7b111fb63d583d12380fcd43))
+* **l10n:** sync translations ([#195](https://github.com/paulthvt/loomia/issues/195)) ([4bb99e1](https://github.com/paulthvt/loomia/commit/4bb99e19249bd6bdbe021da9fb7436fa9fa3fbca))
+* **release:** bump minor on feat commits ([#178](https://github.com/paulthvt/loomia/issues/178)) ([e8df940](https://github.com/paulthvt/loomia/commit/e8df940ebe13519b8a1cecd94b8250cae4deac94))
+* **release:** drop the v prefix from release tags ([#183](https://github.com/paulthvt/loomia/issues/183)) ([63a3cc5](https://github.com/paulthvt/loomia/commit/63a3cc5cc728147892cd7a119fcef2f380f5e38f))
+
 ## [0.1.3](https://github.com/paulthvt/loomia/compare/v0.1.2...v0.1.3) (2026-10-05)
 
 
