@@ -41,6 +41,22 @@ class HistoryController extends AsyncNotifier<List<Activity>> {
     }
   }
 
+  /// Waits for the server; a failure rethrows and leaves the list as it was.
+  Future<void> edit(Activity activity, ActivityDraft draft) async {
+    final alive = ref.keepAlive();
+    try {
+      final edited = await _repository.update(activity.id, draft);
+      _change(
+        (entries) => [
+          for (final entry in entries) entry.id == edited.id ? edited : entry,
+        ],
+      );
+      _reloadBook();
+    } finally {
+      alive.close();
+    }
+  }
+
   /// Gone at once, deleted behind. A failure puts it back and rethrows.
   Future<void> remove(Activity activity) async {
     _change((entries) => [...entries.where((e) => e.id != activity.id)]);

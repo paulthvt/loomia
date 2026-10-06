@@ -114,6 +114,13 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     }
   }
 
+  /// Corrects the day their stage began, to [day] (local midnight). The
+  /// database moves the latest stage entry with it, so the history reloads.
+  Future<void> setStageSince(Person person, DateTime day) async {
+    _replace(await _repository.setStageSince(person.id, day));
+    if (ref.mounted) ref.invalidate(historyProvider(person.id));
+  }
+
   /// Change workflow, for all of [people] in one write; null is "Nothing for
   /// now".
   Future<void> setWorkflow(List<Person> people, FollowWith? follow) async {
