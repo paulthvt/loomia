@@ -65,6 +65,24 @@ void main() {
     expect(find.text('Save'), findsNothing);
   });
 
+  testWidgets('the day the stage began can be corrected', (tester) async {
+    await open(tester);
+
+    expect(find.text('Mar 4, 2026'), findsOneWidget);
+    await tester.tap(find.text('Mar 4, 2026'));
+    await tester.pumpAndSettle();
+    // Typed, not tapped on the calendar: the same in every month.
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '05/12/2025');
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(people.store['p1']!.stageSince, DateTime(2025, 5, 12));
+  });
+
   testWidgets("a team member's own profile is edited with the rest", (
     tester,
   ) async {
@@ -250,7 +268,12 @@ void main() {
       await pick(tester, 'Aiming for', 'Elite');
       expect(labeled('By'), findsOneWidget);
       await tester.ensureVisible(labeled('By'));
-      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.tap(
+        find.descendant(
+          of: labeled('By'),
+          matching: find.byIcon(Icons.calendar_today_outlined),
+        ),
+      );
       await tester.pumpAndSettle();
       // The picker opens on this month; OK keeps it.
       await tester.tap(find.text('OK'));

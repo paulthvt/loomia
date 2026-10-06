@@ -708,6 +708,13 @@
       "amount": { "type": "num", "format": "decimalPattern" }
     }
   },
+  "editStageSince": "{stage} since",
+  "@editStageSince": {
+    "description": "Edit form field: the day their current stage began, e.g. 'Customer since'. Opens a date picker, to correct it for someone imported or added late.",
+    "placeholders": {
+      "stage": { "type": "String" }
+    }
+  },
   "editBy": "By",
   "@editBy": {
     "description": "Edit form field under Aiming for: the month they aim to reach it by. Opens a month picker."
@@ -1726,6 +1733,17 @@
   "importStage": "Add them as",
   "@importStage": {
     "description": "Heading above the stage chips (Prospect, Customer, Team) given to everyone imported. Shown in capitals."
+  },
+  "importSinceToday": "Since today",
+  "@importSinceToday": {
+    "description": "Button under the stage chips of the import screen, before a day is picked: everyone imported starts their stage today. Opens a date picker to pick an earlier day, for people already customers or on the team."
+  },
+  "importSince": "Since {date}",
+  "@importSince": {
+    "description": "The same button once a day is picked: everyone imported has been at the chosen stage since then, e.g. 'Since Mar 4, 2025'.",
+    "placeholders": {
+      "date": { "type": "DateTime", "format": "yMMMd" }
+    }
   },
   "importAction": "{count, plural, =0{Import} =1{Import one person} other{Import {count} people}}",
   "@importAction": {

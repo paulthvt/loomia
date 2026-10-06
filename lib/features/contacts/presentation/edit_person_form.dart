@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
@@ -28,7 +29,8 @@ enum EditPart {
 }
 
 /// Edit details: every field but the stage (it moves through ⋯ in #56) and the
-/// status (edited on the detail screen), or only those of [part]. A scrolling
+/// status (edited on the detail screen), or only those of [part]. The day the
+/// stage began is a field: an import may not know it (#179). A scrolling
 /// sheet on mobile, a dialog elsewhere. Fields not asked for are kept.
 Future<void> showEditPerson(
   BuildContext context,
@@ -97,6 +99,9 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
   late String? _levelNow = widget.person.currentLevel;
   late String? _aimingFor = widget.person.targetLevel;
   late DateTime? _by = widget.person.targetLevelBy;
+
+  /// Null until picked: an untouched day is not written back.
+  DateTime? _since;
   // Plain digits and a dot: parseAmount reads them back in every language
   // (French reads a dot as the decimal too). No context here, so dispose can
   // create it safely.
@@ -120,6 +125,16 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
       last: DateTime(thisMonth.year + 10, thisMonth.month),
     );
     if (by != null && mounted) setState(() => _by = by);
+  }
+
+  Future<void> _pickSince() async {
+    final local = (_since ?? widget.person.stageSince).toLocal();
+    final since = await pickDay(
+      context,
+      initial: DateTime(local.year, local.month, local.day),
+      last: today(),
+    );
+    if (since != null && mounted) setState(() => _since = since);
   }
 
   String? _initial(_Field field) {
@@ -205,6 +220,7 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
               strengths: _text(_Field.strengths),
               stuckOn: _text(_Field.stuckOn),
             ),
+            stageSince: _since,
           );
       if (mounted) Navigator.pop(context);
     } on PeopleFailure catch (failure) {
@@ -361,6 +377,23 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
       ),
     ];
 
+    final stageSince = LabeledField(
+      key: const ValueKey('since'),
+      label: l10n.editStageSince(stageLabel(l10n, widget.person.stage)),
+      child: InkWell(
+        onTap: _pickSince,
+        child: InputDecorator(
+          decoration: const InputDecoration(
+            suffixIcon: Icon(Icons.calendar_today_outlined),
+          ),
+          child: Text(
+            DateFormat.yMMMd(l10n.localeName)
+                .format((_since ?? widget.person.stageSince).toLocal()),
+          ),
+        ),
+      ),
+    );
+
     return Form(
       key: _form,
       child: LoomiaDialog(
@@ -408,6 +441,7 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
                 children: [
                   for (final field in fields.where(_asks)) ...[
                     input(field),
+                    if (field == _Field.name) stageSince,
                     if (field == _Field.why) ...rankAndVolume,
                   ],
                 ],

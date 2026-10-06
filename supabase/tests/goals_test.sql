@@ -2,7 +2,7 @@
 -- frozen close. Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(19);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -97,14 +97,25 @@ select results_eq(
 );
 
 -- Paris, March 2027: local midnight is 23:00 UTC on Feb 28.
-insert into public.person (name, stage, created_at) values
-  ('Nina', 'prospect', '2027-02-28 23:30+00'),
-  ('Paul', 'prospect', '2027-02-28 22:30+00');
+insert into public.person (name, stage, created_at, stage_since) values
+  ('Nina', 'prospect', '2027-02-28 23:30+00', '2027-02-28 23:30+00'),
+  ('Paul', 'prospect', '2027-02-28 22:30+00', '2027-02-28 22:30+00');
 select is(
   (select prospects from public.month_progress('2027-03-01',
      '2027-02-28 23:00+00', '2027-03-31 22:00+00')),
   1,
   'someone added at 00:30 local on the 1st counts in the new month'
+);
+
+-- An import of people already customers or on the team for a year (#179).
+insert into public.person (name, stage, created_at, stage_since) values
+  ('Old customer', 'customer', '2027-03-10 10:00+00', '2026-03-10 10:00+00'),
+  ('Old prospect', 'prospect', '2027-03-10 10:00+00', '2026-03-10 10:00+00');
+select results_eq(
+  $$ select prospects, customers from public.month_progress('2027-03-01',
+       '2027-02-28 23:00+00', '2027-03-31 22:00+00') $$,
+  $$ values (1, 0) $$,
+  'someone backdated to before the month is not new this month'
 );
 
 set local request.jwt.claims =
