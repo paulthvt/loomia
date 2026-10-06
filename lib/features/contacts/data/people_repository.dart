@@ -88,6 +88,11 @@ class PeopleRepository {
       _writeAll(ids, {...placeToRow(place), 'paused_at': null});
 
   /// [notNow] also sets a prospect's status to Not now.
+  /// Corrects the day their stage began. The database moves the latest stage
+  /// entry in the history with it.
+  Future<Person> setStageSince(String id, DateTime at) =>
+      _write(id, {'stage_since': at.toUtc().toIso8601String()});
+
   Future<Person> pause(String id, DateTime at, {required bool notNow}) =>
       _write(id, {
         'paused_at': at.toUtc().toIso8601String(),

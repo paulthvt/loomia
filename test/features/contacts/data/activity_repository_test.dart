@@ -148,4 +148,25 @@ void main() {
     expect(row['person_id'], isNull);
     expect(row['amount'], 100);
   });
+
+  test('activityEditToRow writes the day, the text and the amount only', () {
+    expect(
+      activityEditToRow((
+        kind: ActivityKind.step,
+        happenedOn: DateTime(2026, 10, 1),
+        text: ' Sent the samples ',
+        amount: null,
+      )),
+      {'happened_on': '2026-10-01', 'text': 'Sent the samples', 'amount': null},
+    );
+    expect(
+      activityEditToRow((
+        kind: ActivityKind.order,
+        happenedOn: DateTime(2026, 10, 2),
+        text: ' ',
+        amount: 55,
+      )),
+      {'happened_on': '2026-10-02', 'text': null, 'amount': 55},
+    );
+  });
 }

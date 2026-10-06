@@ -11,6 +11,7 @@ import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
+import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -28,8 +29,20 @@ Future<void> showLogOwnOrder(
 }) =>
     LoomiaDialog.show<void>(context, (_) => _LogActivityForm(onSaved: onSaved));
 
+/// Edit [activity] in [person]'s history: the same form, the kind fixed. A
+/// stage entry asks only for its day, which is [Person.stageSince]. Resolves
+/// true when Delete is tapped; the history confirms and deletes.
+Future<bool?> showEditActivity(
+  BuildContext context,
+  Person person,
+  Activity activity,
+) => LoomiaDialog.show<bool>(
+  context,
+  (_) => _LogActivityForm(person: person, editing: activity),
+);
+
 class _LogActivityForm extends ConsumerStatefulWidget {
-  const _LogActivityForm({this.person, this.onSaved});
+  const _LogActivityForm({this.person, this.onSaved, this.editing});
 
   /// Null: the user's own order.
   final Person? person;
@@ -37,18 +50,30 @@ class _LogActivityForm extends ConsumerStatefulWidget {
   /// Own order only: after the save, before the sheet closes.
   final VoidCallback? onSaved;
 
+  /// Null when adding.
+  final Activity? editing;
+
   @override
   ConsumerState<_LogActivityForm> createState() => _LogActivityFormState();
 }
 
 class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
   final _form = GlobalKey<FormState>();
-  final _text = TextEditingController();
-  final _amount = TextEditingController();
-  late ActivityKind _kind = widget.person == null
-      ? ActivityKind.order
-      : ActivityKind.note;
-  DateTime _day = today();
+  late final Activity? _editing = widget.editing;
+  late final _text = TextEditingController(text: _editing?.text);
+  // Plain digits and a dot, as the edit form writes a volume: parseAmount
+  // reads them back in every language.
+  late final _amount = TextEditingController(
+    text: switch (_editing?.amount) {
+      final double amount when amount % 1 == 0 => amount.toInt().toString(),
+      final double amount => amount.toString(),
+      null => '',
+    },
+  );
+  late ActivityKind _kind =
+      _editing?.kind ??
+      (widget.person == null ? ActivityKind.order : ActivityKind.note);
+  late DateTime _day = _editing?.day ?? today();
   bool _saving = false;
   PeopleFailure? _failure;
 
@@ -59,13 +84,36 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
     super.dispose();
   }
 
+  bool get _stage => _editing?.kind == ActivityKind.stage;
+
   Future<void> _pickDay() async {
-    final day = await pickDay(context, initial: _day, last: today());
+    final now = today();
+    final day = await pickDay(
+      context,
+      initial: _day,
+      first: _stage ? _previousStageDay() : null,
+      // A day saved on a device ahead of this one stays reachable.
+      last: _day.isAfter(now) ? _day : now,
+    );
     if (day != null && mounted) setState(() => _day = day);
   }
 
+  /// A stage entry can't go before the stage before it (the database keeps
+  /// it after that one anyway).
+  DateTime? _previousStageDay() {
+    final entries = ref.read(historyProvider(widget.person!.id)).value;
+    final stages = [
+      for (final entry in entries ?? const <Activity>[])
+        if (entry.kind == ActivityKind.stage) entry,
+    ];
+    final index = stages.indexWhere((entry) => entry.id == _editing!.id);
+    if (index < 0 || index + 1 >= stages.length) return null;
+    return stages[index + 1].day;
+  }
+
   Future<void> _submit() async {
-    if (!_form.currentState!.validate()) return;
+    // A stage entry has only its day: nothing to validate.
+    if (!_stage && !_form.currentState!.validate()) return;
     setState(() {
       _saving = true;
       _failure = null;
@@ -81,11 +129,23 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
             : null,
       );
       final person = widget.person;
+      final editing = _editing;
       if (person == null) {
         await ref.read(activityRepositoryProvider).addOwnOrder(draft);
         widget.onSaved?.call();
-      } else {
+      } else if (editing == null) {
         await ref.read(historyProvider(person.id).notifier).add(draft);
+      } else if (_stage) {
+        // The same day keeps its time, and its place among that day's.
+        if (_day != editing.day) {
+          await ref
+              .read(peopleProvider(ref.read(accountProvider)?.email).notifier)
+              .setStageSince(person, _day);
+        }
+      } else {
+        await ref
+            .read(historyProvider(person.id).notifier)
+            .edit(editing, draft);
       }
       if (mounted) Navigator.pop(context);
     } on PeopleFailure catch (failure) {
@@ -115,10 +175,17 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
     return Form(
       key: _form,
       child: LoomiaDialog(
-        title: person == null
+        title: _editing != null
+            ? l10n.editActivityTitle
+            : person == null
             ? l10n.logOwnOrderTitle
             : l10n.logTitle(firstName(person)),
         actions: [
+          if (_editing != null && !_stage)
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.historyDeleteConfirm),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(material.cancelButtonLabel),
@@ -139,7 +206,7 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
           spacing: AppSpacing.ms,
           children: [
             if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
-            if (person != null)
+            if (person != null && _editing == null)
               Wrap(
                 spacing: AppSpacing.sm,
                 children: [
@@ -208,25 +275,26 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
                   ),
                 ),
               ),
-            LabeledField(
-              // Keeps its state, focus included, when Amount appears above.
-              key: const ValueKey('text'),
-              label: order ? l10n.logNote : l10n.logWhat,
-              child: TextFormField(
-                controller: _text,
-                autofocus: true,
-                minLines: 2,
-                maxLines: 5,
-                textCapitalization: TextCapitalization.sentences,
-                validator: (value) {
-                  if ((value ?? '').trim().isNotEmpty) return null;
-                  if (!order) return l10n.logWhatRequired;
-                  return _amount.text.trim().isEmpty
-                      ? l10n.logOrderRequired
-                      : null;
-                },
+            if (!_stage)
+              LabeledField(
+                // Keeps its state, focus included, when Amount appears above.
+                key: const ValueKey('text'),
+                label: order ? l10n.logNote : l10n.logWhat,
+                child: TextFormField(
+                  controller: _text,
+                  autofocus: _editing == null,
+                  minLines: 2,
+                  maxLines: 5,
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: (value) {
+                    if ((value ?? '').trim().isNotEmpty) return null;
+                    if (!order) return l10n.logWhatRequired;
+                    return _amount.text.trim().isEmpty
+                        ? l10n.logOrderRequired
+                        : null;
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),

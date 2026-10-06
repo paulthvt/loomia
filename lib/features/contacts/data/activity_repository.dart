@@ -51,6 +51,19 @@ class ActivityRepository {
     return activityFromRow(row);
   });
 
+  /// What an edit may change: the day, the text and an order's amount. The
+  /// database refuses any other column, and stage entries altogether.
+  Future<Activity> update(String id, ActivityDraft draft) =>
+      guardPeople(() async {
+        final row = await _client
+            .from(_table)
+            .update(activityEditToRow(draft))
+            .eq('id', id)
+            .select()
+            .single();
+        return activityFromRow(row);
+      });
+
   /// Every order in [month], contacts' and own, latest day first, then
   /// latest made.
   Future<List<MonthOrder>> ordersIn(DateTime month) => guardPeople(() async {
@@ -97,14 +110,22 @@ Map<String, dynamic> activityDraftToRow(String? personId, ActivityDraft draft) {
     draft.kind.byUser,
     'Only the database writes stage entries; step entries come from complete_step',
   );
+  return {
+    'person_id': personId,
+    'kind': draft.kind.name,
+    ...activityEditToRow(draft),
+  };
+}
+
+/// The columns an edit writes; [activityDraftToRow] adds whose and what kind.
+/// Any kind, steps included: the kind itself is never written.
+Map<String, dynamic> activityEditToRow(ActivityDraft draft) {
   assert(
     draft.amount == null || draft.kind == ActivityKind.order,
     'Only an order has an amount',
   );
   final text = draft.text.trim();
   return {
-    'person_id': personId,
-    'kind': draft.kind.name,
     'happened_on': dayColumn(draft.happenedOn),
     'text': text.isEmpty ? null : text,
     'amount': draft.amount,

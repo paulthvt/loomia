@@ -143,6 +143,8 @@ class FakePeopleRepository implements PeopleRepository {
       pausedAt: stored.pausedAt,
     );
     store[person.id] = saved;
+    // As the trigger: the latest stage entry follows a corrected since.
+    if (stageSince != null) activities?.moveLatestStage(person.id, stageSince);
     return _served(saved);
   }
 
@@ -177,6 +179,19 @@ class FakePeopleRepository implements PeopleRepository {
       );
       activities?.recordStage(id, stage);
     }
+    return moved;
+  }
+
+  @override
+  Future<Person> setStageSince(String id, DateTime at) async {
+    await _record('setStageSince($id)');
+    final moved = _with(
+      store[id]!,
+      stageSince: at.toUtc(),
+      place: store[id]!.place,
+      pausedAt: store[id]!.pausedAt,
+    );
+    activities?.moveLatestStage(id, at);
     return moved;
   }
 

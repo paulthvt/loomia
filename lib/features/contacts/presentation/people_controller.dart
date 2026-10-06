@@ -94,6 +94,10 @@ class PeopleController extends AsyncNotifier<List<Person>> {
   /// [stageSince] corrects the day their stage began; null keeps it.
   Future<void> save(Person person, {DateTime? stageSince}) async {
     _replace(await _repository.update(person, stageSince: stageSince));
+    // The database moved the latest stage entry with it.
+    if (stageSince != null && ref.mounted) {
+      ref.invalidate(historyProvider(person.id));
+    }
   }
 
   /// Moves all of [people] in one write. Waits for the server, which decides
@@ -112,6 +116,13 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     for (final person in people) {
       ref.invalidate(historyProvider(person.id));
     }
+  }
+
+  /// Corrects the day their stage began, to [day] (local midnight). The
+  /// database moves the latest stage entry with it, so the history reloads.
+  Future<void> setStageSince(Person person, DateTime day) async {
+    _replace(await _repository.setStageSince(person.id, day));
+    if (ref.mounted) ref.invalidate(historyProvider(person.id));
   }
 
   /// Change workflow, for all of [people] in one write; null is "Nothing for

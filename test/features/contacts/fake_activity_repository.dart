@@ -76,6 +76,47 @@ class FakeActivityRepository implements ActivityRepository {
   }
 
   @override
+  Future<Activity> update(String id, ActivityDraft draft) async {
+    await _record('update($id)');
+    final index = store.indexWhere((entry) => entry.id == id);
+    final before = store[index];
+    final text = draft.text.trim();
+    return store[index] = Activity(
+      id: before.id,
+      personId: before.personId,
+      kind: before.kind,
+      happenedOn: draft.happenedOn,
+      text: text.isEmpty ? null : text,
+      amount: draft.amount,
+      createdAt: before.createdAt,
+    );
+  }
+
+  /// What the trigger does when stage_since moves: the latest stage entry
+  /// goes to [at], kept after the one before it. Not a call.
+  void moveLatestStage(String personId, DateTime at) {
+    final stages = [
+      for (final (index, entry) in store.indexed)
+        if (entry.personId == personId && entry.kind == ActivityKind.stage)
+          (index, entry),
+    ]..sort((a, b) => b.$2.createdAt.compareTo(a.$2.createdAt));
+    if (stages.isEmpty) return;
+    final (index, latest) = stages.first;
+    final previous = stages.length > 1 ? stages[1].$2.createdAt : null;
+    final moved = previous != null && !at.isAfter(previous)
+        ? previous.add(const Duration(microseconds: 1))
+        : at;
+    store[index] = Activity(
+      id: latest.id,
+      personId: latest.personId,
+      kind: latest.kind,
+      happenedOn: latest.happenedOn,
+      stage: latest.stage,
+      createdAt: moved.toUtc(),
+    );
+  }
+
+  @override
   Future<List<MonthOrder>> ordersIn(DateTime month) async {
     await _record('ordersIn(${month.year}-${month.month})');
     return [

@@ -165,4 +165,49 @@ void main() {
 
     expect(_ids(world.container), ['moved', 'before']);
   });
+
+  test('edit waits for the server, then re-sorts the entry', () async {
+    final world = _world([_note('a', 10), _note('b', 12)]);
+    await world.container.read(historyProvider('p1').future);
+
+    await world.container.read(historyProvider('p1').notifier).edit(
+      world.activities.store.first,
+      (
+        kind: ActivityKind.note,
+        happenedOn: DateTime(2026, 9, 14),
+        text: 'Moved',
+        amount: null,
+      ),
+    );
+
+    expect(world.activities.calls.last, 'update(a)');
+    expect(_ids(world.container), ['a', 'b']);
+    expect(
+      world.container.read(historyProvider('p1')).value!.first.text,
+      'Moved',
+    );
+  });
+
+  test('a failed edit rethrows and keeps the list', () async {
+    final world = _world([_note('a', 10)]);
+    await world.container.read(historyProvider('p1').future);
+    world.activities.failWith = PeopleFailure.network;
+
+    await expectLater(
+      world.container.read(historyProvider('p1').notifier).edit(
+        world.activities.store.first,
+        (
+          kind: ActivityKind.note,
+          happenedOn: DateTime(2026, 9, 10),
+          text: 'Changed',
+          amount: null,
+        ),
+      ),
+      throwsA(PeopleFailure.network),
+    );
+    expect(
+      world.container.read(historyProvider('p1')).value!.single.text,
+      'Note a',
+    );
+  });
 }
