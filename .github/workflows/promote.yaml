@@ -7,14 +7,14 @@
 # Promote only from here, never from the Play Console, or GitHub pre-release
 # flags stop matching what users actually get.
 #
-#   gh workflow run Promote -f tag=v0.2.0 -f track=alpha
+#   gh workflow run Promote -f tag=0.2.0 -f track=alpha
 name: Promote
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag already on internal testing, e.g. v0.2.0
+        description: Release tag already on internal testing, e.g. 0.2.0
         required: true
       track:
         description: Target Play track
