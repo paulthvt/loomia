@@ -4,6 +4,7 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
@@ -21,8 +22,15 @@ import 'package:loomia/features/workflows/presentation/workflow_editor.dart';
 import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 enum SettingsSection { account, language, appearance, workflows }
+
+/// The installed app version, major.minor.patch ("0.1.3"): the build number
+/// only matters to the stores. Loaded once: it never changes while the app runs.
+final _appVersionProvider = FutureProvider<String>(
+  (ref) async => (await PackageInfo.fromPlatform()).version,
+);
 
 /// The Settings list, and one of its sections.
 ///
@@ -289,6 +297,21 @@ class _SettingsListState extends ConsumerState<_SettingsList>
               onTap: busy ? null : () => run((auth) => auth.signOut()),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Center(
+          child: Text(
+            // Silent until it resolves; a version footer is non-critical.
+            ref
+                .watch(_appVersionProvider)
+                .maybeWhen(
+                  data: (version) => l10n.settingsVersion(version),
+                  orElse: () => '',
+                ),
+            style: AppTypography.caption.copyWith(
+              color: LoomiaColors.of(context).textMuted,
+            ),
+          ),
         ),
       ],
     );

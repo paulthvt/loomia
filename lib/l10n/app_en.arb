@@ -334,6 +334,16 @@
   "@settingsSignOut": {
     "description": "Button on the Settings screen that signs the user out of the app on this device."
   },
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {
+    "description": "Footer at the bottom of the Settings screen showing the installed app version, e.g. \"Version 0.1.3\".",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.1.3"
+      }
+    }
+  },
   "settingsDeleteAccount": "Delete account",
   "@settingsDeleteAccount": {
     "description": "Button on the Settings screen that starts permanently deleting the user's account. Opens a confirmation first."
