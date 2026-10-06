@@ -358,4 +358,200 @@ void main() {
       expect(find.text('PV'), findsNothing);
     });
   });
+
+  group('edit', () {
+    Future<Object?> openEdit(WidgetTester tester, Activity activity) async {
+      Object? resolved;
+      await pumpFormHarness(
+        tester,
+        people: FakePeopleRepository([_claire])..activities = activities,
+        activities: activities,
+        account: const Account(
+          firstName: 'Pauline',
+          email: 'p@example.com',
+          businessModel: BusinessModel.doterra,
+        ),
+        open: (context) => showEditActivity(context, _claire, activity),
+        result: (value) => resolved = value,
+      );
+      return resolved;
+    }
+
+    testWidgets('a note opens filled in, without kinds, and saves', (
+      tester,
+    ) async {
+      final note = Activity(
+        id: 'a1',
+        personId: 'p1',
+        kind: ActivityKind.note,
+        happenedOn: DateTime(2026, 9, 10),
+        text: 'Asked abot the cream',
+        createdAt: DateTime.utc(2026, 9, 10, 12),
+      );
+      activities.store.add(note);
+      await openEdit(tester, note);
+
+      expect(find.text('Edit'), findsOneWidget);
+      expect(find.byType(ChoiceChip), findsNothing);
+      await tester.enterText(field('What happened'), 'Asked about the cream');
+      await save(tester);
+
+      expect(activities.calls.last, 'update(a1)');
+      expect(activities.store.single.text, 'Asked about the cream');
+      expect(activities.store.single.happenedOn, DateTime(2026, 9, 10));
+    });
+
+    testWidgets('an order keeps its amount, written plainly', (tester) async {
+      final order = Activity(
+        id: 'a1',
+        personId: 'p1',
+        kind: ActivityKind.order,
+        happenedOn: DateTime(2026, 9, 10),
+        amount: 40,
+        createdAt: DateTime.utc(2026, 9, 10, 12),
+      );
+      activities.store.add(order);
+      await openEdit(tester, order);
+
+      expect(find.text('40'), findsOneWidget);
+      await tester.enterText(field('Amount'), '55.5');
+      await save(tester);
+
+      expect(activities.store.single.amount, 55.5);
+    });
+
+    testWidgets('a step entry saves its new text', (tester) async {
+      final step = Activity(
+        id: 'a1',
+        personId: 'p1',
+        kind: ActivityKind.step,
+        happenedOn: DateTime(2026, 9, 10),
+        text: 'Thank them',
+        createdAt: DateTime.utc(2026, 9, 10, 12),
+      );
+      activities.store.add(step);
+      await openEdit(tester, step);
+
+      await tester.enterText(field('What happened'), 'Thanked them by phone');
+      await save(tester);
+
+      expect(activities.store.single.kind, ActivityKind.step);
+      expect(activities.store.single.text, 'Thanked them by phone');
+    });
+
+    testWidgets('Delete hands back to the history', (tester) async {
+      final note = Activity(
+        id: 'a1',
+        personId: 'p1',
+        kind: ActivityKind.note,
+        happenedOn: DateTime(2026, 9, 10),
+        text: 'Note',
+        createdAt: DateTime.utc(2026, 9, 10, 12),
+      );
+      activities.store.add(note);
+      Object? resolved;
+      await pumpFormHarness(
+        tester,
+        people: FakePeopleRepository([_claire]),
+        activities: activities,
+        open: (context) => showEditActivity(context, _claire, note),
+        result: (value) => resolved = value,
+      );
+
+      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(resolved, isTrue);
+      expect(activities.calls, isNot(contains('delete(a1)')));
+    });
+
+    testWidgets('a stage entry edits only its day, which is the since', (
+      tester,
+    ) async {
+      activities.recordStage('p1', Stage.customer);
+      final stage = activities.store.single;
+      final people = FakePeopleRepository([_claire])..activities = activities;
+      await pumpFormHarness(
+        tester,
+        people: people,
+        activities: activities,
+        open: (context) => showEditActivity(context, _claire, stage),
+        result: (_) {},
+      );
+
+      expect(find.byType(TextFormField), findsNothing);
+      expect(find.widgetWithText(TextButton, 'Delete'), findsNothing);
+      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '09/01/2026');
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await save(tester);
+
+      expect(people.calls.last, 'setStageSince(p1)');
+      expect(people.store['p1']!.stageSince, DateTime(2026, 9).toUtc());
+      expect(activities.store.single.day, DateTime(2026, 9));
+    });
+
+    testWidgets('a stage entry saved on the same day writes nothing', (
+      tester,
+    ) async {
+      activities.recordStage('p1', Stage.customer);
+      final stage = activities.store.single;
+      final people = FakePeopleRepository([_claire])..activities = activities;
+      await pumpFormHarness(
+        tester,
+        people: people,
+        activities: activities,
+        open: (context) => showEditActivity(context, _claire, stage),
+        result: (_) {},
+      );
+
+      await save(tester);
+
+      expect(people.calls, isNot(contains('setStageSince(p1)')));
+      expect(find.text('Edit'), findsNothing);
+    });
+
+    testWidgets("a stage entry's day starts at the stage before it", (
+      tester,
+    ) async {
+      final customer = Activity(
+        id: 'customer',
+        personId: 'p1',
+        kind: ActivityKind.stage,
+        happenedOn: DateTime(2026, 9, 20),
+        stage: Stage.customer,
+        createdAt: DateTime(2026, 9, 20, 12).toUtc(),
+      );
+      final team = Activity(
+        id: 'team',
+        personId: 'p1',
+        kind: ActivityKind.stage,
+        happenedOn: DateTime(2026, 9, 25),
+        stage: Stage.team,
+        createdAt: DateTime(2026, 9, 25, 12).toUtc(),
+      );
+      activities.store.addAll([customer, team]);
+      await pumpFormHarness(
+        tester,
+        people: FakePeopleRepository([_claire])..activities = activities,
+        activities: activities,
+        open: (context) => showEditActivity(context, _claire, team),
+        result: (_) {},
+      );
+
+      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<DatePickerDialog>(find.byType(DatePickerDialog))
+            .firstDate,
+        DateTime(2026, 9, 20),
+      );
+    });
+  });
 }

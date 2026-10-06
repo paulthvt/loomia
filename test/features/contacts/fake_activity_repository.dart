@@ -92,7 +92,8 @@ class FakeActivityRepository implements ActivityRepository {
     );
   }
 
-  /// What the trigger does when stage_since moves. Not a call.
+  /// What the trigger does when stage_since moves: the latest stage entry
+  /// goes to [at], kept after the one before it. Not a call.
   void moveLatestStage(String personId, DateTime at) {
     final stages = [
       for (final (index, entry) in store.indexed)
@@ -101,13 +102,17 @@ class FakeActivityRepository implements ActivityRepository {
     ]..sort((a, b) => b.$2.createdAt.compareTo(a.$2.createdAt));
     if (stages.isEmpty) return;
     final (index, latest) = stages.first;
+    final previous = stages.length > 1 ? stages[1].$2.createdAt : null;
+    final moved = previous != null && !at.isAfter(previous)
+        ? previous.add(const Duration(microseconds: 1))
+        : at;
     store[index] = Activity(
       id: latest.id,
       personId: latest.personId,
       kind: latest.kind,
       happenedOn: latest.happenedOn,
       stage: latest.stage,
-      createdAt: at.toUtc(),
+      createdAt: moved.toUtc(),
     );
   }
 
