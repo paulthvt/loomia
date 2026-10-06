@@ -37,23 +37,35 @@ class PeopleRepository {
       });
 
   /// One insert for the whole batch: all of them are saved, or none. Each
-  /// starts at [place].
+  /// starts at [place], in their stage since [stageSince]; null is now.
   Future<List<Person>> addAll(
     List<PersonDraft> drafts, {
     WorkflowPlace? place,
+    DateTime? stageSince,
   }) => guardPeople(() async {
     final rows = await _client
         .from(_table)
         .insert([
           for (final draft in drafts)
-            {...draftToRow(draft), ...placeToRow(place)},
+            {
+              ...draftToRow(draft),
+              ...placeToRow(place),
+              if (stageSince != null)
+                'stage_since': stageSince.toUtc().toIso8601String(),
+            },
         ])
         .select(_columns);
     return rows.map(personFromRow).toList();
   });
 
-  Future<Person> update(Person person) =>
-      _write(person.id, personToRow(person));
+  /// [stageSince] corrects the day the stage began (#179); null keeps it, so
+  /// a stale copy never moves it back.
+  Future<Person> update(Person person, {DateTime? stageSince}) =>
+      _write(person.id, {
+        ...personToRow(person),
+        if (stageSince != null)
+          'stage_since': stageSince.toUtc().toIso8601String(),
+      });
 
   Future<void> delete(String id) =>
       guardPeople(() => _client.from(_table).delete().eq('id', id));

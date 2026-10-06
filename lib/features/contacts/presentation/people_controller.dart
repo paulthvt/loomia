@@ -72,24 +72,28 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     return person;
   }
 
-  /// The import: everyone in one write, on [workflow] like [add].
+  /// The import: everyone in one write, on [workflow] like [add], in their
+  /// stage since [stageSince]; null is now.
   Future<List<Person>> addAll(
     List<PersonDraft> drafts, {
     Workflow? workflow,
     required DateTime today,
+    DateTime? stageSince,
   }) async {
     final added = await _repository.addAll(
       drafts,
       place: workflow == null
           ? null
           : start(workflow, firstDue: firstDueDefault(workflow, today)),
+      stageSince: stageSince,
     );
     _change((people) => [...people, ...added]);
     return added;
   }
 
-  Future<void> save(Person person) async {
-    _replace(await _repository.update(person));
+  /// [stageSince] corrects the day their stage began; null keeps it.
+  Future<void> save(Person person, {DateTime? stageSince}) async {
+    _replace(await _repository.update(person, stageSince: stageSince));
   }
 
   /// Waits for the server, which decides [Person.stageSince] and the status,

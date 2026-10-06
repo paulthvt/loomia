@@ -71,6 +71,31 @@ void main() {
     expect(find.text('2 people imported'), findsOneWidget);
   });
 
+  testWidgets('everyone imported can start their stage on an earlier day', (
+    tester,
+  ) async {
+    final people = await _openImport(
+      tester,
+      FakePhoneContactsRepository([(name: 'Denis', phone: null, email: null)]),
+    );
+
+    await tester.tap(find.text('Denis'));
+    await tester.tap(find.text('Since today'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '03/04/2025');
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(find.text('Since Mar 4, 2025'), findsOneWidget);
+
+    await tester.tap(find.text('Import one person'));
+    await tester.pumpAndSettle();
+
+    final denis = people.store.values.singleWhere((p) => p.name == 'Denis');
+    expect(denis.stageSince, DateTime(2025, 3, 4));
+  });
+
   testWidgets('search narrows the list and keeps what is ticked', (
     tester,
   ) async {

@@ -29,9 +29,10 @@ final phoneContactsProvider = FutureProvider.autoDispose<List<PhoneContact>?>(
   retry: (error, _) => null,
 );
 
-/// Pick people from the phone's contacts and bring them in, all at one stage.
-/// Nobody is ticked to start with; someone who looks already in Loomia says so,
-/// and can still be ticked.
+/// Pick people from the phone's contacts and bring them in, all at one stage,
+/// since today or an earlier day (#179): most are customers or on the team
+/// already. Nobody is ticked to start with; someone who looks already in
+/// Loomia says so, and can still be ticked.
 class ImportContactsPage extends ConsumerStatefulWidget {
   const ImportContactsPage({super.key});
 
@@ -47,6 +48,9 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
   /// apart.
   final Set<int> _selected = {};
   Stage _stage = Stage.prospect;
+
+  /// Null is today: picking is optional, each person can be corrected later.
+  DateTime? _since;
   bool _saving = false;
 
   @override
@@ -90,6 +94,7 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
             ],
             workflow: defaultFor(workflows, _stage),
             today: today(),
+            stageSince: _since,
           );
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.importDone(added.length))),
@@ -225,6 +230,17 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
                     ),
                 ],
               ),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: _pickSince,
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  label: Text(switch (_since) {
+                    final DateTime since => l10n.importSince(since),
+                    null => l10n.importSinceToday,
+                  }),
+                ),
+              ),
               const SizedBox(height: AppSpacing.ms),
               FilledButton(
                 onPressed: count == 0 || _saving
@@ -242,6 +258,14 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _pickSince() async {
+    final now = today();
+    final since = await pickDay(context, initial: _since ?? now, last: now);
+    if (since != null && mounted) {
+      setState(() => _since = since == now ? null : since);
+    }
   }
 
   void _toggle(int index) => setState(

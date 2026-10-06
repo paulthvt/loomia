@@ -88,6 +88,7 @@ class FakePeopleRepository implements PeopleRepository {
   Future<List<Person>> addAll(
     List<PersonDraft> drafts, {
     WorkflowPlace? place,
+    DateTime? stageSince,
   }) async {
     await _record('addAll(${drafts.map((draft) => draft.name).join(', ')})');
     final added = <Person>[];
@@ -96,7 +97,7 @@ class FakePeopleRepository implements PeopleRepository {
         id: 'new-${_next++}',
         name: draft.name.trim(),
         stage: draft.stage,
-        stageSince: DateTime.utc(2026, 9, 28),
+        stageSince: stageSince ?? DateTime.utc(2026, 9, 28),
         phone: draft.phone,
         email: draft.email,
         place: place,
@@ -108,7 +109,7 @@ class FakePeopleRepository implements PeopleRepository {
   }
 
   @override
-  Future<Person> update(Person person) async {
+  Future<Person> update(Person person, {DateTime? stageSince}) async {
     await _record('update(${person.id})');
     // The real update writes neither the stage nor the workflow fields.
     final stored = store[person.id]!;
@@ -116,7 +117,7 @@ class FakePeopleRepository implements PeopleRepository {
       id: person.id,
       name: person.name,
       stage: stored.stage,
-      stageSince: stored.stageSince,
+      stageSince: stageSince ?? stored.stageSince,
       prospectStatus: stored.stage == Stage.prospect
           ? person.prospectStatus
           : null,
