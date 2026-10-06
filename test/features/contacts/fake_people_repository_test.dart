@@ -18,7 +18,7 @@ void main() {
   test('setStage does what the trigger does', () async {
     final people = FakePeopleRepository([marie]);
 
-    final moved = await people.setStage('p1', Stage.customer);
+    final [moved] = await people.setStage(['p1'], Stage.customer);
 
     expect(people.calls, ['setStage(p1, customer)']);
     expect(moved.stage, Stage.customer);
@@ -32,7 +32,7 @@ void main() {
     final activities = FakeActivityRepository();
     final people = FakePeopleRepository([marie])..activities = activities;
 
-    await people.setStage('p1', Stage.team);
+    await people.setStage(['p1'], Stage.team);
 
     expect(activities.store.single.kind, ActivityKind.stage);
     expect(activities.store.single.stage, Stage.team);
@@ -41,7 +41,7 @@ void main() {
 
   test('update keeps the stored stage, as the real update does', () async {
     final people = FakePeopleRepository([marie]);
-    await people.setStage('p1', Stage.customer);
+    await people.setStage(['p1'], Stage.customer);
 
     // A copy read before the move still says prospect.
     final saved = await people.update(

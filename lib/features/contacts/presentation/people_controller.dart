@@ -96,20 +96,28 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     _replace(await _repository.update(person, stageSince: stageSince));
   }
 
-  /// Waits for the server, which decides [Person.stageSince] and the status,
-  /// and writes the history entry that is then reloaded. [follow] travels in
-  /// the same update; null is "Nothing for now". A failure rethrows and
-  /// changes nothing.
-  Future<void> moveTo(Person person, Stage stage, {FollowWith? follow}) async {
-    _replace(
-      await _repository.setStage(person.id, stage, place: _placeFor(follow)),
+  /// Moves all of [people] in one write. Waits for the server, which decides
+  /// [Person.stageSince] and the status, and writes the history entries that
+  /// are then reloaded. [follow] travels in the same update; null is "Nothing
+  /// for now". A failure rethrows and changes nothing.
+  Future<void> moveTo(
+    List<Person> people,
+    Stage stage, {
+    FollowWith? follow,
+  }) async {
+    _replaceAll(
+      await _repository.setStage(_ids(people), stage, place: _placeFor(follow)),
     );
-    if (ref.mounted) ref.invalidate(historyProvider(person.id));
+    if (!ref.mounted) return;
+    for (final person in people) {
+      ref.invalidate(historyProvider(person.id));
+    }
   }
 
-  /// Change workflow; null is "Nothing for now".
-  Future<void> setWorkflow(Person person, FollowWith? follow) async {
-    _replace(await _repository.setPlace(person.id, _placeFor(follow)));
+  /// Change workflow, for all of [people] in one write; null is "Nothing for
+  /// now".
+  Future<void> setWorkflow(List<Person> people, FollowWith? follow) async {
+    _replaceAll(await _repository.setPlace(_ids(people), _placeFor(follow)));
   }
 
   /// Ticks [progress]'s step on [today]: a history entry, and the next step.
@@ -143,10 +151,15 @@ class PeopleController extends AsyncNotifier<List<Person>> {
   static WorkflowPlace? _placeFor(FollowWith? follow) =>
       follow == null ? null : start(follow.workflow, firstDue: follow.firstDue);
 
-  Future<void> remove(String id) async {
-    await _repository.delete(id);
-    _change((people) => [...people.where((other) => other.id != id)]);
+  /// All of [ids] in one write.
+  Future<void> remove(List<String> ids) async {
+    await _repository.delete(ids);
+    _change((people) => [...people.where((other) => !ids.contains(other.id))]);
   }
+
+  static List<String> _ids(List<Person> people) => [
+    for (final person in people) person.id,
+  ];
 
   /// Shown at once, saved behind. A failure puts the previous status back —
   /// unless a newer tap has replaced this one meanwhile — and rethrows.
@@ -166,11 +179,12 @@ class PeopleController extends AsyncNotifier<List<Person>> {
   Person? _find(String id) =>
       state.value?.where((person) => person.id == id).firstOrNull;
 
-  void _replace(Person saved) => _change(
-    (people) => [
-      for (final other in people) other.id == saved.id ? saved : other,
-    ],
-  );
+  void _replace(Person saved) => _replaceAll([saved]);
+
+  void _replaceAll(List<Person> saved) {
+    final byId = {for (final person in saved) person.id: person};
+    _change((people) => [for (final other in people) byId[other.id] ?? other]);
+  }
 
   void _setStatusLocally(String id, ProspectStatus? status) => _change(
     (people) => [

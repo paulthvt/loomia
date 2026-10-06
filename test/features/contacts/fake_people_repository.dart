@@ -147,38 +147,49 @@ class FakePeopleRepository implements PeopleRepository {
   }
 
   @override
-  Future<void> delete(String id) async {
-    await _record('delete($id)');
-    store.remove(id);
+  Future<void> delete(List<String> ids) async {
+    await _record('delete(${ids.join(', ')})');
+    ids.forEach(store.remove);
   }
 
   /// What the database does on a stage change: a new [Person.stageSince], no
   /// status outside prospects, no pause, and an entry in the history.
   @override
-  Future<Person> setStage(
-    String id,
+  Future<List<Person>> setStage(
+    List<String> ids,
     Stage stage, {
     WorkflowPlace? place,
   }) async {
-    await _record('setStage($id, ${stage.name})');
-    final before = store[id]!;
-    final moved = _with(
-      before,
-      stage: stage,
-      stageSince: DateTime.utc(2026, 9, 28),
-      status: before.prospectStatus,
-      place: place,
-      pausedAt: null,
-    );
-    activities?.recordStage(id, stage);
+    await _record('setStage(${ids.join(', ')}, ${stage.name})');
+    final moved = <Person>[];
+    for (final id in ids) {
+      final before = store[id];
+      if (before == null) continue;
+      moved.add(
+        _with(
+          before,
+          stage: stage,
+          stageSince: DateTime.utc(2026, 9, 28),
+          status: before.prospectStatus,
+          place: place,
+          pausedAt: null,
+        ),
+      );
+      activities?.recordStage(id, stage);
+    }
     return moved;
   }
 
   @override
-  Future<Person> setPlace(String id, WorkflowPlace? place) async {
-    await _record('setPlace($id, ${place?.workflowId ?? 'none'})');
-    final before = store[id]!;
-    return _with(before, place: place, pausedAt: null);
+  Future<List<Person>> setPlace(List<String> ids, WorkflowPlace? place) async {
+    await _record(
+      'setPlace(${ids.join(', ')}, ${place?.workflowId ?? 'none'})',
+    );
+    return [
+      for (final id in ids)
+        if (store[id] case final before?)
+          _with(before, place: place, pausedAt: null),
+    ];
   }
 
   @override

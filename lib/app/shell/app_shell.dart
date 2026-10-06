@@ -7,6 +7,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_wordmark.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -14,12 +15,13 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// Desktop: the 248px sidebar. Tablet: the same sidebar collapsed to a 72px
 /// icon rail. Mobile: a bottom bar with the destinations, except on Settings,
-/// which is reached from [AccountButton] and has its own back button. Goals
-/// joins when it exists, never as a placeholder.
+/// which is reached from [AccountButton] and has its own back button, and on
+/// Contacts while picking several people, whose actions take the bar's place.
+/// Goals joins when it exists, never as a placeholder.
 ///
 /// ponytail: the design moves these edges to 840px (rail/bottom bar) and 1100px
 /// (rail/sidebar); size classes are used until the difference is visible.
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({required this.location, required this.child, super.key});
 
   /// The current path, to mark the active destination.
@@ -27,9 +29,12 @@ class AppShell extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final size = context.screenSize;
     if (!size.usesSideNavigation) {
+      final picking =
+          location.startsWith(Routes.contacts) &&
+          ref.watch(contactsPickingProvider);
       if (location.startsWith(Routes.settings)) return child;
       final l10n = AppLocalizations.of(context);
       const tabs = [Routes.today, Routes.contacts, Routes.team, Routes.goals];
@@ -40,29 +45,32 @@ class AppShell extends StatelessWidget {
       );
       return Scaffold(
         body: child,
-        bottomNavigationBar: NavigationBar(
-          // A pushed page outside the tabs keeps Today marked, as before.
-          selectedIndex: selected < 0 ? 0 : selected,
-          onDestinationSelected: (index) => context.go(tabs[index]),
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.wb_sunny_outlined),
-              label: l10n.navToday,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.people_outline),
-              label: l10n.navContacts,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.diversity_3_outlined),
-              label: l10n.navTeam,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.flag_outlined),
-              label: l10n.navGoals,
-            ),
-          ],
-        ),
+        // Null rather than another tree: the Contacts list keeps its state.
+        bottomNavigationBar: picking
+            ? null
+            : NavigationBar(
+                // A pushed page outside the tabs keeps Today marked, as before.
+                selectedIndex: selected < 0 ? 0 : selected,
+                onDestinationSelected: (index) => context.go(tabs[index]),
+                destinations: [
+                  NavigationDestination(
+                    icon: const Icon(Icons.wb_sunny_outlined),
+                    label: l10n.navToday,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.people_outline),
+                    label: l10n.navContacts,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.diversity_3_outlined),
+                    label: l10n.navTeam,
+                  ),
+                  NavigationDestination(
+                    icon: const Icon(Icons.flag_outlined),
+                    label: l10n.navGoals,
+                  ),
+                ],
+              ),
       );
     }
     return Row(

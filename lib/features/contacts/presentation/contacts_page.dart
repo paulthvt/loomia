@@ -10,7 +10,10 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/add_person_sheet.dart';
+import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
+import 'package:loomia/features/contacts/presentation/change_workflow_sheet.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
@@ -44,8 +47,8 @@ Future<void> refreshPeople(BuildContext context, WidgetRef ref) async {
 }
 
 /// Runs a write on the signed-in book; a failure is a SnackBar, and the book
-/// stays as it was.
-Future<void> writePeople(
+/// stays as it was. Completes with whether it succeeded.
+Future<bool> writePeople(
   BuildContext context,
   WidgetRef ref,
   Future<void> Function(PeopleController people) write,
@@ -56,10 +59,28 @@ Future<void> writePeople(
     await write(
       ref.read(peopleProvider(ref.read(accountProvider)?.email).notifier),
     );
+    return true;
   } on PeopleFailure catch (failure) {
     messenger.showSnackBar(
       SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
     );
+    return false;
+  }
+}
+
+/// Whether several people are being picked on Contacts: on a phone the bottom
+/// navigation gives way to what can be done with them (#180).
+final contactsPickingProvider = NotifierProvider<ContactsPicking, bool>(
+  ContactsPicking.new,
+);
+
+class ContactsPicking extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Also called once the list is gone, when this may be disposed.
+  void set(bool picking) {
+    if (ref.mounted) state = picking;
   }
 }
 
@@ -81,10 +102,14 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
 
   late final AppLifecycleListener _lifecycle;
 
+  /// Read once: the list says the picking ended after this is disposed.
+  late final ContactsPicking _picking;
+
   @override
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(onResume: _onResume);
+    _picking = ref.read(contactsPickingProvider.notifier);
   }
 
   @override
@@ -100,6 +125,19 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
     final people = peopleProvider(ref.read(accountProvider)?.email);
     if (!ref.read(people.notifier).isStaleAt(DateTime.now())) return;
     ref.refresh(people.future).ignore();
+  }
+
+  /// The person open beside the list goes first, so the pane never shows
+  /// them missing.
+  Future<bool> _delete(List<Person> people) {
+    if (people.any((person) => person.id == widget.selectedId)) {
+      context.go(Routes.contacts);
+    }
+    return writePeople(
+      context,
+      ref,
+      (book) => book.remove([for (final person in people) person.id]),
+    );
   }
 
   Future<void> _add() async {
@@ -128,8 +166,12 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
             ? null
             : () => unawaited(context.push(Routes.importContacts)),
         onRefresh: () => refreshPeople(context, ref),
+        onMove: (people, stage) => showChangeStage(context, people, stage),
+        onChangeWorkflow: (people) => showChangeWorkflow(context, people),
+        onDelete: _delete,
         selectedId: widget.selectedId,
         showRefresh: sideNavigation,
+        onPickingChanged: _picking.set,
         accountAction: sideNavigation ? null : const AccountButton(),
       );
     } else if (people.hasError) {

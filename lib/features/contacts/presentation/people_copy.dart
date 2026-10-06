@@ -65,6 +65,14 @@ String movedTitle(AppLocalizations l10n, String name, Stage stage) =>
       Stage.team => l10n.changeStageToTeam(name),
     };
 
+/// The same, for [count] people: "These 3 are now customers".
+String movedManyTitle(AppLocalizations l10n, int count, Stage stage) =>
+    switch (stage) {
+      Stage.prospect => l10n.changeStageManyToProspect(count),
+      Stage.customer => l10n.changeStageManyToCustomer(count),
+      Stage.team => l10n.changeStageManyToTeam(count),
+    };
+
 /// Null for stage entries, which the user never picks.
 String? kindLabel(AppLocalizations l10n, ActivityKind kind) => switch (kind) {
   ActivityKind.note => l10n.activityKindNote,

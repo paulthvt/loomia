@@ -15,21 +15,24 @@ import 'package:loomia/features/workflows/presentation/workflows_controller.dart
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Moves [person] to [stage] once confirmed: a sheet on mobile, a dialog
-/// elsewhere. Closes once the move is saved.
-Future<void> showChangeStage(
+/// Moves [people] to [stage] once confirmed, in one write: a sheet on mobile,
+/// a dialog elsewhere. Closes once the move is saved, and completes with
+/// whether it was. None of them may be in [stage] already.
+Future<bool> showChangeStage(
   BuildContext context,
-  Person person,
+  List<Person> people,
   Stage stage,
-) => LoomiaDialog.show<void>(
-  context,
-  (_) => _ChangeStage(person: person, stage: stage),
-);
+) async =>
+    await LoomiaDialog.show<bool>(
+      context,
+      (_) => _ChangeStage(people: people, stage: stage),
+    ) ??
+    false;
 
 class _ChangeStage extends ConsumerStatefulWidget {
-  const _ChangeStage({required this.person, required this.stage});
+  const _ChangeStage({required this.people, required this.stage});
 
-  final Person person;
+  final List<Person> people;
   final Stage stage;
 
   @override
@@ -59,8 +62,8 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
     try {
       await ref
           .read(peopleProvider(ref.read(accountProvider)?.email).notifier)
-          .moveTo(widget.person, widget.stage, follow: follow);
-      if (mounted) Navigator.pop(context);
+          .moveTo(widget.people, widget.stage, follow: follow);
+      if (mounted) Navigator.pop(context, true);
     } on PeopleFailure catch (failure) {
       if (mounted) {
         setState(() {
@@ -80,20 +83,32 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
     final workflows = workflowsAsync.value ?? const [];
     final now = today();
     final follow = _follow(workflows, now);
-    final ending = findWorkflow(workflows, widget.person.place?.workflowId);
-    final onStep = progressOf(widget.person, ending) is OnStep;
+    final people = widget.people;
+    final ending = [
+      for (final person in people)
+        if (findWorkflow(workflows, person.place?.workflowId)
+            case final workflow? when progressOf(person, workflow) is OnStep)
+          workflow,
+    ];
     // The database clears a prospect's status when they leave prospects.
     final clearsStatus =
-        widget.person.prospectStatus != null && widget.stage != Stage.prospect;
+        widget.stage != Stage.prospect &&
+        people.any((person) => person.prospectStatus != null);
     final body = clearsStatus
         ? l10n.changeStageBodyCleared
         : l10n.changeStageBody;
 
     return LoomiaDialog(
-      title: movedTitle(l10n, firstName(widget.person), widget.stage),
-      body: ending != null && onStep
-          ? '$body ${l10n.changeStageWorkflowEnds(ending.name)}'
-          : body,
+      title: switch (people) {
+        [final person] => movedTitle(l10n, firstName(person), widget.stage),
+        _ => movedManyTitle(l10n, people.length, widget.stage),
+      },
+      body: switch (ending) {
+        [] => body,
+        [final workflow] when people.length == 1 =>
+          '$body ${l10n.changeStageWorkflowEnds(workflow.name)}',
+        _ => '$body ${l10n.changeStageWorkflowsEnd}',
+      },
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

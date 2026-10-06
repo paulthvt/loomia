@@ -115,8 +115,8 @@ class ContactPane extends ConsumerWidget {
       onEdit: (part) => unawaited(showEditPerson(context, person, part)),
       onDelete: () => unawaited(_delete(context, ref)),
       onLog: () => unawaited(showLogActivity(context, person)),
-      onMove: (stage) => unawaited(showChangeStage(context, person, stage)),
-      onChangeWorkflow: () => unawaited(showChangeWorkflow(context, person)),
+      onMove: (stage) => unawaited(showChangeStage(context, [person], stage)),
+      onChangeWorkflow: () => unawaited(showChangeWorkflow(context, [person])),
       onPause: () => unawaited(
         writePeople(context, ref, (people) => people.pause(person)),
       ),
@@ -162,7 +162,7 @@ class ContactPane extends ConsumerWidget {
       await leaving?.completed;
     }
     try {
-      await controller.remove(id);
+      await controller.remove([id]);
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),

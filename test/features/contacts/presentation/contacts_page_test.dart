@@ -525,6 +525,65 @@ void main() {
     expect(find.text('Marie Dupont'), findsNothing);
   });
 
+  testWidgets('several picked move to the team together', (tester) async {
+    await openContacts(tester);
+
+    await tester.longPress(find.text('Marie Dupont'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lucas Martin'));
+    await tester.pumpAndSettle();
+    // The picking's actions take the bottom navigation's place.
+    expect(find.byType(NavigationBar), findsNothing);
+    await tester.tap(find.text('Move to…'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Team').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Move to team'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls, contains('setStage(p2, p1, team)'));
+    expect(people.store['p1']!.stage, Stage.team);
+    expect(people.store['p2']!.stage, Stage.team);
+    expect(find.text('2 selected'), findsNothing);
+    expect(find.byType(NavigationBar), findsOneWidget);
+  });
+
+  testWidgets('back ends the picking and brings the navigation back', (
+    tester,
+  ) async {
+    await openContacts(tester);
+
+    await tester.longPress(find.text('Marie Dupont'));
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationBar), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 selected'), findsNothing);
+    expect(find.byType(NavigationBar), findsOneWidget);
+  });
+
+  testWidgets('desktop: deleting the open person empties the pane', (
+    tester,
+  ) async {
+    await openContacts(tester, size: _desktop);
+    await tester.tap(find.text('Marie Dupont'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Select'));
+    await tester.pump();
+    await tester.tap(find.text('Select all'));
+    await tester.pump();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls, contains('delete(p2, p1)'));
+    expect(find.text('Pick someone'), findsOneWidget);
+    expect(find.byType(ContactDetails), findsNothing);
+  });
+
   testWidgets('desktop: right-click deletes an entry in the split', (
     tester,
   ) async {
