@@ -1,0 +1,12 @@
+// The web app on Cloudflare: a Worker with static assets only, no code.
+// release.yaml uploads each release as a preview version, promote.yaml makes it
+// live. Custom domain is set in the dashboard. Setup: README.md → Web.
+{
+  "name": "loomia",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "build/web",
+    // go_router owns every path, so unknown ones serve index.html.
+    "not_found_handling": "single-page-application"
+  }
+}

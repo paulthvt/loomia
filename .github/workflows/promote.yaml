@@ -1,7 +1,8 @@
 # Promote — ship a build already on Play internal testing to a wider track.
 #
 # No rebuild: the exact AAB testers had moves to the target track. Reaching
-# production also turns the GitHub pre-release into the latest release.
+# production also makes the web version live and turns the GitHub pre-release
+# into the latest release.
 #
 # Promote only from here, never from the Play Console, or GitHub pre-release
 # flags stop matching what users actually get.
@@ -76,6 +77,21 @@ jobs:
               releaseNotes: [$notes[0] | to_entries[] | {language: .key, text: .value}]}]}' \
             | api -X PUT "$API/edits/$edit/tracks/$TRACK" -d @- > /dev/null
           api -X POST "$API/edits/$edit:commit" > /dev/null
+
+      # The web version release.yaml uploaded for this tag, no rebuild.
+      # ponytail: versions list only sees the 10 latest, so promote within 10 releases.
+      - name: Make the web version live
+        if: inputs.track == 'production'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          wrangler() { npx --yes wrangler@4.147.0 "$@"; }
+          id=$(wrangler versions list --name loomia --json \
+            | jq -r --arg tag "$TAG" 'map(select(.annotations["workers/tag"] == $tag)) | last | .id // empty')
+          [ -n "$id" ] || { echo "::error::no web version tagged $TAG on Cloudflare"; exit 1; }
+          wrangler versions deploy "$id@100%" --name loomia --message "$TAG" --yes
 
       - name: Mark the GitHub release final
         if: inputs.track == 'production'
