@@ -63,6 +63,20 @@ Person _marieOn(num position, {DateTime? pausedAt}) => Person(
   pausedAt: pausedAt,
 );
 
+/// The custom actions on [finder]'s semantics node, a tap hint included.
+List<CustomSemanticsAction> _customActions(
+  WidgetTester tester,
+  Finder finder,
+) => [
+  for (final id
+      in tester
+              .getSemantics(finder)
+              .getSemanticsData()
+              .customSemanticsActionIds ??
+          const <int>[])
+    CustomSemanticsAction.getAction(id)!,
+];
+
 void main() {
   late FakePeopleRepository people;
   late FakeActivityRepository activities;
@@ -493,6 +507,27 @@ void main() {
     expect(save, findsOneWidget);
   });
 
+  testWidgets('screen readers hear that a tap edits', (tester) async {
+    final semantics = tester.ensureSemantics();
+    activities.store.add(_note('a1', 'Ordered the cream', 10));
+    activities.recordStage('p1', Stage.customer);
+    await openMarie(tester);
+
+    for (final title in ['Ordered the cream', 'Became a customer']) {
+      await reveal(tester, find.text(title));
+      expect(
+        _customActions(tester, find.text(title)),
+        contains(
+          const CustomSemanticsAction.overridingAction(
+            hint: 'Edit',
+            action: SemanticsAction.tap,
+          ),
+        ),
+      );
+    }
+    semantics.dispose();
+  });
+
   testWidgets('screen readers get a Delete action on an entry', (tester) async {
     final semantics = tester.ensureSemantics();
     activities.store.add(_note('a1', 'Ordered the cream', 10));
@@ -500,10 +535,8 @@ void main() {
     await reveal(tester, find.text('Ordered the cream'));
 
     expect(
-      tester.getSemantics(find.text('Ordered the cream')),
-      isSemantics(
-        customActions: [const CustomSemanticsAction(label: 'Delete')],
-      ),
+      _customActions(tester, find.text('Ordered the cream')),
+      contains(const CustomSemanticsAction(label: 'Delete')),
     );
     semantics.dispose();
   });

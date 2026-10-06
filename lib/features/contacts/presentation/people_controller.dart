@@ -94,6 +94,10 @@ class PeopleController extends AsyncNotifier<List<Person>> {
   /// [stageSince] corrects the day their stage began; null keeps it.
   Future<void> save(Person person, {DateTime? stageSince}) async {
     _replace(await _repository.update(person, stageSince: stageSince));
+    // The database moved the latest stage entry with it.
+    if (stageSince != null && ref.mounted) {
+      ref.invalidate(historyProvider(person.id));
+    }
   }
 
   /// Moves all of [people] in one write. Waits for the server, which decides

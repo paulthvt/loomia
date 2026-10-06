@@ -87,11 +87,13 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
   bool get _stage => _editing?.kind == ActivityKind.stage;
 
   Future<void> _pickDay() async {
+    final now = today();
     final day = await pickDay(
       context,
       initial: _day,
       first: _stage ? _previousStageDay() : null,
-      last: today(),
+      // A day saved on a device ahead of this one stays reachable.
+      last: _day.isAfter(now) ? _day : now,
     );
     if (day != null && mounted) setState(() => _day = day);
   }

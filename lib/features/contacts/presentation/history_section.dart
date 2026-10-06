@@ -165,20 +165,23 @@ class _Entry extends StatelessWidget {
     final onDelete = this.onDelete;
     final onTap = this.onTap;
     if (onDelete == null && onTap == null) return item;
-    final gestures = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      onLongPress: onDelete,
-      onSecondaryTap: onDelete,
-      child: item,
-    );
-    if (onDelete == null) return gestures;
     return Semantics(
       container: true,
-      customSemanticsActions: {
-        CustomSemanticsAction(label: l10n.historyDeleteConfirm): onDelete,
-      },
-      child: gestures,
+      onTap: onTap,
+      // "Double tap to edit", not a bare "double tap to activate".
+      onTapHint: onTap == null ? null : l10n.editActivityTitle,
+      customSemanticsActions: onDelete == null
+          ? null
+          : {CustomSemanticsAction(label: l10n.historyDeleteConfirm): onDelete},
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        // The Semantics above speaks for it.
+        excludeFromSemantics: true,
+        onTap: onTap,
+        onLongPress: onDelete,
+        onSecondaryTap: onDelete,
+        child: item,
+      ),
     );
   }
 }

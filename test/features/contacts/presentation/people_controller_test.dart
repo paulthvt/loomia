@@ -101,6 +101,26 @@ void main() {
     expect(_names(world.container), ['Anne', 'Bruno', 'Chloé']);
   });
 
+  test(
+    'a corrected since re-reads the history, which the database moved',
+    () async {
+      final world = _world([_person('1', 'Anne')]);
+      await world.container.read(_book(world.container).future);
+      world.container.listen(historyProvider('1'), (_, _) {});
+      await world.container.read(historyProvider('1').future);
+
+      await world.container
+          .read(_book(world.container).notifier)
+          .save(_person('1', 'Anne'), stageSince: DateTime(2025, 6));
+      await world.container.read(historyProvider('1').future);
+
+      expect(
+        world.activities.calls.where((call) => call == 'list(1)'),
+        hasLength(2),
+      );
+    },
+  );
+
   test('save replaces the person', () async {
     final world = _world([_person('1', 'Anne')]);
     await world.container.read(_book(world.container).future);

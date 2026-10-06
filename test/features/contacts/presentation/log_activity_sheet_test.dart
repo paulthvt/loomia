@@ -420,6 +420,28 @@ void main() {
       expect(activities.store.single.amount, 55.5);
     });
 
+    testWidgets("a day after the device's today still opens the calendar", (
+      tester,
+    ) async {
+      // Logged on a device a day ahead (another time zone, a clock change).
+      final ahead = _today().add(const Duration(days: 1));
+      final note = Activity(
+        id: 'a1',
+        personId: 'p1',
+        kind: ActivityKind.note,
+        happenedOn: ahead,
+        text: 'Note',
+        createdAt: DateTime.utc(2026, 9, 10, 12),
+      );
+      activities.store.add(note);
+      await openEdit(tester, note);
+
+      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+    });
+
     testWidgets('a step entry saves its new text', (tester) async {
       final step = Activity(
         id: 'a1',
