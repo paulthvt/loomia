@@ -123,10 +123,12 @@ minutes, never a percentage of a target.
 ### 12. ActionItem
 *Purpose:* the unit of Today — a suggestion, not a task.
 *Anatomy:* radius-16 card, 1px hairline · Avatar 40 · name (`title`) · reason
-(`body-sm`) · optional chip · trailing IconButton.
+(`body-sm`) · optional chip · trailing resolve ring (28px empty ring with a faint
+check, 48px touch target; a bare check read as a status, not a button — #190).
 *Props:* `name`, `reason`, `showMeta` (+ nested avatar initials and chip label).
-*States:* pressed = whole row opens the contact; trailing button resolves in one
-tap; resolving collapses the row over 240ms.
+*States:* pressed = whole row opens the contact; the ring resolves in one tap and
+stays filled (primary, white check) while the tick saves; resolving collapses the
+row over 240ms.
 *Rules:* max ~5 on Today (principle #3). The reason is mandatory — it is what
 makes the item an offer instead of a demand (principle #4).
 

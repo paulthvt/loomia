@@ -20,6 +20,38 @@ abstract final class AppTheme {
     );
   }
 
+  /// The resolve ring of an action item, for an `IconButton` with
+  /// `isSelected`: an empty ring that reads "tick me", filled once ticked
+  /// (#190). A bare check read as a status, not a button. Selected stays filled
+  /// while disabled — that is the tick in flight.
+  static ButtonStyle resolveRing(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
+    return ButtonStyle(
+      fixedSize: const WidgetStatePropertyAll(Size.square(28)),
+      minimumSize: const WidgetStatePropertyAll(Size.square(28)),
+      padding: const WidgetStatePropertyAll(EdgeInsets.zero),
+      iconSize: const WidgetStatePropertyAll(18),
+      // The ring is small; the touch target is not.
+      tapTargetSize: MaterialTapTargetSize.padded,
+      shape: const WidgetStatePropertyAll(CircleBorder()),
+      side: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? BorderSide.none
+            : BorderSide(color: colors.textMuted, width: 2),
+      ),
+      backgroundColor: WidgetStateProperty.resolveWith(
+        (states) =>
+            states.contains(WidgetState.selected) ? scheme.primary : null,
+      ),
+      foregroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? scheme.onPrimary
+            : colors.textMuted.withValues(alpha: 0.45),
+      ),
+    );
+  }
+
   static ThemeData _build(ColorScheme scheme, LoomiaColors colors) {
     final text = AppTypography.textTheme(scheme);
     final pill = RoundedRectangleBorder(

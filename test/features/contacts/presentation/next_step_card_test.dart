@@ -102,12 +102,13 @@ void main() {
     expect(find.text('3 days late — Keep it short'), findsOneWidget);
   });
 
-  testWidgets('busy: no tick button, so a second tap can\'t skip a step', (
+  testWidgets('busy: the ring stays filled and takes no second tap', (
     tester,
   ) async {
     await _pump(tester, onStep(2, _today), busy: true);
 
-    expect(find.byType(IconButton), findsNothing);
+    final ring = tester.widget<IconButton>(find.byType(IconButton));
+    expect((ring.isSelected, ring.onPressed), (true, null));
   });
 
   testWidgets('a prospect done: how did it end, two ways on', (tester) async {

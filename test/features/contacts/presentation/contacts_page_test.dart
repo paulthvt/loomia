@@ -717,7 +717,7 @@ void main() {
     expect(people.calls, contains('completeStep(p1, samples-1)'));
   });
 
-  testWidgets('a tick in flight hides the button: one step, not two', (
+  testWidgets('a tick in flight takes no second tap: one step, not two', (
     tester,
   ) async {
     people.store['p1'] = _marieOn(1);
@@ -726,7 +726,8 @@ void main() {
 
     await tester.tap(find.byTooltip(markFirst));
     await tester.pump();
-    expect(find.byTooltip(markFirst), findsNothing);
+    await tester.tap(find.byTooltip(markFirst));
+    await tester.pump();
     people.gate!.complete();
     people.gate = null;
     await tester.pumpAndSettle();

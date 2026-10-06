@@ -41,8 +41,8 @@ class TodayPage extends ConsumerStatefulWidget {
 }
 
 class _TodayPageState extends ConsumerState<TodayPage> {
-  /// People whose tick is in flight: their button is gone, so a second tap
-  /// can't tick the next step too.
+  /// People whose tick is in flight: their ring stays filled and takes no
+  /// tap, so a second tap can't tick the next step too.
   final Set<String> _busy = {};
 
   Future<void> _tick(Due due) async {
@@ -364,9 +364,8 @@ class _TodayViewState extends State<TodayView> {
           ? DateChip(dueLabel(l10n, step.due, day))
           : null,
       onOpen: () => widget.onOpen(person),
-      onResolve: widget.busy.contains(person.id)
-          ? null
-          : () => widget.onTick(due),
+      onResolve: () => widget.onTick(due),
+      resolved: widget.busy.contains(person.id),
       resolveLabel: l10n.nextStepMarkDone(step.step.label),
     );
   }
