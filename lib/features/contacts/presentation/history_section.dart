@@ -11,6 +11,7 @@ import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
+import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -51,6 +52,11 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
     }
   }
 
+  Future<void> _edit(Activity activity) async {
+    final delete = await showEditActivity(context, widget.person, activity);
+    if (delete == true && mounted) await _delete(activity);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -60,6 +66,10 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
     final history = ref.watch(provider);
     final entries = history.value;
     final shown = _expanded ? entries : entries?.take(_preview).toList();
+    // Only the current stage's entry is its "since"; older ones stay.
+    final latestStage = entries
+        ?.where((entry) => entry.kind == ActivityKind.stage)
+        .firstOrNull;
     final today = DateTime.now();
     final model =
         ref.watch(accountProvider)?.businessModel ?? BusinessModel.other;
@@ -102,6 +112,10 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
               today: today,
               model: model,
               last: index == shown.length - 1,
+              onTap:
+                  activity.kind == ActivityKind.stage && activity != latestStage
+                  ? null
+                  : () => _edit(activity),
               onDelete: activity.kind == ActivityKind.stage
                   ? null
                   : () => _delete(activity),
@@ -120,14 +134,16 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
   }
 }
 
-/// One entry. Long-press, right-click, or the screen reader's Delete action
-/// removes it; stage entries have none.
+/// One entry. Tap edits it. Long-press, right-click, or the screen reader's
+/// Delete action removes it; stage entries can't be removed, and only the
+/// latest opens.
 class _Entry extends StatelessWidget {
   const _Entry({
     required this.activity,
     required this.today,
     required this.model,
     required this.last,
+    required this.onTap,
     required this.onDelete,
   });
 
@@ -135,6 +151,7 @@ class _Entry extends StatelessWidget {
   final DateTime today;
   final BusinessModel model;
   final bool last;
+  final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
   @override
@@ -146,18 +163,22 @@ class _Entry extends StatelessWidget {
       showRailLine: !last,
     );
     final onDelete = this.onDelete;
-    if (onDelete == null) return item;
+    final onTap = this.onTap;
+    if (onDelete == null && onTap == null) return item;
+    final gestures = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      onLongPress: onDelete,
+      onSecondaryTap: onDelete,
+      child: item,
+    );
+    if (onDelete == null) return gestures;
     return Semantics(
       container: true,
       customSemanticsActions: {
         CustomSemanticsAction(label: l10n.historyDeleteConfirm): onDelete,
       },
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onLongPress: onDelete,
-        onSecondaryTap: onDelete,
-        child: item,
-      ),
+      child: gestures,
     );
   }
 }

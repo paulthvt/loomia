@@ -428,6 +428,71 @@ void main() {
     expect(find.text('Delete this entry?'), findsNothing);
   });
 
+  testWidgets('tapping an entry edits it', (tester) async {
+    activities.store.add(_note('a1', 'Ordered the cream', 10));
+    await openMarie(tester);
+
+    await reveal(tester, find.text('Ordered the cream'));
+    await tester.tap(find.text('Ordered the cream'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(FilledButton, 'Save'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Ordered the cream'),
+      'Ordered the cream and the soap',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(activities.calls, contains('update(a1)'));
+    expect(find.text('Ordered the cream and the soap'), findsOneWidget);
+  });
+
+  testWidgets('Delete in the edit sheet confirms, then deletes', (
+    tester,
+  ) async {
+    activities.store.add(_note('a1', 'Ordered the cream', 10));
+    await openMarie(tester);
+
+    await reveal(tester, find.text('Ordered the cream'));
+    await tester.tap(find.text('Ordered the cream'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete this entry?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(activities.calls, contains('delete(a1)'));
+    expect(find.text('Ordered the cream'), findsNothing);
+  });
+
+  testWidgets('only the latest stage entry opens', (tester) async {
+    Activity stage(String id, Stage stage, int day) => Activity(
+      id: id,
+      personId: 'p1',
+      kind: ActivityKind.stage,
+      happenedOn: DateTime(2026, 9, day),
+      stage: stage,
+      createdAt: DateTime.utc(2026, 9, day, 12),
+    );
+    activities.store.addAll([
+      stage('s1', Stage.customer, 20),
+      stage('s2', Stage.prospect, 25),
+    ]);
+    await openMarie(tester);
+    final save = find.widgetWithText(FilledButton, 'Save');
+
+    await reveal(tester, find.text('Became a customer'));
+    await tester.tap(find.text('Became a customer'));
+    await tester.pumpAndSettle();
+    expect(save, findsNothing);
+
+    await reveal(tester, find.text('Back to prospects'));
+    await tester.tap(find.text('Back to prospects'));
+    await tester.pumpAndSettle();
+    expect(save, findsOneWidget);
+  });
+
   testWidgets('screen readers get a Delete action on an entry', (tester) async {
     final semantics = tester.ensureSemantics();
     activities.store.add(_note('a1', 'Ordered the cream', 10));
