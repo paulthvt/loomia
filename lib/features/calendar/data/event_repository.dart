@@ -14,11 +14,14 @@ class EventRepository {
 
   static const String _table = 'event';
 
+  /// Every column, and who is invited.
+  static const String _columns = '*, event_attendee(person_id, came)';
+
   /// Every event, earliest first.
   // ponytail: loads every event; read a month at a time (the starts_at
   // index is there) once someone has years of them.
   Future<List<CalendarEvent>> list() => guardPeople(() async {
-    final rows = await _client.from(_table).select().order('starts_at');
+    final rows = await _client.from(_table).select(_columns).order('starts_at');
     return rows.map(eventFromRow).toList();
   });
 
@@ -26,7 +29,7 @@ class EventRepository {
     final row = await _client
         .from(_table)
         .insert(draftToEventRow(draft))
-        .select()
+        .select(_columns)
         .single();
     return eventFromRow(row);
   });
@@ -37,13 +40,47 @@ class EventRepository {
             .from(_table)
             .update(draftToEventRow(draft))
             .eq('id', id)
-            .select()
+            .select(_columns)
             .single();
         return eventFromRow(row);
       });
 
   Future<void> remove(String id) =>
       guardPeople(() => _client.from(_table).delete().eq('id', id));
+
+  Future<void> invite(String eventId, Iterable<String> personIds) =>
+      guardPeople(
+        () => _client.from('event_attendee').insert([
+          for (final personId in personIds)
+            {'event_id': eventId, 'person_id': personId},
+        ]),
+      );
+
+  Future<void> uninvite(String eventId, String personId) => guardPeople(
+    () => _client
+        .from('event_attendee')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('person_id', personId),
+  );
+
+  /// Who was there, an Event entry in each of their histories on [today],
+  /// and the event done, in one transaction. An event already done, or an
+  /// id that isn't invited, is refused.
+  Future<void> markDone(
+    String eventId,
+    Iterable<String> came,
+    DateTime today,
+  ) => guardPeople(
+    () => _client.rpc<Object?>(
+      'mark_event_done',
+      params: {
+        'p_event': eventId,
+        'p_came': came.toList(),
+        'p_today': dayColumn(today),
+      },
+    ),
+  );
 }
 
 final eventRepositoryProvider = Provider<EventRepository>(
@@ -66,6 +103,17 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
   place: _text(row['place']),
   link: _text(row['link']),
   notes: _text(row['notes']),
+  doneAt: switch (row['done_at']) {
+    final String at => DateTime.parse(at),
+    _ => null,
+  },
+  attendees: [
+    for (final attendee in (row['event_attendee'] as List?) ?? const [])
+      (
+        personId: (attendee as Map<String, dynamic>)['person_id'] as String,
+        came: attendee['came'] as bool,
+      ),
+  ],
 );
 
 Map<String, Object?> draftToEventRow(EventDraft draft) => {

@@ -798,6 +798,10 @@
   "@activityKindStep": {
     "description": "Kind of history entry: a workflow step the user marked done. The entry's title is the step's name."
   },
+  "activityKindEvent": "Event",
+  "@activityKindEvent": {
+    "description": "Kind of history entry: the person was at one of the user's events (a workshop, a training). The entry's title is the event's title."
+  },
   "logWhen": "When",
   "@logWhen": {
     "description": "Label of the day field in Log something."

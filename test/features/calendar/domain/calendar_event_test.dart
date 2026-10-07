@@ -77,4 +77,29 @@ void main() {
       'query': 'Studio Lumière, Lyon',
     });
   });
+
+  group('canMarkDone', () {
+    final starts = DateTime(2026, 10, 8, 19);
+    CalendarEvent event({
+      List<Attendee> attendees = const [(personId: 'p1', came: false)],
+      DateTime? doneAt,
+    }) => CalendarEvent(
+      id: 'e1',
+      title: 'Workshop',
+      startsAt: starts,
+      attendees: attendees,
+      doneAt: doneAt,
+    );
+
+    test('once it has started, with someone invited', () {
+      expect(event().canMarkDone(starts), isTrue);
+      expect(event().canMarkDone(DateTime(2026, 10, 9)), isTrue);
+    });
+
+    test('not before it starts, not with nobody, not twice', () {
+      expect(event().canMarkDone(DateTime(2026, 10, 8, 18, 59)), isFalse);
+      expect(event(attendees: const []).canMarkDone(starts), isFalse);
+      expect(event(doneAt: starts).canMarkDone(starts), isFalse);
+    });
+  });
 }

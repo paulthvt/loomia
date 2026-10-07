@@ -1,3 +1,7 @@
+/// Someone invited to an event, and whether they were there once it is
+/// marked done.
+typedef Attendee = ({String personId, bool came});
+
 /// Something on the calendar: a workshop, a training. [startsAt] and
 /// [endsAt] are instants; the calendar reads them in the device's time zone.
 class CalendarEvent {
@@ -9,6 +13,8 @@ class CalendarEvent {
     this.place,
     this.link,
     this.notes,
+    this.attendees = const [],
+    this.doneAt,
   });
 
   final String id;
@@ -24,6 +30,22 @@ class CalendarEvent {
   /// An http(s) address, for an online event.
   final String? link;
   final String? notes;
+
+  /// Who is invited, in no order: screens sort them by name.
+  final List<Attendee> attendees;
+
+  /// When "Mark who was there" was done. From then on attendance is history.
+  final DateTime? doneAt;
+
+  bool get done => doneAt != null;
+
+  /// How many were there. Meaningful once [done].
+  int get cameCount => attendees.where((attendee) => attendee.came).length;
+
+  /// "Mark who was there" is offered from the start, until it is done, and
+  /// only with someone to mark.
+  bool canMarkDone(DateTime now) =>
+      !done && attendees.isNotEmpty && !startsAt.isAfter(now);
 
   /// The local calendar day it starts on, as local midnight.
   DateTime get day {
