@@ -3,12 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
-import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
-import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
@@ -206,18 +204,15 @@ void main() {
       eventWorkflows: eventWorkflows,
     );
 
-    // Create workflow directly and navigate to it
-    final created = await eventWorkflows.create('Training');
-    // Invalidate the provider so it sees the new workflow (in real usage,
-    // editEventWorkflows() does this)
-    container.invalidate(
-      eventWorkflowsProvider(container.read(accountProvider)?.email),
-    );
+    // Navigate to Workflows list and create through UI
+    container.read(routerProvider).go(Routes.settingsWorkflows);
     await tester.pumpAndSettle();
 
-    container
-        .read(routerProvider)
-        .go(Routes.settingsEventWorkflowLocation(created.id));
+    await tester.tap(find.text('New event workflow'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Training');
+    await tester.tap(find.text('Create'));
     await tester.pumpAndSettle();
 
     expect(find.text('No steps yet.'), findsOneWidget);
@@ -262,18 +257,15 @@ void main() {
         events: events,
       );
 
-      // Create workflow directly and navigate to it
-      final created = await eventWorkflows.create('Training');
-      // Invalidate the provider so it sees the new workflow (in real usage,
-      // editEventWorkflows() does this)
-      container.invalidate(
-        eventWorkflowsProvider(container.read(accountProvider)?.email),
-      );
+      // Navigate to Workflows list and create through UI
+      container.read(routerProvider).go(Routes.settingsWorkflows);
       await tester.pumpAndSettle();
 
-      container
-          .read(routerProvider)
-          .go(Routes.settingsEventWorkflowLocation(created.id));
+      await tester.tap(find.text('New event workflow'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Training');
+      await tester.tap(find.text('Create'));
       await tester.pumpAndSettle();
 
       expect(find.text('No steps yet.'), findsOneWidget);
