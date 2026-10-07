@@ -9,6 +9,7 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -390,5 +391,33 @@ void main() {
       find.text("This event isn't in your calendar any more."),
       findsOneWidget,
     );
+  });
+
+  testWidgets('people load failed: error state, no Mark who was there', (
+    tester,
+  ) async {
+    final started = DateTime.now().subtract(const Duration(hours: 1));
+    final events = FakeEventRepository([
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: started,
+        attendees: const [(personId: 'p1', came: false)],
+      ),
+    ]);
+    final people = FakePeopleRepository([_claire]);
+    people.failWith = PeopleFailure.network;
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 1000),
+      events: events,
+      people: people,
+    );
+    container.read(routerProvider).go(Routes.eventLocation('e1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't load your contacts."), findsOneWidget);
+    expect(find.text('Mark who was there'), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
   });
 }

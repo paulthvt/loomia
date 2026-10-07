@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 
@@ -71,7 +72,12 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
     Iterable<String> came,
     DateTime today,
   ) async {
-    await ref.read(eventRepositoryProvider).markDone(eventId, came, today);
+    try {
+      await ref.read(eventRepositoryProvider).markDone(eventId, came, today);
+    } on PeopleFailure {
+      ref.invalidateSelf();
+      rethrow;
+    }
     if (!ref.mounted) return;
     ref
       ..invalidate(peopleProvider(owner))
@@ -83,7 +89,11 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
   Future<void> _reload() async {
     if (!ref.mounted) return;
     ref.invalidateSelf();
-    await future;
+    try {
+      await future;
+    } on PeopleFailure {
+      // The change landed; the list shows its own load error.
+    }
   }
 
   void _put(CalendarEvent saved) {

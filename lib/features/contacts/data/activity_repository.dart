@@ -108,7 +108,7 @@ Activity activityFromRow(Map<String, dynamic> row) {
 Map<String, dynamic> activityDraftToRow(String? personId, ActivityDraft draft) {
   assert(
     draft.kind.byUser,
-    'Only the database writes stage entries; step entries come from complete_step',
+    'Only the database writes stage entries; step and event entries come from complete_step and mark_event_done',
   );
   return {
     'person_id': personId,

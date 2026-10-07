@@ -177,4 +177,60 @@ void main() {
     expect(fake.calls, contains('markDone(e1:p1)'));
     expect(people.calls.where((call) => call == 'list()').length, listed + 1);
   });
+
+  test('markDone succeeds even if reload fails', () async {
+    final fake = _FailAfterMark([_workshop]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    await events.invite('e1', ['p1']);
+
+    await events.markDone('e1', ['p1'], DateTime(2026, 10, 9));
+
+    expect(fake.calls, contains('markDone(e1:p1)'));
+    expect(fake.calls.last, 'list()');
+  });
+
+  test('markDone invalidates and rethrows on failure', () async {
+    final fake = FakeEventRepository([_workshop]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    fake.failWith = PeopleFailure.unknown;
+
+    await expectLater(
+      events.markDone('e1', [], DateTime(2026, 10, 9)),
+      throwsA(PeopleFailure.unknown),
+    );
+
+    expect(fake.calls, contains('markDone(e1:)'));
+    expect(container.read(eventsProvider(_owner)).isLoading, isTrue);
+  });
+}
+
+/// Fails list() once after markDone.
+class _FailAfterMark extends FakeEventRepository {
+  _FailAfterMark(super.events);
+
+  var _failNext = false;
+
+  @override
+  Future<void> markDone(
+    String eventId,
+    Iterable<String> came,
+    DateTime today,
+  ) async {
+    await super.markDone(eventId, came, today);
+    _failNext = true;
+  }
+
+  @override
+  Future<List<CalendarEvent>> list() async {
+    if (_failNext) {
+      _failNext = false;
+      calls.add('list()');
+      throw PeopleFailure.network;
+    }
+    return super.list();
+  }
 }

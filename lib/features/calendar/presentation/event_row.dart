@@ -42,7 +42,9 @@ class EventRow extends StatelessWidget {
     final count = event.attendees.isEmpty
         ? null
         : event.done
-        ? l10n.eventThereCount(event.cameCount)
+        ? (where == null
+              ? l10n.eventThereCountAlone(event.cameCount)
+              : l10n.eventThereCount(event.cameCount))
         : l10n.eventInvitedCount(event.attendees.length);
     final line = where != null && count != null
         ? l10n.eventRowLine(where, count)

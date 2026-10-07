@@ -88,9 +88,23 @@ class EventPane extends ConsumerWidget {
       );
     }
     final book = ref.watch(peopleProvider(ref.watch(accountProvider)?.email));
-    final byId = {
-      for (final person in book.value ?? const <Person>[]) person.id: person,
-    };
+    final bookPeople = book.value;
+    if (bookPeople == null) {
+      return book.hasError
+          ? Center(
+              child: EmptyState(
+                icon: Icons.cloud_off_outlined,
+                title: l10n.contactsLoadError,
+                body: l10n.contactsLoadErrorBody,
+                actionLabel: l10n.contactsRetry,
+                onAction: () => ref.invalidate(
+                  peopleProvider(ref.watch(accountProvider)?.email),
+                ),
+              ),
+            )
+          : const Center(child: CircularProgressIndicator());
+    }
+    final byId = {for (final person in bookPeople) person.id: person};
     // Someone deleted from the contacts on another device can linger until
     // the events reload; they are left out rather than shown nameless.
     final people =

@@ -2022,6 +2022,13 @@
       "count": { "type": "int" }
     }
   },
+  "eventThereCountAlone": "{count, plural, =0{Nobody was there} =1{1 was there} other{{count} were there}}",
+  "@eventThereCountAlone": {
+    "description": "On a done event's row in the Calendar when there is no place and no link: how many were there, starting the line.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "eventRowLine": "{where} · {people}",
   "@eventRowLine": {
     "description": "Second line of an event's row in the Calendar when it has both: where (a place, or 'Online') and the people count (eventInvitedCount or eventThereCount).",
