@@ -11,6 +11,7 @@ import 'package:loomia/features/auth/presentation/register_page.dart';
 import 'package:loomia/features/auth/presentation/reset_password_page.dart';
 import 'package:loomia/features/auth/presentation/welcome_page.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/import_contacts_page.dart';
@@ -109,6 +110,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: Routes.calendarName,
                 pageBuilder: (context, state) =>
                     _calendarPage(context, state, null),
+                routes: [
+                  GoRoute(
+                    path: Routes.eventSegment,
+                    name: Routes.eventName,
+                    pageBuilder: (context, state) => _calendarPage(
+                      context,
+                      state,
+                      state.pathParameters['id'],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -293,12 +305,14 @@ Page<void> _calendarPage(
     return NoTransitionPage<void>(
       key: state.pageKey,
       name: state.name,
-      child: const Scaffold(body: CalendarDayPane()),
+      child: Scaffold(
+        body: id == null ? const CalendarDayPane() : EventPane(id: id),
+      ),
     );
   }
   return MaterialPage<void>(
     key: state.pageKey,
     name: state.name,
-    child: const CalendarPage(),
+    child: id == null ? const CalendarPage() : EventPage(id: id),
   );
 }

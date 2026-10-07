@@ -1986,5 +1986,36 @@
       "day": { "type": "DateTime", "format": "MMMMEEEEd" },
       "time": { "type": "String" }
     }
+  },
+  "eventJoin": "Join",
+  "@eventJoin": {
+    "description": "Button on an event's screen that opens its online meeting link."
+  },
+  "eventDelete": "Delete event",
+  "@eventDelete": {
+    "description": "Tooltip of the delete button on an event's screen."
+  },
+  "eventDeleteTitle": "Delete {title}?",
+  "@eventDeleteTitle": {
+    "description": "Title of the dialog that confirms deleting an event. title is the event's title.",
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "eventDeleteBody": "It goes from your calendar. Nobody else is told.",
+  "@eventDeleteBody": {
+    "description": "Body of the dialog that confirms deleting an event."
+  },
+  "eventDeleteAction": "Delete",
+  "@eventDeleteAction": {
+    "description": "Destructive button of the dialog that confirms deleting an event."
+  },
+  "eventNotFound": "This event isn't in your calendar any more.",
+  "@eventNotFound": {
+    "description": "Title shown when an event's link points to one that no longer exists."
+  },
+  "eventNotFoundBody": "It may have been deleted on another device.",
+  "@eventNotFoundBody": {
+    "description": "Body under eventNotFound."
   }
 }
