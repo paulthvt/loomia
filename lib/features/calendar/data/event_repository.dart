@@ -3,6 +3,7 @@ import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// The `event` table. Every method throws [PeopleFailure] and nothing else.
@@ -15,7 +16,8 @@ class EventRepository {
   static const String _table = 'event';
 
   /// Every column, and who is invited.
-  static const String _columns = '*, event_attendee(person_id, came)';
+  static const String _columns =
+      '*, event_attendee(person_id, came), event_step_done(step_id, done_on)';
 
   /// Every event, earliest first.
   // ponytail: loads every event; read a month at a time (the starts_at
@@ -81,6 +83,22 @@ class EventRepository {
       },
     ),
   );
+
+  Future<void> tick(String eventId, String stepId, DateTime on) => guardPeople(
+    () => _client.from('event_step_done').insert({
+      'event_id': eventId,
+      'step_id': stepId,
+      'done_on': dayColumn(on),
+    }),
+  );
+
+  Future<void> untick(String eventId, String stepId) => guardPeople(
+    () => _client
+        .from('event_step_done')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('step_id', stepId),
+  );
 }
 
 final eventRepositoryProvider = Provider<EventRepository>(
@@ -114,6 +132,14 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
         came: attendee['came'] as bool,
       ),
   ],
+  eventWorkflowId: row['event_workflow_id'] as String?,
+  followUps: followUpsFromRow(row),
+  stepsDone: {
+    for (final done in (row['event_step_done'] as List?) ?? const [])
+      (done as Map<String, dynamic>)['step_id'] as String: DateTime.parse(
+        done['done_on'] as String,
+      ),
+  },
 );
 
 Map<String, Object?> draftToEventRow(EventDraft draft) => {
@@ -123,4 +149,6 @@ Map<String, Object?> draftToEventRow(EventDraft draft) => {
   'place': draft.place,
   'link': draft.link,
   'notes': draft.notes,
+  'event_workflow_id': draft.eventWorkflowId,
+  ...followUpsToRow(draft.followUps),
 };

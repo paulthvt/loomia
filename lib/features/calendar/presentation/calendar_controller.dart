@@ -85,6 +85,16 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
     await _reload();
   }
 
+  Future<void> tick(String eventId, String stepId, DateTime on) async {
+    await ref.read(eventRepositoryProvider).tick(eventId, stepId, on);
+    await _reload();
+  }
+
+  Future<void> untick(String eventId, String stepId) async {
+    await ref.read(eventRepositoryProvider).untick(eventId, stepId);
+    await _reload();
+  }
+
   /// The embed is the truth for attendance: read it again.
   Future<void> _reload() async {
     if (!ref.mounted) return;

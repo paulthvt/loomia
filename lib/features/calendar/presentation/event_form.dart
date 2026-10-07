@@ -141,6 +141,8 @@ class _EventFormState extends ConsumerState<_EventForm> {
       place: text(_place),
       link: normaliseLink(_link.text),
       notes: text(_notes),
+      eventWorkflowId: null,
+      followUps: const {},
     );
     setState(() {
       _saving = true;

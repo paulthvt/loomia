@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 
 void main() {
   test('reads a row: instants in UTC, blank text as null', () {
@@ -30,6 +31,8 @@ void main() {
       place: 'Studio Lumière',
       link: null,
       notes: null,
+      eventWorkflowId: null,
+      followUps: const {},
     ));
 
     expect(row, {
@@ -39,6 +42,10 @@ void main() {
       'place': 'Studio Lumière',
       'link': null,
       'notes': null,
+      'event_workflow_id': null,
+      'prospect_workflow_id': null,
+      'customer_workflow_id': null,
+      'team_workflow_id': null,
     });
   });
 
@@ -76,5 +83,46 @@ void main() {
 
     expect(event.attendees, isEmpty);
     expect(event.done, isFalse);
+  });
+
+  test('reads the event workflow, the stages and the ticked steps', () {
+    final event = eventFromRow({
+      'id': 'e1',
+      'title': 'Workshop',
+      'starts_at': '2026-10-08T17:00:00+00:00',
+      'event_workflow_id': 'w1',
+      'prospect_workflow_id': 'samples',
+      'customer_workflow_id': null,
+      'team_workflow_id': 'getting-started',
+      'event_step_done': [
+        {'step_id': 's1', 'done_on': '2026-10-07'},
+      ],
+    });
+
+    expect(event.eventWorkflowId, 'w1');
+    expect(event.followUps, {
+      Stage.prospect: 'samples',
+      Stage.team: 'getting-started',
+    });
+    expect(event.stepsDone, {'s1': DateTime(2026, 10, 7)});
+  });
+
+  test('writes the event workflow and every stage, none as null', () {
+    final row = draftToEventRow((
+      title: 'Workshop',
+      startsAt: DateTime(2026, 10, 8, 19),
+      endsAt: null,
+      place: null,
+      link: null,
+      notes: null,
+      eventWorkflowId: 'w1',
+      followUps: const {Stage.prospect: 'samples'},
+    ));
+
+    expect(row['event_workflow_id'], 'w1');
+    expect(row['prospect_workflow_id'], 'samples');
+    expect(row.containsKey('customer_workflow_id'), isTrue);
+    expect(row['customer_workflow_id'], isNull);
+    expect(row['team_workflow_id'], isNull);
   });
 }

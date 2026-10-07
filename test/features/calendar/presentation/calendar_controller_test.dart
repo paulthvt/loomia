@@ -35,6 +35,8 @@ EventDraft _draft(String title, DateTime startsAt) => (
   place: null,
   link: null,
   notes: null,
+  eventWorkflowId: null,
+  followUps: const {},
 );
 
 final _workshop = CalendarEvent(
@@ -205,6 +207,25 @@ void main() {
 
     expect(fake.calls, contains('markDone(e1:)'));
     expect(container.read(eventsProvider(_owner)).isLoading, isTrue);
+  });
+
+  test('ticking and unticking a step reload the event', () async {
+    final fake = FakeEventRepository([_workshop]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+
+    await events.tick('e1', 's1', DateTime(2026, 10, 7));
+    expect(container.read(eventsProvider(_owner)).value!.single.stepsDone, {
+      's1': DateTime(2026, 10, 7),
+    });
+
+    await events.untick('e1', 's1');
+    expect(
+      container.read(eventsProvider(_owner)).value!.single.stepsDone,
+      isEmpty,
+    );
+    expect(fake.calls, containsAll(['tick(e1:s1)', 'untick(e1:s1)']));
   });
 }
 
