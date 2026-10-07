@@ -49,7 +49,8 @@ void main() {
       eventWorkflowsProvider('p@example.com').future,
     );
 
-    expect(listed.single.name, 'Workshop');
+    expect(listed.any((w) => w.name == 'Workshop'), isTrue);
+    expect(listed.any((w) => w.name == 'Training'), isTrue);
     expect(world.workflows.calls.first, startsWith('seed('));
   });
 

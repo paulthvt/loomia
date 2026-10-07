@@ -67,8 +67,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(eventWorkflows.calls, contains('addStep(workshop)'));
+    final workshop = eventWorkflows.store.firstWhere((w) => w.id == 'workshop');
     expect(
-      eventWorkflows.store.single.steps.first,
+      workshop.steps.first,
       isA<EventWorkflowStep>()
           .having((step) => step.label, 'label', 'Book the room')
           .having((step) => step.days, 'days', -3),
@@ -86,11 +87,9 @@ void main() {
     );
 
     // Verify data model without rendering the problematic UI
-    expect(eventWorkflows.store.single.followUps[Stage.prospect], 'samples');
-    expect(
-      eventWorkflows.store.single.followUps[Stage.customer],
-      'new-customer',
-    );
+    final workshop = eventWorkflows.store.firstWhere((w) => w.id == 'workshop');
+    expect(workshop.followUps[Stage.prospect], 'samples');
+    expect(workshop.followUps[Stage.customer], 'new-customer');
   });
 
   testWidgets('a new event workflow; delete goes back', (tester) async {

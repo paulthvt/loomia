@@ -20,6 +20,7 @@ import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/event_step_copy.dart';
 import 'package:loomia/features/workflows/presentation/event_step_sheet.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
+import 'package:loomia/features/workflows/presentation/follow_up_picker.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -279,56 +280,30 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
                   AppSpacing.md,
                   AppSpacing.md,
                 ),
-                child: Builder(
-                  builder: (context) {
-                    final id = workflow.followUps[stage];
-                    final available = forStage(widget.workflows, stage);
-                    final currentValue =
-                        id != null && available.any((w) => w.id == id)
-                            ? id
-                            : null;
-                    return DropdownButtonFormField<String?>(
-                      key: ValueKey('$stage-$currentValue'),
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                      ),
-                      initialValue: currentValue,
-                      items: [
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text(l10n.eventWorkflowKeep),
-                        ),
-                        for (final w in available)
-                          DropdownMenuItem<String?>(
-                            value: w.id,
-                            child: Text(w.name),
+                child: IgnorePointer(
+                  ignoring: _busy.contains(_Control.followUps),
+                  child: FollowUpPicker(
+                    stage: stage,
+                    workflows: widget.workflows,
+                    value: workflow.followUps[stage],
+                    onChanged: (id) {
+                      final followUps = {...workflow.followUps};
+                      if (id == null) {
+                        followUps.remove(stage);
+                      } else {
+                        followUps[stage] = id;
+                      }
+                      unawaited(
+                        _run(
+                          _Control.followUps,
+                          () => widget.onSave(
+                            name: workflow.name,
+                            followUps: followUps,
                           ),
-                      ],
-                      onChanged: _busy.contains(_Control.followUps)
-                          ? null
-                          : (id) {
-                              final followUps = {...workflow.followUps};
-                              if (id == null) {
-                                followUps.remove(stage);
-                              } else {
-                                followUps[stage] = id;
-                              }
-                              unawaited(
-                                _run(
-                                  _Control.followUps,
-                                  () => widget.onSave(
-                                    name: workflow.name,
-                                    followUps: followUps,
-                                  ),
-                                ),
-                              );
-                            },
-                    );
-                  },
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],

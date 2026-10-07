@@ -153,7 +153,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
     );
   }
 
-  /// The seeded Workshop.
+  /// The seeded Workshop and Training.
   static List<EventWorkflow> samples() => [
     EventWorkflow(
       id: 'workshop',
@@ -175,5 +175,6 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         ),
       ],
     ),
+    EventWorkflow(id: 'training', name: 'Training', steps: const []),
   ];
 }

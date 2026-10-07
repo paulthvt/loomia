@@ -1224,6 +1224,10 @@
   "@eventWorkflowFooter": {
     "description": "Footer of an event workflow's editor."
   },
+  "eventType": "Type",
+  "@eventType": {
+    "description": "Label of the event form's choice of event workflow: what kind of event it is (e.g. Workshop, Training). Choosing one fills the title and the after-the-event workflows."
+  },
   "eventWorkflowDeleteBody": "Events of this kind keep their title, without the steps.",
   "@eventWorkflowDeleteBody": {
     "description": "Body of the dialog confirming that an event workflow is deleted."
