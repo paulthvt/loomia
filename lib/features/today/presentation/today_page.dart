@@ -103,16 +103,11 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final workflows = ref.watch(lists);
 
     final calendarEvents = ref.watch(eventsProvider(owner));
-    final now = DateTime.now();
+    final eventWorkflows = ref.watch(eventWorkflowsProvider(owner));
 
-    // Only watch event workflows if there are events; avoids loading them on
-    // every page when Today is the home
-    final events = switch (calendarEvents.value) {
-      final list? when list.isNotEmpty => todayEvents(
-        list,
-        ref.watch(eventWorkflowsProvider(owner)).value ?? const [],
-        now,
-      ),
+    final now = DateTime.now();
+    final events = switch ((calendarEvents.value, eventWorkflows.value)) {
+      (final list?, final flows?) => todayEvents(list, flows, now),
       _ => noTodayEvents,
     };
 
