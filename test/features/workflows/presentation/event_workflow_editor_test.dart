@@ -236,57 +236,56 @@ void main() {
     expect(find.text('EVENTS'), findsOneWidget);
   });
 
-  testWidgets(
-    'a new event workflow with events on Today; delete goes back',
-    (tester) async {
-      final eventWorkflows = FakeEventWorkflowRepository(
-        FakeEventWorkflowRepository.samples(),
-      );
-      final events = FakeEventRepository([
-        CalendarEvent(
-          id: 'e1',
-          title: 'Workshop',
-          startsAt: DateTime.now().add(const Duration(days: 1)),
-          eventWorkflowId: 'workshop',
-        ),
-      ]);
-      final container = await pumpLoomia(
-        tester,
-        size: const Size(390, 2000),
-        eventWorkflows: eventWorkflows,
-        events: events,
-      );
+  testWidgets('a new event workflow with events on Today; delete goes back', (
+    tester,
+  ) async {
+    final eventWorkflows = FakeEventWorkflowRepository(
+      FakeEventWorkflowRepository.samples(),
+    );
+    final events = FakeEventRepository([
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: DateTime.now().add(const Duration(days: 1)),
+        eventWorkflowId: 'workshop',
+      ),
+    ]);
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 2000),
+      eventWorkflows: eventWorkflows,
+      events: events,
+    );
 
-      // Navigate to Workflows list and create through UI
-      container.read(routerProvider).go(Routes.settingsWorkflows);
-      await tester.pumpAndSettle();
+    // Navigate to Workflows list and create through UI
+    container.read(routerProvider).go(Routes.settingsWorkflows);
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('New event workflow'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('New event workflow'));
+    await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField), 'Training');
-      await tester.tap(find.text('Create'));
-      await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Training');
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('No steps yet.'), findsOneWidget);
+    expect(find.text('No steps yet.'), findsOneWidget);
 
-      // Scroll to and tap delete
-      await tester.ensureVisible(find.text('Delete workflow').last);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete workflow').last);
-      await tester.pumpAndSettle();
-      expect(
-        find.text('Events of this kind keep their title, without the steps.'),
-        findsOneWidget,
-      );
-      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
-      await tester.pumpAndSettle();
+    // Scroll to and tap delete
+    await tester.ensureVisible(find.text('Delete workflow').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete workflow').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Events of this kind keep their title, without the steps.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
 
-      expect(
-        eventWorkflows.calls.where((call) => call.startsWith('delete(')),
-        hasLength(1),
-      );
-      expect(find.text('EVENTS'), findsOneWidget);
-    },
-  );
+    expect(
+      eventWorkflows.calls.where((call) => call.startsWith('delete(')),
+      hasLength(1),
+    );
+    expect(find.text('EVENTS'), findsOneWidget);
+  });
 }
