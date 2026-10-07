@@ -160,8 +160,9 @@ class EventPane extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
-    final events =
-        ref.read(eventsProvider(ref.read(accountProvider)?.email).notifier);
+    final events = ref.read(
+      eventsProvider(ref.read(accountProvider)?.email).notifier,
+    );
     try {
       await events.uninvite(event.id, person.id);
     } on PeopleFailure catch (failure) {
