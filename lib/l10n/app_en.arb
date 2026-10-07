@@ -1213,9 +1213,9 @@
   "@eventWorkflowKeep": {
     "description": "Choice in the After the event pickers: people at that stage who were there stay on the workflow they're on."
   },
-  "eventWorkflowStage": "{stage, select, prospect{Prospects who were there} customer{Customers who were there} other{Team members who were there}}",
+  "eventWorkflowStage": "{stage, select, prospect{Prospects} customer{Customers} other{Team members}}",
   "@eventWorkflowStage": {
-    "description": "Label of one After the event picker: the people of one stage who were at the event.",
+    "description": "Label of one row under the After the event heading (event workflow editor, event form, event screen): the people of one stage who were at the event. Kept short: the row also holds the workflow they start.",
     "placeholders": {
       "stage": { "type": "String" }
     }

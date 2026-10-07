@@ -484,7 +484,7 @@ void main() {
     );
 
     await tester.scrollUntilVisible(find.text('Start Samples'), 200);
-    expect(find.text('Prospects who were there'), findsOneWidget);
+    expect(find.text('Prospects'), findsOneWidget);
     expect(find.text('Keep their workflow'), findsNWidgets(2));
   });
 
