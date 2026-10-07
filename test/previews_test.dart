@@ -53,6 +53,10 @@ void main() {
     'workflows_list_light': (const Size(390, 844), workflowsListLight),
     'workflow_editor_light': (const Size(390, 844), workflowEditorLight),
     'workflow_step_light': (const Size(390, 844), workflowStepLight),
+    'event_workflow_editor_light': (
+      const Size(390, 844),
+      eventWorkflowEditorLight,
+    ),
     'components_light': (const Size(420, 1800), uiComponentsLight),
     'components_dark': (const Size(420, 1800), uiComponentsDark),
     'tokens_colour_light': (const Size(420, 900), colourTokensLight),
