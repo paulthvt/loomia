@@ -17,13 +17,16 @@ into the right workflow without retyping anything.
 | --- | --- |
 | Calendar library | None. A month grid is a 7-column `GridView` and `DateTime` arithmetic. Syncfusion is proprietary (Community License caps revenue and team size, a key to register) and, like `table_calendar`, built on the frozen `flutter/material.dart`: it would not see this app's `Theme` or `MaterialLocalizations` (architecture.md → Design packages). Revisit with a week or day view. |
 | Views | Month only, plus the selected day's events. |
-| Event fields | Title, start (date and time), optional end time, place (free text, can be a video link), notes, attendees. From #153 also an event workflow. No recurrence. |
+| Event fields | Title, start (date and time), optional end time, place (free text), link (meeting URL), notes, attendees. Place and link are both optional; a hybrid event has both. From #153 also an event workflow. No recurrence. |
+| Getting there | No place picker: it needs a Places API key, billing and a package, for autocomplete only. Tapping the place opens the maps app on the address, ready for directions: `https://maps.apple.com/?q=` on iOS, `https://www.google.com/maps/search/?api=1&query=` elsewhere (Android opens the Maps app), through `url_launcher`. Add autocomplete when users ask. |
+| Online | The link shows as **Join** on the event, and on Today's event row from 15 minutes before the start until the end. |
+| Wording | "Was there", not "came": it reads the same for online and in-person events. Sheet "Who was there?", rows "Was there" / "Missed it". The column stays `came`. |
 | Event workflow | A new kind of workflow, and the event's type: "Workshop". It holds a checklist and, per stage, the person workflow that people who came start. |
 | Checklist | Steps for the user about the event, not per attendee: "Remind everyone it's tomorrow". Each step is `days` from the event date, signed: −1 the day before, 0 the day of, +1 the day after. Ticked once. |
 | Stage mapping | One person workflow (or none, "Keep current workflow") per stage. Set on the event workflow, copied onto the event when it is created, changeable per event. |
 | Attendees | Picked from contacts. Invited, then came or not. An invite writes no history; coming does. |
 | Who gets a workflow | Only people marked as came. It **replaces** their current workflow and ends a pause, starting that day. No mapping for their stage: their workflow stays. |
-| Marking done | By hand, once the start has passed: "Mark who came", everyone ticked by default, a summary of what will happen, Done. One transaction. |
+| Marking done | By hand, once the start has passed: "Mark who was there", everyone ticked by default, a summary of what will happen, Done. One transaction. |
 | Undo | None. A done event's attendance is read-only; the checklist stays tickable. Add undo when someone asks. |
 | Several workflows per person | Later. Until then, replacing is the rule. |
 | Navigation | Today · Calendar · Contacts · Goals. The Team tab goes: Contacts `Team` filter for the list, WORTH A CHECK-IN onto Today. `/team` redirects to `/contacts` (no filter in the URL today; add one if links to Team matter). Comes back with the team plan. |
@@ -48,6 +51,7 @@ that creates it. Foreign keys between owned tables are composite
 | `starts_at` | timestamptz not null | |
 | `ends_at` | timestamptz | `check (ends_at is null or ends_at > starts_at)` |
 | `place` | text | |
+| `link` | text | `check (link is null or link ~* '^https?://')` |
 | `notes` | text | |
 
 Index on `(owner_id, starts_at)`: the calendar reads one month at a time.
@@ -124,7 +128,7 @@ defaults (null where it has none).
 - `stepDue(Event event, EventWorkflowStep step)`: the event's local date plus
   `step.days`.
 - `cameSummary(attendees, came, event)`: per stage, how many start which
-  workflow and how many keep theirs. Feeds the Mark who came sheet.
+  workflow and how many keep theirs. Feeds the Who was there sheet.
 
 The repository lives in `lib/features/calendar/data/`. Event workflows sit with
 workflows: `lib/features/workflows/` gains the event workflow model,
@@ -142,7 +146,7 @@ Routes in `routes.dart`: `/calendar`, `/calendar/new`, `/calendar/:id`,
   outside the month dimmed, up to 3 dots for a day's events, a ring on today,
   the selected day filled. Horizontal swipe changes month. Below the grid, the
   selected day: event rows "19:00 · Workshop · Place · 6 invited" (or "4
-  came" once done). Empty: "Nothing planned". FAB: New event, prefilled with
+  were there" once done). Empty: "Nothing planned". FAB: New event, prefilled with
   the selected day at 19:00.
 - **Desktop / tablet:** the grid on the left, the selected day on the right;
   an opened event replaces the day pane, like the Contacts list/detail shell.
@@ -151,23 +155,23 @@ Routes in `routes.dart`: `/calendar`, `/calendar/new`, `/calendar/:id`,
 
 Top to bottom:
 
-1. Title, date and time, place (a link opens in the browser), notes. Edit and
-   Delete (confirmed) in the top bar.
+1. Title, date and time, place (tap opens the maps app), link (a **Join**
+   button), notes. Edit and Delete (confirmed) in the top bar.
 2. **Checklist** (from #153): each step with "1 day before" / "On the day" /
    "1 day after" and its date, the resolve ring of #192.
 3. **People** (from #152): attendee rows (`ContactRow`), Add people (the
    multi-select picker of #180), remove from the row menu.
-4. Once the start has passed and not done: **Mark who came**. A sheet: the
-   attendees with checkboxes, all ticked; the summary ("3 prospects start
+4. Once the start has passed and not done: **Mark who was there**. A sheet,
+   "Who was there?": the attendees with checkboxes, all ticked; the summary ("3 prospects start
    Samples · 1 customer starts New customer · 2 keep their workflow"); Done.
-5. Done: a "Done · 4 came" banner; attendees show came / didn't come,
-   read-only.
+5. Done: a "Done · 4 of 5 were there" banner; attendees show "Was there" /
+   "Missed it", read-only.
 
 ### New / edit event
 
 A sheet on mobile, a dialog on desktop. Event workflow (chips, required from
 #153, sets the title), title, date and start time and optional end time
-(platform pickers, architecture.md), place, notes, and a collapsed **After the
+(platform pickers, architecture.md), place, link (URL keyboard), notes, and a collapsed **After the
 event** block: one picker per stage, prefilled from the event workflow.
 
 ### Workflow settings → Events
@@ -183,8 +187,9 @@ its events with their title and no checklist.
 Below the hero, in order:
 
 1. **Events**, only when it has items:
-   - today's events: "Workshop · 19:00 · 6 invited", tap opens it;
-   - past events not done: "How did Workshop go? · Tue", Mark who came opens
+   - today's events: "Workshop · 19:00 · 6 invited", tap opens it; Join
+     from 15 minutes before the start when it has a link;
+   - past events not done: "How did Workshop go? · Tue", Mark who was there opens
      the same sheet;
    - checklist steps due today or overdue: "Remind everyone it's tomorrow ·
      Workshop Wed", the resolve ring ticks it.
@@ -205,7 +210,7 @@ and are used by Today.
 | PR | Scope |
 | --- | --- |
 | #151 | `event`, Calendar tab, add / edit / delete, the navigation swap and check-ins on Today. |
-| #152 | `event_attendee`, `done_at`, the picker, Mark who came writing history. |
+| #152 | `event_attendee`, `done_at`, the picker, Mark who was there writing history. |
 | #153 | Event workflows, their settings, the checklist, the mapping on the event, `mark_event_done` starting workflows, the seeded Workshop. |
 | #154 | The Events section on Today. |
 | #155 | Parked: export to the device calendar. |
