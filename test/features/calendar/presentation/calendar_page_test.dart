@@ -111,6 +111,34 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('a row says how many are invited, or were there', (tester) async {
+    await _pump(
+      tester,
+      events: [
+        CalendarEvent(
+          id: 'e1',
+          title: 'Essential oils for sleep',
+          startsAt: DateTime(2026, 10, 8, 19),
+          place: 'Studio Lumière',
+          attendees: const [
+            (personId: 'p1', came: false),
+            (personId: 'p2', came: false),
+          ],
+        ),
+        CalendarEvent(
+          id: 'e2',
+          title: 'Training',
+          startsAt: DateTime(2026, 10, 8, 10),
+          doneAt: DateTime(2026, 10, 8, 12),
+          attendees: const [(personId: 'p1', came: true)],
+        ),
+      ],
+    );
+
+    expect(find.text('Studio Lumière · 2 invited'), findsOneWidget);
+    expect(find.text('1 was there'), findsOneWidget);
+  });
+
   testWidgets('tapping a day selects it', (tester) async {
     DateTime? selected;
     await _pump(tester, onSelect: (day) => selected = day);

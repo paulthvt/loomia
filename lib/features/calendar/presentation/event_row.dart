@@ -37,9 +37,16 @@ class EventRow extends StatelessWidget {
     final scheme = theme.colorScheme;
     final colors = LoomiaColors.of(context);
     final ends = event.endsAt;
-    final where =
-        event.place ??
-        (event.link == null ? null : AppLocalizations.of(context).eventOnline);
+    final l10n = AppLocalizations.of(context);
+    final where = event.place ?? (event.link == null ? null : l10n.eventOnline);
+    final count = event.attendees.isEmpty
+        ? null
+        : event.done
+        ? l10n.eventThereCount(event.cameCount)
+        : l10n.eventInvitedCount(event.attendees.length);
+    final line = where != null && count != null
+        ? l10n.eventRowLine(where, count)
+        : where ?? count;
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppRadii.lg),
       side: BorderSide(color: colors.borderSubtle),
@@ -90,9 +97,9 @@ class EventRow extends StatelessWidget {
                     spacing: AppSpacing.xs,
                     children: [
                       Text(event.title, style: theme.textTheme.titleMedium),
-                      if (where != null)
+                      if (line != null)
                         Text(
-                          where,
+                          line,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),

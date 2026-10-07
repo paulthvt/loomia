@@ -44,6 +44,12 @@ Widget eventMobileLight() => _app(
     appBar: AppBar(leading: const BackButton()),
     body: EventView(
       event: _events[1],
+      people: const [],
+      now: DateTime(2026, 10, 7, 9),
+      onAddPeople: () {},
+      onRemove: (_) {},
+      onOpenPerson: (_) {},
+      onMarkDone: () {},
       onEdit: () {},
       onDelete: () {},
       onOpenPlace: (_) {},
