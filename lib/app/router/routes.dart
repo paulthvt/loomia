@@ -30,6 +30,7 @@ abstract final class Routes {
   static String eventLocation(String id) =>
       '$calendar/${Uri.encodeComponent(id)}';
 
+  /// The old Team tab (before #151). Kept so a saved link lands on Contacts.
   static const String team = '/team';
   static const String teamName = 'team';
 

@@ -21,7 +21,6 @@ import 'package:loomia/features/goals/presentation/goals_page.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
-import 'package:loomia/features/team/presentation/team_page.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -127,7 +126,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.team,
             name: Routes.teamName,
-            builder: (context, state) => const TeamPage(),
+            redirect: (context, state) => Routes.contacts,
           ),
           GoRoute(
             path: Routes.goals,

@@ -190,7 +190,7 @@ class TodayView extends StatefulWidget {
   /// The close-and-plan card's Start: opens /goals/close.
   final VoidCallback? onRitual;
 
-  /// Team members worth a check-in: the desktop side column shows them.
+  /// Team members worth a check-in: under the day on a phone, in the side column on desktop.
   final List<CheckIn> checkIns;
 
   /// A check-in row's button: opens Log something.
@@ -304,8 +304,19 @@ class _TodayViewState extends State<TodayView> {
                         ],
                       ],
                     )
-                  else
+                  else ...[
                     ...content,
+                    // Desktop has them in the side column.
+                    if (widget.checkIns.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      ...checkInItems(
+                        l10n,
+                        widget.checkIns,
+                        onOpen: widget.onOpen,
+                        onCheckIn: widget.onCheckIn ?? (_) {},
+                      ),
+                    ],
+                  ],
                 ],
               ),
             ),

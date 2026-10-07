@@ -14,6 +14,7 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/app_harness.dart';
+import '../contacts/fake_activity_repository.dart';
 import '../contacts/fake_people_repository.dart';
 import '../goals/fake_goals_repository.dart';
 import '../workflows/fake_workflow_repository.dart';
@@ -268,5 +269,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(GoalLine), findsOneWidget);
+  });
+
+  testWidgets('a new team member is worth a check-in; logging clears it', (
+    tester,
+  ) async {
+    final activities = FakeActivityRepository();
+    final people = FakePeopleRepository([
+      Person(
+        id: 'bea',
+        name: 'Bea Martin',
+        stage: Stage.team,
+        stageSince: addDays(today(), -9).toUtc(),
+      ),
+    ])..activities = activities;
+    await pumpLoomia(
+      tester,
+      size: _tallPhone,
+      people: people,
+      activities: activities,
+    );
+    expect(find.text('WORTH A CHECK-IN'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Log something with Bea'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'Welcome call');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('WORTH A CHECK-IN'), findsNothing);
   });
 }

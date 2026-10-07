@@ -210,4 +210,29 @@ void main() {
     );
     expect(second.top - first.bottom, 12);
   });
+
+  testWidgets('mobile: the check-ins follow the day', (tester) async {
+    await pump(
+      tester,
+      now: DateTime(2026, 9, 29, 9),
+      size: const Size(390, 1600),
+      checkIns: [
+        (
+          person: Person(
+            id: 'Bruno',
+            name: 'Bruno',
+            stage: Stage.team,
+            stageSince: DateTime(2026, 5),
+            lastContactOn: DateTime(2026, 9),
+          ),
+          reason: CheckInReason.quiet,
+          since: DateTime(2026, 9),
+          days: 28,
+        ),
+      ],
+    );
+
+    expect(find.text('WORTH A CHECK-IN'), findsOneWidget);
+    expect(find.text('Bruno'), findsOneWidget);
+  });
 }
