@@ -235,10 +235,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
-    expect(
-      events.store.single.followUps.containsKey(Stage.prospect),
-      isFalse,
-    );
+    expect(events.store.single.followUps.containsKey(Stage.prospect), isFalse);
     expect(events.store.single.followUps[Stage.customer], isNotNull);
   });
 

@@ -68,7 +68,9 @@ class _EventFormState extends ConsumerState<_EventForm> {
       final owner = ref.read(accountProvider)?.email;
       ref.listenManual(eventWorkflowsProvider(owner), (_, next) {
         final workflows = next.value;
-        if (workflows == null || workflows.isEmpty || _eventWorkflowId != null) {
+        if (workflows == null ||
+            workflows.isEmpty ||
+            _eventWorkflowId != null) {
           return;
         }
         final first = workflows.first;
