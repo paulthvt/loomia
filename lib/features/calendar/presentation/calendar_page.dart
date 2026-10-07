@@ -16,6 +16,8 @@ import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -44,6 +46,25 @@ class CalendarPage extends ConsumerWidget {
     }
   }
 
+  /// Reloads the events, and the book their people come from, while the
+  /// month stays on screen. A failure says so in a SnackBar.
+  Future<void> _refresh(BuildContext context, WidgetRef ref) async {
+    final owner = ref.read(accountProvider)?.email;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final provider = eventsProvider(owner);
+    ref
+      ..invalidate(peopleProvider(owner))
+      ..invalidate(provider);
+    try {
+      await ref.read(provider.future);
+    } on PeopleFailure {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.contactsRefreshFailed)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = eventsProvider(ref.watch(accountProvider)?.email);
@@ -62,6 +83,7 @@ class CalendarPage extends ConsumerWidget {
       onOpen: (event) => openEvent(context, event.id),
       onAdd: (day) => unawaited(_add(context, ref, day)),
       onRetry: () => ref.invalidate(provider),
+      onRefresh: () => _refresh(context, ref),
       pane: pane,
       // With a sidebar, Settings is its account block instead.
       accountAction: context.screenSize.usesSideNavigation
@@ -114,6 +136,7 @@ class CalendarView extends StatelessWidget {
     required this.onOpen,
     required this.onAdd,
     required this.onRetry,
+    this.onRefresh,
     this.pane,
     this.accountAction,
     super.key,
@@ -141,6 +164,9 @@ class CalendarView extends StatelessWidget {
   /// Adds an event on the given day.
   final ValueChanged<DateTime> onAdd;
   final VoidCallback onRetry;
+
+  /// Pull to refresh, on mobile and tablet. None in previews.
+  final Future<void> Function()? onRefresh;
   final Widget? pane;
 
   /// Top-bar entry to Settings, where there is no sidebar to hold it.
@@ -232,30 +258,41 @@ class CalendarView extends StatelessWidget {
         child: const Icon(Icons.add_rounded),
       ),
       body: SafeArea(
-        child: ListView(
-          // The bottom inset keeps the last row clear of the add button.
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xxxl + AppSpacing.lg,
-          ),
-          children: [
-            header,
-            const SizedBox(height: AppSpacing.md),
-            grid,
-            const Divider(height: AppSpacing.xl),
-            DaySection(
-              events: events,
-              day: selection.day,
-              onOpen: onOpen,
-              onAdd: onAdd,
-              onRetry: onRetry,
+        child: _refreshable(
+          ListView(
+            // Pull to refresh works on a short list too.
+            physics: const AlwaysScrollableScrollPhysics(),
+            // The bottom inset keeps the last row clear of the add button.
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xxxl + AppSpacing.lg,
             ),
-          ],
+            children: [
+              header,
+              const SizedBox(height: AppSpacing.md),
+              grid,
+              const Divider(height: AppSpacing.xl),
+              DaySection(
+                events: events,
+                day: selection.day,
+                onOpen: onOpen,
+                onAdd: onAdd,
+                onRetry: onRetry,
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _refreshable(Widget list) {
+    final refresh = onRefresh;
+    return refresh == null
+        ? list
+        : RefreshIndicator(onRefresh: refresh, child: list);
   }
 }
 
