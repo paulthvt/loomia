@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -8,6 +10,7 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -18,16 +21,23 @@ Future<void> showWhoWasThere(
   BuildContext context, {
   required CalendarEvent event,
   required List<EventPerson> people,
+  required Map<Stage, String> followUpNames,
 }) => LoomiaDialog.show<void>(
   context,
-  (_) => _WhoWasThere(event: event, people: people),
+  (_) =>
+      _WhoWasThere(event: event, people: people, followUpNames: followUpNames),
 );
 
 class _WhoWasThere extends ConsumerStatefulWidget {
-  const _WhoWasThere({required this.event, required this.people});
+  const _WhoWasThere({
+    required this.event,
+    required this.people,
+    required this.followUpNames,
+  });
 
   final CalendarEvent event;
   final List<EventPerson> people;
+  final Map<Stage, String> followUpNames;
 
   @override
   ConsumerState<_WhoWasThere> createState() => _WhoWasThereState();
@@ -39,6 +49,11 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
   };
   bool _saving = false;
   PeopleFailure? _failure;
+
+  List<ThereLine> get _lines => thereSummary([
+    for (final (:person, came: _) in widget.people)
+      if (_there.contains(person.id)) person.stage,
+  ], widget.event.followUps);
 
   Future<void> _submit() async {
     setState(() {
@@ -101,6 +116,42 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
               title: Text(person.name),
               subtitle: Text(stageLabel(l10n, person.stage)),
               controlAffinity: ListTileControlAffinity.leading,
+            ),
+          if (widget.event.eventWorkflowId != null && _lines.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: LoomiaColors.of(context).surfaceSunken,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppSpacing.xs,
+                children: [
+                  Text(
+                    l10n.eventWhatHappensNext.toUpperCase(),
+                    style: AppTypography.overline.copyWith(
+                      color: LoomiaColors.of(context).textMuted,
+                    ),
+                  ),
+                  for (final line in _lines)
+                    Text(switch (widget.followUpNames[line.stage]) {
+                      final String name => l10n.eventThereStarts(
+                        line.count,
+                        line.stage.name,
+                        name,
+                      ),
+                      null => l10n.eventThereKeeps(line.count, line.stage.name),
+                    }),
+                  if (_lines.any(
+                    (line) => widget.followUpNames.containsKey(line.stage),
+                  ))
+                    Text(
+                      l10n.eventThereReplaces,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
             ),
         ],
       ),

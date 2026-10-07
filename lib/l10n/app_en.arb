@@ -2117,5 +2117,67 @@
       "where": { "type": "String" },
       "people": { "type": "String" }
     }
+  },
+  "eventChecklist": "Checklist",
+  "@eventChecklist": {
+    "description": "Heading of an event's steps (from its event workflow): things to do before and after the event."
+  },
+  "eventStepDue": "{timing} · {day}",
+  "@eventStepDue": {
+    "description": "Second line of a checklist step on an event: when it comes due relative to the event (e.g. '1 day before'), then the date, e.g. 'Wednesday, October 7'.",
+    "placeholders": {
+      "timing": { "type": "String" },
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" }
+    }
+  },
+  "eventStepTick": "Mark \"{label}\" done",
+  "@eventStepTick": {
+    "description": "Screen reader label of the ring that ticks a checklist step on an event. label is the step.",
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "eventStepUntick": "Mark \"{label}\" not done",
+  "@eventStepUntick": {
+    "description": "Screen reader label of a ticked checklist step's ring, which unticks it. label is the step.",
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "eventFollowUpStarts": "Start {workflow}",
+  "@eventFollowUpStarts": {
+    "description": "On an event's After the event rows: the people of that stage who were there start this workflow. workflow is its name.",
+    "placeholders": {
+      "workflow": { "type": "String" }
+    }
+  },
+  "eventFollowUpKeeps": "Keep their workflow",
+  "@eventFollowUpKeeps": {
+    "description": "On an event's After the event rows: people of that stage keep the workflow they're on."
+  },
+  "eventWhatHappensNext": "What happens next",
+  "@eventWhatHappensNext": {
+    "description": "Heading, shown uppercased, of the summary in the Who was there? sheet of what marking it done will do."
+  },
+  "eventThereStarts": "{count, plural, =1{1 {stage, select, prospect{prospect} customer{customer} other{team member}} starts {workflow}} other{{count} {stage, select, prospect{prospects} customer{customers} other{team members}} start {workflow}}}",
+  "@eventThereStarts": {
+    "description": "A line of the Who was there? summary: how many of a stage are ticked, and the workflow they will start. workflow is its name.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "stage": { "type": "String" },
+      "workflow": { "type": "String" }
+    }
+  },
+  "eventThereKeeps": "{count, plural, =1{1 {stage, select, prospect{prospect} customer{customer} other{team member}} keeps their workflow} other{{count} {stage, select, prospect{prospects} customer{customers} other{team members}} keep their workflow}}",
+  "@eventThereKeeps": {
+    "description": "A line of the Who was there? summary: how many of a stage are ticked and keep the workflow they're on.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "stage": { "type": "String" }
+    }
+  },
+  "eventThereReplaces": "A new workflow replaces the one they're on.",
+  "@eventThereReplaces": {
+    "description": "Last line of the Who was there? summary, shown when someone will start a workflow."
   }
 }

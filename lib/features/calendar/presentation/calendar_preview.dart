@@ -55,6 +55,9 @@ Widget eventMobileLight() => _app(
       onDelete: () {},
       onOpenPlace: (_) {},
       onJoin: (_) {},
+      steps: const [],
+      onTick: (_, _) {},
+      followUpNames: const {},
     ),
   ),
 );
@@ -98,6 +101,9 @@ Widget eventDoneMobileLight() => _app(
       onDelete: () {},
       onOpenPlace: (_) {},
       onJoin: (_) {},
+      steps: const [],
+      onTick: (_, _) {},
+      followUpNames: const {},
     ),
   ),
 );
