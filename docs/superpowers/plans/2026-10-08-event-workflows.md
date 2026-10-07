@@ -40,7 +40,7 @@
 
 1. Marking who was there moves a prospect who was there onto the event's prospect workflow, at its first step, unpaused, from the device's today. Someone whose stage has no mapping keeps their workflow, and someone who missed it is untouched. Pinned in Task 1.
 2. A deleted person workflow leaves the event workflow and the events with "keep their workflow", not a dangling id. Pinned in Task 1.
-3. The seed gives a new account "Workshop" once. Existing accounts get it once from the migration, mapped to their current defaults (null where they have none). Pinned in Task 1.
+3. The seed gives a new account "Workshop" once. Existing accounts get it once from the migration, mapped to their current defaults (null where they have none). The seed is pinned in Task 1; the backfill is read in review, because the test database starts with no accounts.
 4. A step's due date is the event's local day plus `days`, negative included, across a month end. Pinned in Task 2.
 5. Choosing another event workflow in the form doesn't overwrite a title the user typed. Pinned in Task 4.
 
