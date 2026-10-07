@@ -114,7 +114,8 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
-    expect(events.calls.last, 'update(e1)');
+    // list() is the provider's first load when the notifier is read.
+    expect(events.calls, ['list()', 'update(e1)']);
     expect(events.store.single.endsAt, isNull);
   });
 
