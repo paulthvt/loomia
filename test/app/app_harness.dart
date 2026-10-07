@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/app.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/data/phone_contacts_repository.dart';
@@ -11,6 +12,7 @@ import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../features/auth/fake_auth_repository.dart';
+import '../features/calendar/fake_event_repository.dart';
 import '../features/contacts/fake_activity_repository.dart';
 import '../features/contacts/fake_people_repository.dart';
 import '../features/contacts/fake_phone_contacts_repository.dart';
@@ -29,6 +31,7 @@ Future<ProviderContainer> pumpLoomia(
   FakeActivityRepository? activities,
   FakeWorkflowRepository? workflows,
   FakeGoalsRepository? goals,
+  FakeEventRepository? events,
   FakePhoneContactsRepository? phoneContacts,
   FakeAuthRepository? auth,
   bool settle = true,
@@ -55,6 +58,9 @@ Future<ProviderContainer> pumpLoomia(
         ),
         goalsRepositoryProvider.overrideWithValue(
           goals ?? FakeGoalsRepository(),
+        ),
+        eventRepositoryProvider.overrideWithValue(
+          events ?? FakeEventRepository(),
         ),
         phoneContactsRepositoryProvider.overrideWithValue(
           phoneContacts ?? FakePhoneContactsRepository(),
