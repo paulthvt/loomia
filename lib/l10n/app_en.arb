@@ -364,105 +364,9 @@
   "@navContacts": {
     "description": "Navigation destination (bottom bar, sidebar) that opens the list of people."
   },
-  "navTeam": "Team",
-  "@navTeam": {
-    "description": "Navigation destination (bottom bar, sidebar) that opens the Team screen: the people who work with the user."
-  },
-  "teamTitle": "Team",
-  "@teamTitle": {
-    "description": "Title of the Team screen."
-  },
-  "teamCount": "{count, plural, =1{One person on your team} other{{count} people on your team}}",
-  "@teamCount": {
-    "description": "Heading of the summary card on the Team screen. A sentence, not a score.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "teamNotMeasured": "Nobody is being measured here — this is just who might need you.",
-  "@teamNotMeasured": {
-    "description": "Body of the summary card on the Team screen. States the rule out loud: the screen is about helping, never about performance. Informal register."
-  },
-  "teamSectionEveryone": "Everyone",
-  "@teamSectionEveryone": {
-    "description": "Section header above every team member, with their count beside it. Shown in capitals."
-  },
-  "teamJoinedToday": "Team · joined today",
-  "@teamJoinedToday": {
-    "description": "Second line of a team member's row: they joined the team today."
-  },
-  "teamJoinedYesterday": "Team · joined yesterday",
-  "@teamJoinedYesterday": {
-    "description": "Second line of a team member's row: they joined the team yesterday."
-  },
-  "teamJoinedDaysAgo": "{count, plural, other{Team · joined {count} days ago}}",
-  "@teamJoinedDaysAgo": {
-    "description": "Second line of a team member's row, 2 to 6 days after they joined the team.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "teamJoinedWeeksAgo": "{count, plural, =1{Team · joined a week ago} other{Team · joined {count} weeks ago}}",
-  "@teamJoinedWeeksAgo": {
-    "description": "Second line of a team member's row, 1 to 8 weeks after they joined the team. count is whole weeks.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "teamJoinedIn": "Team · joined in {date}",
-  "@teamJoinedIn": {
-    "description": "Second line of a team member's row, more than 8 weeks after they joined: the month, e.g. 'Team · joined in March 2026'.",
-    "placeholders": {
-      "date": { "type": "DateTime", "format": "yMMMM" }
-    }
-  },
-  "teamEmptyTitle": "No one on your team yet",
-  "@teamEmptyTitle": {
-    "description": "Heading of the Team screen when nobody in the user's contacts is at the team stage."
-  },
-  "teamEmptyBody": "Move someone to Team from their page.",
-  "@teamEmptyBody": {
-    "description": "Body under teamEmptyTitle: how someone joins the team, from the ⋯ menu of their contact page. Informal register."
-  },
-  "teamLoadFailed": "Couldn't load your team.",
-  "@teamLoadFailed": {
-    "description": "Heading in place of the Team screen when the contacts could not be loaded. Above contactsLoadErrorBody and a Try again button."
-  },
-  "teamTalkedToday": "Team · talked today",
-  "@teamTalkedToday": {
-    "description": "Second line of a team member's row: something was logged with them today."
-  },
-  "teamTalkedYesterday": "Team · talked yesterday",
-  "@teamTalkedYesterday": {
-    "description": "Second line of a team member's row: the latest thing logged with them was yesterday."
-  },
-  "teamTalkedDaysAgo": "{count, plural, other{Team · talked {count} days ago}}",
-  "@teamTalkedDaysAgo": {
-    "description": "Second line of a team member's row, 2 to 6 days after the latest thing logged with them.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "teamTalkedWeeksAgo": "{count, plural, =1{Team · talked a week ago} other{Team · talked {count} weeks ago}}",
-  "@teamTalkedWeeksAgo": {
-    "description": "Second line of a team member's row, 1 to 8 weeks after the latest thing logged with them. count is whole weeks.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "teamTalkedIn": "Team · talked in {date}",
-  "@teamTalkedIn": {
-    "description": "Second line of a team member's row, more than 8 weeks after the latest thing logged with them: the month, e.g. 'Team · talked in March 2026'.",
-    "placeholders": {
-      "date": { "type": "DateTime", "format": "yMMMM" }
-    }
-  },
-  "teamCheckInSummary": "{count, plural, =0{Everyone has heard from you lately.} =1{One of them could use a message this week.} other{{count} of them could use a message this week.}}",
-  "@teamCheckInSummary": {
-    "description": "First sentence of the summary card on the Team screen, before teamNotMeasured: how many members are worth a check-in. A gentle offer, never a score. Informal register.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
+  "navCalendar": "Calendar",
+  "@navCalendar": {
+    "description": "Navigation destination (bottom bar, sidebar) that opens the Calendar: the user's events, such as workshops."
   },
   "teamSectionCheckIn": "Worth a check-in",
   "@teamSectionCheckIn": {
@@ -1872,5 +1776,150 @@
   "@contactsMovePartly": {
     "description": "Under a stage in the Move to… sheet, when some of the picked people are already in that stage and only the others move.",
     "placeholders": { "moving": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "calendarNewEvent": "New event",
+  "@calendarNewEvent": {
+    "description": "Title of the form that adds an event to the calendar (a workshop, a training), and tooltip of the Calendar's add button."
+  },
+  "eventEdit": "Edit event",
+  "@eventEdit": {
+    "description": "Title of the form that changes an event, and tooltip of the edit button on an event's screen."
+  },
+  "eventTitle": "Title",
+  "@eventTitle": {
+    "description": "Label of the event form's field for what the event is called, e.g. 'Essential oils for sleep'."
+  },
+  "eventTitleRequired": "Give it a title",
+  "@eventTitleRequired": {
+    "description": "Error under the event form's Title field when it is empty."
+  },
+  "eventDate": "Date",
+  "@eventDate": {
+    "description": "Label of the event form's field for the day the event happens."
+  },
+  "eventStarts": "Starts",
+  "@eventStarts": {
+    "description": "Label of the event form's field for the time the event starts."
+  },
+  "eventEnds": "Ends",
+  "@eventEnds": {
+    "description": "Label of the event form's field for the time the event ends, on the same day."
+  },
+  "eventEndsNone": "Optional",
+  "@eventEndsNone": {
+    "description": "Shown in the event form's Ends field while no end time is set: setting one is optional."
+  },
+  "eventEndsBeforeStart": "It has to end after it starts.",
+  "@eventEndsBeforeStart": {
+    "description": "Error under the event form's Ends field when the end time is not after the start time."
+  },
+  "eventPlace": "Place",
+  "@eventPlace": {
+    "description": "Label of the event form's field for where the event happens: an address or a place's name. Tapping it later opens the maps app."
+  },
+  "eventLink": "Link",
+  "@eventLink": {
+    "description": "Label of the event form's field for an online meeting's web address."
+  },
+  "eventLinkHint": "For an online event",
+  "@eventLinkHint": {
+    "description": "Hint inside the empty Link field of the event form."
+  },
+  "eventLinkInvalid": "That doesn't look like a web link.",
+  "@eventLinkInvalid": {
+    "description": "Error under the event form's Link field when what was typed is not a web address."
+  },
+  "eventNotes": "Notes",
+  "@eventNotes": {
+    "description": "Label of the event form's field for free notes about the event, e.g. what to bring."
+  },
+  "calendarMonth": "{month}",
+  "@calendarMonth": {
+    "description": "Title of the Calendar screen: the month shown, e.g. 'October 2026'. The format follows the locale.",
+    "placeholders": {
+      "month": { "type": "DateTime", "format": "yMMMM" }
+    }
+  },
+  "calendarToday": "Today",
+  "@calendarToday": {
+    "description": "Button on the Calendar screen that goes back to the current month and selects today."
+  },
+  "calendarPreviousMonth": "Previous month",
+  "@calendarPreviousMonth": {
+    "description": "Tooltip of the Calendar's button that shows the month before."
+  },
+  "calendarNextMonth": "Next month",
+  "@calendarNextMonth": {
+    "description": "Tooltip of the Calendar's button that shows the month after."
+  },
+  "calendarDayTitle": "{day}",
+  "@calendarDayTitle": {
+    "description": "Heading above the selected day's events on the Calendar screen, shown uppercased, e.g. 'Thursday, October 8'. The format follows the locale.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" }
+    }
+  },
+  "calendarAdd": "Add",
+  "@calendarAdd": {
+    "description": "Action beside the selected day's heading on the Calendar screen: adds an event on that day."
+  },
+  "calendarNothingPlanned": "Nothing planned",
+  "@calendarNothingPlanned": {
+    "description": "Shown under the selected day on the Calendar screen when it has no event."
+  },
+  "calendarDaySemantics": "{day}, {count, plural, =0{nothing planned} =1{one event} other{{count} events}}",
+  "@calendarDaySemantics": {
+    "description": "What a screen reader says for a day in the Calendar's month grid: the date, then how many events it has.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "count": { "type": "int" }
+    }
+  },
+  "calendarLoadFailed": "Couldn't load your calendar.",
+  "@calendarLoadFailed": {
+    "description": "Title of the error shown on the Calendar when the events could not be loaded."
+  },
+  "eventOnline": "Online",
+  "@eventOnline": {
+    "description": "Second line of an event's row on the Calendar when it has a meeting link and no place."
+  },
+  "eventWhen": "{day} · {time}",
+  "@eventWhen": {
+    "description": "When an event happens, on its screen: the date, then the time or 'start – end', e.g. 'Thursday, October 8 · 7:00 PM – 9:00 PM'.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "time": { "type": "String" }
+    }
+  },
+  "eventJoin": "Join",
+  "@eventJoin": {
+    "description": "Button on an event's screen that opens its online meeting link."
+  },
+  "eventDelete": "Delete event",
+  "@eventDelete": {
+    "description": "Tooltip of the delete button on an event's screen."
+  },
+  "eventDeleteTitle": "Delete {title}?",
+  "@eventDeleteTitle": {
+    "description": "Title of the dialog that confirms deleting an event. title is the event's title.",
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "eventDeleteBody": "It goes from your calendar. Nobody else is told.",
+  "@eventDeleteBody": {
+    "description": "Body of the dialog that confirms deleting an event."
+  },
+  "eventDeleteAction": "Delete",
+  "@eventDeleteAction": {
+    "description": "Destructive button of the dialog that confirms deleting an event."
+  },
+  "eventNotFound": "This event isn't in your calendar any more.",
+  "@eventNotFound": {
+    "description": "Title shown when an event's link points to one that no longer exists."
+  },
+  "eventNotFoundBody": "It may have been deleted on another device.",
+  "@eventNotFoundBody": {
+    "description": "Body under eventNotFound."
   }
 }

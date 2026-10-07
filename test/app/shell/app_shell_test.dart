@@ -1,13 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/router/app_router.dart';
+import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
-import 'package:loomia/features/team/presentation/team_page.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../features/contacts/fake_activity_repository.dart';
@@ -131,26 +133,36 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
   });
 
-  testWidgets('mobile: Team is the third tab and opens the team', (
+  testWidgets('mobile: Calendar is the second tab and opens the month', (
     tester,
   ) async {
     await pumpLoomia(tester, size: const Size(390, 844));
 
-    await tester.tap(find.text('Team'));
+    await tester.tap(find.text('Calendar'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(TeamPage), findsOneWidget);
+    expect(find.byType(CalendarView), findsOneWidget);
     final bar = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(bar.selectedIndex, 2);
+    expect(bar.selectedIndex, 1);
+    expect(find.text('Team'), findsNothing);
   });
 
-  testWidgets('desktop: the sidebar opens the team', (tester) async {
+  testWidgets('desktop: the sidebar opens the Calendar', (tester) async {
     await pumpLoomia(tester, size: const Size(1440, 900));
 
-    await tester.tap(find.text('Team'));
+    await tester.tap(find.text('Calendar'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(TeamPage), findsOneWidget);
+    expect(find.byType(CalendarView), findsOneWidget);
+  });
+
+  testWidgets('an old link to Team opens Contacts', (tester) async {
+    final container = await pumpLoomia(tester, size: const Size(390, 844));
+
+    container.read(routerProvider).go(Routes.team);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ContactList), findsOneWidget);
   });
 
   testWidgets('mobile: Goals is the fourth tab and opens Goals', (

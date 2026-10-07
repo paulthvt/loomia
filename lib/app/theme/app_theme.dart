@@ -219,6 +219,18 @@ abstract final class AppTheme {
         ),
       ),
 
+      // Flat like the rest (design-system §5): Material's FAB casts a shadow
+      // and is tonal.
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
+        disabledElevation: 0,
+      ),
+
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surfaceDefault,
         surfaceTintColor: Colors.transparent,

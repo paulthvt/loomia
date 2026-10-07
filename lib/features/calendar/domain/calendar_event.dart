@@ -1,0 +1,88 @@
+/// Something on the calendar: a workshop, a training. [startsAt] and
+/// [endsAt] are instants; the calendar reads them in the device's time zone.
+class CalendarEvent {
+  const CalendarEvent({
+    required this.id,
+    required this.title,
+    required this.startsAt,
+    this.endsAt,
+    this.place,
+    this.link,
+    this.notes,
+  });
+
+  final String id;
+  final String title;
+  final DateTime startsAt;
+
+  /// After [startsAt], the same day (the form has no end date).
+  final DateTime? endsAt;
+
+  /// Free text: an address, a café's name.
+  final String? place;
+
+  /// An http(s) address, for an online event.
+  final String? link;
+  final String? notes;
+
+  /// The local calendar day it starts on, as local midnight.
+  DateTime get day {
+    final local = startsAt.toLocal();
+    return DateTime(local.year, local.month, local.day);
+  }
+}
+
+/// What the form saves. Text is trimmed and empty text is null by then.
+typedef EventDraft = ({
+  String title,
+  DateTime startsAt,
+  DateTime? endsAt,
+  String? place,
+  String? link,
+  String? notes,
+});
+
+/// Earliest first.
+List<CalendarEvent> byStart(Iterable<CalendarEvent> events) =>
+    [...events]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+
+/// [events] starting on [day] (local midnight), earliest first.
+List<CalendarEvent> eventsOn(List<CalendarEvent> events, DateTime day) =>
+    byStart(events.where((event) => event.day == day));
+
+/// How many events start on each local day; days without one are absent.
+Map<DateTime, int> eventsPerDay(List<CalendarEvent> events) {
+  final counts = <DateTime, int>{};
+  for (final event in events) {
+    counts.update(event.day, (count) => count + 1, ifAbsent: () => 1);
+  }
+  return counts;
+}
+
+/// [text] as an http(s) link: trimmed, `https://` added when there is no
+/// scheme. Null when empty, or when it isn't a web address with a dotted
+/// host, which also turns away `javascript:`.
+String? normaliseLink(String text) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return null;
+  final link = trimmed.contains('://') ? trimmed : 'https://$trimmed';
+  final uri = Uri.tryParse(link);
+  if (uri == null ||
+      !(uri.isScheme('http') || uri.isScheme('https')) ||
+      !uri.host.contains('.')) {
+    return null;
+  }
+  return link;
+}
+
+/// [link] as the event screen shows it: without `https://`.
+String shownLink(String link) => link.replaceFirst(RegExp('^https?://'), '');
+
+/// Directions to [place] in the maps app: Apple Maps on iOS, Google Maps
+/// elsewhere (Android's Maps app opens these links; the web gets the site).
+Uri mapsUri(String place, {required bool apple}) => apple
+    ? Uri.https('maps.apple.com', '/', {'q': place})
+    : Uri.https('www.google.com', '/maps/search/', {
+        'api': '1',
+        'query': place,
+      });

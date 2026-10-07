@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/theme_preview.dart';
 import 'package:loomia/core/ui/ui_preview.dart';
+import 'package:loomia/features/calendar/presentation/calendar_preview.dart';
 import 'package:loomia/features/contacts/presentation/contacts_preview.dart';
 import 'package:loomia/features/goals/presentation/goals_preview.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_preview.dart';
-import 'package:loomia/features/team/presentation/team_preview.dart';
 import 'package:loomia/features/today/presentation/today_preview.dart';
 import 'package:loomia/features/workflows/presentation/workflows_preview.dart';
 import 'package:material_ui/material_ui.dart';
@@ -30,9 +30,10 @@ void main() {
     'today_desktop_light': (const Size(1440, 900), todayDesktopLight),
     'today_desktop_dark': (const Size(1440, 900), todayDesktopDark),
     'today_empty_light': (const Size(390, 844), todayEmptyLight),
-    'team_mobile_light': (const Size(390, 844), teamMobileLight),
-    'team_mobile_dark': (const Size(390, 844), teamMobileDark),
-    'team_desktop_light': (const Size(1440, 900), teamDesktopLight),
+    'calendar_mobile_light': (const Size(390, 844), calendarMobileLight),
+    'calendar_mobile_dark': (const Size(390, 844), calendarMobileDark),
+    'calendar_desktop_light': (const Size(1440, 900), calendarDesktopLight),
+    'event_mobile_light': (const Size(390, 844), eventMobileLight),
     'goals_mobile_light': (const Size(390, 844), goalsMobileLight),
     'goals_mobile_dark': (const Size(390, 844), goalsMobileDark),
     'goals_desktop_light': (const Size(1440, 900), goalsDesktopLight),

@@ -17,10 +17,12 @@ import 'package:material_ui/material_ui.dart';
 /// icon rail. Mobile: a bottom bar with the destinations, except on Settings,
 /// which is reached from [AccountButton] and has its own back button, and on
 /// Contacts while picking several people, whose actions take the bar's place.
-/// Goals joins when it exists, never as a placeholder.
+/// Team returns with the team plan; until then the Contacts `Team` filter
+/// lists the team, and Today its check-ins.
 ///
-/// ponytail: the design moves these edges to 840px (rail/bottom bar) and 1100px
-/// (rail/sidebar); size classes are used until the difference is visible.
+/// ponytail: the design moves these edges to 840px (rail/bottom bar) and
+/// 1100px (rail/sidebar); size classes are used until the difference is
+/// visible.
 class AppShell extends ConsumerWidget {
   const AppShell({required this.location, required this.child, super.key});
 
@@ -37,7 +39,12 @@ class AppShell extends ConsumerWidget {
           ref.watch(contactsPickingProvider);
       if (location.startsWith(Routes.settings)) return child;
       final l10n = AppLocalizations.of(context);
-      const tabs = [Routes.today, Routes.contacts, Routes.team, Routes.goals];
+      const tabs = [
+        Routes.today,
+        Routes.calendar,
+        Routes.contacts,
+        Routes.goals,
+      ];
       final selected = tabs.lastIndexWhere(
         (path) => path == Routes.today
             ? location == Routes.today
@@ -58,12 +65,12 @@ class AppShell extends ConsumerWidget {
                     label: l10n.navToday,
                   ),
                   NavigationDestination(
-                    icon: const Icon(Icons.people_outline),
-                    label: l10n.navContacts,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: l10n.navCalendar,
                   ),
                   NavigationDestination(
-                    icon: const Icon(Icons.diversity_3_outlined),
-                    label: l10n.navTeam,
+                    icon: const Icon(Icons.people_outline),
+                    label: l10n.navContacts,
                   ),
                   NavigationDestination(
                     icon: const Icon(Icons.flag_outlined),
@@ -147,18 +154,18 @@ class _Sidebar extends ConsumerWidget {
                   onTap: () => context.go(Routes.today),
                 ),
                 _SidebarItem(
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: l10n.navCalendar,
+                  selected: location.startsWith(Routes.calendar),
+                  expanded: expanded,
+                  onTap: () => context.go(Routes.calendar),
+                ),
+                _SidebarItem(
                   icon: const Icon(Icons.people_outline),
                   label: l10n.navContacts,
                   selected: location.startsWith(Routes.contacts),
                   expanded: expanded,
                   onTap: () => context.go(Routes.contacts),
-                ),
-                _SidebarItem(
-                  icon: const Icon(Icons.diversity_3_outlined),
-                  label: l10n.navTeam,
-                  selected: location.startsWith(Routes.team),
-                  expanded: expanded,
-                  onTap: () => context.go(Routes.team),
                 ),
                 _SidebarItem(
                   icon: const Icon(Icons.flag_outlined),

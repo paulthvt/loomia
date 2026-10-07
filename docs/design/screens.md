@@ -8,9 +8,9 @@ are not a second design to maintain).
 | Frame | Size | Page |
 | --- | --- | --- |
 | Today — mobile | 390 × 844 | 04 / 05 |
+| Calendar — mobile | 390 × 844 | 04 / 05 |
 | Contacts — mobile | 390 × 844 | 04 / 05 |
 | Contact detail — mobile | 390 × 844 | 04 / 05 |
-| Team — mobile | 390 × 844 | 04 / 05 |
 | Goals — mobile | 390 × 844 | 04 / 05 |
 | Today — desktop | 1440 × 900 | 04 / 05 |
 | Contacts — desktop | 1440 × 900 | 04 / 05 |
@@ -131,6 +131,9 @@ first step's day.
 
 ## 4. Team
 
+Retired with #151: the list is the Contacts Team filter, the check-ins are on
+Today; returns with the team plan.
+
 App bar → a summary card ("6 people on your team" + AvatarGroup + "Two of them
 could use a message this week. **Nobody is being measured here** — this is just who
 might need you.") → `WORTH A CHECK-IN` (2 ActionItems about people, with the
@@ -166,7 +169,7 @@ person, and the largest numeral on the screen is smaller than the screen title
 (guardrail #4).
 
 **Built** ([#142](https://github.com/paulthvt/loomia/issues/142)): the Goals
-tab (Today · Contacts · Team · Goals, and in the sidebar), one 624px column on
+tab (Today · Calendar · Contacts · Goals, and in the sidebar), one 624px column on
 every size. No plan this month: "What are you aiming for this month?" and
 `Plan September`. With a plan: the own-volume card (bar, percent and days
 left when there is a target; pace from day 4), four tiles, the declared row

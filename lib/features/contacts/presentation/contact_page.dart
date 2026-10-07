@@ -7,6 +7,7 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -25,7 +26,6 @@ import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// One person on mobile and tablet: a screen of its own above the list.
 class ContactPage extends StatelessWidget {
@@ -123,7 +123,7 @@ class ContactPane extends ConsumerWidget {
       onResume: () => unawaited(
         writePeople(context, ref, (people) => people.resume(person, today())),
       ),
-      onLaunch: (uri) => unawaited(_launch(context, uri)),
+      onLaunch: (uri) => unawaited(openExternal(context, uri)),
       onRefresh: () {
         ref.invalidate(historyProvider(person.id));
         ref.invalidate(workflows);
@@ -167,22 +167,6 @@ class ContactPane extends ConsumerWidget {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
       );
-    }
-  }
-
-  Future<void> _launch(BuildContext context, Uri uri) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final l10n = AppLocalizations.of(context);
-    bool opened;
-    try {
-      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } on Exception {
-      // No app for the scheme throws on some platforms instead of returning
-      // false.
-      opened = false;
-    }
-    if (!opened) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.contactLaunchFailed)));
     }
   }
 }

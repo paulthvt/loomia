@@ -10,6 +10,8 @@ import 'package:loomia/features/auth/presentation/login_page.dart';
 import 'package:loomia/features/auth/presentation/register_page.dart';
 import 'package:loomia/features/auth/presentation/reset_password_page.dart';
 import 'package:loomia/features/auth/presentation/welcome_page.dart';
+import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/import_contacts_page.dart';
@@ -19,7 +21,6 @@ import 'package:loomia/features/goals/presentation/goals_page.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
-import 'package:loomia/features/team/presentation/team_page.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -95,10 +96,37 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // Like Contacts: on desktop the month stays built beside a pane
+          // that follows the URL; elsewhere the month and an event are
+          // separate screens.
+          ShellRoute(
+            builder: (context, state, child) => context.screenSize.isDesktop
+                ? CalendarPage(pane: child)
+                : child,
+            routes: [
+              GoRoute(
+                path: Routes.calendar,
+                name: Routes.calendarName,
+                pageBuilder: (context, state) =>
+                    _calendarPage(context, state, null),
+                routes: [
+                  GoRoute(
+                    path: Routes.eventSegment,
+                    name: Routes.eventName,
+                    pageBuilder: (context, state) => _calendarPage(
+                      context,
+                      state,
+                      state.pathParameters['id'],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           GoRoute(
             path: Routes.team,
             name: Routes.teamName,
-            builder: (context, state) => const TeamPage(),
+            redirect: (context, state) => Routes.contacts,
           ),
           GoRoute(
             path: Routes.goals,
@@ -263,4 +291,27 @@ Page<void> _workflowPage(BuildContext context, GoRouterState state, String id) {
           child: child,
         )
       : MaterialPage<void>(key: state.pageKey, name: state.name, child: child);
+}
+
+/// Desktop: the pane beside the month, swapped without a transition (see
+/// [_settingsPage]). Elsewhere: the month, or an event pushed above it.
+Page<void> _calendarPage(
+  BuildContext context,
+  GoRouterState state,
+  String? id,
+) {
+  if (context.screenSize.isDesktop) {
+    return NoTransitionPage<void>(
+      key: state.pageKey,
+      name: state.name,
+      child: Scaffold(
+        body: id == null ? const CalendarDayPane() : EventPane(id: id),
+      ),
+    );
+  }
+  return MaterialPage<void>(
+    key: state.pageKey,
+    name: state.name,
+    child: id == null ? const CalendarPage() : EventPage(id: id),
+  );
 }

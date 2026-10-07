@@ -6,6 +6,7 @@ import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -14,6 +15,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'app/app_harness.dart';
 import 'features/auth/fake_auth_repository.dart';
+import 'features/calendar/fake_event_repository.dart';
 import 'features/contacts/fake_activity_repository.dart';
 import 'features/contacts/fake_people_repository.dart';
 import 'load_fonts.dart';
@@ -40,7 +42,7 @@ void main() {
     'today': Routes.today,
     'contacts': Routes.contacts,
     'contact': Routes.contactLocation('marie'),
-    'team': Routes.team,
+    'calendar': Routes.calendar,
   };
 
   setUpAll(loadAppFonts);
@@ -58,6 +60,7 @@ void main() {
             pixelRatio: ratio,
             people: FakePeopleRepository(_book())..activities = activities,
             activities: activities,
+            events: FakeEventRepository(_events()),
             auth: FakeAuthRepository()
               ..session = true
               ..account = Account(
@@ -197,3 +200,33 @@ List<Activity> _history() => [
       text: text,
     ),
 ];
+
+/// Today's workshop and training, and two more later in the month.
+List<CalendarEvent> _events() {
+  final day = today();
+  DateTime at(int days, int hour, [int minute = 0]) =>
+      DateTime(day.year, day.month, day.day + days, hour, minute);
+  return [
+    CalendarEvent(
+      id: 'e1',
+      title: 'Essential oils for sleep',
+      startsAt: at(0, 19),
+      endsAt: at(0, 21),
+      place: 'Studio Lumière, Lyon',
+    ),
+    CalendarEvent(
+      id: 'e2',
+      title: 'New member training',
+      startsAt: at(0, 14),
+      endsAt: at(0, 15),
+      link: 'https://meet.google.com/abc-defg-hij',
+    ),
+    CalendarEvent(
+      id: 'e3',
+      title: 'Product evening',
+      startsAt: at(6, 19, 30),
+      place: 'Chez Claire',
+    ),
+    CalendarEvent(id: 'e4', title: 'Workshop', startsAt: at(13, 19)),
+  ];
+}
