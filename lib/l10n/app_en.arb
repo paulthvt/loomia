@@ -1925,5 +1925,24 @@
   "eventNotFoundBody": "It may have been deleted on another device.",
   "@eventNotFoundBody": {
     "description": "Body under eventNotFound."
+  },
+  "peoplePickerTitle": "Add people",
+  "@peoplePickerTitle": {
+    "description": "Title of the sheet that picks contacts to invite to an event, and the action beside an event's People heading."
+  },
+  "peoplePickerSearch": "Search people",
+  "@peoplePickerSearch": {
+    "description": "Hint in the search field of the sheet that picks contacts to invite to an event."
+  },
+  "peoplePickerAdd": "{count, plural, =0{Add} =1{Add one person} other{Add {count} people}}",
+  "@peoplePickerAdd": {
+    "description": "Button that invites the picked contacts to the event. count is how many are picked; at 0 the button is disabled.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "peoplePickerNobody": "Nobody else to add.",
+  "@peoplePickerNobody": {
+    "description": "Shown in the people picker when every contact matching the search is already invited, or there are no contacts."
   }
 }
