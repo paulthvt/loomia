@@ -134,14 +134,17 @@ class EventPane extends ConsumerWidget {
     final owner = ref.read(accountProvider)?.email;
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
+    final people = ref.read(peopleProvider(owner)).value ?? const [];
+    final events = ref.read(eventsProvider(owner).notifier);
     final picked = await pickPeople(
       context,
-      people: ref.read(peopleProvider(owner)).value ?? const [],
+      people: people,
       except: {for (final attendee in event.attendees) attendee.personId},
     );
+    if (!context.mounted) return;
     if (picked == null || picked.isEmpty) return;
     try {
-      await ref.read(eventsProvider(owner).notifier).invite(event.id, picked);
+      await events.invite(event.id, picked);
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
@@ -157,10 +160,10 @@ class EventPane extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
+    final events =
+        ref.read(eventsProvider(ref.read(accountProvider)?.email).notifier);
     try {
-      await ref
-          .read(eventsProvider(ref.read(accountProvider)?.email).notifier)
-          .uninvite(event.id, person.id);
+      await events.uninvite(event.id, person.id);
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
