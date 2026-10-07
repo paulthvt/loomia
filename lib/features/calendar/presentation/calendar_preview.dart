@@ -5,6 +5,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -44,8 +45,51 @@ Widget eventMobileLight() => _app(
     appBar: AppBar(leading: const BackButton()),
     body: EventView(
       event: _events[1],
-      people: const [],
+      people: _people.map((p) => (person: p, came: false)).toList(),
       now: DateTime(2026, 10, 7, 9),
+      onAddPeople: () {},
+      onRemove: (_) {},
+      onOpenPerson: (_) {},
+      onMarkDone: () {},
+      onEdit: () {},
+      onDelete: () {},
+      onOpenPlace: (_) {},
+      onJoin: (_) {},
+    ),
+  ),
+);
+
+@Preview(group: 'Calendar', name: 'Event done — light', size: Size(390, 844))
+Widget eventDoneMobileLight() => _app(
+  AppTheme.light,
+  Scaffold(
+    appBar: AppBar(leading: const BackButton()),
+    body: EventView(
+      event: CalendarEvent(
+        id: _events[1].id,
+        title: _events[1].title,
+        startsAt: _events[1].startsAt,
+        endsAt: _events[1].endsAt,
+        place: _events[1].place,
+        link: _events[1].link,
+        notes: _events[1].notes,
+        attendees: [
+          (personId: 'p1', came: true), // Claire
+          (personId: 'p2', came: false), // Amélie
+          (personId: 'p3', came: true), // Sarah
+          (personId: 'p4', came: true), // Marie
+          (personId: 'p5', came: true), // Bruno
+        ],
+        doneAt: DateTime(2026, 10, 9, 9),
+      ),
+      people: [
+        (person: _people[0], came: false), // Amélie
+        (person: _people[1], came: true), // Bruno
+        (person: _people[2], came: true), // Claire
+        (person: _people[3], came: true), // Marie
+        (person: _people[4], came: true), // Sarah
+      ],
+      now: DateTime(2026, 10, 9, 9),
       onAddPeople: () {},
       onRemove: (_) {},
       onOpenPerson: (_) {},
@@ -60,6 +104,40 @@ Widget eventMobileLight() => _app(
 
 final _today = DateTime(2026, 10, 7);
 final _selected = DateTime(2026, 10, 8);
+
+/// Five people as in the Figma: sorted by name.
+final _people = [
+  Person(
+    id: 'p2',
+    name: 'Amélie Rousseau',
+    stage: Stage.prospect,
+    stageSince: DateTime(2026, 9),
+  ),
+  Person(
+    id: 'p5',
+    name: 'Bruno Keller',
+    stage: Stage.team,
+    stageSince: DateTime(2026, 9),
+  ),
+  Person(
+    id: 'p1',
+    name: 'Claire Moreau',
+    stage: Stage.prospect,
+    stageSince: DateTime(2026, 9),
+  ),
+  Person(
+    id: 'p4',
+    name: 'Marie Dupont',
+    stage: Stage.customer,
+    stageSince: DateTime(2026, 9),
+  ),
+  Person(
+    id: 'p3',
+    name: 'Sarah Lemaire',
+    stage: Stage.prospect,
+    stageSince: DateTime(2026, 9),
+  ),
+];
 
 /// As in the Figma: a done event on the 3rd, two on the 8th, one on the
 /// 14th, two on the 21st, one on the 27th.
@@ -77,6 +155,13 @@ final _events = [
     place: 'Studio Lumière, 4 rue Mercière, Lyon',
     link: 'https://meet.google.com/abc-defg-hij',
     notes: 'Bring the diffuser and ten sample vials. Doors open at 18:45.',
+    attendees: [
+      (personId: 'p1', came: false),
+      (personId: 'p2', came: false),
+      (personId: 'p3', came: false),
+      (personId: 'p4', came: false),
+      (personId: 'p5', came: false),
+    ],
   ),
   CalendarEvent(
     id: 'e2',
@@ -84,6 +169,11 @@ final _events = [
     startsAt: DateTime(2026, 10, 8, 14),
     endsAt: DateTime(2026, 10, 8, 15),
     link: 'https://meet.google.com/abc-defg-hij',
+    attendees: [
+      (personId: 'p1', came: false),
+      (personId: 'p3', came: false),
+      (personId: 'p5', came: false),
+    ],
   ),
   CalendarEvent(
     id: 'e3',
