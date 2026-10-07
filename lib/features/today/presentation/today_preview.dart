@@ -2,11 +2,14 @@ import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/today/domain/due.dart';
+import 'package:loomia/features/today/domain/today_events.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -31,6 +34,18 @@ Widget todayDesktopDark() => _app(AppTheme.dark, _book, goals: _goals);
 
 @Preview(group: 'Today', name: 'Empty — light', size: Size(390, 844))
 Widget todayEmptyLight() => _app(AppTheme.light, const []);
+
+@Preview(group: 'Today', name: 'Events — light', size: Size(390, 844))
+Widget todayEventsMobileLight() => _app(
+  AppTheme.light,
+  [
+    _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
+    _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
+    _due('Julie Bernard', 1, DateTime(2026, 9, 29)),
+  ],
+  events: _events,
+  now: DateTime(2026, 9, 29, 18, 50),
+);
 
 final _now = DateTime(2026, 9, 29, 9);
 
@@ -99,7 +114,62 @@ final _book = [
   _due('Nadia Roux', 1, DateTime(2026, 9, 29)),
 ];
 
-Widget _app(ThemeData theme, List<Due> due, {GoalsMonth? goals}) {
+final _eventWorkflow = EventWorkflow(
+  id: 'product-evening',
+  name: 'Product evening',
+  steps: [
+    const EventWorkflowStep(
+      id: 'remind',
+      label: 'Remind everyone it\'s tomorrow',
+      days: -1,
+    ),
+  ],
+);
+
+final _events = (
+  today: [
+    CalendarEvent(
+      id: 'oils',
+      title: 'Essential oils for sleep',
+      startsAt: DateTime(2026, 9, 29, 19, 0),
+      endsAt: DateTime(2026, 9, 29, 20, 30),
+      link: 'https://meet.example.com/oils',
+      attendees: List.generate(6, (i) => (personId: 'person$i', came: false)),
+    ),
+  ],
+  toMark: [
+    CalendarEvent(
+      id: 'training',
+      title: 'New member training',
+      startsAt: DateTime(2026, 9, 24, 14, 0),
+      endsAt: DateTime(2026, 9, 24, 16, 0),
+      attendees: List.generate(
+        3,
+        (i) => (personId: 'person${i + 10}', came: false),
+      ),
+    ),
+  ],
+  steps: [
+    (
+      event: CalendarEvent(
+        id: 'product',
+        title: 'Product evening',
+        startsAt: DateTime(2026, 9, 30, 19, 0),
+        eventWorkflowId: 'product-evening',
+      ),
+      step: _eventWorkflow.steps[0],
+      due: DateTime(2026, 9, 29),
+    ),
+  ],
+);
+
+Widget _app(
+  ThemeData theme,
+  List<Due> due, {
+  GoalsMonth? goals,
+  TodayEvents events = noTodayEvents,
+  DateTime? now,
+}) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
     // The preview is its own app: without the delegates, any component that
@@ -109,7 +179,7 @@ Widget _app(ThemeData theme, List<Due> due, {GoalsMonth? goals}) {
     theme: theme,
     home: TodayView(
       due: AsyncData(due),
-      now: _now,
+      now: now ?? _now,
       firstName: 'Pauline',
       onTick: (_) {},
       onOpen: (_) {},
@@ -117,6 +187,11 @@ Widget _app(ThemeData theme, List<Due> due, {GoalsMonth? goals}) {
       onRefresh: () async {},
       goals: goals,
       model: BusinessModel.doterra,
+      events: events,
+      onOpenEvent: (_) {},
+      onMarkDone: (_) {},
+      onTickStep: (_) {},
+      onJoin: (_) {},
     ),
   );
 }

@@ -30,6 +30,7 @@ void main() {
     'today_desktop_light': (const Size(1440, 900), todayDesktopLight),
     'today_desktop_dark': (const Size(1440, 900), todayDesktopDark),
     'today_empty_light': (const Size(390, 844), todayEmptyLight),
+    'today_events_mobile_light': (const Size(390, 844), todayEventsMobileLight),
     'calendar_mobile_light': (const Size(390, 844), calendarMobileLight),
     'calendar_mobile_dark': (const Size(390, 844), calendarMobileDark),
     'calendar_desktop_light': (const Size(1440, 900), calendarDesktopLight),
