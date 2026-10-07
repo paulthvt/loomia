@@ -37,6 +37,13 @@ class CalendarPage extends ConsumerWidget {
 
   final Widget? pane;
 
+  Future<void> _add(BuildContext context, WidgetRef ref, DateTime day) async {
+    final saved = await showEventForm(context, day: day);
+    if (saved != null && context.mounted) {
+      ref.read(calendarSelectionProvider.notifier).select(saved.day);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = eventsProvider(ref.watch(accountProvider)?.email);
@@ -53,7 +60,7 @@ class CalendarPage extends ConsumerWidget {
       onShift: selector.shift,
       onToday: selector.toToday,
       onOpen: (event) => openEvent(context, event.id),
-      onAdd: (day) => unawaited(showEventForm(context, day: day)),
+      onAdd: (day) => unawaited(_add(context, ref, day)),
       onRetry: () => ref.invalidate(provider),
       pane: pane,
       // With a sidebar, Settings is its account block instead.
@@ -68,6 +75,13 @@ class CalendarPage extends ConsumerWidget {
 class CalendarDayPane extends ConsumerWidget {
   const CalendarDayPane({super.key});
 
+  Future<void> _add(BuildContext context, WidgetRef ref, DateTime day) async {
+    final saved = await showEventForm(context, day: day);
+    if (saved != null && context.mounted) {
+      ref.read(calendarSelectionProvider.notifier).select(saved.day);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = eventsProvider(ref.watch(accountProvider)?.email);
@@ -78,7 +92,7 @@ class CalendarDayPane extends ConsumerWidget {
           events: ref.watch(provider),
           day: ref.watch(calendarSelectionProvider).day,
           onOpen: (event) => openEvent(context, event.id),
-          onAdd: (day) => unawaited(showEventForm(context, day: day)),
+          onAdd: (day) => unawaited(_add(context, ref, day)),
           onRetry: () => ref.invalidate(provider),
         ),
       ],

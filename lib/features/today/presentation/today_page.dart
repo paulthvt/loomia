@@ -190,7 +190,8 @@ class TodayView extends StatefulWidget {
   /// The close-and-plan card's Start: opens /goals/close.
   final VoidCallback? onRitual;
 
-  /// Team members worth a check-in: under the day on a phone, in the side column on desktop.
+  /// Team members worth a check-in: under the day on a phone, in the side
+  /// column on desktop.
   final List<CheckIn> checkIns;
 
   /// A check-in row's button: opens Log something.

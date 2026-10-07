@@ -78,7 +78,7 @@ class EventPane extends ConsumerWidget {
     }
     return EventView(
       event: event,
-      onEdit: () => unawaited(showEventForm(context, event: event)),
+      onEdit: () => unawaited(_edit(context, ref, event)),
       onDelete: () => unawaited(_delete(context, ref, event)),
       onOpenPlace: (place) => unawaited(
         openExternal(
@@ -91,6 +91,17 @@ class EventPane extends ConsumerWidget {
       ),
       onJoin: (link) => unawaited(openExternal(context, link)),
     );
+  }
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+  ) async {
+    final saved = await showEventForm(context, event: event);
+    if (saved != null && context.mounted) {
+      ref.read(calendarSelectionProvider.notifier).select(saved.day);
+    }
   }
 
   /// Leaves the event first, so its screen never shows it missing.
@@ -190,6 +201,7 @@ class EventView extends StatelessWidget {
           _Line(
             icon: Icons.videocam_outlined,
             text: shownLink(link),
+            singleLine: true,
             trailing: FilledButton.tonal(
               style: AppTheme.tonal(context),
               onPressed: () => onJoin(Uri.parse(link)),
@@ -218,12 +230,14 @@ class _Line extends StatelessWidget {
     required this.text,
     this.onTap,
     this.trailing,
+    this.singleLine = false,
   });
 
   final IconData icon;
   final String text;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool singleLine;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +253,8 @@ class _Line extends StatelessWidget {
           Expanded(
             child: Text(
               text,
+              maxLines: singleLine ? 1 : null,
+              overflow: singleLine ? TextOverflow.ellipsis : null,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: tap == null
                     ? muted

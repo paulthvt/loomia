@@ -109,7 +109,7 @@ void main() {
     expect(events.calls, isEmpty);
 
     // Clearing the end time saves.
-    await tester.tap(find.byTooltip('Delete'));
+    await tester.tap(find.byTooltip('Clear text'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();

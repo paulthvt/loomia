@@ -223,4 +223,57 @@ void main() {
     expect(find.text('Workshop'), findsOneWidget);
     expect(events.store.single.day, today());
   });
+
+  testWidgets('changing an event date selects that day', (tester) async {
+    // Start with the Calendar on October 15, 2026 with an event that day.
+    final event = CalendarEvent(
+      id: 'e1',
+      title: 'Workshop',
+      startsAt: DateTime(2026, 10, 15, 19, 0),
+      endsAt: null,
+      place: null,
+      link: null,
+      notes: null,
+    );
+    final events = FakeEventRepository([event]);
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      events: events,
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+
+    // Select October 15 (the event's day).
+    await tester.tap(find.text('15'));
+    await tester.pumpAndSettle();
+
+    // Open the event from the day section.
+    await tester.tap(find.text('Workshop'));
+    await tester.pumpAndSettle();
+
+    // Edit it.
+    await tester.tap(find.byTooltip('Edit event'));
+    await tester.pumpAndSettle();
+
+    // Change the date to October 20.
+    await tester.tap(find.text('Thu, Oct 15'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('20'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    // Save.
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    // Go back to the calendar.
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    // The selected day should now be October 20, with the event listed.
+    expect(find.text('TUESDAY, OCTOBER 20'), findsOneWidget);
+    expect(find.text('Workshop'), findsOneWidget);
+  });
 }

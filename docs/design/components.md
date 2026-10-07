@@ -225,12 +225,17 @@ below 1100px, and is replaced by BottomNav below 840px.
 hairline appears). `overline` eyebrow carries the date, `headline` title carries
 the place; the title collapses to `title-lg` on scroll. One trailing ghost action.
 
+### 25. FAB
+*Purpose:* primary action for the screen.
+*Anatomy:* 56px square, radius-16, `primary` fill, `on-primary` icon, no shadow.
+*Rules:* at most one per screen. Used by Calendar's New event.
+
 ---
 
 ## Deliberately absent from v1
 
 Tabs, date picker, snackbar, tooltip, menu, switch, radio group, stepper, table,
-chart, FAB, badge, carousel, onboarding.
+chart, badge, carousel, onboarding.
 
 Each is absent for the same reason: no screen in this phase needs it, and
 principle #1 plus the working rules in CLAUDE.md say not to scaffold for later.

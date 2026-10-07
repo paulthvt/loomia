@@ -318,8 +318,7 @@ class _Picker extends StatelessWidget {
               ? Icon(icon)
               : IconButton(
                   onPressed: clear,
-                  tooltip: MaterialLocalizations.of(context)
-                      .deleteButtonTooltip,
+                  tooltip: MaterialLocalizations.of(context).clearButtonTooltip,
                   icon: const Icon(Icons.close_rounded),
                 ),
         ),

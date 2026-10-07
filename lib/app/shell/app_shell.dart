@@ -17,10 +17,12 @@ import 'package:material_ui/material_ui.dart';
 /// icon rail. Mobile: a bottom bar with the destinations, except on Settings,
 /// which is reached from [AccountButton] and has its own back button, and on
 /// Contacts while picking several people, whose actions take the bar's place.
-/// Team returns with the team plan; until then the Contacts `Team` filter lists the team, and Today its check-ins.
+/// Team returns with the team plan; until then the Contacts `Team` filter
+/// lists the team, and Today its check-ins.
 ///
-/// ponytail: the design moves these edges to 840px (rail/bottom bar) and 1100px
-/// (rail/sidebar); size classes are used until the difference is visible.
+/// ponytail: the design moves these edges to 840px (rail/bottom bar) and
+/// 1100px (rail/sidebar); size classes are used until the difference is
+/// visible.
 class AppShell extends ConsumerWidget {
   const AppShell({required this.location, required this.child, super.key});
 
