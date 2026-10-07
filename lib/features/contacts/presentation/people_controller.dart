@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
@@ -166,6 +167,9 @@ class PeopleController extends AsyncNotifier<List<Person>> {
   Future<void> remove(List<String> ids) async {
     await _repository.delete(ids);
     _change((people) => [...people.where((other) => !ids.contains(other.id))]);
+    // The database also took them off their events: the calendar's counts
+    // are stale until it reads them again.
+    if (ref.mounted) ref.invalidate(eventsProvider(owner));
   }
 
   static List<String> _ids(List<Person> people) => [

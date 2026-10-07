@@ -8,11 +8,14 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
+import '../../contacts/fake_people_repository.dart';
 import '../fake_event_repository.dart';
 
 final _workshop = CalendarEvent(
@@ -111,6 +114,34 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('a row says how many are invited, or were there', (tester) async {
+    await _pump(
+      tester,
+      events: [
+        CalendarEvent(
+          id: 'e1',
+          title: 'Essential oils for sleep',
+          startsAt: DateTime(2026, 10, 8, 19),
+          place: 'Studio Lumière',
+          attendees: const [
+            (personId: 'p1', came: false),
+            (personId: 'p2', came: false),
+          ],
+        ),
+        CalendarEvent(
+          id: 'e2',
+          title: 'Training',
+          startsAt: DateTime(2026, 10, 8, 10),
+          doneAt: DateTime(2026, 10, 8, 12),
+          attendees: const [(personId: 'p1', came: true)],
+        ),
+      ],
+    );
+
+    expect(find.text('Studio Lumière · 2 invited'), findsOneWidget);
+    expect(find.text('1 was there'), findsOneWidget);
+  });
+
   testWidgets('tapping a day selects it', (tester) async {
     DateTime? selected;
     await _pump(tester, onSelect: (day) => selected = day);
@@ -194,6 +225,77 @@ void main() {
       tester.getCenter(find.text('October 2026')).dx,
       lessThan(tester.getCenter(find.text('pane')).dx),
     );
+  });
+
+  testWidgets('in the app: deleting a contact updates the count', (
+    tester,
+  ) async {
+    final day = today();
+    final startsAt = DateTime(day.year, day.month, day.day, 19);
+    final events = FakeEventRepository([
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: startsAt,
+        attendees: const [
+          (personId: 'p1', came: false),
+          (personId: 'p2', came: false),
+        ],
+      ),
+    ]);
+    Person person(String id, String name) => Person(
+      id: id,
+      name: name,
+      stage: Stage.prospect,
+      stageSince: DateTime.utc(2026, 9),
+    );
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      events: events,
+      people: FakePeopleRepository([
+        person('p1', 'Claire Moreau'),
+        person('p2', 'Sarah Lemaire'),
+      ]),
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    expect(find.text('2 invited'), findsOneWidget);
+
+    // The database removes her from the event as it deletes her.
+    events.store[0] = CalendarEvent(
+      id: 'e1',
+      title: 'Workshop',
+      startsAt: startsAt,
+      attendees: const [(personId: 'p1', came: false)],
+    );
+    await container.read(peopleProvider('p@example.com').notifier).remove([
+      'p2',
+    ]);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 invited'), findsOneWidget);
+  });
+
+  testWidgets('in the app: pulling down reloads the events', (tester) async {
+    final events = FakeEventRepository();
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      events: events,
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    final loads = events.calls.where((call) => call == 'list()').length;
+
+    await tester.fling(
+      find.text('Nothing planned'),
+      const Offset(0, 400),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(events.calls.where((call) => call == 'list()').length, loads + 1);
   });
 
   testWidgets('in the app: an event added today shows under today', (

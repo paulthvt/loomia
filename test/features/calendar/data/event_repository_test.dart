@@ -41,4 +41,40 @@ void main() {
       'notes': null,
     });
   });
+
+  test('reads the attendees and when it was marked done', () {
+    final event = eventFromRow({
+      'id': 'e1',
+      'title': 'Workshop',
+      'starts_at': '2026-10-08T17:00:00+00:00',
+      'ends_at': null,
+      'place': null,
+      'link': null,
+      'notes': null,
+      'done_at': '2026-10-09T08:00:00+00:00',
+      'event_attendee': [
+        {'person_id': 'p1', 'came': true},
+        {'person_id': 'p2', 'came': false},
+      ],
+    });
+
+    expect(event.doneAt, DateTime.utc(2026, 10, 9, 8));
+    expect(event.done, isTrue);
+    expect(event.attendees, [
+      (personId: 'p1', came: true),
+      (personId: 'p2', came: false),
+    ]);
+    expect(event.cameCount, 1);
+  });
+
+  test('a row without the embed has nobody invited', () {
+    final event = eventFromRow({
+      'id': 'e1',
+      'title': 'Workshop',
+      'starts_at': '2026-10-08T17:00:00+00:00',
+    });
+
+    expect(event.attendees, isEmpty);
+    expect(event.done, isFalse);
+  });
 }

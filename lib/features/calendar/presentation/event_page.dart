@@ -9,18 +9,29 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/open_external.dart';
+import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/people_picker.dart';
+import 'package:loomia/features/calendar/presentation/who_was_there_sheet.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/domain/search_key.dart';
+import 'package:loomia/features/contacts/presentation/contacts_page.dart';
+import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
+
+/// An invited contact found in the book.
+typedef EventPerson = ({Person person, bool came});
 
 /// One event on mobile and tablet: a screen of its own above the month.
 class EventPage extends StatelessWidget {
@@ -76,8 +87,44 @@ class EventPane extends ConsumerWidget {
         ),
       );
     }
+    final book = ref.watch(peopleProvider(ref.watch(accountProvider)?.email));
+    final bookPeople = book.value;
+    if (bookPeople == null) {
+      return book.hasError
+          ? Center(
+              child: EmptyState(
+                icon: Icons.cloud_off_outlined,
+                title: l10n.contactsLoadError,
+                body: l10n.contactsLoadErrorBody,
+                actionLabel: l10n.contactsRetry,
+                onAction: () => ref.invalidate(
+                  peopleProvider(ref.watch(accountProvider)?.email),
+                ),
+              ),
+            )
+          : const Center(child: CircularProgressIndicator());
+    }
+    final byId = {for (final person in bookPeople) person.id: person};
+    // Someone deleted from the contacts on another device can linger until
+    // the events reload; they are left out rather than shown nameless.
+    final people =
+        [
+          for (final attendee in event.attendees)
+            if (byId[attendee.personId] case final person?)
+              (person: person, came: attendee.came),
+        ]..sort(
+          (a, b) =>
+              searchKey(a.person.name).compareTo(searchKey(b.person.name)),
+        );
     return EventView(
       event: event,
+      people: people,
+      now: DateTime.now(),
+      onAddPeople: () => unawaited(_invite(context, ref, event)),
+      onRemove: (person) => unawaited(_uninvite(context, ref, event, person)),
+      onOpenPerson: (person) => openContact(context, person.id),
+      onMarkDone: () =>
+          unawaited(showWhoWasThere(context, event: event, people: people)),
       onEdit: () => unawaited(_edit(context, ref, event)),
       onDelete: () => unawaited(_delete(context, ref, event)),
       onOpenPlace: (place) => unawaited(
@@ -91,6 +138,52 @@ class EventPane extends ConsumerWidget {
       ),
       onJoin: (link) => unawaited(openExternal(context, link)),
     );
+  }
+
+  Future<void> _invite(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+  ) async {
+    final owner = ref.read(accountProvider)?.email;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final people = ref.read(peopleProvider(owner)).value ?? const [];
+    final events = ref.read(eventsProvider(owner).notifier);
+    final picked = await pickPeople(
+      context,
+      people: people,
+      except: {for (final attendee in event.attendees) attendee.personId},
+    );
+    if (!context.mounted) return;
+    if (picked == null || picked.isEmpty) return;
+    try {
+      await events.invite(event.id, picked);
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+    }
+  }
+
+  Future<void> _uninvite(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+    Person person,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final events = ref.read(
+      eventsProvider(ref.read(accountProvider)?.email).notifier,
+    );
+    try {
+      await events.uninvite(event.id, person.id);
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+    }
   }
 
   Future<void> _edit(
@@ -143,6 +236,12 @@ class EventPane extends ConsumerWidget {
 class EventView extends StatelessWidget {
   const EventView({
     required this.event,
+    required this.people,
+    required this.now,
+    required this.onAddPeople,
+    required this.onRemove,
+    required this.onOpenPerson,
+    required this.onMarkDone,
     required this.onEdit,
     required this.onDelete,
     required this.onOpenPlace,
@@ -151,6 +250,12 @@ class EventView extends StatelessWidget {
   });
 
   final CalendarEvent event;
+  final List<EventPerson> people;
+  final DateTime now;
+  final VoidCallback onAddPeople;
+  final void Function(Person) onRemove;
+  final void Function(Person) onOpenPerson;
+  final VoidCallback onMarkDone;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -218,8 +323,58 @@ class EventView extends StatelessWidget {
               ),
             ),
           ),
+        if (event.done) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _DoneBanner(
+            text: l10n.eventDoneBanner(event.cameCount, event.attendees.length),
+          ),
+        ] else if (event.canMarkDone(now)) ...[
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton(
+            onPressed: onMarkDone,
+            child: Text(l10n.eventMarkWhoWasThere),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        SectionHeader(
+          title: l10n.eventPeople,
+          actionLabel: event.done ? null : l10n.peoplePickerTitle,
+          onAction: event.done ? null : onAddPeople,
+        ),
+        if (people.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Text(
+              l10n.eventNoPeople,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: LoomiaColors.of(context).textMuted,
+              ),
+            ),
+          )
+        else
+          for (final (:person, :came) in people)
+            ContactRow(
+              name: person.name,
+              subtitle: _status(l10n, person, came),
+              onTap: () => onOpenPerson(person),
+              trailing: event.done
+                  ? null
+                  : IconButton(
+                      onPressed: () => onRemove(person),
+                      tooltip: l10n.eventRemovePerson(person.name),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+            ),
       ],
     );
+  }
+
+  String _status(AppLocalizations l10n, Person person, bool came) {
+    final stage = stageLabel(l10n, person.stage);
+    if (!event.done) return l10n.eventPersonInvited(stage);
+    return came
+        ? l10n.eventPersonWasThere(stage)
+        : l10n.eventPersonMissed(stage);
   }
 }
 
@@ -272,5 +427,40 @@ class _Line extends StatelessWidget {
             link: true,
             child: InkWell(onTap: tap, child: row),
           );
+  }
+}
+
+/// "Done · 4 of 5 were there": attendance is history from here.
+class _DoneBanner extends StatelessWidget {
+  const _DoneBanner({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.ms,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Row(
+        spacing: AppSpacing.ms,
+        children: [
+          Icon(Icons.check_rounded, color: scheme.onSecondaryContainer),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.labelLarge
+                  ?.copyWith(color: scheme.onSecondaryContainer),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

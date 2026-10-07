@@ -82,6 +82,7 @@ String? kindLabel(AppLocalizations l10n, ActivityKind kind) => switch (kind) {
   ActivityKind.meeting => l10n.activityKindMeeting,
   ActivityKind.stage => null,
   ActivityKind.step => l10n.activityKindStep,
+  ActivityKind.event => l10n.activityKindEvent,
 };
 
 /// What the user wrote; for a stage entry, what changed; for an order with an

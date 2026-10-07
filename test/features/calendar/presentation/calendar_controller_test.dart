@@ -4,16 +4,29 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
+import 'package:loomia/features/contacts/data/activity_repository.dart';
+import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/presentation/people_controller.dart';
 
+import '../../contacts/fake_activity_repository.dart';
+import '../../contacts/fake_people_repository.dart';
 import '../fake_event_repository.dart';
 
 const _owner = 'p@example.com';
 
-ProviderContainer _container(FakeEventRepository events) =>
-    ProviderContainer.test(
-      overrides: [eventRepositoryProvider.overrideWithValue(events)],
-    );
+ProviderContainer _container(
+  FakeEventRepository events, {
+  FakePeopleRepository? people,
+  FakeActivityRepository? activities,
+}) => ProviderContainer.test(
+  overrides: [
+    eventRepositoryProvider.overrideWithValue(events),
+    if (people != null) peopleRepositoryProvider.overrideWithValue(people),
+    if (activities != null)
+      activityRepositoryProvider.overrideWithValue(activities),
+  ],
+);
 
 EventDraft _draft(String title, DateTime startsAt) => (
   title: title,
@@ -122,4 +135,102 @@ void main() {
       expect(container.read(calendarSelectionProvider).day, now);
     });
   });
+
+  test('invite and uninvite reload the event with its people', () async {
+    final fake = FakeEventRepository([_workshop]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+
+    await events.invite('e1', ['p1', 'p2']);
+    expect(container.read(eventsProvider(_owner)).value!.single.attendees, [
+      (personId: 'p1', came: false),
+      (personId: 'p2', came: false),
+    ]);
+
+    await events.uninvite('e1', 'p1');
+    expect(container.read(eventsProvider(_owner)).value!.single.attendees, [
+      (personId: 'p2', came: false),
+    ]);
+    expect(fake.calls.where((call) => call == 'list()'), hasLength(3));
+  });
+
+  test('marking done reloads the events and the people', () async {
+    final fake = FakeEventRepository([_workshop]);
+    final people = FakePeopleRepository();
+    final container = _container(fake, people: people);
+    await container.read(eventsProvider(_owner).future);
+    await container.read(peopleProvider(_owner).future);
+    final listed = people.calls.where((call) => call == 'list()').length;
+    final events = container.read(eventsProvider(_owner).notifier);
+    await events.invite('e1', ['p1', 'p2']);
+
+    await events.markDone('e1', ['p1'], DateTime(2026, 10, 9));
+    await container.read(peopleProvider(_owner).future);
+
+    final done = container.read(eventsProvider(_owner)).value!.single;
+    expect(done.done, isTrue);
+    expect(done.attendees, [
+      (personId: 'p1', came: true),
+      (personId: 'p2', came: false),
+    ]);
+    expect(fake.calls, contains('markDone(e1:p1)'));
+    expect(people.calls.where((call) => call == 'list()').length, listed + 1);
+  });
+
+  test('markDone succeeds even if reload fails', () async {
+    final fake = _FailAfterMark([_workshop]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    await events.invite('e1', ['p1']);
+
+    await events.markDone('e1', ['p1'], DateTime(2026, 10, 9));
+
+    expect(fake.calls, contains('markDone(e1:p1)'));
+    expect(fake.calls.last, 'list()');
+  });
+
+  test('markDone invalidates and rethrows on failure', () async {
+    final fake = FakeEventRepository([_workshop]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    fake.failWith = PeopleFailure.unknown;
+
+    await expectLater(
+      events.markDone('e1', [], DateTime(2026, 10, 9)),
+      throwsA(PeopleFailure.unknown),
+    );
+
+    expect(fake.calls, contains('markDone(e1:)'));
+    expect(container.read(eventsProvider(_owner)).isLoading, isTrue);
+  });
+}
+
+/// Fails list() once after markDone.
+class _FailAfterMark extends FakeEventRepository {
+  _FailAfterMark(super.events);
+
+  var _failNext = false;
+
+  @override
+  Future<void> markDone(
+    String eventId,
+    Iterable<String> came,
+    DateTime today,
+  ) async {
+    await super.markDone(eventId, came, today);
+    _failNext = true;
+  }
+
+  @override
+  Future<List<CalendarEvent>> list() async {
+    if (_failNext) {
+      _failNext = false;
+      calls.add('list()');
+      throw PeopleFailure.network;
+    }
+    return super.list();
+  }
 }

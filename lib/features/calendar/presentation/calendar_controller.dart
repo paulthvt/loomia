@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/presentation/history_controller.dart';
+import 'package:loomia/features/contacts/presentation/people_controller.dart';
 
 /// One account's events, `eventsProvider(account?.email)`, earliest first.
 /// Keyed by account for the same reason as `peopleProvider`. No automatic
@@ -49,6 +52,48 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
       for (final event in state.value ?? const <CalendarEvent>[])
         if (event.id != id) event,
     ]);
+  }
+
+  /// Throws `PeopleFailure`, and then nobody is added.
+  Future<void> invite(String eventId, Iterable<String> personIds) async {
+    await ref.read(eventRepositoryProvider).invite(eventId, personIds);
+    await _reload();
+  }
+
+  Future<void> uninvite(String eventId, String personId) async {
+    await ref.read(eventRepositoryProvider).uninvite(eventId, personId);
+    await _reload();
+  }
+
+  /// Marks who was there. Their histories and last contact move with it, so
+  /// the book and any open history reload too. Throws `PeopleFailure`.
+  Future<void> markDone(
+    String eventId,
+    Iterable<String> came,
+    DateTime today,
+  ) async {
+    try {
+      await ref.read(eventRepositoryProvider).markDone(eventId, came, today);
+    } on PeopleFailure {
+      ref.invalidateSelf();
+      rethrow;
+    }
+    if (!ref.mounted) return;
+    ref
+      ..invalidate(peopleProvider(owner))
+      ..invalidate(historyProvider);
+    await _reload();
+  }
+
+  /// The embed is the truth for attendance: read it again.
+  Future<void> _reload() async {
+    if (!ref.mounted) return;
+    ref.invalidateSelf();
+    try {
+      await future;
+    } on PeopleFailure {
+      // The change landed; the list shows its own load error.
+    }
   }
 
   void _put(CalendarEvent saved) {

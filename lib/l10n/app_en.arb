@@ -798,6 +798,10 @@
   "@activityKindStep": {
     "description": "Kind of history entry: a workflow step the user marked done. The entry's title is the step's name."
   },
+  "activityKindEvent": "Event",
+  "@activityKindEvent": {
+    "description": "Kind of history entry: the person was at one of the user's events (a workshop, a training). The entry's title is the event's title."
+  },
   "logWhen": "When",
   "@logWhen": {
     "description": "Label of the day field in Log something."
@@ -1921,5 +1925,116 @@
   "eventNotFoundBody": "It may have been deleted on another device.",
   "@eventNotFoundBody": {
     "description": "Body under eventNotFound."
+  },
+  "peoplePickerTitle": "Add people",
+  "@peoplePickerTitle": {
+    "description": "Title of the sheet that picks contacts to invite to an event, and the action beside an event's People heading."
+  },
+  "peoplePickerSearch": "Search people",
+  "@peoplePickerSearch": {
+    "description": "Hint in the search field of the sheet that picks contacts to invite to an event."
+  },
+  "peoplePickerAdd": "{count, plural, =0{Add} =1{Add one person} other{Add {count} people}}",
+  "@peoplePickerAdd": {
+    "description": "Button that invites the picked contacts to the event. count is how many are picked; at 0 the button is disabled.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "peoplePickerNobody": "Nobody else to add.",
+  "@peoplePickerNobody": {
+    "description": "Shown in the people picker when every contact matching the search is already invited, or there are no contacts."
+  },
+  "eventPeople": "People",
+  "@eventPeople": {
+    "description": "Heading of the list of contacts invited to an event, on the event's screen."
+  },
+  "eventNoPeople": "Nobody invited yet.",
+  "@eventNoPeople": {
+    "description": "Shown under an event's People heading when nobody is invited."
+  },
+  "eventPersonInvited": "{stage} · invited",
+  "@eventPersonInvited": {
+    "description": "Second line of an invited contact's row on an event, before the event is marked done. stage is their stage, e.g. 'Prospect'.",
+    "placeholders": {
+      "stage": { "type": "String" }
+    }
+  },
+  "eventPersonWasThere": "{stage} · was there",
+  "@eventPersonWasThere": {
+    "description": "Second line of a contact's row on a done event when they were at it (in person or online). stage is their stage, e.g. 'Prospect'.",
+    "placeholders": {
+      "stage": { "type": "String" }
+    }
+  },
+  "eventPersonMissed": "{stage} · missed it",
+  "@eventPersonMissed": {
+    "description": "Second line of a contact's row on a done event when they were invited but not there. Neutral, never a reproach. stage is their stage.",
+    "placeholders": {
+      "stage": { "type": "String" }
+    }
+  },
+  "eventRemovePerson": "Remove {name} from the event",
+  "@eventRemovePerson": {
+    "description": "Tooltip of the button that takes an invited contact off an event. name is the contact's name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "eventMarkWhoWasThere": "Mark who was there",
+  "@eventMarkWhoWasThere": {
+    "description": "Button on an event that has started: opens the sheet that records which invited contacts were there."
+  },
+  "eventWhoWasThere": "Who was there?",
+  "@eventWhoWasThere": {
+    "description": "Title of the sheet that records which invited contacts were at an event, in person or online."
+  },
+  "eventWhoWasThereBody": "Everyone is ticked. Untick anyone who missed it.",
+  "@eventWhoWasThereBody": {
+    "description": "Body of the Who was there? sheet: every invited contact starts ticked."
+  },
+  "eventMarkDone": "{count, plural, =0{Nobody was there} =1{Done · 1 was there} other{Done · {count} were there}}",
+  "@eventMarkDone": {
+    "description": "Button of the Who was there? sheet that saves it. count is how many are ticked.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "eventDoneBanner": "{count, plural, =0{Done · nobody was there} =1{Done · 1 of {total} was there} other{Done · {count} of {total} were there}}",
+  "@eventDoneBanner": {
+    "description": "Banner on an event marked done. count is how many were there, total how many were invited.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "eventInvitedCount": "{count, plural, =1{1 invited} other{{count} invited}}",
+  "@eventInvitedCount": {
+    "description": "On an event's row in the Calendar, before it is done: how many contacts are invited.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "eventThereCount": "{count, plural, =0{nobody was there} =1{1 was there} other{{count} were there}}",
+  "@eventThereCount": {
+    "description": "On a done event's row in the Calendar: how many of the invited contacts were there.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "eventThereCountAlone": "{count, plural, =0{Nobody was there} =1{1 was there} other{{count} were there}}",
+  "@eventThereCountAlone": {
+    "description": "On a done event's row in the Calendar when there is no place and no link: how many were there, starting the line.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "eventRowLine": "{where} · {people}",
+  "@eventRowLine": {
+    "description": "Second line of an event's row in the Calendar when it has both: where (a place, or 'Online') and the people count (eventInvitedCount or eventThereCount).",
+    "placeholders": {
+      "where": { "type": "String" },
+      "people": { "type": "String" }
+    }
   }
 }
