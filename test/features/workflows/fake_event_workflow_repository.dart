@@ -34,7 +34,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
   @override
   Future<List<EventWorkflow>> list() async {
     await _record('list()');
-    return [...store];
+    return [...store]..sort((a, b) => a.name.compareTo(b.name));
   }
 
   @override
@@ -50,17 +50,27 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
   }
 
   @override
-  Future<void> save(
-    String id, {
-    required String name,
-    required Map<Stage, String> followUps,
-  }) async {
-    await _record('save($id)');
+  Future<void> rename(String id, String name) async {
+    await _record('rename($id, $name)');
     _change(
       id,
       (workflow) => EventWorkflow(
         id: workflow.id,
         name: name,
+        followUps: workflow.followUps,
+        steps: workflow.steps,
+      ),
+    );
+  }
+
+  @override
+  Future<void> setFollowUps(String id, Map<Stage, String> followUps) async {
+    await _record('setFollowUps($id)');
+    _change(
+      id,
+      (workflow) => EventWorkflow(
+        id: workflow.id,
+        name: workflow.name,
         followUps: followUps,
         steps: workflow.steps,
       ),

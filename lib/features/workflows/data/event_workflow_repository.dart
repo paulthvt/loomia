@@ -15,8 +15,12 @@ class EventWorkflowRepository {
 
   static const String _columns = '*, event_workflow_step(*)';
 
+  /// By name.
   Future<List<EventWorkflow>> list() => guardPeople(() async {
-    final rows = await _client.from('event_workflow').select(_columns);
+    final rows = await _client
+        .from('event_workflow')
+        .select(_columns)
+        .order('name');
     return rows.map(eventWorkflowFromRow).toList();
   });
 
@@ -30,16 +34,18 @@ class EventWorkflowRepository {
     return eventWorkflowFromRow(row);
   });
 
-  Future<void> save(
-    String id, {
-    required String name,
-    required Map<Stage, String> followUps,
-  }) => guardPeople(() async {
-    await _client
-        .from('event_workflow')
-        .update({'name': name, ...followUpsToRow(followUps)})
-        .eq('id', id);
+  Future<void> rename(String id, String name) => guardPeople(() async {
+    await _client.from('event_workflow').update({'name': name}).eq('id', id);
   });
+
+  /// Every stage: one missing from [followUps] keeps their workflow.
+  Future<void> setFollowUps(String id, Map<Stage, String> followUps) =>
+      guardPeople(() async {
+        await _client
+            .from('event_workflow')
+            .update(followUpsToRow(followUps))
+            .eq('id', id);
+      });
 
   /// Its steps go with it; its events keep their title, without a checklist.
   Future<void> delete(String id) => guardPeople(() async {

@@ -35,7 +35,6 @@ class WorkflowsSettings extends ConsumerWidget {
     final list = state.value;
     final eventWorkflows = eventWorkflowsProvider(owner);
     final eventState = ref.watch(eventWorkflows);
-    final events = eventState.value;
     if (list == null) {
       return state.hasError
           ? WorkflowsLoadError(onRetry: () => ref.invalidate(workflows))
@@ -50,9 +49,12 @@ class WorkflowsSettings extends ConsumerWidget {
       workflows: list,
       onOpen: (workflow) => openWorkflow(context, workflow.id),
       onNew: () => unawaited(showNewWorkflow(context)),
-      eventWorkflows: events ?? const [],
+      eventWorkflows: eventState.value ?? const [],
       onOpenEvent: (w) => openEventWorkflow(context, w.id),
       onNewEvent: () => unawaited(showNewEventWorkflow(context)),
+      onRetryEvents: eventState.hasError && !eventState.isLoading
+          ? () => ref.invalidate(eventWorkflows)
+          : null,
     );
   }
 }
@@ -67,6 +69,7 @@ class WorkflowsView extends StatelessWidget {
     required this.eventWorkflows,
     required this.onOpenEvent,
     required this.onNewEvent,
+    this.onRetryEvents,
     super.key,
   });
 
@@ -76,6 +79,9 @@ class WorkflowsView extends StatelessWidget {
   final List<EventWorkflow> eventWorkflows;
   final ValueChanged<EventWorkflow> onOpenEvent;
   final VoidCallback onNewEvent;
+
+  /// Set when the event workflows failed to load: their section says so.
+  final VoidCallback? onRetryEvents;
 
   @override
   Widget build(BuildContext context) {
@@ -123,12 +129,12 @@ class WorkflowsView extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xl),
         SectionHeader(title: l10n.workflowsEvents),
-        if (eventWorkflows.isNotEmpty)
+        if (onRetryEvents case final retry?)
+          WorkflowsLoadError(onRetry: retry)
+        else if (eventWorkflows.isNotEmpty)
           SettingsGroup(
             children: [
-              for (final workflow in [
-                ...eventWorkflows,
-              ]..sort((a, b) => a.name.compareTo(b.name)))
+              for (final workflow in eventWorkflows)
                 ListTile(
                   title: Text(workflow.name),
                   trailing: Row(

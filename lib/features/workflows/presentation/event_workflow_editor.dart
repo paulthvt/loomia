@@ -51,7 +51,9 @@ class EventWorkflowEditor extends ConsumerWidget {
       }
       if (list == null) {
         return WorkflowsLoadError(
-          onRetry: () => ref.invalidate(eventWorkflows),
+          onRetry: () => ref
+            ..invalidate(workflowsProvider(owner))
+            ..invalidate(eventWorkflows),
         );
       }
       return Center(
@@ -76,16 +78,14 @@ class EventWorkflowEditor extends ConsumerWidget {
       child: EventWorkflowEditorView(
         workflow: workflow,
         workflows: workflows,
-        onSave:
-            ({required String name, required Map<Stage, String> followUps}) =>
-                editEventWorkflows(
-                  ref,
-                  (repository) => repository.save(
-                    workflow.id,
-                    name: name,
-                    followUps: followUps,
-                  ),
-                ),
+        onRename: (name) => editEventWorkflows(
+          ref,
+          (repository) => repository.rename(workflow.id, name),
+        ),
+        onFollowUps: (followUps) => editEventWorkflows(
+          ref,
+          (repository) => repository.setFollowUps(workflow.id, followUps),
+        ),
         onAddStep: () => unawaited(showEventStepSheet(context, workflow)),
         onOpenStep: (step) =>
             unawaited(showEventStepSheet(context, workflow, step: step)),
@@ -124,7 +124,8 @@ class EventWorkflowEditorView extends StatefulWidget {
   const EventWorkflowEditorView({
     required this.workflow,
     required this.workflows,
-    required this.onSave,
+    required this.onRename,
+    required this.onFollowUps,
     required this.onAddStep,
     required this.onOpenStep,
     required this.onDelete,
@@ -133,11 +134,12 @@ class EventWorkflowEditorView extends StatefulWidget {
 
   final EventWorkflow workflow;
   final List<Workflow> workflows;
-  final Future<void> Function({
-    required String name,
-    required Map<Stage, String> followUps,
-  })
-  onSave;
+
+  /// A trimmed name, different from the saved one.
+  final Future<void> Function(String name) onRename;
+
+  /// Every stage; one missing keeps their workflow.
+  final Future<void> Function(Map<Stage, String> followUps) onFollowUps;
   final VoidCallback onAddStep;
   final ValueChanged<EventWorkflowStep> onOpenStep;
   final Future<void> Function() onDelete;
@@ -152,6 +154,7 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
   final _nameFocus = FocusNode();
   final Set<_Control> _busy = {};
   String? _written;
+  EventWorkflowsController? _notifier;
 
   @override
   void initState() {
@@ -159,6 +162,18 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
     _nameFocus.addListener(() {
       if (!_nameFocus.hasFocus) unawaited(_saveName());
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_notifier == null && mounted) {
+      final container = ProviderScope.containerOf(context);
+      final email = container.read(accountProvider)?.email;
+      if (email != null) {
+        _notifier = container.read(eventWorkflowsProvider(email).notifier);
+      }
+    }
   }
 
   @override
@@ -170,6 +185,29 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
     if (widget.workflow.name != oldWidget.workflow.name) {
       _written = null;
     }
+  }
+
+  @override
+  void deactivate() {
+    // Save before dispose() clears the focus listener: the user typed a name
+    // and is leaving. Empty or unchanged names write nothing.
+    final saved = widget.workflow.name;
+    final name = _name.text.trim();
+    final notifier = _notifier;
+    if (name.isNotEmpty &&
+        name != saved &&
+        name != _written &&
+        !_busy.contains(_Control.name) &&
+        notifier != null) {
+      _written = name;
+      // ponytail: failure after leaving can't show (no SnackBar on dead context)
+      unawaited(
+        notifier
+            .edit((repository) => repository.rename(widget.workflow.id, name))
+            .catchError((Object _) {}, test: (e) => e is PeopleFailure),
+      );
+    }
+    super.deactivate();
   }
 
   @override
@@ -206,10 +244,7 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
     }
     _name.text = name;
     _written = name;
-    final ok = await _run(
-      _Control.name,
-      () => widget.onSave(name: name, followUps: widget.workflow.followUps),
-    );
+    final ok = await _run(_Control.name, () => widget.onRename(name));
     if (!ok) {
       _written = null;
       if (mounted) _name.text = widget.workflow.name;
@@ -260,53 +295,25 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
         SectionHeader(title: l10n.eventWorkflowAfter),
         SettingsGroup(
           children: [
-            for (final stage in Stage.values) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.xs,
-                ),
-                child: Text(
-                  l10n.eventWorkflowStage(stage.name),
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                ),
-                child: IgnorePointer(
-                  ignoring: _busy.contains(_Control.followUps),
-                  child: FollowUpPicker(
-                    stage: stage,
-                    workflows: widget.workflows,
-                    value: workflow.followUps[stage],
-                    onChanged: (id) {
-                      final followUps = {...workflow.followUps};
-                      if (id == null) {
-                        followUps.remove(stage);
-                      } else {
-                        followUps[stage] = id;
-                      }
-                      unawaited(
+            for (final stage in Stage.values)
+              FollowUpPicker(
+                stage: stage,
+                workflows: widget.workflows,
+                value: workflow.followUps[stage],
+                onChanged: _busy.contains(_Control.followUps)
+                    ? null
+                    : (id) => unawaited(
                         _run(
                           _Control.followUps,
-                          () => widget.onSave(
-                            name: workflow.name,
-                            followUps: followUps,
-                          ),
+                          () => widget.onFollowUps({
+                            for (final MapEntry(:key, :value)
+                                in workflow.followUps.entries)
+                              if (key != stage) key: value,
+                            stage: ?id,
+                          }),
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
               ),
-            ],
           ],
         ),
         const SizedBox(height: AppSpacing.sm),

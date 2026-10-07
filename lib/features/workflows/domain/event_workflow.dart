@@ -40,9 +40,9 @@ class EventWorkflow {
 /// Chronological: by days, then by label.
 List<EventWorkflowStep> byDays(Iterable<EventWorkflowStep> steps) =>
     List.unmodifiable(
-      [...steps]..sort((a, b) {
-        if (a.days != b.days) return a.days.compareTo(b.days) as int;
-        return a.label.compareTo(b.label) as int;
+      <EventWorkflowStep>[...steps]..sort((a, b) {
+        if (a.days != b.days) return a.days.compareTo(b.days);
+        return a.label.compareTo(b.label);
       }),
     );
 

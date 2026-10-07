@@ -84,7 +84,8 @@ Widget eventWorkflowEditorLight() => _app(
       child: EventWorkflowEditorView(
         workflow: _workshop,
         workflows: _workflows,
-        onSave: ({required name, required followUps}) async {},
+        onRename: (_) async {},
+        onFollowUps: (_) async {},
         onAddStep: () {},
         onOpenStep: (_) {},
         onDelete: () async {},
