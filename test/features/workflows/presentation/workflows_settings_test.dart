@@ -40,7 +40,8 @@ void main() {
     expect(find.text('Default · 5 steps'), findsNWidgets(2));
     expect(find.text('Default · 4 steps'), findsOneWidget);
     expect(find.text('4 steps'), findsOneWidget);
-    expect(find.text('2 steps'), findsOneWidget);
+    // Workshop event workflow also has 2 steps
+    expect(find.text('2 steps'), findsNWidgets(2));
     expect(
       tester.getTopLeft(find.text('Samples')).dy,
       lessThan(tester.getTopLeft(find.text('Health professionals')).dy),

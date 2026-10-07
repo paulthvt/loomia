@@ -42,7 +42,7 @@ class EventWorkflowEditor extends ConsumerWidget {
     final workflow = list == null ? null : findEventWorkflow(list, id);
 
     final workflowsState = ref.watch(workflowsProvider(owner));
-    final workflows = workflowsState.value ?? const [];
+    final workflows = workflowsState.value;
 
     if (workflow == null) {
       if (state.isLoading) {
@@ -62,6 +62,11 @@ class EventWorkflowEditor extends ConsumerWidget {
           onAction: () => context.go(Routes.settingsWorkflows),
         ),
       );
+    }
+
+    // Wait for person workflows to load: the dropdowns need them
+    if (workflows == null) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     return SettingsScroll(
@@ -254,11 +259,34 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
         SectionHeader(title: l10n.eventWorkflowAfter),
         SettingsGroup(
           children: [
-            for (final stage in Stage.values)
-              ListTile(
-                title: Text(l10n.eventWorkflowStage(stage.name)),
-                trailing: DropdownButton<String?>(
-                  underline: const SizedBox.shrink(),
+            for (final stage in Stage.values) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
+                child: Text(
+                  l10n.eventWorkflowStage(stage.name),
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: DropdownButtonFormField<String?>(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
                   value: () {
                     final id = workflow.followUps[stage];
                     final available = forStage(widget.workflows, stage);
@@ -298,6 +326,7 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
                         },
                 ),
               ),
+            ],
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
