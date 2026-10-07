@@ -1872,5 +1872,61 @@
   "@contactsMovePartly": {
     "description": "Under a stage in the Move to… sheet, when some of the picked people are already in that stage and only the others move.",
     "placeholders": { "moving": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "calendarNewEvent": "New event",
+  "@calendarNewEvent": {
+    "description": "Title of the form that adds an event to the calendar (a workshop, a training), and tooltip of the Calendar's add button."
+  },
+  "eventEdit": "Edit event",
+  "@eventEdit": {
+    "description": "Title of the form that changes an event, and tooltip of the edit button on an event's screen."
+  },
+  "eventTitle": "Title",
+  "@eventTitle": {
+    "description": "Label of the event form's field for what the event is called, e.g. 'Essential oils for sleep'."
+  },
+  "eventTitleRequired": "Give it a title",
+  "@eventTitleRequired": {
+    "description": "Error under the event form's Title field when it is empty."
+  },
+  "eventDate": "Date",
+  "@eventDate": {
+    "description": "Label of the event form's field for the day the event happens."
+  },
+  "eventStarts": "Starts",
+  "@eventStarts": {
+    "description": "Label of the event form's field for the time the event starts."
+  },
+  "eventEnds": "Ends",
+  "@eventEnds": {
+    "description": "Label of the event form's field for the time the event ends, on the same day."
+  },
+  "eventEndsNone": "Optional",
+  "@eventEndsNone": {
+    "description": "Shown in the event form's Ends field while no end time is set: setting one is optional."
+  },
+  "eventEndsBeforeStart": "It has to end after it starts.",
+  "@eventEndsBeforeStart": {
+    "description": "Error under the event form's Ends field when the end time is not after the start time."
+  },
+  "eventPlace": "Place",
+  "@eventPlace": {
+    "description": "Label of the event form's field for where the event happens: an address or a place's name. Tapping it later opens the maps app."
+  },
+  "eventLink": "Link",
+  "@eventLink": {
+    "description": "Label of the event form's field for an online meeting's web address."
+  },
+  "eventLinkHint": "For an online event",
+  "@eventLinkHint": {
+    "description": "Hint inside the empty Link field of the event form."
+  },
+  "eventLinkInvalid": "That doesn't look like a web link.",
+  "@eventLinkInvalid": {
+    "description": "Error under the event form's Link field when what was typed is not a web address."
+  },
+  "eventNotes": "Notes",
+  "@eventNotes": {
+    "description": "Label of the event form's field for free notes about the event, e.g. what to bring."
   }
 }

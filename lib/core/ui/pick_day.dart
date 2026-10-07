@@ -64,6 +64,31 @@ Future<DateTime?> pickMonth(
   return picked == null ? null : DateTime(picked.year, picked.month);
 }
 
+/// A time of day; null when dismissed. A wheel on iOS, the Material dial
+/// elsewhere, both in the device's 12- or 24-hour format.
+Future<TimeOfDay?> pickTime(
+  BuildContext context, {
+  required TimeOfDay initial,
+}) async {
+  if (!_wheel) return showTimePicker(context: context, initialTime: initial);
+  final now = DateTime.now();
+  final picked = await showCupertinoModalPopup<DateTime>(
+    context: context,
+    builder: (context) => _Wheel(
+      mode: CupertinoDatePickerMode.time,
+      initial: DateTime(
+        now.year,
+        now.month,
+        now.day,
+        initial.hour,
+        initial.minute,
+      ),
+      use24hFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    ),
+  );
+  return picked == null ? null : TimeOfDay.fromDateTime(picked);
+}
+
 bool get _wheel => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 class _Wheel extends StatefulWidget {
@@ -71,14 +96,18 @@ class _Wheel extends StatefulWidget {
     this.mode = CupertinoDatePickerMode.date,
     required this.initial,
     this.first,
-    required this.last,
+    this.last,
+    this.use24hFormat = false,
   });
 
   final CupertinoDatePickerMode mode;
 
   final DateTime initial;
   final DateTime? first;
-  final DateTime last;
+  final DateTime? last;
+
+  /// Time mode only: hours as the device shows them.
+  final bool use24hFormat;
 
   @override
   State<_Wheel> createState() => _WheelState();
@@ -109,6 +138,7 @@ class _WheelState extends State<_Wheel> {
                 initialDateTime: widget.initial,
                 minimumDate: widget.first,
                 maximumDate: widget.last,
+                use24hFormat: widget.use24hFormat,
                 onDateTimeChanged: (day) => _day = day,
               ),
             ),
