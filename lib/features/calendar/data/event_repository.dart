@@ -84,12 +84,15 @@ class EventRepository {
     ),
   );
 
+  /// Ticking a step already ticked (a double tap) keeps the first day.
   Future<void> tick(String eventId, String stepId, DateTime on) => guardPeople(
-    () => _client.from('event_step_done').insert({
-      'event_id': eventId,
-      'step_id': stepId,
-      'done_on': dayColumn(on),
-    }),
+    () => _client
+        .from('event_step_done')
+        .upsert(
+          {'event_id': eventId, 'step_id': stepId, 'done_on': dayColumn(on)},
+          onConflict: 'event_id,step_id',
+          ignoreDuplicates: true,
+        ),
   );
 
   Future<void> untick(String eventId, String stepId) => guardPeople(

@@ -18,6 +18,10 @@ Finder _field(String label) => find.descendant(
 
 final _day = DateTime(2026, 10, 8);
 
+/// Workshop alone, as an account is seeded: the first by name.
+FakeEventWorkflowRepository _seeded() =>
+    FakeEventWorkflowRepository([FakeEventWorkflowRepository.samples().first]);
+
 void main() {
   testWidgets('a new event on the day, at 19:00, with what was typed', (
     tester,
@@ -161,6 +165,7 @@ void main() {
     await pumpCalendarHarness(
       tester,
       events: events,
+      eventWorkflows: _seeded(),
       open: (context) => showEventForm(context, day: _day),
       result: (_) {},
     );
@@ -222,6 +227,7 @@ void main() {
     await pumpCalendarHarness(
       tester,
       events: events,
+      eventWorkflows: _seeded(),
       open: (context) => showEventForm(context, day: _day),
       result: (_) {},
     );
@@ -258,5 +264,33 @@ void main() {
 
     expect(events.store.single.eventWorkflowId, isNull);
     expect(events.store.single.title, 'Coffee');
+  });
+
+  testWidgets('a deleted event workflow or stage workflow is not saved', (
+    tester,
+  ) async {
+    final event = CalendarEvent(
+      id: 'e1',
+      title: 'Open evening',
+      startsAt: DateTime(2026, 10, 8, 19),
+      eventWorkflowId: 'deleted',
+      followUps: const {
+        Stage.prospect: 'deleted-workflow',
+        Stage.customer: 'new-customer',
+      },
+    );
+    final events = FakeEventRepository([event]);
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      open: (context) => showEventForm(context, event: event),
+      result: (_) {},
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(events.store.single.eventWorkflowId, isNull);
+    expect(events.store.single.followUps, {Stage.customer: 'new-customer'});
   });
 }

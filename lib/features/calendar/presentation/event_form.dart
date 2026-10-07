@@ -11,6 +11,7 @@ import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/follow_up_picker.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
@@ -85,14 +86,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
     _end = ends == null ? null : TimeOfDay.fromDateTime(ends.toLocal());
     _eventWorkflowId = event.eventWorkflowId;
     _followUps = event.followUps;
-    if (_eventWorkflowId != null) {
-      final owner = ref.read(accountProvider)?.email;
-      final workflows = ref.read(eventWorkflowsProvider(owner)).value;
-      if (workflows != null) {
-        final workflow = findEventWorkflow(workflows, _eventWorkflowId!);
-        _typeName = workflow?.name;
-      }
-    }
   }
 
   @override
@@ -150,9 +143,15 @@ class _EventFormState extends ConsumerState<_EventForm> {
     _endBeforeStart = false;
   });
 
+  List<EventWorkflow>? get _eventWorkflows =>
+      ref.read(eventWorkflowsProvider(ref.read(accountProvider)?.email)).value;
+
   void _choose(EventWorkflow workflow) {
     final currentTitle = _title.text.trim();
-    if (currentTitle.isEmpty || currentTitle == _typeName) {
+    final previous =
+        _typeName ??
+        findEventWorkflow(_eventWorkflows ?? const [], _eventWorkflowId)?.name;
+    if (currentTitle.isEmpty || currentTitle == previous) {
       _title.text = workflow.name;
     }
     _typeName = workflow.name;
@@ -174,6 +173,21 @@ class _EventFormState extends ConsumerState<_EventForm> {
       return value.isEmpty ? null : value;
     }
 
+    // Deleted since the form opened, or since the event was saved: dropped,
+    // once the lists say so.
+    final owner = ref.read(accountProvider)?.email;
+    final eventWorkflows = _eventWorkflows;
+    final workflows = ref.read(workflowsProvider(owner)).value;
+    final eventWorkflowId = eventWorkflows == null
+        ? _eventWorkflowId
+        : findEventWorkflow(eventWorkflows, _eventWorkflowId)?.id;
+    final followUps = workflows == null
+        ? _followUps
+        : {
+            for (final MapEntry(:key, :value) in _followUps.entries)
+              if (findWorkflow(workflows, value) != null) key: value,
+          };
+
     final EventDraft draft = (
       title: _title.text.trim(),
       startsAt: startsAt,
@@ -181,17 +195,15 @@ class _EventFormState extends ConsumerState<_EventForm> {
       place: text(_place),
       link: normaliseLink(_link.text),
       notes: text(_notes),
-      eventWorkflowId: _eventWorkflowId,
-      followUps: _followUps,
+      eventWorkflowId: eventWorkflowId,
+      followUps: followUps,
     );
     setState(() {
       _saving = true;
       _failure = null;
     });
     try {
-      final events = ref.read(
-        eventsProvider(ref.read(accountProvider)?.email).notifier,
-      );
+      final events = ref.read(eventsProvider(owner).notifier);
       final event = widget.event;
       final saved = event == null
           ? await events.add(draft)
@@ -349,41 +361,18 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 collapsedShape: const Border(),
                 children: [
                   for (final stage in Stage.values)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.xs,
-                            ),
-                            child: Text(
-                              l10n.eventWorkflowStage(stage.name),
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                          FollowUpPicker(
-                            stage: stage,
-                            workflows: workflows,
-                            value: _followUps[stage],
-                            onChanged: (id) {
-                              setState(() {
-                                if (id == null) {
-                                  _followUps = {..._followUps}..remove(stage);
-                                } else {
-                                  _followUps = {..._followUps, stage: id};
-                                }
-                              });
-                            },
-                          ),
-                        ],
-                      ),
+                    FollowUpPicker(
+                      stage: stage,
+                      workflows: workflows,
+                      value: _followUps[stage],
+                      onChanged: (id) => setState(() {
+                        _followUps = {
+                          for (final MapEntry(:key, :value)
+                              in _followUps.entries)
+                            if (key != stage) key: value,
+                          stage: ?id,
+                        };
+                      }),
                     ),
                 ],
               ),

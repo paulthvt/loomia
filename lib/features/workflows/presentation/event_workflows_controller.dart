@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
@@ -29,12 +30,17 @@ class EventWorkflowsController extends AsyncNotifier<List<EventWorkflow>> {
     return repository.list();
   }
 
-  /// Runs [write], then reloads. Rethrows its `PeopleFailure`.
+  /// Runs [write], then reloads, and the events: a deleted event workflow
+  /// leaves theirs without one. Rethrows its `PeopleFailure`.
   Future<T> edit<T>(
     Future<T> Function(EventWorkflowRepository repository) write,
   ) async {
     final result = await write(ref.read(eventWorkflowRepositoryProvider));
-    if (ref.mounted) ref.invalidateSelf();
+    if (ref.mounted) {
+      ref
+        ..invalidateSelf()
+        ..invalidate(eventsProvider(owner));
+    }
     return result;
   }
 }

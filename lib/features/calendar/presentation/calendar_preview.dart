@@ -88,10 +88,7 @@ Widget eventDoneMobileLight() => _app(
           (personId: 'p5', came: true), // Bruno
         ],
         doneAt: DateTime(2026, 10, 9, 9),
-        stepsDone: {
-          'remind': DateTime(2026, 10, 7),
-          'thank': DateTime(2026, 10, 7),
-        },
+        stepsDone: {..._events[1].stepsDone, 'thank': DateTime(2026, 10, 9)},
       ),
       people: [
         (person: _people[0], came: false), // Amélie
@@ -184,6 +181,7 @@ final _events = [
       Stage.prospect: 'samples',
       Stage.customer: 'new-customer',
     },
+    stepsDone: {'remind': DateTime(2026, 10, 7)},
   ),
   CalendarEvent(
     id: 'e2',

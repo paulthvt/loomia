@@ -10,8 +10,8 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -21,23 +21,16 @@ Future<void> showWhoWasThere(
   BuildContext context, {
   required CalendarEvent event,
   required List<EventPerson> people,
-  required Map<Stage, String> followUpNames,
 }) => LoomiaDialog.show<void>(
   context,
-  (_) =>
-      _WhoWasThere(event: event, people: people, followUpNames: followUpNames),
+  (_) => _WhoWasThere(event: event, people: people),
 );
 
 class _WhoWasThere extends ConsumerStatefulWidget {
-  const _WhoWasThere({
-    required this.event,
-    required this.people,
-    required this.followUpNames,
-  });
+  const _WhoWasThere({required this.event, required this.people});
 
   final CalendarEvent event;
   final List<EventPerson> people;
-  final Map<Stage, String> followUpNames;
 
   @override
   ConsumerState<_WhoWasThere> createState() => _WhoWasThereState();
@@ -79,6 +72,14 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final failure = _failure;
+    // Until the workflows load, the summary would say "keeps" for all.
+    final workflows = ref.watch(
+      workflowsProvider(ref.watch(accountProvider)?.email),
+    );
+    final followUpNames = switch (workflows.value) {
+      final list? => followUpNamesOf(widget.event.followUps, list),
+      null => null,
+    };
     return LoomiaDialog(
       title: l10n.eventWhoWasThere,
       body: l10n.eventWhoWasThereBody,
@@ -117,7 +118,9 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
               subtitle: Text(stageLabel(l10n, person.stage)),
               controlAffinity: ListTileControlAffinity.leading,
             ),
-          if (widget.event.eventWorkflowId != null && _lines.isNotEmpty)
+          if (widget.event.eventWorkflowId != null &&
+              followUpNames != null &&
+              _lines.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
@@ -135,7 +138,7 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
                     ),
                   ),
                   for (final line in _lines)
-                    Text(switch (widget.followUpNames[line.stage]) {
+                    Text(switch (followUpNames[line.stage]) {
                       final String name => l10n.eventThereStarts(
                         line.count,
                         line.stage.name,
@@ -144,7 +147,7 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
                       null => l10n.eventThereKeeps(line.count, line.stage.name),
                     }),
                   if (_lines.any(
-                    (line) => widget.followUpNames.containsKey(line.stage),
+                    (line) => followUpNames.containsKey(line.stage),
                   ))
                     Text(
                       l10n.eventThereReplaces,

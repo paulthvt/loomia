@@ -131,12 +131,7 @@ class EventPane extends ConsumerWidget {
     final steps =
         findEventWorkflow(eventWorkflows, event.eventWorkflowId)?.steps ??
         const <EventWorkflowStep>[];
-    final followUpNames = <Stage, String>{
-      for (final stage in Stage.values)
-        if (event.followUps[stage] case final id?)
-          if (findWorkflow(workflows, id) case final workflow?)
-            stage: workflow.name,
-    };
+    final followUpNames = followUpNamesOf(event.followUps, workflows);
     return EventView(
       event: event,
       people: people,
@@ -144,14 +139,8 @@ class EventPane extends ConsumerWidget {
       onAddPeople: () => unawaited(_invite(context, ref, event)),
       onRemove: (person) => unawaited(_uninvite(context, ref, event, person)),
       onOpenPerson: (person) => openContact(context, person.id),
-      onMarkDone: () => unawaited(
-        showWhoWasThere(
-          context,
-          event: event,
-          people: people,
-          followUpNames: followUpNames,
-        ),
-      ),
+      onMarkDone: () =>
+          unawaited(showWhoWasThere(context, event: event, people: people)),
       onEdit: () => unawaited(_edit(context, ref, event)),
       onDelete: () => unawaited(_delete(context, ref, event)),
       onOpenPlace: (place) => unawaited(
@@ -563,3 +552,13 @@ class _DoneBanner extends StatelessWidget {
     );
   }
 }
+
+/// The name of each stage's workflow in [followUps]; a stage whose workflow
+/// isn't in [workflows] (deleted) is left out, so it reads "keeps".
+Map<Stage, String> followUpNamesOf(
+  Map<Stage, String> followUps,
+  List<Workflow> workflows,
+) => {
+  for (final MapEntry(key: stage, value: id) in followUps.entries)
+    if (findWorkflow(workflows, id) case final workflow?) stage: workflow.name,
+};
