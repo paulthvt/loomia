@@ -1928,5 +1928,63 @@
   "eventNotes": "Notes",
   "@eventNotes": {
     "description": "Label of the event form's field for free notes about the event, e.g. what to bring."
+  },
+  "calendarMonth": "{month}",
+  "@calendarMonth": {
+    "description": "Title of the Calendar screen: the month shown, e.g. 'October 2026'. The format follows the locale.",
+    "placeholders": {
+      "month": { "type": "DateTime", "format": "yMMMM" }
+    }
+  },
+  "calendarToday": "Today",
+  "@calendarToday": {
+    "description": "Button on the Calendar screen that goes back to the current month and selects today."
+  },
+  "calendarPreviousMonth": "Previous month",
+  "@calendarPreviousMonth": {
+    "description": "Tooltip of the Calendar's button that shows the month before."
+  },
+  "calendarNextMonth": "Next month",
+  "@calendarNextMonth": {
+    "description": "Tooltip of the Calendar's button that shows the month after."
+  },
+  "calendarDayTitle": "{day}",
+  "@calendarDayTitle": {
+    "description": "Heading above the selected day's events on the Calendar screen, shown uppercased, e.g. 'Thursday, October 8'. The format follows the locale.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" }
+    }
+  },
+  "calendarAdd": "Add",
+  "@calendarAdd": {
+    "description": "Action beside the selected day's heading on the Calendar screen: adds an event on that day."
+  },
+  "calendarNothingPlanned": "Nothing planned",
+  "@calendarNothingPlanned": {
+    "description": "Shown under the selected day on the Calendar screen when it has no event."
+  },
+  "calendarDaySemantics": "{day}, {count, plural, =0{nothing planned} =1{one event} other{{count} events}}",
+  "@calendarDaySemantics": {
+    "description": "What a screen reader says for a day in the Calendar's month grid: the date, then how many events it has.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "count": { "type": "int" }
+    }
+  },
+  "calendarLoadFailed": "Couldn't load your calendar.",
+  "@calendarLoadFailed": {
+    "description": "Title of the error shown on the Calendar when the events could not be loaded."
+  },
+  "eventOnline": "Online",
+  "@eventOnline": {
+    "description": "Second line of an event's row on the Calendar when it has a meeting link and no place."
+  },
+  "eventWhen": "{day} · {time}",
+  "@eventWhen": {
+    "description": "When an event happens, on its screen: the date, then the time or 'start – end', e.g. 'Thursday, October 8 · 7:00 PM – 9:00 PM'.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "time": { "type": "String" }
+    }
   }
 }

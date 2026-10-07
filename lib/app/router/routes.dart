@@ -20,6 +20,16 @@ abstract final class Routes {
   static String contactWorkflowLocation(String id) =>
       '${contactLocation(id)}/$contactWorkflowSegment';
 
+  static const String calendar = '/calendar';
+  static const String calendarName = 'calendar';
+
+  /// One event, nested under [calendar] so back returns to the month.
+  static const String eventSegment = ':id';
+  static const String eventName = 'event';
+
+  static String eventLocation(String id) =>
+      '$calendar/${Uri.encodeComponent(id)}';
+
   static const String team = '/team';
   static const String teamName = 'team';
 
