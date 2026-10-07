@@ -1,6 +1,6 @@
 # Calendar — design
 
-Epic: #150 (sub-issues #151–#155). Figma: section "Calendar — #150" on page
+Epic: #150 (sub-issues #151–#155). Figma: [Calendar — #150](https://www.figma.com/design/spz2vsSK8gbt1Ok2rW1sdQ/Loomia?node-id=257-4672), on page
 "04 — Screens (Light)". Supersedes the *Calendar epic* sketch at the end of
 `2026-10-02-goals-design.md`.
 
