@@ -138,8 +138,9 @@ select throws_ok(
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
 select is(
-  (select count(*)::int
-   from public.event_workflow, public.event_workflow_step, public.event_step_done),
+  (select count(*)::int from public.event_workflow)
+  + (select count(*)::int from public.event_workflow_step)
+  + (select count(*)::int from public.event_step_done),
   0,
   'another user sees none of it'
 );

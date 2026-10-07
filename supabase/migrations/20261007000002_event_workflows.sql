@@ -59,6 +59,23 @@ alter table public.event
   add foreign key (team_workflow_id, owner_id)
     references public.workflow (id, owner_id) on delete set null (team_workflow_id);
 
+-- The referencing side of every composite FK: deletes and their
+-- "set null" look rows up by these.
+create index event_event_workflow_id_owner_id_idx
+  on public.event (event_workflow_id, owner_id);
+create index event_prospect_workflow_id_owner_id_idx
+  on public.event (prospect_workflow_id, owner_id);
+create index event_customer_workflow_id_owner_id_idx
+  on public.event (customer_workflow_id, owner_id);
+create index event_team_workflow_id_owner_id_idx
+  on public.event (team_workflow_id, owner_id);
+create index event_workflow_prospect_workflow_id_owner_id_idx
+  on public.event_workflow (prospect_workflow_id, owner_id);
+create index event_workflow_customer_workflow_id_owner_id_idx
+  on public.event_workflow (customer_workflow_id, owner_id);
+create index event_workflow_team_workflow_id_owner_id_idx
+  on public.event_workflow (team_workflow_id, owner_id);
+
 create table public.event_step_done (
   event_id uuid not null,
   step_id uuid not null,
@@ -71,6 +88,9 @@ create table public.event_step_done (
   foreign key (step_id, owner_id)
     references public.event_workflow_step (id, owner_id) on delete cascade
 );
+
+create index event_step_done_step_id_owner_id_idx
+  on public.event_step_done (step_id, owner_id);
 
 create trigger event_workflow_set_updated_at before update on public.event_workflow
   for each row execute function public.set_updated_at();
