@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -9,6 +11,7 @@ import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -40,6 +43,11 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
   bool _saving = false;
   PeopleFailure? _failure;
 
+  List<ThereLine> get _lines => thereSummary([
+    for (final (:person, came: _) in widget.people)
+      if (_there.contains(person.id)) person.stage,
+  ], widget.event.followUps);
+
   Future<void> _submit() async {
     setState(() {
       _saving = true;
@@ -64,6 +72,14 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final failure = _failure;
+    // Until the workflows load, the summary would say "keeps" for all.
+    final workflows = ref.watch(
+      workflowsProvider(ref.watch(accountProvider)?.email),
+    );
+    final followUpNames = switch (workflows.value) {
+      final list? => followUpNamesOf(widget.event.followUps, list),
+      null => null,
+    };
     return LoomiaDialog(
       title: l10n.eventWhoWasThere,
       body: l10n.eventWhoWasThereBody,
@@ -101,6 +117,44 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
               title: Text(person.name),
               subtitle: Text(stageLabel(l10n, person.stage)),
               controlAffinity: ListTileControlAffinity.leading,
+            ),
+          if (widget.event.eventWorkflowId != null &&
+              followUpNames != null &&
+              _lines.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: LoomiaColors.of(context).surfaceSunken,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: AppSpacing.xs,
+                children: [
+                  Text(
+                    l10n.eventWhatHappensNext.toUpperCase(),
+                    style: AppTypography.overline.copyWith(
+                      color: LoomiaColors.of(context).textMuted,
+                    ),
+                  ),
+                  for (final line in _lines)
+                    Text(switch (followUpNames[line.stage]) {
+                      final String name => l10n.eventThereStarts(
+                        line.count,
+                        line.stage.name,
+                        name,
+                      ),
+                      null => l10n.eventThereKeeps(line.count, line.stage.name),
+                    }),
+                  if (_lines.any(
+                    (line) => followUpNames.containsKey(line.stage),
+                  ))
+                    Text(
+                      l10n.eventThereReplaces,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
             ),
         ],
       ),

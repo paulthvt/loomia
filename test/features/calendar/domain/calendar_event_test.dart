@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
 CalendarEvent _event(String id, DateTime startsAt) =>
     CalendarEvent(id: id, title: id, startsAt: startsAt);
@@ -101,5 +103,45 @@ void main() {
       expect(event(attendees: const []).canMarkDone(starts), isFalse);
       expect(event(doneAt: starts).canMarkDone(starts), isFalse);
     });
+  });
+
+  group('stepDue', () {
+    CalendarEvent on(DateTime startsAt) =>
+        CalendarEvent(id: 'e', title: 'Workshop', startsAt: startsAt);
+    EventWorkflowStep step(int days) =>
+        EventWorkflowStep(id: 's', label: 'Step', days: days);
+
+    test('the event day plus days, before or after', () {
+      final event = on(DateTime(2026, 10, 8, 19));
+      expect(stepDue(event, step(-1)), DateTime(2026, 10, 7));
+      expect(stepDue(event, step(0)), DateTime(2026, 10, 8));
+      expect(stepDue(event, step(1)), DateTime(2026, 10, 9));
+    });
+
+    test('across a month end', () {
+      expect(
+        stepDue(on(DateTime(2026, 10, 1, 10)), step(-1)),
+        DateTime(2026, 9, 30),
+      );
+      expect(
+        stepDue(on(DateTime(2026, 10, 31, 10)), step(1)),
+        DateTime(2026, 11),
+      );
+    });
+  });
+
+  test('who was there, per stage, with what they start', () {
+    expect(
+      thereSummary(
+        [Stage.customer, Stage.prospect, Stage.prospect, Stage.team],
+        {Stage.prospect: 'samples', Stage.customer: 'new-customer'},
+      ),
+      [
+        (stage: Stage.prospect, count: 2, workflowId: 'samples'),
+        (stage: Stage.customer, count: 1, workflowId: 'new-customer'),
+        (stage: Stage.team, count: 1, workflowId: null),
+      ],
+    );
+    expect(thereSummary(const [], const {}), isEmpty);
   });
 }

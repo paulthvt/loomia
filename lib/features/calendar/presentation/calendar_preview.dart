@@ -6,6 +6,7 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -55,6 +56,12 @@ Widget eventMobileLight() => _app(
       onDelete: () {},
       onOpenPlace: (_) {},
       onJoin: (_) {},
+      steps: _workshopSteps,
+      onTick: (_, _) {},
+      followUpNames: const {
+        Stage.prospect: 'Samples',
+        Stage.customer: 'New customer',
+      },
     ),
   ),
 );
@@ -81,6 +88,7 @@ Widget eventDoneMobileLight() => _app(
           (personId: 'p5', came: true), // Bruno
         ],
         doneAt: DateTime(2026, 10, 9, 9),
+        stepsDone: {..._events[1].stepsDone, 'thank': DateTime(2026, 10, 9)},
       ),
       people: [
         (person: _people[0], came: false), // Amélie
@@ -98,6 +106,12 @@ Widget eventDoneMobileLight() => _app(
       onDelete: () {},
       onOpenPlace: (_) {},
       onJoin: (_) {},
+      steps: _workshopSteps,
+      onTick: (_, _) {},
+      followUpNames: const {
+        Stage.prospect: 'Samples',
+        Stage.customer: 'New customer',
+      },
     ),
   ),
 );
@@ -162,6 +176,12 @@ final _events = [
       (personId: 'p4', came: false),
       (personId: 'p5', came: false),
     ],
+    eventWorkflowId: 'workshop',
+    followUps: const {
+      Stage.prospect: 'samples',
+      Stage.customer: 'new-customer',
+    },
+    stepsDone: {'remind': DateTime(2026, 10, 7)},
   ),
   CalendarEvent(
     id: 'e2',
@@ -194,6 +214,19 @@ final _events = [
     id: 'e6',
     title: 'Workshop',
     startsAt: DateTime(2026, 10, 27, 19),
+  ),
+];
+
+final _workshopSteps = [
+  const EventWorkflowStep(
+    id: 'remind',
+    label: "Remind everyone it's tomorrow",
+    days: -1,
+  ),
+  const EventWorkflowStep(
+    id: 'thank',
+    label: 'Send a thank-you and the notes',
+    days: 1,
   ),
 ];
 

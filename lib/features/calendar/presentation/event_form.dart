@@ -8,7 +8,13 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
+import 'package:loomia/features/workflows/presentation/follow_up_picker.dart';
+import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -48,6 +54,9 @@ class _EventFormState extends ConsumerState<_EventForm> {
   bool _endBeforeStart = false;
   bool _saving = false;
   PeopleFailure? _failure;
+  String? _eventWorkflowId;
+  Map<Stage, String> _followUps = const {};
+  String? _typeName;
 
   @override
   void initState() {
@@ -56,6 +65,18 @@ class _EventFormState extends ConsumerState<_EventForm> {
     if (event == null) {
       _day = widget.day ?? today();
       _start = _defaultStart;
+      // For a new event: pick the first event workflow by name once loaded
+      final owner = ref.read(accountProvider)?.email;
+      ref.listenManual(eventWorkflowsProvider(owner), (_, next) {
+        final workflows = next.value;
+        if (workflows == null ||
+            workflows.isEmpty ||
+            _eventWorkflowId != null) {
+          return;
+        }
+        final first = workflows.first;
+        setState(() => _choose(first));
+      }, fireImmediately: true);
       return;
     }
     final starts = event.startsAt.toLocal();
@@ -63,6 +84,8 @@ class _EventFormState extends ConsumerState<_EventForm> {
     _start = TimeOfDay.fromDateTime(starts);
     final ends = event.endsAt;
     _end = ends == null ? null : TimeOfDay.fromDateTime(ends.toLocal());
+    _eventWorkflowId = event.eventWorkflowId;
+    _followUps = event.followUps;
   }
 
   @override
@@ -120,6 +143,22 @@ class _EventFormState extends ConsumerState<_EventForm> {
     _endBeforeStart = false;
   });
 
+  List<EventWorkflow>? get _eventWorkflows =>
+      ref.read(eventWorkflowsProvider(ref.read(accountProvider)?.email)).value;
+
+  void _choose(EventWorkflow workflow) {
+    final currentTitle = _title.text.trim();
+    final previous =
+        _typeName ??
+        findEventWorkflow(_eventWorkflows ?? const [], _eventWorkflowId)?.name;
+    if (currentTitle.isEmpty || currentTitle == previous) {
+      _title.text = workflow.name;
+    }
+    _typeName = workflow.name;
+    _eventWorkflowId = workflow.id;
+    _followUps = {...workflow.followUps};
+  }
+
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
     final startsAt = _at(_start);
@@ -134,6 +173,21 @@ class _EventFormState extends ConsumerState<_EventForm> {
       return value.isEmpty ? null : value;
     }
 
+    // Deleted since the form opened, or since the event was saved: dropped,
+    // once the lists say so.
+    final owner = ref.read(accountProvider)?.email;
+    final eventWorkflows = _eventWorkflows;
+    final workflows = ref.read(workflowsProvider(owner)).value;
+    final eventWorkflowId = eventWorkflows == null
+        ? _eventWorkflowId
+        : findEventWorkflow(eventWorkflows, _eventWorkflowId)?.id;
+    final followUps = workflows == null
+        ? _followUps
+        : {
+            for (final MapEntry(:key, :value) in _followUps.entries)
+              if (findWorkflow(workflows, value) != null) key: value,
+          };
+
     final EventDraft draft = (
       title: _title.text.trim(),
       startsAt: startsAt,
@@ -141,15 +195,15 @@ class _EventFormState extends ConsumerState<_EventForm> {
       place: text(_place),
       link: normaliseLink(_link.text),
       notes: text(_notes),
+      eventWorkflowId: eventWorkflowId,
+      followUps: followUps,
     );
     setState(() {
       _saving = true;
       _failure = null;
     });
     try {
-      final events = ref.read(
-        eventsProvider(ref.read(accountProvider)?.email).notifier,
-      );
+      final events = ref.read(eventsProvider(owner).notifier);
       final event = widget.event;
       final saved = event == null
           ? await events.add(draft)
@@ -174,6 +228,10 @@ class _EventFormState extends ConsumerState<_EventForm> {
         material.formatTimeOfDay(value, alwaysUse24HourFormat: h24);
     final failure = _failure;
     final end = _end;
+    final owner = ref.watch(accountProvider)?.email;
+    final eventWorkflows =
+        ref.watch(eventWorkflowsProvider(owner)).value ?? const [];
+    final workflows = ref.watch(workflowsProvider(owner)).value ?? const [];
 
     return Form(
       key: _form,
@@ -200,6 +258,21 @@ class _EventFormState extends ConsumerState<_EventForm> {
           spacing: AppSpacing.ms,
           children: [
             if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
+            if (eventWorkflows.isNotEmpty)
+              LabeledField(
+                label: l10n.eventType,
+                child: Wrap(
+                  spacing: AppSpacing.sm,
+                  children: [
+                    for (final w in eventWorkflows)
+                      ChoiceChip(
+                        label: Text(w.name),
+                        selected: w.id == _eventWorkflowId,
+                        onSelected: (_) => setState(() => _choose(w)),
+                      ),
+                  ],
+                ),
+              ),
             LabeledField(
               label: l10n.eventTitle,
               child: TextFormField(
@@ -281,6 +354,28 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 textCapitalization: TextCapitalization.sentences,
               ),
             ),
+            if (_eventWorkflowId != null || _followUps.isNotEmpty)
+              ExpansionTile(
+                title: Text(l10n.eventWorkflowAfter),
+                shape: const Border(),
+                collapsedShape: const Border(),
+                children: [
+                  for (final stage in Stage.values)
+                    FollowUpPicker(
+                      stage: stage,
+                      workflows: workflows,
+                      value: _followUps[stage],
+                      onChanged: (id) => setState(() {
+                        _followUps = {
+                          for (final MapEntry(:key, :value)
+                              in _followUps.entries)
+                            if (key != stage) key: value,
+                          stage: ?id,
+                        };
+                      }),
+                    ),
+                ],
+              ),
           ],
         ),
       ),

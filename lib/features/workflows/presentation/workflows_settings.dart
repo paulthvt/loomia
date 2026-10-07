@@ -16,7 +16,9 @@ import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -27,9 +29,12 @@ class WorkflowsSettings extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workflows = workflowsProvider(ref.watch(accountProvider)?.email);
+    final owner = ref.watch(accountProvider)?.email;
+    final workflows = workflowsProvider(owner);
     final state = ref.watch(workflows);
     final list = state.value;
+    final eventWorkflows = eventWorkflowsProvider(owner);
+    final eventState = ref.watch(eventWorkflows);
     if (list == null) {
       return state.hasError
           ? WorkflowsLoadError(onRetry: () => ref.invalidate(workflows))
@@ -44,6 +49,12 @@ class WorkflowsSettings extends ConsumerWidget {
       workflows: list,
       onOpen: (workflow) => openWorkflow(context, workflow.id),
       onNew: () => unawaited(showNewWorkflow(context)),
+      eventWorkflows: eventState.value ?? const [],
+      onOpenEvent: (w) => openEventWorkflow(context, w.id),
+      onNewEvent: () => unawaited(showNewEventWorkflow(context)),
+      onRetryEvents: eventState.hasError && !eventState.isLoading
+          ? () => ref.invalidate(eventWorkflows)
+          : null,
     );
   }
 }
@@ -55,12 +66,22 @@ class WorkflowsView extends StatelessWidget {
     required this.workflows,
     required this.onOpen,
     required this.onNew,
+    required this.eventWorkflows,
+    required this.onOpenEvent,
+    required this.onNewEvent,
+    this.onRetryEvents,
     super.key,
   });
 
   final List<Workflow> workflows;
   final ValueChanged<Workflow> onOpen;
   final VoidCallback onNew;
+  final List<EventWorkflow> eventWorkflows;
+  final ValueChanged<EventWorkflow> onOpenEvent;
+  final VoidCallback onNewEvent;
+
+  /// Set when the event workflows failed to load: their section says so.
+  final VoidCallback? onRetryEvents;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +126,42 @@ class WorkflowsView extends StatelessWidget {
           style: AppTheme.tonal(context),
           icon: const Icon(Icons.add_rounded),
           label: Text(l10n.workflowsNew),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        SectionHeader(title: l10n.workflowsEvents),
+        if (onRetryEvents case final retry?)
+          WorkflowsLoadError(onRetry: retry)
+        else if (eventWorkflows.isNotEmpty)
+          SettingsGroup(
+            children: [
+              for (final workflow in eventWorkflows)
+                ListTile(
+                  title: Text(workflow.name),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: AppSpacing.sm,
+                    children: [
+                      Text(l10n.followWithSteps(workflow.steps.length)),
+                      const Icon(Icons.chevron_right_rounded),
+                    ],
+                  ),
+                  onTap: () => onOpenEvent(workflow),
+                ),
+            ],
+          ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          l10n.workflowsEventsHint,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        FilledButton.tonalIcon(
+          onPressed: onNewEvent,
+          style: AppTheme.tonal(context),
+          icon: const Icon(Icons.add_rounded),
+          label: Text(l10n.eventWorkflowNew),
         ),
       ],
     );
@@ -162,6 +219,28 @@ Future<void> showNewWorkflow(BuildContext context) async {
     (_) => const _NewWorkflowForm(),
   );
   if (created != null && context.mounted) openWorkflow(context, created.id);
+}
+
+/// In the pane in place of the list on desktop; elsewhere pushed, so back
+/// returns to the list.
+void openEventWorkflow(BuildContext context, String id) {
+  final location = Routes.settingsEventWorkflowLocation(id);
+  if (context.screenSize.isDesktop) {
+    context.go(location);
+  } else {
+    context.push(location);
+  }
+}
+
+/// Name only. Create writes, then opens the editor on the new event workflow.
+Future<void> showNewEventWorkflow(BuildContext context) async {
+  final created = await LoomiaDialog.show<EventWorkflow>(
+    context,
+    (_) => const _NewEventWorkflowForm(),
+  );
+  if (created != null && context.mounted) {
+    openEventWorkflow(context, created.id);
+  }
 }
 
 class _NewWorkflowForm extends ConsumerStatefulWidget {
@@ -260,6 +339,97 @@ class _NewWorkflowFormState extends ConsumerState<_NewWorkflowForm> {
                     onSelected: (_) => setState(() => _stage = stage),
                   ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewEventWorkflowForm extends ConsumerStatefulWidget {
+  const _NewEventWorkflowForm();
+
+  @override
+  ConsumerState<_NewEventWorkflowForm> createState() =>
+      _NewEventWorkflowFormState();
+}
+
+class _NewEventWorkflowFormState extends ConsumerState<_NewEventWorkflowForm> {
+  final _form = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  bool _saving = false;
+  PeopleFailure? _failure;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_saving || !_form.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _failure = null;
+    });
+    try {
+      final created = await editEventWorkflows(
+        ref,
+        (workflows) => workflows.create(_name.text.trim()),
+      );
+      if (mounted) Navigator.pop(context, created);
+    } on PeopleFailure catch (failure) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _failure = failure;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final material = MaterialLocalizations.of(context);
+    final failure = _failure;
+
+    return Form(
+      key: _form,
+      child: LoomiaDialog(
+        title: l10n.eventWorkflowNew,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(material.cancelButtonLabel),
+          ),
+          FilledButton(
+            onPressed: _saving ? null : _submit,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(l10n.workflowsCreate),
+          ),
+        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AppSpacing.ms,
+          children: [
+            if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
+            LabeledField(
+              label: l10n.workflowName,
+              child: TextFormField(
+                controller: _name,
+                autofocus: true,
+                textCapitalization: TextCapitalization.sentences,
+                validator: (value) => (value ?? '').trim().isEmpty
+                    ? l10n.workflowNameRequired
+                    : null,
+              ),
             ),
           ],
         ),

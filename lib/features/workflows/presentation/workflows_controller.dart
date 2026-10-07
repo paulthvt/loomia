@@ -3,6 +3,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
@@ -47,13 +48,18 @@ class WorkflowsController extends AsyncNotifier<List<Workflow>> {
 
   /// Runs [write], then reloads: the workflows, and through [build] the
   /// people, whose current step and due day the server may now compute
-  /// differently. Rethrows the write's `PeopleFailure`. Nothing is
+  /// differently, and the events, whose stages a deleted workflow leaves
+  /// keeping theirs. Rethrows the write's `PeopleFailure`. Nothing is
   /// optimistic: screens show the saved state until the reload lands.
   Future<T> edit<T>(
     Future<T> Function(WorkflowRepository repository) write,
   ) async {
     final result = await write(ref.read(workflowRepositoryProvider));
-    if (ref.mounted) ref.invalidateSelf();
+    if (ref.mounted) {
+      ref
+        ..invalidateSelf()
+        ..invalidate(eventsProvider(owner));
+    }
     return result;
   }
 }

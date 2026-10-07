@@ -13,6 +13,7 @@ import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/open_external.dart';
+import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -27,6 +28,11 @@ import 'package:loomia/features/contacts/domain/search_key.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_step_copy.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
+import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -116,6 +122,16 @@ class EventPane extends ConsumerWidget {
           (a, b) =>
               searchKey(a.person.name).compareTo(searchKey(b.person.name)),
         );
+    final owner = ref.watch(accountProvider)?.email;
+    final eventWorkflows =
+        ref.watch(eventWorkflowsProvider(owner)).value ??
+        const <EventWorkflow>[];
+    final workflows =
+        ref.watch(workflowsProvider(owner)).value ?? const <Workflow>[];
+    final steps =
+        findEventWorkflow(eventWorkflows, event.eventWorkflowId)?.steps ??
+        const <EventWorkflowStep>[];
+    final followUpNames = followUpNamesOf(event.followUps, workflows);
     return EventView(
       event: event,
       people: people,
@@ -137,6 +153,9 @@ class EventPane extends ConsumerWidget {
         ),
       ),
       onJoin: (link) => unawaited(openExternal(context, link)),
+      steps: steps,
+      onTick: (step, done) => unawaited(_tick(context, ref, event, step, done)),
+      followUpNames: followUpNames,
     );
   }
 
@@ -179,6 +198,31 @@ class EventPane extends ConsumerWidget {
     );
     try {
       await events.uninvite(event.id, person.id);
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+    }
+  }
+
+  Future<void> _tick(
+    BuildContext context,
+    WidgetRef ref,
+    CalendarEvent event,
+    EventWorkflowStep step,
+    bool done,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final events = ref.read(
+      eventsProvider(ref.read(accountProvider)?.email).notifier,
+    );
+    try {
+      if (done) {
+        await events.tick(event.id, step.id, today());
+      } else {
+        await events.untick(event.id, step.id);
+      }
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
@@ -246,6 +290,9 @@ class EventView extends StatelessWidget {
     required this.onDelete,
     required this.onOpenPlace,
     required this.onJoin,
+    required this.steps,
+    required this.onTick,
+    required this.followUpNames,
     super.key,
   });
 
@@ -262,6 +309,9 @@ class EventView extends StatelessWidget {
   /// Opens the maps app on the place.
   final void Function(String place) onOpenPlace;
   final void Function(Uri link) onJoin;
+  final List<EventWorkflowStep> steps;
+  final void Function(EventWorkflowStep step, bool done) onTick;
+  final Map<Stage, String> followUpNames;
 
   @override
   Widget build(BuildContext context) {
@@ -323,6 +373,31 @@ class EventView extends StatelessWidget {
               ),
             ),
           ),
+        if (steps.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          SectionHeader(title: l10n.eventChecklist),
+          for (final step in steps)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(step.label),
+              subtitle: Text(
+                l10n.eventStepDue(
+                  stepTiming(l10n, step.days),
+                  stepDue(event, step),
+                ),
+              ),
+              trailing: IconButton(
+                onPressed: () =>
+                    onTick(step, !event.stepsDone.containsKey(step.id)),
+                isSelected: event.stepsDone.containsKey(step.id),
+                tooltip: event.stepsDone.containsKey(step.id)
+                    ? l10n.eventStepUntick(step.label)
+                    : l10n.eventStepTick(step.label),
+                style: AppTheme.resolveRing(context),
+                icon: const Icon(Icons.check_rounded),
+              ),
+            ),
+        ],
         if (event.done) ...[
           const SizedBox(height: AppSpacing.lg),
           _DoneBanner(
@@ -365,6 +440,19 @@ class EventView extends StatelessWidget {
                       icon: const Icon(Icons.close_rounded),
                     ),
             ),
+        if (!event.done && event.eventWorkflowId != null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          SectionHeader(title: l10n.eventWorkflowAfter),
+          for (final stage in Stage.values)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.eventWorkflowStage(stage.name)),
+              trailing: Text(switch (followUpNames[stage]) {
+                final String name => l10n.eventFollowUpStarts(name),
+                null => l10n.eventFollowUpKeeps,
+              }),
+            ),
+        ],
       ],
     );
   }
@@ -464,3 +552,13 @@ class _DoneBanner extends StatelessWidget {
     );
   }
 }
+
+/// The name of each stage's workflow in [followUps]; a stage whose workflow
+/// isn't in [workflows] (deleted) is left out, so it reads "keeps".
+Map<Stage, String> followUpNamesOf(
+  Map<Stage, String> followUps,
+  List<Workflow> workflows,
+) => {
+  for (final MapEntry(key: stage, value: id) in followUps.entries)
+    if (findWorkflow(workflows, id) case final workflow?) stage: workflow.name,
+};

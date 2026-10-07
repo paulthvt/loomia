@@ -11,12 +11,14 @@ import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../../contacts/fake_people_repository.dart';
+import '../../workflows/fake_event_workflow_repository.dart';
 import '../fake_event_repository.dart';
 
 final _workshop = CalendarEvent(
@@ -63,6 +65,9 @@ Future<void> _pumpView(
   VoidCallback? onMarkDone,
   void Function(String place)? onOpenPlace,
   void Function(Uri link)? onJoin,
+  List<EventWorkflowStep> steps = const [],
+  void Function(EventWorkflowStep, bool)? onTick,
+  Map<Stage, String> followUpNames = const {},
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -83,6 +88,9 @@ Future<void> _pumpView(
           onDelete: () {},
           onOpenPlace: onOpenPlace ?? (_) {},
           onJoin: onJoin ?? (_) {},
+          steps: steps,
+          onTick: onTick ?? (_, _) {},
+          followUpNames: followUpNames,
         ),
       ),
     ),
@@ -419,5 +427,99 @@ void main() {
     expect(find.text("Couldn't load your contacts."), findsOneWidget);
     expect(find.text('Mark who was there'), findsNothing);
     expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('the checklist: when each step is due, tick and untick', (
+    tester,
+  ) async {
+    final ticks = <(String, bool)>[];
+    final event = CalendarEvent(
+      id: 'e1',
+      title: 'Workshop',
+      startsAt: DateTime(2026, 10, 8, 19),
+      eventWorkflowId: 'workshop',
+      stepsDone: {'thank': DateTime(2026, 10, 9)},
+    );
+    await _pumpView(
+      tester,
+      event,
+      steps: const [
+        EventWorkflowStep(
+          id: 'remind',
+          label: "Remind everyone it's tomorrow",
+          days: -1,
+        ),
+        EventWorkflowStep(
+          id: 'thank',
+          label: 'Send a thank-you and the notes',
+          days: 1,
+        ),
+      ],
+      onTick: (step, done) => ticks.add((step.id, done)),
+    );
+
+    expect(find.text('CHECKLIST'), findsOneWidget);
+    expect(find.text('1 day before · Wednesday, October 7'), findsOneWidget);
+    expect(find.text('1 day after · Friday, October 9'), findsOneWidget);
+
+    await tester.tap(
+      find.byTooltip('Mark "Remind everyone it\'s tomorrow" done'),
+    );
+    await tester.tap(
+      find.byTooltip('Mark "Send a thank-you and the notes" not done'),
+    );
+    expect(ticks, [('remind', true), ('thank', false)]);
+  });
+
+  testWidgets('after the event: what each stage starts', (tester) async {
+    await _pumpView(
+      tester,
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: DateTime(2026, 10, 8, 19),
+        eventWorkflowId: 'workshop',
+      ),
+      followUpNames: const {Stage.prospect: 'Samples'},
+    );
+
+    await tester.scrollUntilVisible(find.text('Start Samples'), 200);
+    expect(find.text('Prospects'), findsOneWidget);
+    expect(find.text('Keep their workflow'), findsNWidgets(2));
+  });
+
+  testWidgets('who was there says what happens next', (tester) async {
+    final started = DateTime.now().subtract(const Duration(hours: 1));
+    final events = FakeEventRepository([
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: started,
+        eventWorkflowId: 'workshop',
+        followUps: FakeEventWorkflowRepository.samples().first.followUps,
+        attendees: const [
+          (personId: 'p1', came: false),
+          (personId: 'p2', came: false),
+        ],
+      ),
+    ]);
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 1000),
+      events: events,
+      people: FakePeopleRepository([_claire, _sarah]),
+    );
+    container.read(routerProvider).go(Routes.eventLocation('e1'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mark who was there'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('WHAT HAPPENS NEXT'), findsOneWidget);
+    expect(find.text('1 prospect starts Samples'), findsOneWidget);
+    expect(find.text('1 customer starts New customer'), findsOneWidget);
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'Sarah Lemaire'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 customer starts New customer'), findsNothing);
   });
 }

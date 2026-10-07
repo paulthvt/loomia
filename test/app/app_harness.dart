@@ -8,6 +8,7 @@ import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/data/phone_contacts_repository.dart';
 import 'package:loomia/features/goals/data/goals_repository.dart';
+import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,6 +18,7 @@ import '../features/contacts/fake_activity_repository.dart';
 import '../features/contacts/fake_people_repository.dart';
 import '../features/contacts/fake_phone_contacts_repository.dart';
 import '../features/goals/fake_goals_repository.dart';
+import '../features/workflows/fake_event_workflow_repository.dart';
 import '../features/workflows/fake_workflow_repository.dart';
 
 /// The whole app, signed in as Pauline unless [auth] says otherwise, at [size]
@@ -30,6 +32,7 @@ Future<ProviderContainer> pumpLoomia(
   FakePeopleRepository? people,
   FakeActivityRepository? activities,
   FakeWorkflowRepository? workflows,
+  FakeEventWorkflowRepository? eventWorkflows,
   FakeGoalsRepository? goals,
   FakeEventRepository? events,
   FakePhoneContactsRepository? phoneContacts,
@@ -55,6 +58,12 @@ Future<ProviderContainer> pumpLoomia(
         ),
         workflowRepositoryProvider.overrideWithValue(
           workflows ?? FakeWorkflowRepository(FakeWorkflowRepository.samples()),
+        ),
+        eventWorkflowRepositoryProvider.overrideWithValue(
+          eventWorkflows ??
+              FakeEventWorkflowRepository(
+                FakeEventWorkflowRepository.samples(),
+              ),
         ),
         goalsRepositoryProvider.overrideWithValue(
           goals ?? FakeGoalsRepository(),

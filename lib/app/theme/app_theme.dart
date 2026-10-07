@@ -277,6 +277,15 @@ abstract final class AppTheme {
     );
   }
 
+  /// The value of a compact `DropdownButton` in a Settings row's trailing
+  /// slot: the row's trailing size, in the text colour, as it can be changed.
+  static TextStyle? rowDropdown(BuildContext context) {
+    final theme = Theme.of(context);
+    return theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurface,
+    );
+  }
+
   /// A search field: a pill with no hairline, the focus ring kept.
   static InputDecoration search(BuildContext context) {
     final pill = BorderRadius.circular(AppRadii.pill);

@@ -28,6 +28,7 @@ class FakeEventRepository implements EventRepository {
     EventDraft draft, {
     List<Attendee> attendees = const [],
     DateTime? doneAt,
+    Map<String, DateTime> stepsDone = const {},
   }) => CalendarEvent(
     id: id,
     title: draft.title,
@@ -38,6 +39,9 @@ class FakeEventRepository implements EventRepository {
     notes: draft.notes,
     attendees: attendees,
     doneAt: doneAt,
+    eventWorkflowId: draft.eventWorkflowId,
+    followUps: draft.followUps,
+    stepsDone: stepsDone,
   );
 
   @override
@@ -64,6 +68,7 @@ class FakeEventRepository implements EventRepository {
       draft,
       attendees: saved.attendees,
       doneAt: saved.doneAt,
+      stepsDone: saved.stepsDone,
     );
     store[index] = event;
     return event;
@@ -79,6 +84,7 @@ class FakeEventRepository implements EventRepository {
     String eventId,
     List<Attendee> Function(List<Attendee>) change, {
     DateTime? doneAt,
+    Map<String, DateTime>? stepsDone,
   }) {
     final index = store.indexWhere((event) => event.id == eventId);
     final event = store[index];
@@ -92,6 +98,9 @@ class FakeEventRepository implements EventRepository {
       notes: event.notes,
       attendees: change(event.attendees),
       doneAt: doneAt ?? event.doneAt,
+      eventWorkflowId: event.eventWorkflowId,
+      followUps: event.followUps,
+      stepsDone: stepsDone ?? event.stepsDone,
     );
     store[index] = changed;
     return changed;
@@ -139,6 +148,33 @@ class FakeEventRepository implements EventRepository {
           ),
       ],
       doneAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<void> tick(String eventId, String stepId, DateTime on) async {
+    _record('tick($eventId:$stepId)');
+    final index = store.indexWhere((event) => event.id == eventId);
+    final event = store[index];
+    _with(
+      eventId,
+      (attendees) => attendees,
+      stepsDone: {...event.stepsDone, stepId: on},
+    );
+  }
+
+  @override
+  Future<void> untick(String eventId, String stepId) async {
+    _record('untick($eventId:$stepId)');
+    final index = store.indexWhere((event) => event.id == eventId);
+    final event = store[index];
+    _with(
+      eventId,
+      (attendees) => attendees,
+      stepsDone: {
+        for (final entry in event.stepsDone.entries)
+          if (entry.key != stepId) entry.key: entry.value,
+      },
     );
   }
 }

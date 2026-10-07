@@ -4,8 +4,10 @@ import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../workflows/fake_event_workflow_repository.dart';
 import '../calendar_harness.dart';
 import '../fake_event_repository.dart';
 
@@ -15,6 +17,10 @@ Finder _field(String label) => find.descendant(
 );
 
 final _day = DateTime(2026, 10, 8);
+
+/// Workshop alone, as an account is seeded: the first by name.
+FakeEventWorkflowRepository _seeded() =>
+    FakeEventWorkflowRepository([FakeEventWorkflowRepository.samples().first]);
 
 void main() {
   testWidgets('a new event on the day, at 19:00, with what was typed', (
@@ -55,6 +61,7 @@ void main() {
       result: (_) {},
     );
 
+    await tester.enterText(_field('Title'), '');
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -100,7 +107,13 @@ void main() {
     );
 
     expect(find.text('Edit event'), findsOneWidget);
-    expect(find.text('Workshop'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.widgetWithText(LabeledField, 'Title'),
+        matching: find.text('Workshop'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Bring the diffuser'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
@@ -135,7 +148,149 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FormError), findsOneWidget);
-    expect(find.text('Workshop'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.widgetWithText(LabeledField, 'Title'),
+        matching: find.text('Workshop'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('New event'), findsOneWidget);
+  });
+
+  testWidgets('a new event is a Workshop: its title, its stages', (
+    tester,
+  ) async {
+    final events = FakeEventRepository();
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      eventWorkflows: _seeded(),
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    expect(find.text('Workshop'), findsWidgets);
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    final saved = events.store.single;
+    expect(saved.title, 'Workshop');
+    expect(saved.eventWorkflowId, 'workshop');
+    expect(
+      saved.followUps,
+      FakeEventWorkflowRepository.samples().first.followUps,
+    );
+  });
+
+  testWidgets('another type follows an untouched title', (tester) async {
+    final events = FakeEventRepository();
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Training'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(events.store.single.title, 'Training');
+    expect(events.store.single.followUps, isEmpty);
+  });
+
+  testWidgets('another type keeps a title that was typed', (tester) async {
+    final events = FakeEventRepository();
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    await tester.enterText(_field('Title'), 'Essential oils for sleep');
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Training'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(events.store.single.title, 'Essential oils for sleep');
+    expect(events.store.single.eventWorkflowId, 'training');
+  });
+
+  testWidgets('after the event: prospects can keep theirs, for this event', (
+    tester,
+  ) async {
+    final events = FakeEventRepository();
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      eventWorkflows: _seeded(),
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    await tester.tap(find.text('After the event'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Samples'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Keep their workflow').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(events.store.single.followUps.containsKey(Stage.prospect), isFalse);
+    expect(events.store.single.followUps[Stage.customer], isNotNull);
+  });
+
+  testWidgets('an event from before keeps having no type', (tester) async {
+    final event = CalendarEvent(
+      id: 'e1',
+      title: 'Coffee',
+      startsAt: DateTime(2026, 10, 8, 10),
+    );
+    final events = FakeEventRepository([event]);
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      open: (context) => showEventForm(context, event: event),
+      result: (_) {},
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(events.store.single.eventWorkflowId, isNull);
+    expect(events.store.single.title, 'Coffee');
+  });
+
+  testWidgets('a deleted event workflow or stage workflow is not saved', (
+    tester,
+  ) async {
+    final event = CalendarEvent(
+      id: 'e1',
+      title: 'Open evening',
+      startsAt: DateTime(2026, 10, 8, 19),
+      eventWorkflowId: 'deleted',
+      followUps: const {
+        Stage.prospect: 'deleted-workflow',
+        Stage.customer: 'new-customer',
+      },
+    );
+    final events = FakeEventRepository([event]);
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      open: (context) => showEventForm(context, event: event),
+      result: (_) {},
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(events.store.single.eventWorkflowId, isNull);
+    expect(events.store.single.followUps, {Stage.customer: 'new-customer'});
   });
 }

@@ -6,7 +6,9 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_scroll.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_workflow_editor.dart';
 import 'package:loomia/features/workflows/presentation/step_sheet.dart';
 import 'package:loomia/features/workflows/presentation/workflow_editor.dart';
 import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
@@ -23,7 +25,14 @@ Widget workflowsListLight() => _app(
   Builder(
     builder: (context) => SettingsScroll(
       title: AppLocalizations.of(context).settingsSectionWorkflows,
-      child: WorkflowsView(workflows: _workflows, onOpen: (_) {}, onNew: () {}),
+      child: WorkflowsView(
+        workflows: _workflows,
+        onOpen: (_) {},
+        onNew: () {},
+        eventWorkflows: _eventWorkflows,
+        onOpenEvent: (_) {},
+        onNewEvent: () {},
+      ),
     ),
   ),
 );
@@ -58,6 +67,29 @@ Widget workflowStepLight() => _app(
       step: _samples.steps[1],
       onSave: (_) async {},
       onRemove: () async {},
+    ),
+  ),
+);
+
+@Preview(
+  group: 'Workflows',
+  name: 'Event workflow editor — light',
+  size: Size(390, 844),
+)
+Widget eventWorkflowEditorLight() => _app(
+  Builder(
+    builder: (context) => SettingsScroll(
+      eyebrow: AppLocalizations.of(context).workflowsEvents,
+      title: _workshop.name,
+      child: EventWorkflowEditorView(
+        workflow: _workshop,
+        workflows: _workflows,
+        onRename: (_) async {},
+        onFollowUps: (_) async {},
+        onAddStep: () {},
+        onOpenStep: (_) {},
+        onDelete: () async {},
+      ),
     ),
   ),
 );
@@ -114,6 +146,26 @@ final _workflows = [
     ('Two-week check-in', 14),
   ], isDefault: true),
 ];
+
+final _workshop = EventWorkflow(
+  id: 'workshop',
+  name: 'Workshop',
+  followUps: const {Stage.prospect: 'samples', Stage.customer: 'new-customer'},
+  steps: const [
+    EventWorkflowStep(
+      id: 'remind',
+      label: "Remind everyone it's tomorrow",
+      days: -1,
+    ),
+    EventWorkflowStep(
+      id: 'thank',
+      label: 'Send a thank-you and the notes',
+      days: 1,
+    ),
+  ],
+);
+
+final _eventWorkflows = [_workshop];
 
 Widget _app(Widget body) => ProviderScope(
   overrides: [accountProvider.overrideWith((_) => null)],
