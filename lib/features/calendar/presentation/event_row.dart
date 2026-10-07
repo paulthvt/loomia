@@ -23,13 +23,21 @@ String whenLabel(BuildContext context, CalendarEvent event) {
 
 /// One event on the Calendar: its times, a bar, its title and where.
 class EventRow extends StatelessWidget {
-  const EventRow({required this.event, required this.onTap, super.key});
+  const EventRow({
+    required this.event,
+    required this.onTap,
+    this.trailing,
+    super.key,
+  });
 
   static const double _timeWidth = 64;
   static const double _bar = 3;
 
   final CalendarEvent event;
   final VoidCallback onTap;
+
+  /// Today's Join.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +117,7 @@ class EventRow extends StatelessWidget {
                     ],
                   ),
                 ),
+                ?trailing,
               ],
             ),
           ),

@@ -11,9 +11,16 @@ import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
+import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
+import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/calendar/presentation/who_was_there_sheet.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
@@ -27,7 +34,10 @@ import 'package:loomia/features/goals/presentation/volume_card.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/features/today/domain/due.dart';
+import 'package:loomia/features/today/domain/today_events.dart';
+import 'package:loomia/features/today/presentation/today_event_items.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -60,20 +70,45 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     }
   }
 
+  Future<void> _tickStep(DueEventStep due) async {
+    final events = ref.read(
+      eventsProvider(ref.read(accountProvider)?.email).notifier,
+    );
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    try {
+      await events.tick(due.event.id, due.step.id, today());
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+    }
+  }
+
   /// The people, and this month's goals with them: a failed goals load has
   /// no Try again of its own on Today.
   Future<void> _refresh() {
     ref.invalidate(goalsProvider(ref.read(accountProvider)?.email));
+    ref.invalidate(eventsProvider(ref.read(accountProvider)?.email));
     return refreshPeople(context, ref);
   }
 
   @override
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
-    final book = peopleProvider(account?.email);
-    final lists = workflowsProvider(account?.email);
+    final owner = account?.email;
+    final book = peopleProvider(owner);
+    final lists = workflowsProvider(owner);
     final people = ref.watch(book);
     final workflows = ref.watch(lists);
+    final calendarEvents = ref.watch(eventsProvider(owner));
+    final eventWorkflows = ref.watch(eventWorkflowsProvider(owner));
+
+    final now = DateTime.now();
+    final events = switch ((calendarEvents.value, eventWorkflows.value)) {
+      (final list?, final flows?) => todayEvents(list, flows, now),
+      _ => noTodayEvents,
+    };
 
     return TodayView(
       // `.value` survives a failed refresh, so the rows stay on screen.
@@ -91,7 +126,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         ),
         _ => const AsyncLoading(),
       },
-      now: DateTime.now(),
+      now: now,
       firstName: account?.firstName ?? '',
       // With a sidebar, Settings is its account block instead.
       accountAction: context.screenSize.usesSideNavigation
@@ -109,7 +144,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         if (workflows.hasError) ref.invalidate(lists);
       },
       onRefresh: _refresh,
-      goals: ref.watch(goalsProvider(account?.email)).value,
+      goals: ref.watch(goalsProvider(owner)).value,
       model: account?.businessModel ?? BusinessModel.other,
       onGoals: () => context.go(Routes.goals),
       onRitual: () => context.push(Routes.goalsClose),
@@ -118,6 +153,19 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           if (person.stage == Stage.team) person,
       ], today()),
       onCheckIn: (person) => unawaited(showLogActivity(context, person)),
+      events: events,
+      onOpenEvent: (event) => openEvent(context, event.id),
+      onMarkDone: (event) => unawaited(
+        showWhoWasThere(
+          context,
+          event: event,
+          people: people.value == null
+              ? const []
+              : eventPeople(event, people.value!),
+        ),
+      ),
+      onTickStep: (due) => unawaited(_tickStep(due)),
+      onJoin: (link) => unawaited(openExternal(context, link)),
     );
   }
 }
@@ -155,6 +203,11 @@ class TodayView extends StatefulWidget {
     this.onRitual,
     this.checkIns = const [],
     this.onCheckIn,
+    this.events = noTodayEvents,
+    this.onOpenEvent,
+    this.onMarkDone,
+    this.onTickStep,
+    this.onJoin,
     super.key,
   });
 
@@ -196,6 +249,21 @@ class TodayView extends StatefulWidget {
 
   /// A check-in row's button: opens Log something.
   final void Function(Person person)? onCheckIn;
+
+  /// Today's events, events to mark, and steps due.
+  final TodayEvents events;
+
+  /// An event's title: opens the event.
+  final void Function(CalendarEvent event)? onOpenEvent;
+
+  /// "How did … go?" → Mark who was there.
+  final void Function(CalendarEvent event)? onMarkDone;
+
+  /// A step's ring: marks it done.
+  final void Function(DueEventStep step)? onTickStep;
+
+  /// Join: opens the link.
+  final void Function(Uri link)? onJoin;
 
   @override
   State<TodayView> createState() => _TodayViewState();
@@ -255,14 +323,45 @@ class _TodayViewState extends State<TodayView> {
         ),
     ];
 
+    final eventItems = todayEventItems(
+      context,
+      events: widget.events,
+      now: widget.now,
+      onOpen: widget.onOpenEvent ?? (_) {},
+      onMarkDone: widget.onMarkDone ?? (_) {},
+      onTick: widget.onTickStep ?? (_) {},
+      onJoin: widget.onJoin ?? (_) {},
+    );
+    final eventsBlock = [
+      if (eventItems.isNotEmpty) ...[
+        ...eventItems,
+        SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+      ],
+    ];
+
     final content = switch (widget.due) {
       AsyncData(:final value) when value.isEmpty => [
+        ...eventsBlock,
         ...goalWidgets,
         const _UpToDate(),
       ],
-      AsyncData(:final value) => _due(l10n, value, desktop, goalWidgets),
-      AsyncError() => [...goalWidgets, _Failed(onRetry: widget.onRetry)],
-      _ => [...goalWidgets, const Center(child: CircularProgressIndicator())],
+      AsyncData(:final value) => _due(
+        l10n,
+        value,
+        desktop,
+        goalWidgets,
+        eventsBlock,
+      ),
+      AsyncError() => [
+        ...eventsBlock,
+        ...goalWidgets,
+        _Failed(onRetry: widget.onRetry),
+      ],
+      _ => [
+        ...eventsBlock,
+        ...goalWidgets,
+        const Center(child: CircularProgressIndicator()),
+      ],
     };
 
     return Scaffold(
@@ -332,6 +431,7 @@ class _TodayViewState extends State<TodayView> {
     List<Due> due,
     bool desktop,
     List<Widget> goalWidgets,
+    List<Widget> eventsBlock,
   ) {
     final shown = _expanded ? due : due.take(desktop ? 6 : 5).toList();
     final now = widget.now;
@@ -342,7 +442,10 @@ class _TodayViewState extends State<TodayView> {
         headline: l10n.todayHeadline(due.length),
       ),
       ...goalWidgets,
-      SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+      if (eventsBlock.isNotEmpty)
+        ...eventsBlock
+      else
+        SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
       SectionHeader(title: l10n.todaySectionPriority),
       for (final (index, row) in shown.indexed) ...[
         if (index > 0) const SizedBox(height: AppSpacing.ms),
