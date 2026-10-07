@@ -74,6 +74,14 @@ abstract final class Routes {
   static String settingsWorkflowLocation(String id) =>
       '$settingsWorkflows/${Uri.encodeComponent(id)}';
 
+  /// One event workflow, nested under [settingsWorkflows]. Declared before
+  /// [settingsWorkflowSegment] so `events/x` isn't read as a workflow id.
+  static const String settingsEventWorkflowSegment = 'events/:id';
+  static const String settingsEventWorkflowName = 'settingsEventWorkflow';
+
+  static String settingsEventWorkflowLocation(String id) =>
+      '$settingsWorkflows/events/${Uri.encodeComponent(id)}';
+
   /// First run: "Who do you already work with?", once per account.
   static const String start = '/start';
   static const String startName = 'start';

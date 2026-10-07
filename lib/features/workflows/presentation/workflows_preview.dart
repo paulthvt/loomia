@@ -23,7 +23,14 @@ Widget workflowsListLight() => _app(
   Builder(
     builder: (context) => SettingsScroll(
       title: AppLocalizations.of(context).settingsSectionWorkflows,
-      child: WorkflowsView(workflows: _workflows, onOpen: (_) {}, onNew: () {}),
+      child: WorkflowsView(
+        workflows: _workflows,
+        onOpen: (_) {},
+        onNew: () {},
+        eventWorkflows: const [],
+        onOpenEvent: (_) {},
+        onNewEvent: () {},
+      ),
     ),
   ),
 );

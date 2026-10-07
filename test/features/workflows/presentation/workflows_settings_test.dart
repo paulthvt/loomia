@@ -45,6 +45,10 @@ void main() {
       tester.getTopLeft(find.text('Samples')).dy,
       lessThan(tester.getTopLeft(find.text('Health professionals')).dy),
     );
+
+    // Event workflows section appears
+    await tester.scrollUntilVisible(find.text('EVENTS'), 200);
+    expect(find.text('Workshop'), findsOneWidget);
   });
 
   testWidgets('a stage with no workflows has no group', (tester) async {

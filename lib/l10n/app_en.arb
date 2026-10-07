@@ -1189,6 +1189,83 @@
   "@workflowsCreate": {
     "description": "Confirms New workflow."
   },
+  "workflowsEvents": "Events",
+  "@workflowsEvents": {
+    "description": "Heading of the Events section in Settings → Workflows: event workflows, one per kind of event (a workshop, a training). Also the eyebrow above an event workflow's name in its editor."
+  },
+  "workflowsEventsHint": "Steps around an event, and the workflow people who were there start next.",
+  "@workflowsEventsHint": {
+    "description": "Line under the Events section in Settings → Workflows, explaining what an event workflow is."
+  },
+  "eventWorkflowNew": "New event workflow",
+  "@eventWorkflowNew": {
+    "description": "Button under the Events section, and title of the dialog that names a new event workflow (a kind of event, e.g. 'Training')."
+  },
+  "eventWorkflowAfter": "After the event",
+  "@eventWorkflowAfter": {
+    "description": "Heading of the part of an event workflow (and of an event) that says which workflow people who were there start, per stage."
+  },
+  "eventWorkflowAfterHint": "When you mark who was there, each person starts the workflow for their stage, in place of the one they're on.",
+  "@eventWorkflowAfterHint": {
+    "description": "Line under the After the event part of an event workflow's editor."
+  },
+  "eventWorkflowKeep": "Keep their workflow",
+  "@eventWorkflowKeep": {
+    "description": "Choice in the After the event pickers: people at that stage who were there stay on the workflow they're on."
+  },
+  "eventWorkflowStage": "{stage, select, prospect{Prospects who were there} customer{Customers who were there} other{Team members who were there}}",
+  "@eventWorkflowStage": {
+    "description": "Label of one After the event picker: the people of one stage who were at the event.",
+    "placeholders": {
+      "stage": { "type": "String" }
+    }
+  },
+  "eventWorkflowFooter": "Each step comes due a number of days before or after the event. You can change what people start on a single event.",
+  "@eventWorkflowFooter": {
+    "description": "Footer of an event workflow's editor."
+  },
+  "eventWorkflowDeleteBody": "Events of this kind keep their title, without the steps.",
+  "@eventWorkflowDeleteBody": {
+    "description": "Body of the dialog confirming that an event workflow is deleted."
+  },
+  "eventStepBefore": "{days, plural, =1{1 day before} other{{days} days before}}",
+  "@eventStepBefore": {
+    "description": "When an event workflow step comes due, before the event. days is at least 1.",
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "eventStepOnTheDay": "On the day",
+  "@eventStepOnTheDay": {
+    "description": "When an event workflow step comes due: the day of the event. Also a choice in the step sheet."
+  },
+  "eventStepAfter": "{days, plural, =1{1 day after} other{{days} days after}}",
+  "@eventStepAfter": {
+    "description": "When an event workflow step comes due, after the event. days is at least 1.",
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "eventStepWhen": "When",
+  "@eventStepWhen": {
+    "description": "Label of the choice of when an event workflow step comes due: before, on the day, or after the event."
+  },
+  "eventStepWhenBefore": "Before",
+  "@eventStepWhenBefore": {
+    "description": "Choice in the step sheet: the step comes due some days before the event."
+  },
+  "eventStepWhenAfter": "After",
+  "@eventStepWhenAfter": {
+    "description": "Choice in the step sheet: the step comes due some days after the event."
+  },
+  "eventStepDays": "Days",
+  "@eventStepDays": {
+    "description": "Label of the number of days before or after the event that a step comes due."
+  },
+  "eventStepDaysInvalid": "Enter a number from 1 to 365.",
+  "@eventStepDaysInvalid": {
+    "description": "Error under the step sheet's Days field."
+  },
   "workflowMissingTitle": "This workflow isn't here anymore",
   "@workflowMissingTitle": {
     "description": "Shown when an open workflow no longer exists (deleted elsewhere, or a bad link)."

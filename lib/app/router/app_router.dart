@@ -163,6 +163,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                     _settingsPage(context, state, SettingsSection.workflows),
                 routes: [
                   GoRoute(
+                    path: Routes.settingsEventWorkflowSegment,
+                    name: Routes.settingsEventWorkflowName,
+                    pageBuilder: (context, state) => _settingsPage(
+                      context,
+                      state,
+                      SettingsSection.workflows,
+                      eventWorkflowId: state.pathParameters['id'],
+                    ),
+                  ),
+                  GoRoute(
                     path: Routes.settingsWorkflowSegment,
                     name: Routes.settingsWorkflowName,
                     pageBuilder: (context, state) => _settingsPage(
@@ -246,8 +256,13 @@ Page<void> _settingsPage(
   GoRouterState state,
   SettingsSection section, {
   String? workflowId,
+  String? eventWorkflowId,
 }) {
-  final child = SettingsPage(section: section, workflowId: workflowId);
+  final child = SettingsPage(
+    section: section,
+    workflowId: workflowId,
+    eventWorkflowId: eventWorkflowId,
+  );
   return context.screenSize.isDesktop
       ? NoTransitionPage<void>(
           key: state.pageKey,

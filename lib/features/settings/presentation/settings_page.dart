@@ -18,6 +18,7 @@ import 'package:loomia/features/settings/presentation/language_settings.dart';
 import 'package:loomia/features/settings/presentation/settings_action.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_scroll.dart';
+import 'package:loomia/features/workflows/presentation/event_workflow_editor.dart';
 import 'package:loomia/features/workflows/presentation/workflow_editor.dart';
 import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -38,7 +39,12 @@ final _appVersionProvider = FutureProvider<String>(
 /// none is — on the right. Mobile and tablet show one at a time, each section
 /// its own screen; a tablet's rail leaves too little room for two panes.
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({this.section, this.workflowId, super.key});
+  const SettingsPage({
+    this.section,
+    this.workflowId,
+    this.eventWorkflowId,
+    super.key,
+  });
 
   static const double _listWidth = 400;
 
@@ -46,6 +52,9 @@ class SettingsPage extends StatelessWidget {
 
   /// The workflow open in [SettingsSection.workflows]; null shows the list.
   final String? workflowId;
+
+  /// The event workflow open in [SettingsSection.workflows]; null shows the list.
+  final String? eventWorkflowId;
 
   /// Beside the list on desktop; elsewhere pushed, so back returns to it.
   static void open(BuildContext context, SettingsSection section) {
@@ -90,7 +99,11 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: _Section(section: shown, workflowId: workflowId),
+                child: _Section(
+                  section: shown,
+                  workflowId: workflowId,
+                  eventWorkflowId: eventWorkflowId,
+                ),
               ),
             ],
           ),
@@ -109,7 +122,7 @@ class SettingsPage extends StatelessWidget {
                   context,
                   current == null
                       ? Routes.today
-                      : workflowId == null
+                      : workflowId == null && eventWorkflowId == null
                       ? Routes.settings
                       : Routes.settingsWorkflows,
                 ),
@@ -122,17 +135,26 @@ class SettingsPage extends StatelessWidget {
                 title: l10n.settingsTitle,
                 child: const _SettingsList(),
               )
-            : _Section(section: current, workflowId: workflowId),
+            : _Section(
+                section: current,
+                workflowId: workflowId,
+                eventWorkflowId: eventWorkflowId,
+              ),
       ),
     );
   }
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.section, this.workflowId});
+  const _Section({
+    required this.section,
+    this.workflowId,
+    this.eventWorkflowId,
+  });
 
   final SettingsSection section;
   final String? workflowId;
+  final String? eventWorkflowId;
 
   @override
   Widget build(BuildContext context) {
@@ -150,14 +172,16 @@ class _Section extends StatelessWidget {
         title: l10n.settingsSectionAppearance,
         child: const AppearanceSettings(),
       ),
-      SettingsSection.workflows => switch (workflowId) {
-        null => SettingsScroll(
+      SettingsSection.workflows => switch ((workflowId, eventWorkflowId)) {
+        (_, final String id) => _WorkflowPane(
+          child: EventWorkflowEditor(key: ValueKey(id), id: id),
+        ),
+        (final String id, null) => _WorkflowPane(
+          child: WorkflowEditor(key: ValueKey(id), id: id),
+        ),
+        (null, null) => SettingsScroll(
           title: l10n.settingsSectionWorkflows,
           child: const WorkflowsSettings(),
-        ),
-        // A new id is a new editor: nothing typed carries over.
-        final id => _WorkflowPane(
-          child: WorkflowEditor(key: ValueKey(id), id: id),
         ),
       },
     };
