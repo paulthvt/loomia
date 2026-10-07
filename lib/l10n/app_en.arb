@@ -210,12 +210,19 @@
       "title": { "type": "String" }
     }
   },
-  "todayStepFor": "{event} · {timing}",
+  "todayEventDay": "{day}",
+  "@todayEventDay": {
+    "description": "Subtitle of a to-mark event card on Today: the event's short weekday, e.g. 'Wed'.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "E" }
+    }
+  },
+  "todayStepFor": "{event} · {day}",
   "@todayStepFor": {
-    "description": "Second line of an event's checklist step on Today: the event's title, then when the step is due relative to it, e.g. 'Workshop · 1 day before'.",
+    "description": "Second line of an event's checklist step on Today: the event's title, then its short weekday, e.g. 'Workshop · Tue'.",
     "placeholders": {
       "event": { "type": "String" },
-      "timing": { "type": "String" }
+      "day": { "type": "DateTime", "format": "E" }
     }
   },
   "todaySectionPriority": "Priority",

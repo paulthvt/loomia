@@ -107,7 +107,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
 
     final now = DateTime.now();
     final events = switch ((calendarEvents.value, eventWorkflows.value)) {
-      (final list?, final flows?) => todayEvents(list, flows, now),
+      (final list?, final flows) => todayEvents(list, flows ?? const [], now),
       _ => noTodayEvents,
     };
 
@@ -156,15 +156,19 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       onCheckIn: (person) => unawaited(showLogActivity(context, person)),
       events: events,
       onOpenEvent: (event) => openEvent(context, event.id),
-      onMarkDone: (event) => unawaited(
-        showWhoWasThere(
-          context,
-          event: event,
-          people: people.value == null
-              ? const []
-              : eventPeople(event, people.value!),
-        ),
-      ),
+      onMarkDone: (event) {
+        if (people.value == null) {
+          openEvent(context, event.id);
+        } else {
+          unawaited(
+            showWhoWasThere(
+              context,
+              event: event,
+              people: eventPeople(event, people.value!),
+            ),
+          );
+        }
+      },
       onTickStep: (due) => unawaited(_tickStep(due)),
       onJoin: (link) => unawaited(openExternal(context, link)),
     );
@@ -342,8 +346,8 @@ class _TodayViewState extends State<TodayView> {
 
     final content = switch (widget.due) {
       AsyncData(:final value) when value.isEmpty => [
-        ...eventsBlock,
         ...goalWidgets,
+        ...eventsBlock,
         const _UpToDate(),
       ],
       AsyncData(:final value) => _due(
@@ -354,13 +358,13 @@ class _TodayViewState extends State<TodayView> {
         eventsBlock,
       ),
       AsyncError() => [
-        ...eventsBlock,
         ...goalWidgets,
+        ...eventsBlock,
         _Failed(onRetry: widget.onRetry),
       ],
       _ => [
-        ...eventsBlock,
         ...goalWidgets,
+        ...eventsBlock,
         const Center(child: CircularProgressIndicator()),
       ],
     };
@@ -443,10 +447,8 @@ class _TodayViewState extends State<TodayView> {
         headline: l10n.todayHeadline(due.length),
       ),
       ...goalWidgets,
-      if (eventsBlock.isNotEmpty)
-        ...eventsBlock
-      else
-        SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+      SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+      ...eventsBlock,
       SectionHeader(title: l10n.todaySectionPriority),
       for (final (index, row) in shown.indexed) ...[
         if (index > 0) const SizedBox(height: AppSpacing.ms),

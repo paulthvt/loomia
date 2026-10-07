@@ -42,7 +42,10 @@ TodayEvents todayEvents(
   final from = DateTime(day.year, day.month, day.day - todayEventsDays);
   final toMark = byStart(
     events.where(
-      (event) => event.canMarkDone(now) && !event.day.isBefore(from),
+      (event) =>
+          event.canMarkDone(now) &&
+          !canJoin(event, now) &&
+          !event.day.isBefore(from),
     ),
   );
   final today = [

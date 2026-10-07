@@ -117,7 +117,7 @@ class EventRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                ?trailing,
+                if (trailing case final t?) Center(child: t),
               ],
             ),
           ),

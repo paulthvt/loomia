@@ -141,8 +141,8 @@ final _events = (
     CalendarEvent(
       id: 'training',
       title: 'New member training',
-      startsAt: DateTime(2026, 9, 24, 14, 0),
-      endsAt: DateTime(2026, 9, 24, 16, 0),
+      startsAt: DateTime(2026, 9, 22, 14, 0),
+      endsAt: DateTime(2026, 9, 22, 16, 0),
       attendees: List.generate(
         3,
         (i) => (personId: 'person${i + 10}', came: false),

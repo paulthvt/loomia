@@ -5,7 +5,6 @@ import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/today/domain/today_events.dart';
-import 'package:loomia/features/workflows/presentation/event_step_copy.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -40,7 +39,7 @@ List<Widget> todayEventItems(
       _Card(
         onTap: () => onOpen(event),
         title: l10n.todayHowDidItGo(event.title),
-        subtitle: whenLabel(context, event),
+        subtitle: l10n.todayEventDay(event.startsAt),
         below: Align(
           alignment: AlignmentDirectional.centerStart,
           child: FilledButton.tonal(
@@ -54,10 +53,7 @@ List<Widget> todayEventItems(
       _Card(
         onTap: () => onOpen(due.event),
         title: due.step.label,
-        subtitle: l10n.todayStepFor(
-          due.event.title,
-          stepTiming(l10n, due.step.days),
-        ),
+        subtitle: l10n.todayStepFor(due.event.title, due.event.startsAt),
         trailing: IconButton(
           onPressed: () => onTick(due),
           tooltip: l10n.eventStepTick(due.step.label),

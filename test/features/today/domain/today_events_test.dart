@@ -145,4 +145,32 @@ void main() {
     expect(canJoin(open, DateTime(2026, 10, 8, 21)), isFalse);
     expect(canJoin(inPerson, DateTime(2026, 10, 8, 19)), isFalse);
   });
+
+  test('an online event stays in today during Join, moves to toMark after', () {
+    final online = _event(
+      'online',
+      DateTime(2026, 10, 8, 19),
+      endsAt: DateTime(2026, 10, 8, 20, 30),
+      link: 'https://meet.google.com/abc',
+    );
+    final inPerson = _event('inPerson', DateTime(2026, 10, 8, 19));
+
+    // At 19:05, online is in today (Join window), inPerson is to mark.
+    final duringJoin = todayEvents(
+      [online, inPerson],
+      const [],
+      DateTime(2026, 10, 8, 19, 5),
+    );
+    expect(duringJoin.today, [online]);
+    expect(duringJoin.toMark, [inPerson]);
+
+    // At 20:30, both are to mark.
+    final afterJoin = todayEvents(
+      [online, inPerson],
+      const [],
+      DateTime(2026, 10, 8, 20, 30),
+    );
+    expect(afterJoin.today, isEmpty);
+    expect(afterJoin.toMark, [online, inPerson]);
+  });
 }

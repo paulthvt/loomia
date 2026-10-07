@@ -137,7 +137,7 @@ void main() {
 
     expect(find.text("Remind everyone it's tomorrow"), findsOneWidget);
     expect(
-      find.text('Essential oils for sleep · 1 day before'),
+      find.text('Essential oils for sleep · Thu'),
       findsOneWidget,
     );
   });
