@@ -68,7 +68,8 @@ void main() {
       DateTime(2026, 10, 15),
     );
 
-    final done = await people.completeReminder(added.id, DateTime(2026, 10, 9));
+    await people.completeReminder(added.id, DateTime(2026, 10, 9));
+    final [done] = await people.list();
 
     expect(done.reminders, isEmpty);
     expect(done.lastContactOn, DateTime(2026, 10, 9));

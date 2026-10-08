@@ -320,7 +320,7 @@ class FakePeopleRepository implements PeopleRepository {
   /// As `complete_reminder`: the entry, the delete; one already gone is
   /// refused.
   @override
-  Future<Person> completeReminder(String id, DateTime on) async {
+  Future<void> completeReminder(String id, DateTime on) async {
     await _record('completeReminder($id)');
     final MapEntry(key: personId, value: list) = reminders.entries.firstWhere(
       (entry) => entry.value.any((reminder) => reminder.id == id),
@@ -343,7 +343,6 @@ class FakePeopleRepository implements PeopleRepository {
         ),
       );
     }
-    return _served(store[personId]!);
   }
 
   /// [before] with the given fields replaced, stored and returned. Stage and

@@ -29,7 +29,7 @@
 - **`Person` copies through one private helper.** `withStatus` and the new `withReminders` both call `_copy(...)`, instead of a second thirty-field copy.
 - **Reminders are sorted on the client**, not by PostgREST: `personFromRow` and `withReminders` sort by `due_on`, then `created_at`. `Reminder` keeps `createdAt` so an add or edit re-sorts locally without a fetch.
 - **Add, edit and delete are not optimistic.** They wait for the server, then swap the person's reminders, like every other book write but `setStatus`.
-- **Ticking is `completeReminder` → `_replace(person)`** plus `historyProvider(person.id)` invalidated, exactly like `completeStep`.
+- **Ticking does not trust the RPC's row** (found on a device after merge-ready): PostgREST reads the embedded `reminder(...)` and `last_contact_on` in the call's own snapshot, before the function's delete and insert, so the returned person still had the reminder and a second tap hit `P0002`. `completeReminder` returns nothing; the controller drops the reminder locally, invalidates the history and reloads the book.
 - **Today's slots and busy set are keyed by `Due.key`**: a step row's key is the person id (one current step each, as today, so a ticked step's slot still swaps to the next step), a reminder row's is the reminder id. Corrected while implementing: keying a step row by its step id collides when two people are on the same step.
 - **`DueReminder` before `DueStep`** on the same day for the same person, as in the Figma Today frame.
 - **The Today mock's "0 of 3 done", "about 10 minutes" and "See all"** are template leftovers; Today does not have them and this plan does not add them.

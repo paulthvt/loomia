@@ -744,7 +744,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(people.calls.last, startsWith('completeReminder('));
+    expect(people.calls, contains(startsWith('completeReminder(')));
     expect(
       activities.store.where((entry) => entry.kind == ActivityKind.reminder),
       hasLength(1),

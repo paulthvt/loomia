@@ -646,7 +646,9 @@ void main() {
           DateTime(2026, 10, 9),
         );
 
-        final done = world.container.read(book).value!.single;
+        // Gone at once, before the book comes back.
+        expect(world.container.read(book).value!.single.reminders, isEmpty);
+        final [done] = await world.container.read(book.future);
         expect(done.reminders, isEmpty);
         expect(done.lastContactOn, DateTime(2026, 10, 9));
         final history = await world.container.read(

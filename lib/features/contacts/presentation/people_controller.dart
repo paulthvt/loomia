@@ -172,15 +172,23 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     );
   }
 
-  /// The history entry and the delete, on the server; the person comes back
-  /// as it left them, contact counted.
+  /// The history entry and the delete, on the server. The reminder goes at
+  /// once; the book reloads behind for the contact it counts as (the RPC's
+  /// own answer can't carry it, see [PeopleRepository.completeReminder]).
   Future<void> completeReminder(
     Person person,
     Reminder reminder,
     DateTime today,
   ) async {
-    _replace(await _repository.completeReminder(reminder.id, today));
-    if (ref.mounted) ref.invalidate(historyProvider(person.id));
+    await _repository.completeReminder(reminder.id, today);
+    _changeReminders(
+      person.id,
+      (reminders) => [...reminders.where((other) => other.id != reminder.id)],
+    );
+    if (!ref.mounted) return;
+    ref
+      ..invalidate(historyProvider(person.id))
+      ..invalidateSelf();
   }
 
   void _changeReminders(

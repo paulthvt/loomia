@@ -157,17 +157,17 @@ class PeopleRepository {
 
   /// Ticks a reminder: the history entry and the delete, in one transaction
   /// on the server. One already gone (ticked on another device) is refused.
-  Future<Person> completeReminder(String id, DateTime on) =>
-      guardPeople(() async {
-        final row = await _client
-            .rpc<Object?>(
-              'complete_reminder',
-              params: {'p_reminder': id, 'p_on': dayColumn(on)},
-            )
-            .select(_columns)
-            .single();
-        return personFromRow(row);
-      });
+  ///
+  /// Returns nothing: PostgREST would read an embedded `reminder(...)` and
+  /// `last_contact_on` in the call's own snapshot, before its delete and
+  /// insert, so the person it returns still has the reminder. The caller
+  /// reads the book again.
+  Future<void> completeReminder(String id, DateTime on) => guardPeople(
+    () => _client.rpc<Object?>(
+      'complete_reminder',
+      params: {'p_reminder': id, 'p_on': dayColumn(on)},
+    ),
+  );
 
   Future<Person> _write(String id, Map<String, dynamic> values) =>
       guardPeople(() async {
