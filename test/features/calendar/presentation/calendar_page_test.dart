@@ -8,6 +8,7 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -275,6 +276,44 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1 invited'), findsOneWidget);
+  });
+
+  testWidgets('in the app: the month follows the finger, then turns', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(390, 844));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    final month = container.read(calendarSelectionProvider).month;
+    final grids = find.byType(MonthGrid);
+    final left = tester.getTopLeft(grids).dx;
+
+    // Held mid-drag: the month moved with the finger, the next one beside it.
+    final gesture = await tester.startGesture(tester.getCenter(grids));
+    await gesture.moveBy(const Offset(-20, 0));
+    await gesture.moveBy(const Offset(-80, 0));
+    await tester.pump();
+    expect(grids, findsNWidgets(2));
+    // The first pixels go to telling a sideways drag from a scroll.
+    expect(tester.getTopLeft(grids.first).dx, lessThan(left - 60));
+    expect(tester.getTopLeft(grids.last).dx, greaterThan(left));
+
+    // Released short of halfway, slowly: it springs back.
+    await tester.pump(const Duration(seconds: 1));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(grids, findsOneWidget);
+    expect(tester.getTopLeft(grids).dx, left);
+    expect(container.read(calendarSelectionProvider).month, month);
+
+    // Past halfway: the next month.
+    await tester.drag(grids, const Offset(-250, 0));
+    await tester.pumpAndSettle();
+    expect(grids, findsOneWidget);
+    expect(
+      container.read(calendarSelectionProvider).month,
+      DateTime(month.year, month.month + 1),
+    );
   });
 
   testWidgets('in the app: pulling down reloads the events', (tester) async {
