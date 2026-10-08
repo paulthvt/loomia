@@ -1122,6 +1122,14 @@
       "day": { "type": "DateTime", "format": "MMMMd" }
     }
   },
+  "nextStepNoWorkflow": "No workflow",
+  "@nextStepNoWorkflow": {
+    "description": "Card on a contact who follows no workflow but has reminders listed above it (so 'Nothing planned' would be wrong); a Follow with button follows."
+  },
+  "reminderAdd": "Add a reminder",
+  "@reminderAdd": {
+    "description": "Button under Next step on a contact: opens the sheet to write a reminder about them, outside any workflow."
+  },
   "nextStepNothingPlanned": "Nothing planned",
   "@nextStepNothingPlanned": {
     "description": "Card on a contact who follows no workflow."

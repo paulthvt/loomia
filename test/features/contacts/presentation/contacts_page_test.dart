@@ -717,6 +717,41 @@ void main() {
     expect(people.calls, contains('completeStep(p1, samples-1)'));
   });
 
+  testWidgets('a reminder: added from Next step, then ticked into the '
+      'history', (tester) async {
+    people.store['p1'] = _marieOn(1);
+    await openMarie(tester);
+
+    await tester.tap(find.text('Add a reminder'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.widgetWithText(LabeledField, 'What'),
+        matching: find.byType(TextFormField),
+      ),
+      'Call back about the diffuser',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Call back about the diffuser'), findsOneWidget);
+    expect(find.text('Due tomorrow'), findsOneWidget);
+    // The step is still there, below.
+    expect(find.text('Send a first message'), findsOneWidget);
+
+    await tester.tap(
+      find.byTooltip('Mark "Call back about the diffuser" done'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(people.calls.last, startsWith('completeReminder('));
+    expect(
+      activities.store.where((entry) => entry.kind == ActivityKind.reminder),
+      hasLength(1),
+    );
+    expect(find.text('Send a first message'), findsOneWidget);
+  });
+
   testWidgets('a tick in flight takes no second tap: one step, not two', (
     tester,
   ) async {

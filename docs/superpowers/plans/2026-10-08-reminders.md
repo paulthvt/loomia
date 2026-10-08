@@ -326,19 +326,19 @@ final class DueReminder extends Due {
 - Modify: `lib/features/contacts/presentation/next_step_section.dart`, `lib/features/contacts/presentation/contacts_preview.dart` (if it shows `NextStepCard`), `lib/l10n/app_en.arb`
 - Test: `test/features/contacts/presentation/next_step_card_test.dart`
 
-- [ ] **Step 1: Failing widget tests** on `NextStepCard`:
+- [x] **Step 1: Failing widget tests** on `NextStepCard`:
   - two reminders (one 2 days late, one in 5 days) above the step: titles in order, reasons "2 days late" and "Due in 5 days", no `DateChip`; Add a reminder below the card;
   - the same with `Paused`, `Done` and `null` progress; with `null`, the body reads "No workflow";
   - tapping a reminder's ring calls `onTickReminder(reminder)`; tapping the row calls `onEditReminder(reminder)`; Add a reminder calls `onAddReminder`;
   - `NextStepSection` while workflows load: the reminders and Add a reminder still show above the spinner card.
-- [ ] **Step 2: Run.** Expected: fail.
-- [ ] **Step 3: Implement.**
-  - `NextStepCard` gains `onTickReminder`, `onEditReminder`, `onAddReminder` and `busyReminders` (`Set<String>`, default empty). Its `build` becomes a `Column`: one `SlideSwap(child: ActionItem(key: ValueKey(r.id), name: person.name, title: r.text, reason: dueLabel(l10n, r.dueOn, today), onOpen: () => onEditReminder(r), onResolve: () => onTickReminder(r), resolved: busyReminders.contains(r.id), resolveLabel: l10n.nextStepMarkDone(r.text)))` per reminder with `AppSpacing.ms` gaps, then the existing `SlideSwap` card, then `Align(start, TextButton.icon(icon: Icons.add_rounded, label: l10n.reminderAdd))`. The `SectionHeader` moves above the reminders, so it is not repeated: `_step` and `_Panel` take `showHeader: false` from here (or the header is lifted out of them; pick whichever leaves the smaller diff). With `null` progress and reminders, body `l10n.nextStepNoWorkflow`.
-  - `NextStepSection`: `_busyReminders` set; `onTickReminder` → `_runReminder(r.id, (people) => people.completeReminder(person, r, today()))` through `writePeople`; `onEditReminder` → `showReminder(context, person, editing: r)`; `onAddReminder` → `showReminder(context, person)`. `_Waiting` gets the same reminders above it (pass them through, or render them from the section before `_Waiting`).
+- [x] **Step 2: Run.** Expected: fail.
+- [x] **Step 3: Implement.**
+  - `NextStepCard` gains `onTickReminder`, `onEditReminder`, `onAddReminder` and `busyReminders` (`Set<String>`, default empty). Its `build` becomes a `Column`: one `SlideSwap(child: ActionItem(key: ValueKey(r.id), name: person.name, title: r.text, reason: dueLabel(l10n, r.dueOn, today), onOpen: () => onEditReminder(r), onResolve: () => onTickReminder(r), resolved: busyReminders.contains(r.id), resolveLabel: l10n.nextStepMarkDone(r.text)))` per reminder with `AppSpacing.ms` gaps, then the existing `SlideSwap` card, then `Align(start, TextButton.icon(icon: Icons.add_rounded, label: l10n.reminderAdd))`. The `SectionHeader` is lifted out of `_step` and `_Panel` into `build`, above the reminders, so it is not repeated. With `null` progress and reminders, body `l10n.nextStepNoWorkflow`.
+  - `NextStepSection`: `_busyReminders` set; `onTickReminder` → `_runReminder(r.id, (people) => people.completeReminder(person, r, today()))` through `writePeople`; `onEditReminder` → `showReminder(context, person, editing: r)`; `onAddReminder` → `showReminder(context, person)`. `_Waiting` goes: `NextStepCard` takes `waiting` and `onRetry` (set when the load failed) and shows the spinner or the error as its card, under the reminders.
   - `app_en.arb`: `reminderAdd` "Add a reminder", `nextStepNoWorkflow` "No workflow".
   - Preview: a `NextStepCard` sample with the two reminders, as in Figma 273:5278. Goldens: regenerate through CI.
-- [ ] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass but goldens.
-- [ ] **Step 5: Commit** `feat(contacts): reminders under Next step`.
+- [x] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass but goldens.
+- [x] **Step 5: Commit** `feat(contacts): reminders under Next step`.
 - [ ] **Step 6: PR** `feat(reminders): reminders on contacts and Today`, `Closes #218`; regenerate goldens through CI (testing steering), open the PNGs, commit them.
 
 ---
