@@ -32,7 +32,9 @@ extension TodayEventsEmpty on TodayEvents {
 /// What Today's Events section shows at [now]: today's events not yet to
 /// mark; events started within [todayEventsDays] days that can be marked
 /// done; and checklist steps due from [todayEventsDays] days ago through
-/// today, not ticked. Each list earliest first.
+/// today, not ticked. A step set before the event is preparation: from the
+/// event's day it is no longer worth doing, and only the event's screen
+/// lists it. Each list earliest first.
 TodayEvents todayEvents(
   List<CalendarEvent> events,
   List<EventWorkflow> workflows,
@@ -58,7 +60,8 @@ TodayEvents todayEvents(
           if (findEventWorkflow(workflows, event.eventWorkflowId)
               case final workflow?)
             for (final step in workflow.steps)
-              if (!event.stepsDone.containsKey(step.id))
+              if (!event.stepsDone.containsKey(step.id) &&
+                  (step.days >= 0 || day.isBefore(event.day)))
                 if (stepDue(event, step) case final due
                     when !due.isAfter(day) && !due.isBefore(from))
                   (event: event, step: step, due: due),
