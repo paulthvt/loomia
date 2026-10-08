@@ -83,7 +83,8 @@ void main() {
       doneAt: DateTime(2026, 10, 6, 21),
       stepsDone: {'remind': DateTime(2026, 10, 5)},
     );
-    // Thank due Oct 9: tomorrow, not yet.
+    // Thank due Oct 9: tomorrow, not yet. Remind, due Oct 7, is past use on
+    // the day itself.
     final today = _event('today', DateTime(2026, 10, 8, 19));
     // Both ticked.
     final ticked = _event(
@@ -115,9 +116,33 @@ void main() {
         for (final due in steps)
           '${due.event.id}:${due.step.id}:${due.due.day}',
       ],
-      ['tuesday:thank:7', 'today:remind:7', 'friday:remind:8'],
+      ['tuesday:thank:7', 'friday:remind:8'],
     );
   });
+
+  test(
+    'a late prep step shows until the event day, then only on the event',
+    () {
+      final prep = EventWorkflow(
+        id: 'workshop',
+        name: 'Workshop',
+        steps: const [
+          EventWorkflowStep(id: 'order', label: 'Order', days: -3),
+          EventWorkflowStep(id: 'setup', label: 'Set up', days: 0),
+        ],
+      );
+      final saturday = _event('saturday', DateTime(2026, 10, 10, 19));
+      List<String> due(DateTime now) => [
+        for (final step in todayEvents([saturday], [prep], now).steps)
+          step.step.id,
+      ];
+
+      // Order was due Oct 7: late, still worth doing.
+      expect(due(_morning), ['order']);
+      // On the day: setting up is due, ordering is past use.
+      expect(due(DateTime(2026, 10, 10, 9)), ['setup']);
+    },
+  );
 
   test('Join from 15 minutes before until the end', () {
     final online = _event(
