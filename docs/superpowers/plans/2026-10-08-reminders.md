@@ -339,7 +339,7 @@ final class DueReminder extends Due {
   - Preview: a `NextStepCard` sample with the two reminders, as in Figma 273:5278. Goldens: regenerate through CI.
 - [x] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass but goldens.
 - [x] **Step 5: Commit** `feat(contacts): reminders under Next step`.
-- [ ] **Step 6: PR** `feat(reminders): reminders on contacts and Today`, `Closes #218`; regenerate goldens through CI (testing steering), open the PNGs, commit them.
+- [x] **Step 6: PR** `feat(reminders): reminders on contacts and Today`, `Closes #218`; regenerate goldens through CI (testing steering), open the PNGs, commit them.
 
 ---
 
