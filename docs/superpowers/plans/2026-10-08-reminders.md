@@ -351,9 +351,9 @@ final class DueReminder extends Due {
 - Create: `supabase/migrations/<timestamp>_log_with_reminder.sql`
 - Modify: `supabase/tests/reminders_test.sql`
 
-- [ ] **Step 1: Failing assertions** appended (raise `plan`): `log_with_reminder(…a1, 'call', 'Called her', '2026-10-08', null, 'Call Claire back', '2026-10-15')` → one `call` entry and one reminder; with `p_remind = ' '` → `throws_ok '23514'` and no new `call` entry (count unchanged); with `p_kind = 'stage'` → refused by the activity policy, nothing written.
-- [ ] **Step 2: Run** `supabase db reset && supabase test db`. Expected: fail.
-- [ ] **Step 3: Implement.**
+- [x] **Step 1: Failing assertions** appended (raise `plan`): `log_with_reminder(…a1, 'call', 'Called her', '2026-10-08', null, 'Call Claire back', '2026-10-15')` → one `call` entry and one reminder; with `p_remind = ' '` → `throws_ok '23514'` and no new `call` entry (count unchanged). A `stage` kind is left to `activity_test.sql`, which already pins the insert policy that refuses it.
+- [x] **Step 2: Run** `supabase db reset && supabase test db`. Expected: fail.
+- [x] **Step 3: Implement.**
 
 ```sql
 -- Log something with Remind me (#219): the entry and the reminder together,
@@ -374,8 +374,8 @@ grant execute on function public.log_with_reminder(uuid, public.activity_kind, t
 ```
 
   Match the text normalisation to `activityDraftToRow` (read it first; if it does not `nullif`, neither does this).
-- [ ] **Step 4: Run.** Expected: pass.
-- [ ] **Step 5: Commit** `feat(reminders): log_with_reminder`.
+- [x] **Step 4: Run.** Expected: pass.
+- [x] **Step 5: Commit** `feat(reminders): log_with_reminder`.
 
 ### Task 9: `addWithReminder` through the history
 
