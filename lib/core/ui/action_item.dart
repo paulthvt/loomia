@@ -16,6 +16,7 @@ class ActionItem extends StatelessWidget {
     required this.reason,
     this.title,
     this.chip,
+    this.tag,
     this.onOpen,
     this.onResolve,
     this.resolveLabel,
@@ -31,6 +32,10 @@ class ActionItem extends StatelessWidget {
 
   /// Usually an accent chip, and only when a real date drives the item.
   final Widget? chip;
+
+  /// A neutral chip at the end of the name line: who the person is to the
+  /// user (Prospect, Customer, Team).
+  final Widget? tag;
 
   /// Opening the row opens the person.
   final VoidCallback? onOpen;
@@ -77,7 +82,18 @@ class ActionItem extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title ?? name, style: theme.textTheme.titleMedium),
+                      Row(
+                        spacing: AppSpacing.sm,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title ?? name,
+                              style: theme.textTheme.titleMedium,
+                            ),
+                          ),
+                          ?tag,
+                        ],
+                      ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(reason, style: theme.textTheme.bodySmall),
                       if (chipWidget != null) ...[

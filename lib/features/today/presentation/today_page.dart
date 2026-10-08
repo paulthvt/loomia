@@ -10,6 +10,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -572,6 +573,7 @@ class _TodayViewState extends State<TodayView> {
       key: ValueKey(key),
       name: due.person.name,
       reason: reason,
+      tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),
       // The accent chip only when a real date drives it: late.
       chip: due.day.isBefore(day)
           ? DateChip(dueLabel(l10n, due.day, day))
