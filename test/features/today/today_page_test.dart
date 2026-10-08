@@ -90,6 +90,8 @@ void main() {
     // The accent chip only where the date says something: late.
     expect(find.text('2 days late'), findsOneWidget);
     expect(find.text('Due today'), findsNothing);
+    // Who each person is, on their name line.
+    expect(find.text('Prospect'), findsNWidgets(2));
   });
 
   testWidgets('a tick sends completeStep and the row leaves', (tester) async {
