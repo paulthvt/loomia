@@ -239,7 +239,13 @@ Future<void> showNewEventWorkflow(BuildContext context) async {
     (_) => const _NewEventWorkflowForm(),
   );
   if (created != null && context.mounted) {
-    openEventWorkflow(context, created.id);
+    // Wait for the list to reload after create before opening the editor
+    final container = ProviderScope.containerOf(context);
+    final owner = container.read(accountProvider)?.email;
+    await container.read(eventWorkflowsProvider(owner).future);
+    if (context.mounted) {
+      openEventWorkflow(context, created.id);
+    }
   }
 }
 

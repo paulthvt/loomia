@@ -3,12 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
+import '../../calendar/fake_event_repository.dart';
 import '../fake_event_workflow_repository.dart';
 
 const _failed = "Couldn't save. Check your connection and try again.";
@@ -202,11 +204,68 @@ void main() {
       eventWorkflows: eventWorkflows,
     );
 
-    // Create workflow directly and navigate to it
-    final created = await eventWorkflows.create('Training');
-    container
-        .read(routerProvider)
-        .go(Routes.settingsEventWorkflowLocation(created.id));
+    // Navigate to Workflows list and create through UI
+    container.read(routerProvider).go(Routes.settingsWorkflows);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New event workflow'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Training');
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No steps yet.'), findsOneWidget);
+
+    // Scroll to and tap delete
+    await tester.ensureVisible(find.text('Delete workflow').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete workflow').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Events of this kind keep their title, without the steps.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(
+      eventWorkflows.calls.where((call) => call.startsWith('delete(')),
+      hasLength(1),
+    );
+    expect(find.text('EVENTS'), findsOneWidget);
+  });
+
+  testWidgets('a new event workflow with events on Today; delete goes back', (
+    tester,
+  ) async {
+    final eventWorkflows = FakeEventWorkflowRepository(
+      FakeEventWorkflowRepository.samples(),
+    );
+    final events = FakeEventRepository([
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: DateTime.now().add(const Duration(days: 1)),
+        eventWorkflowId: 'workshop',
+      ),
+    ]);
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 2000),
+      eventWorkflows: eventWorkflows,
+      events: events,
+    );
+
+    // Navigate to Workflows list and create through UI
+    container.read(routerProvider).go(Routes.settingsWorkflows);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('New event workflow'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Training');
+    await tester.tap(find.text('Create'));
     await tester.pumpAndSettle();
 
     expect(find.text('No steps yet.'), findsOneWidget);

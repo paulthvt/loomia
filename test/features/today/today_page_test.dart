@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/pick_day.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
@@ -14,6 +16,7 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../app/app_harness.dart';
+import '../calendar/fake_event_repository.dart';
 import '../contacts/fake_activity_repository.dart';
 import '../contacts/fake_people_repository.dart';
 import '../goals/fake_goals_repository.dart';
@@ -298,5 +301,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('WORTH A CHECK-IN'), findsNothing);
+  });
+
+  testWidgets('Mark who was there with people loading opens event page', (
+    tester,
+  ) async {
+    final people = FakePeopleRepository()..failWith = PeopleFailure.network;
+    final events = FakeEventRepository([
+      CalendarEvent(
+        id: 'workshop',
+        title: 'Workshop',
+        startsAt: addDays(today(), -1).add(const Duration(hours: 19)),
+        attendees: const [(personId: 'p1', came: false)],
+      ),
+    ]);
+    await pumpLoomia(tester, size: _tallPhone, people: people, events: events);
+
+    expect(find.text('How did Workshop go?'), findsOneWidget);
+    await tester.tap(find.text('Mark who was there'));
+    await tester.pumpAndSettle();
+
+    // Opens the event page, not the sheet.
+    expect(find.byType(EventPage), findsOneWidget);
   });
 }

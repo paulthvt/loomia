@@ -39,6 +39,19 @@ import 'package:material_ui/material_ui.dart';
 /// An invited contact found in the book.
 typedef EventPerson = ({Person person, bool came});
 
+/// [event]'s attendees found in [book], by name. Someone deleted from the
+/// contacts on another device is left out rather than shown nameless.
+List<EventPerson> eventPeople(CalendarEvent event, List<Person> book) {
+  final byId = {for (final person in book) person.id: person};
+  return [
+    for (final attendee in event.attendees)
+      if (byId[attendee.personId] case final person?)
+        (person: person, came: attendee.came),
+  ]..sort(
+    (a, b) => searchKey(a.person.name).compareTo(searchKey(b.person.name)),
+  );
+}
+
 /// One event on mobile and tablet: a screen of its own above the month.
 class EventPage extends StatelessWidget {
   const EventPage({required this.id, super.key});
@@ -110,18 +123,7 @@ class EventPane extends ConsumerWidget {
             )
           : const Center(child: CircularProgressIndicator());
     }
-    final byId = {for (final person in bookPeople) person.id: person};
-    // Someone deleted from the contacts on another device can linger until
-    // the events reload; they are left out rather than shown nameless.
-    final people =
-        [
-          for (final attendee in event.attendees)
-            if (byId[attendee.personId] case final person?)
-              (person: person, came: attendee.came),
-        ]..sort(
-          (a, b) =>
-              searchKey(a.person.name).compareTo(searchKey(b.person.name)),
-        );
+    final people = eventPeople(event, bookPeople);
     final owner = ref.watch(accountProvider)?.email;
     final eventWorkflows =
         ref.watch(eventWorkflowsProvider(owner)).value ??

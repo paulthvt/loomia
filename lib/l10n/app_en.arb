@@ -199,6 +199,32 @@
   "@authHidePassword": {
     "description": "Tooltip on the reveal toggle inside a password field, while the password is visible."
   },
+  "todaySectionEvents": "Events",
+  "@todaySectionEvents": {
+    "description": "Heading on Today, shown uppercased, above today's events, the events to mark who was there, and the event steps that are due."
+  },
+  "todayHowDidItGo": "How did {title} go?",
+  "@todayHowDidItGo": {
+    "description": "On Today, an event that has started and isn't marked done yet. title is the event's title, e.g. 'How did New member training go?'.",
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "todayEventDay": "{day}",
+  "@todayEventDay": {
+    "description": "Subtitle of a to-mark event card on Today: the event's short weekday, e.g. 'Wed'.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "E" }
+    }
+  },
+  "todayStepFor": "{event} · {day}",
+  "@todayStepFor": {
+    "description": "Second line of an event's checklist step on Today: the event's title, then its short weekday, e.g. 'Workshop · Tue'.",
+    "placeholders": {
+      "event": { "type": "String" },
+      "day": { "type": "DateTime", "format": "E" }
+    }
+  },
   "todaySectionPriority": "Priority",
   "@todaySectionPriority": {
     "description": "Section heading above the people worth a message today."
