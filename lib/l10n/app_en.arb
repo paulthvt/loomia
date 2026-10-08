@@ -284,6 +284,13 @@
       "total": { "type": "int" }
     }
   },
+  "todayReminderReason": "{text} · Reminder",
+  "@todayReminderReason": {
+    "description": "Second line of a reminder's row on Today, under the person's name: what the user wrote for themselves, then the word Reminder. E.g. 'Call back about the diffuser · Reminder'.",
+    "placeholders": {
+      "text": { "type": "String" }
+    }
+  },
   "todayShowMore": "{count, plural, =1{And one more waiting} other{And {count} more waiting}}",
   "@todayShowMore": {
     "description": "Button under the first rows on Today; shows the rest in place. count is how many are not shown yet.",
@@ -824,6 +831,10 @@
   "@activityKindStep": {
     "description": "Kind of history entry: a workflow step the user marked done. The entry's title is the step's name."
   },
+  "activityKindReminder": "Reminder",
+  "@activityKindReminder": {
+    "description": "Kind of history entry: a reminder the user set for themselves and marked done. The entry's title is what the reminder said."
+  },
   "activityKindEvent": "Event",
   "@activityKindEvent": {
     "description": "Kind of history entry: the person was at one of the user's events (a workshop, a training). The entry's title is the event's title."
@@ -972,6 +983,44 @@
   "@historyDeleteConfirm": {
     "description": "Destructive button that deletes a history entry; also the screen-reader action on an entry."
   },
+  "reminderNewTitle": "Remind me",
+  "@reminderNewTitle": {
+    "description": "Title of the sheet where the user writes a reminder for themselves about one person, outside any workflow: something to do with them on a day."
+  },
+  "reminderEditTitle": "Edit reminder",
+  "@reminderEditTitle": {
+    "description": "Title of the same sheet when changing a reminder the user already wrote."
+  },
+  "reminderWhat": "What",
+  "@reminderWhat": {
+    "description": "Label of the text field of a reminder: what the user wants to remember to do, e.g. 'Call back about the diffuser'."
+  },
+  "reminderWhatRequired": "Say what to do.",
+  "@reminderWhatRequired": {
+    "description": "Error under an empty reminder text."
+  },
+  "reminderTomorrow": "Tomorrow",
+  "@reminderTomorrow": {
+    "description": "Chip that sets a reminder for tomorrow."
+  },
+  "reminderInDays": "{count, plural, =1{Tomorrow} other{In {count} days}}",
+  "@reminderInDays": {
+    "description": "Chip that sets a reminder a few days from today, e.g. 'In 3 days'.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reminderInWeeks": "{count, plural, =1{In a week} other{In {count} weeks}}",
+  "@reminderInWeeks": {
+    "description": "Chip that sets a reminder one or more weeks from today, e.g. 'In a week', 'In 2 weeks'.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reminderPickDay": "Pick a day",
+  "@reminderPickDay": {
+    "description": "Chip that opens a calendar to choose the reminder's day; selected when the day is none of the other chips'."
+  },
   "nextStepTitle": "Next step",
   "@nextStepTitle": {
     "description": "Header of the card on a contact that shows the next thing to do with them in their workflow. Shown uppercased."
@@ -1072,6 +1121,14 @@
     "placeholders": {
       "day": { "type": "DateTime", "format": "MMMMd" }
     }
+  },
+  "nextStepNoWorkflow": "No workflow",
+  "@nextStepNoWorkflow": {
+    "description": "Card on a contact who follows no workflow but has reminders listed above it (so 'Nothing planned' would be wrong); a Follow with button follows."
+  },
+  "reminderAdd": "Add a reminder",
+  "@reminderAdd": {
+    "description": "Button under Next step on a contact: opens the sheet to write a reminder about them, outside any workflow."
   },
   "nextStepNothingPlanned": "Nothing planned",
   "@nextStepNothingPlanned": {

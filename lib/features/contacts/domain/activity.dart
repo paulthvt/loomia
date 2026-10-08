@@ -3,7 +3,8 @@ import 'package:loomia/features/contacts/domain/person.dart';
 
 /// What an entry records. [stage] entries are written by the database when a
 /// person changes stage, [step] entries when a workflow step is ticked, [event]
-/// entries when the person was at an event; the user writes the others.
+/// entries when the person was at an event, [reminder] entries when a reminder
+/// is ticked; the user writes the others.
 enum ActivityKind {
   note,
   call,
@@ -12,10 +13,12 @@ enum ActivityKind {
   meeting,
   stage,
   step,
-  event;
+  event,
+  reminder;
 
   /// Offered in Log something.
-  bool get byUser => this != stage && this != step && this != event;
+  bool get byUser =>
+      this != stage && this != step && this != event && this != reminder;
 }
 
 /// One thing in a person's history. Its text, day and amount can be edited;

@@ -16,8 +16,12 @@ class PeopleRepository {
 
   static const String _table = 'person';
 
-  /// Every column, plus the server's computed step and due day.
-  static const String _columns = '*, current_step_id, due_on, last_contact_on';
+  /// Every column, the server's computed step, due day and last contact, and
+  /// the open reminders.
+  static const String _columns =
+      '*, current_step_id, due_on, last_contact_on, reminder($_reminderColumns)';
+
+  static const String _reminderColumns = 'id, text, due_on, created_at';
 
   /// Unordered: the controller sorts by `searchKey`, which Postgres collation
   /// does not match.
@@ -121,6 +125,49 @@ class PeopleRepository {
             .single();
         return personFromRow(row);
       });
+
+  /// A reminder for [personId], as saved.
+  Future<Reminder> addReminder(String personId, String text, DateTime dueOn) =>
+      guardPeople(() async {
+        final row = await _client
+            .from('reminder')
+            .insert({
+              'person_id': personId,
+              'text': text.trim(),
+              'due_on': dayColumn(dueOn),
+            })
+            .select(_reminderColumns)
+            .single();
+        return reminderFromRow(row);
+      });
+
+  Future<Reminder> updateReminder(String id, String text, DateTime dueOn) =>
+      guardPeople(() async {
+        final row = await _client
+            .from('reminder')
+            .update({'text': text.trim(), 'due_on': dayColumn(dueOn)})
+            .eq('id', id)
+            .select(_reminderColumns)
+            .single();
+        return reminderFromRow(row);
+      });
+
+  Future<void> deleteReminder(String id) =>
+      guardPeople(() => _client.from('reminder').delete().eq('id', id));
+
+  /// Ticks a reminder: the history entry and the delete, in one transaction
+  /// on the server. One already gone (ticked on another device) is refused.
+  ///
+  /// Returns nothing: PostgREST would read an embedded `reminder(...)` and
+  /// `last_contact_on` in the call's own snapshot, before its delete and
+  /// insert, so the person it returns still has the reminder. The caller
+  /// reads the book again.
+  Future<void> completeReminder(String id, DateTime on) => guardPeople(
+    () => _client.rpc<Object?>(
+      'complete_reminder',
+      params: {'p_reminder': id, 'p_on': dayColumn(on)},
+    ),
+  );
 
   Future<Person> _write(String id, Map<String, dynamic> values) =>
       guardPeople(() async {
@@ -240,8 +287,20 @@ Person personFromRow(Map<String, dynamic> row) {
       final String day => DateTime.parse(day),
       _ => null,
     },
+    reminders: sortedReminders([
+      for (final reminder in (row['reminder'] as List?) ?? const [])
+        reminderFromRow(reminder as Map<String, dynamic>),
+    ]),
   );
 }
+
+Reminder reminderFromRow(Map<String, dynamic> row) => (
+  id: row['id'] as String,
+  text: row['text'] as String,
+  // A bare date parses as local midnight.
+  dueOn: DateTime.parse(row['due_on'] as String),
+  createdAt: DateTime.parse(row['created_at'] as String),
+);
 
 /// What an update writes: everything the user can edit, except the stage and
 /// the workflow fields. Only [PeopleRepository.setStage] writes it, so a stale

@@ -102,14 +102,14 @@ void main() {
       now: DateTime(2026, 10, 8, 18, 50),
       events: _events,
       due: AsyncData([
-        (
-          person: Person(
+        DueStep(
+          Person(
             id: 'p1',
             name: 'Anna',
             stage: Stage.prospect,
             stageSince: DateTime(2026, 10),
           ),
-          step: OnStep(
+          OnStep(
             workflow: workflow,
             step: workflow.steps.first,
             index: 1,
@@ -206,14 +206,14 @@ void main() {
       now: DateTime(2026, 10, 8, 18, 50),
       events: _events,
       due: AsyncData([
-        (
-          person: Person(
+        DueStep(
+          Person(
             id: 'p1',
             name: 'Anna',
             stage: Stage.prospect,
             stageSince: DateTime(2026, 10),
           ),
-          step: OnStep(
+          OnStep(
             workflow: workflow,
             step: workflow.steps.first,
             index: 1,

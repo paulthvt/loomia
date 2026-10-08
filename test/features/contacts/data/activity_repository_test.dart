@@ -31,6 +31,12 @@ void main() {
       expect(activity.createdAt, DateTime.utc(2026, 9, 28, 12));
     });
 
+    test('reads a reminder entry, which the user never picks', () {
+      final activity = activityFromRow(_row({'kind': 'reminder'}));
+      expect(activity.kind, ActivityKind.reminder);
+      expect(ActivityKind.reminder.byUser, isFalse);
+    });
+
     test('reads a stage entry', () {
       final activity = activityFromRow(
         _row({'kind': 'stage', 'text': null, 'stage': 'team'}),

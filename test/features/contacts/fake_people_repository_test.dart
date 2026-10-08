@@ -58,4 +58,26 @@ void main() {
     expect(saved.stageSince, DateTime.utc(2026, 9, 28));
     expect(people.store['p1']!.id, saved.id);
   });
+
+  test('completeReminder does what complete_reminder does', () async {
+    final activities = FakeActivityRepository();
+    final people = FakePeopleRepository([marie])..activities = activities;
+    final added = await people.addReminder(
+      'p1',
+      ' Call back ',
+      DateTime(2026, 10, 15),
+    );
+
+    await people.completeReminder(added.id, DateTime(2026, 10, 9));
+    final [done] = await people.list();
+
+    expect(done.reminders, isEmpty);
+    expect(done.lastContactOn, DateTime(2026, 10, 9));
+    expect(activities.store.single.kind, ActivityKind.reminder);
+    expect(activities.store.single.text, 'Call back');
+    await expectLater(
+      people.completeReminder(added.id, DateTime(2026, 10, 9)),
+      throwsA(isA<Object>()),
+    );
+  });
 }

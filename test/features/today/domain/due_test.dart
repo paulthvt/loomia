@@ -15,6 +15,7 @@ Person _person(
   String? step = 'samples-2',
   DateTime? pausedAt,
   bool follows = true,
+  List<Reminder> reminders = const [],
 }) => Person(
   id: id,
   name: name,
@@ -26,7 +27,13 @@ Person _person(
   currentStepId: follows ? step : null,
   dueOn: due,
   pausedAt: pausedAt,
+  reminders: reminders,
 );
+
+Reminder _reminder(String id, DateTime due) =>
+    (id: id, text: 'Text $id', dueOn: due, createdAt: DateTime.utc(2026));
+
+List<String> _keys(List<Due> due) => [for (final row in due) row.key];
 
 void main() {
   test('due today and late stay; not yet due, paused, done and no workflow '
@@ -45,7 +52,7 @@ void main() {
     );
 
     expect([for (final row in due) row.person.id], ['late', 'today']);
-    expect(due.first.step.step.label, 'Send the samples');
+    expect((due.first as DueStep).step.step.label, 'Send the samples');
   });
 
   test('oldest first, then by name whatever the case', () {
@@ -63,5 +70,49 @@ void main() {
       [for (final row in due) row.person.name],
       ['Bruno', 'claire', 'Anna'],
     );
+  });
+
+  test('reminders due today or late stay, later ones fall out, whatever the '
+      'workflow', () {
+    final due = dueToday(
+      [
+        _person(
+          'paused',
+          'Paused',
+          pausedAt: DateTime.utc(2026, 9, 1),
+          reminders: [_reminder('r-paused', _today)],
+        ),
+        _person(
+          'none',
+          'None',
+          follows: false,
+          reminders: [
+            _reminder('r-late', DateTime(2026, 9, 27)),
+            _reminder('r-tomorrow', DateTime(2026, 9, 30)),
+          ],
+        ),
+      ],
+      _workflows,
+      _today,
+    );
+
+    expect(_keys(due), ['r-late', 'r-paused']);
+    expect((due.first as DueReminder).reminder.dueOn, DateTime(2026, 9, 27));
+  });
+
+  test('one person with a reminder and a step due the same day has two rows, '
+      'the reminder first', () {
+    final late = DateTime(2026, 9, 27);
+    final due = dueToday(
+      [
+        _person('b', 'Bruno', due: late),
+        _person('a', 'Anna', due: late, reminders: [_reminder('r-anna', late)]),
+      ],
+      _workflows,
+      _today,
+    );
+
+    expect(_keys(due), ['r-anna', 'a', 'b']);
+    expect([for (final row in due) row.person.id], ['a', 'a', 'b']);
   });
 }

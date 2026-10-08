@@ -152,7 +152,21 @@ Widget _details({Person? person}) => ContactDetails(
   nextStep: person != null
       ? null
       : NextStepCard(
-          person: _sample.first,
+          // As in Figma "Reminders — #217": one late, one later.
+          person: _sample.first.withReminders([
+            (
+              id: 'r1',
+              text: 'Call back about the diffuser',
+              dueOn: DateTime(2026, 9, 27),
+              createdAt: DateTime.utc(2026, 9),
+            ),
+            (
+              id: 'r2',
+              text: 'Send her the price list',
+              dueOn: DateTime(2026, 10, 4),
+              createdAt: DateTime.utc(2026, 9),
+            ),
+          ]),
           progress: OnStep(
             workflow: _samples,
             step: _samples.steps[3],
@@ -166,6 +180,9 @@ Widget _details({Person? person}) => ContactDetails(
           onNotNow: () {},
           onFollowWith: () {},
           onBecameCustomer: () {},
+          onTickReminder: (_) {},
+          onEditReminder: (_) {},
+          onAddReminder: () {},
         ),
 );
 

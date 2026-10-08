@@ -27,14 +27,14 @@ final _samples = Workflow(
   ],
 );
 
-Due _due(String name, DateTime due) => (
-  person: Person(
+Due _due(String name, DateTime due) => DueStep(
+  Person(
     id: name,
     name: name,
     stage: Stage.prospect,
     stageSince: DateTime.utc(2026, 9),
   ),
-  step: OnStep(
+  OnStep(
     workflow: _samples,
     step: _samples.steps.first,
     index: 1,

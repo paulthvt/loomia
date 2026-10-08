@@ -44,6 +44,7 @@ Person withServerFields(Person person, List<Workflow> workflows) {
         ? null
         : addDays(place.lastTick, step.days),
     lastContactOn: person.lastContactOn,
+    reminders: person.reminders,
   );
 }
 
@@ -78,6 +79,7 @@ Person withLastContact(Person person, DateTime? day) => Person(
   currentStepId: person.currentStepId,
   dueOn: person.dueOn,
   lastContactOn: day,
+  reminders: person.reminders,
 );
 
 /// Where ticking [stepId] leads: the next step's position, or 1e9 once done

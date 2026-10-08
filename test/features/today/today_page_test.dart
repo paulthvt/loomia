@@ -38,6 +38,7 @@ Person _on(
   num at = 1,
   int ago = 0,
   DateTime? pausedAt,
+  List<Reminder> reminders = const [],
 }) => Person(
   id: id,
   name: name,
@@ -49,7 +50,18 @@ Person _on(
     lastTick: addDays(today(), -ago),
   ),
   pausedAt: pausedAt,
+  reminders: reminders,
 );
+
+/// Due [inDays] from today: negative is late.
+Reminder _reminder(String text, int inDays) => (
+  id: 'r-$text',
+  text: text,
+  dueOn: addDays(today(), inDays),
+  createdAt: DateTime.utc(2026),
+);
+
+const _markPriceList = 'Mark "Send her the price list" done';
 
 void main() {
   testWidgets('due today and late show, oldest first; not yet due and '
@@ -146,6 +158,71 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Anna'), findsOneWidget);
+    expect(find.byTooltip(_markFirst), findsOneWidget);
+  });
+
+  testWidgets('a reminder joins Priority beside the step; the person counts '
+      'once', (tester) async {
+    final people = FakePeopleRepository([
+      _on(
+        'p1',
+        'Anna',
+        reminders: [
+          _reminder('Send her the price list', -2),
+          _reminder('Next week', 7),
+        ],
+      ),
+      _on('p2', 'Bruno', at: 2, reminders: [_reminder('Call back', 0)]),
+    ]);
+    await pumpLoomia(tester, size: _tallPhone, people: people);
+
+    expect(find.text('2 people are worth a message today'), findsOneWidget);
+    expect(find.text('Send her the price list · Reminder'), findsOneWidget);
+    expect(find.text('Call back · Reminder'), findsOneWidget);
+    expect(find.textContaining('Next week'), findsNothing);
+    // Late: the accent chip; due today: none.
+    expect(find.text('2 days late'), findsOneWidget);
+    expect(find.text('Due today'), findsNothing);
+    final reminder = tester.getTopLeft(
+      find.text('Send her the price list · Reminder'),
+    );
+    final step = tester.getTopLeft(
+      find.text('Send a first message · Samples, step 1 of 5'),
+    );
+    expect(reminder.dy, lessThan(step.dy));
+  });
+
+  testWidgets('ticking a reminder leaves the step tickable, and it goes', (
+    tester,
+  ) async {
+    final people = FakePeopleRepository([
+      _on('p1', 'Anna', reminders: [_reminder('Send her the price list', -2)]),
+    ]);
+    await pumpLoomia(tester, size: _phone, people: people);
+    people.gate = Completer<void>();
+
+    await tester.tap(find.byTooltip(_markPriceList));
+    await tester.pump();
+    expect(
+      tester
+          .widget<IconButton>(
+            find.ancestor(
+              of: find.byTooltip(_markFirst),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    people.gate!.complete();
+    people.gate = null;
+    await tester.pumpAndSettle();
+
+    expect(
+      people.calls,
+      contains('completeReminder(r-Send her the price list)'),
+    );
+    expect(find.text('Send her the price list · Reminder'), findsNothing);
     expect(find.byTooltip(_markFirst), findsOneWidget);
   });
 
