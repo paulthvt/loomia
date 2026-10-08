@@ -30,8 +30,19 @@ class AppShell extends ConsumerWidget {
   final String location;
   final Widget child;
 
+  /// Back on another tab returns to Today, the home; only Today exits the
+  /// app. Pages pushed inside a tab pop first: their navigator is asked
+  /// before this route's.
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) => PopScope(
+    canPop: location == Routes.today,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) context.go(Routes.today);
+    },
+    child: _chrome(context, ref),
+  );
+
+  Widget _chrome(BuildContext context, WidgetRef ref) {
     final size = context.screenSize;
     if (!size.usesSideNavigation) {
       final picking =
