@@ -222,14 +222,15 @@ Restrained. Motion explains what moved, it never celebrates.
 | --- | --- |
 | 120ms | Hover, pressed, focus ring. |
 | 180ms | Chip/toggle state, small fades. |
-| 240ms | Row collapse on completion, list reorder, tab change. |
-| 320ms | Sheet and dialog present/dismiss. |
+| 240ms | List reorder, tab change. |
+| 320ms | Sheet and dialog present/dismiss; a completed card sliding out. |
 
 Easing: standard `cubic(0.2, 0, 0, 1)`, decelerate `cubic(0, 0, 0, 1)` for
 entering, accelerate `cubic(0.3, 0, 1, 1)` for leaving.
 
 Rules: no bounce or overshoot; no scale above 1.02; completing an action is a
-check plus a 240ms row collapse (no confetti, no counter, no streak — principle
+check, then the card slides out to the start over 320ms while its slot closes,
+the next step (if any) sliding in from the end at once (no confetti, no counter, no streak — principle
 #5); no looping animation except an indeterminate loader; all of it respects
 "reduce motion" by collapsing to a 120ms opacity change.
 
@@ -248,7 +249,8 @@ interaction is wrong before the table is.
 | Label ↔ spinner on a button | 180ms | decelerate in, accelerate out | `AnimatedSwitcher` |
 | Inline message appearing | 180ms | decelerate | `TweenAnimationBuilder` over opacity + `Align.heightFactor` |
 | Progress bar value | 240ms | standard | `TweenAnimationBuilder` |
-| Row collapse on completion, list reorder, tab change | 240ms | standard | `AnimatedSize` / `AnimatedList` |
+| Completed card out, next one in | 320ms | decelerate | `SlideSwap` (`lib/core/ui/slide_swap.dart`) |
+| List reorder, tab change | 240ms | standard | `AnimatedSize` / `AnimatedList` |
 | Page transition | platform | platform | a plain `MaterialPage` — the platform's own transition |
 | Sheet, dialog | 320ms | standard | Material defaults from the component themes |
 

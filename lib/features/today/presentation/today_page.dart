@@ -14,6 +14,7 @@ import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
+import 'package:loomia/core/ui/slide_swap.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
@@ -281,6 +282,10 @@ class _TodayViewState extends State<TodayView> {
   /// "And N more waiting" was tapped. Resets on leaving Today.
   bool _expanded = false;
 
+  /// The priority rows as last built, by person; a null due is a row on its
+  /// way out.
+  List<({String id, Due? due})> _slots = const [];
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -450,10 +455,10 @@ class _TodayViewState extends State<TodayView> {
       SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
       ...eventsBlock,
       SectionHeader(title: l10n.todaySectionPriority),
-      for (final (index, row) in shown.indexed) ...[
-        if (index > 0) const SizedBox(height: AppSpacing.ms),
-        _row(l10n, row, day),
-      ],
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: _slotted(shown, (due) => _row(l10n, due, day)),
+      ),
       if (shown.length < due.length) ...[
         const SizedBox(height: AppSpacing.ms),
         Align(
@@ -467,9 +472,53 @@ class _TodayViewState extends State<TodayView> {
     ];
   }
 
+  /// One slot per person, so a ticked row slides out where it was and the
+  /// next step slides in over it. A person who left keeps an empty slot at
+  /// their place, after whoever was above them, while it closes.
+  // ponytail: the empty slots stay until Today is rebuilt from scratch, one
+  // per row ticked away during a visit; prune them on a timer if that grows.
+  List<Widget> _slotted(List<Due> shown, Widget Function(Due due) row) {
+    final next = <({String id, Due? due})>[
+      for (final due in shown) (id: due.person.id, due: due),
+    ];
+    final live = {for (final slot in next) slot.id};
+    for (final (index, slot) in _slots.indexed) {
+      if (live.contains(slot.id)) continue;
+      var at = 0;
+      for (var above = index - 1; above >= 0; above--) {
+        final found = next.indexWhere((other) => other.id == _slots[above].id);
+        if (found != -1) {
+          at = found + 1;
+          break;
+        }
+      }
+      next.insert(at, (id: slot.id, due: null));
+    }
+    _slots = next;
+
+    var gap = false;
+    final slots = <Widget>[];
+    for (final slot in next) {
+      final due = slot.due;
+      slots.add(
+        SlideSwap(
+          key: ValueKey(slot.id),
+          // The gap belongs to the row below it, and only once a row is
+          // above: when the first row leaves, the next one's gap closes too.
+          padding: EdgeInsets.only(top: gap ? AppSpacing.ms : 0),
+          child: due == null ? null : row(due),
+        ),
+      );
+      if (due != null) gap = true;
+    }
+    return slots;
+  }
+
   Widget _row(AppLocalizations l10n, Due due, DateTime day) {
     final (:person, :step) = due;
     return ActionItem(
+      // A new step is a new card: it slides in.
+      key: ValueKey(step.step.id),
       name: person.name,
       reason: l10n.todayReason(
         step.step.label,
