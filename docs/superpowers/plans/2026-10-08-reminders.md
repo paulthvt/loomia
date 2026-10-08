@@ -307,18 +307,18 @@ final class DueReminder extends Due {
 - Modify: `lib/l10n/app_en.arb`
 - Test: `test/features/contacts/presentation/reminder_sheet_test.dart`
 
-- [ ] **Step 1: Failing widget tests** (the `form_harness.dart` pattern, the fake book, today 2026-10-08):
+- [x] **Step 1: Failing widget tests** (the `form_harness.dart` pattern, the fake book, today 2026-10-08):
   - new: Save disabled-by-validation with an empty What ("Say what to do."); type "Call back", tap In a week, the line under the chips reads "Thursday, October 15"; Save → fake `addReminder(p1)` with `DateTime(2026, 10, 15)`; the sheet closes;
   - Tomorrow by default;
   - edit: the text and day prefilled, the matching chip selected (a day that matches none: Pick a day selected); Save → `updateReminder`; Delete → `deleteReminder`, no confirm;
   - a `PeopleFailure` keeps the sheet open with the failure copy.
-- [ ] **Step 2: Run.** Expected: fail.
-- [ ] **Step 3: Implement.**
+- [x] **Step 2: Run.** Expected: fail.
+- [x] **Step 3: Implement.**
   - `Future<void> showReminder(BuildContext context, Person person, {Reminder? editing})` → `LoomiaDialog.show` with a `ConsumerStatefulWidget` form like `_LogActivityForm` (`_saving`, `_failure`, `FormError`, Cancel / Save, Delete when editing). Writes `peopleProvider(owner).notifier.addReminder / editReminder / deleteReminder`, read before the first `await`.
-  - Public `ReminderDayField({required DateTime value, required DateTime today, required ValueChanged<DateTime> onChanged, required String label})`: `LabeledField(label:)` over a `Wrap` of `ChoiceChip`s for `+1, +3, +7, +14` days (`addDays` from `progress.dart`) and Pick a day (`pickDay(context, initial: value, first: today, last: addDays(today, 365 * 2))`), then the day written under them (`dayLabel`-style long date: `MaterialLocalizations.formatFullDate`). Selected chip: the preset whose day equals `value`, else Pick a day.
+  - Public `ReminderDayField({required DateTime value, required DateTime today, required ValueChanged<DateTime> onChanged, required String label})`: `LabeledField(label:)` over a `Wrap` of `ChoiceChip`s for `+1, +3, +7, +14` days (`addDays` from `progress.dart`) and Pick a day (`pickDay(context, initial: value, first: today, last: addDays(today, 365 * 2))`), then the day written under them (`DateFormat.MMMMEEEEd`, with the year when it is not this year, as in Figma). Selected chip: the preset whose day equals `value`, else Pick a day.
   - `app_en.arb`, each with a description: `reminderNewTitle` "Remind me", `reminderEditTitle` "Edit reminder", `reminderWhat` "What", `reminderWhatRequired` "Say what to do.", `reminderWhen` → reuse `logWhen`; `reminderTomorrow` "Tomorrow", `reminderInDays` "{count, plural, =1{Tomorrow} other{In {count} days}}" (3), `reminderInWeeks` "{count, plural, =1{In a week} other{In {count} weeks}}", `reminderPickDay` "Pick a day", `reminderDelete` → reuse `historyDeleteConfirm`.
-- [ ] **Step 4: Run** `flutter gen-l10n && flutter test`. Expected: pass.
-- [ ] **Step 5: Commit** `feat(contacts): the reminder sheet`.
+- [x] **Step 4: Run** `flutter gen-l10n && flutter test`. Expected: pass.
+- [x] **Step 5: Commit** `feat(contacts): the reminder sheet`.
 
 ### Task 7: Reminders under Next step
 
