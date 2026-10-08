@@ -6,6 +6,7 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -145,9 +146,6 @@ class CalendarView extends StatelessWidget {
   /// Fixed, like the Contacts list, so a resized window narrows the month.
   static const double _paneWidth = 440;
 
-  /// A horizontal swipe faster than this changes month.
-  static const double _swipe = 300;
-
   final AsyncValue<List<CalendarEvent>> events;
   final CalendarSelection selection;
 
@@ -201,17 +199,15 @@ class CalendarView extends StatelessWidget {
         ?accountAction,
       ],
     );
-    final grid = GestureDetector(
-      // A swipe changes month, as in the phone's own calendar.
-      onHorizontalDragEnd: (details) {
-        final velocity = details.primaryVelocity ?? 0;
-        if (velocity.abs() > _swipe) onShift(velocity < 0 ? 1 : -1);
-      },
-      child: MonthGrid(
-        month: selection.month,
+    final counts = eventsPerDay(events.value ?? const []);
+    final grid = _SwipeableMonth(
+      month: selection.month,
+      onShift: onShift,
+      builder: (month) => MonthGrid(
+        month: month,
         selected: selection.day,
         today: today,
-        counts: eventsPerDay(events.value ?? const []),
+        counts: counts,
         onSelect: onSelect,
       ),
     );
@@ -293,6 +289,135 @@ class CalendarView extends StatelessWidget {
     return refresh == null
         ? list
         : RefreshIndicator(onRefresh: refresh, child: list);
+  }
+}
+
+/// The grid for [month], which follows the finger: dragged sideways, the
+/// neighbouring month comes in beside it, and on release the page turns
+/// (past halfway, or flung) or springs back. The arrows and Today slide the
+/// new month in from its side too. Reduce motion: they just switch.
+class _SwipeableMonth extends StatefulWidget {
+  const _SwipeableMonth({
+    required this.month,
+    required this.onShift,
+    required this.builder,
+  });
+
+  final DateTime month;
+
+  /// −1 for the month before, 1 for the one after.
+  final ValueChanged<int> onShift;
+
+  /// The grid for a month.
+  final Widget Function(DateTime month) builder;
+
+  @override
+  State<_SwipeableMonth> createState() => _SwipeableMonthState();
+}
+
+class _SwipeableMonthState extends State<_SwipeableMonth>
+    with SingleTickerProviderStateMixin {
+  /// A fling faster than this, in px/s, turns the page however short it was.
+  static const double _fling = 300;
+
+  /// Where [_SwipeableMonth.month] sits, in grid widths: −1 is off to the
+  /// left with the next month fully in, 1 off to the right with the one
+  /// before fully in.
+  late final _offset = AnimationController.unbounded(vsync: this);
+  double _width = 1;
+
+  @override
+  void didUpdateWidget(_SwipeableMonth old) {
+    super.didUpdateWidget(old);
+    if (widget.month == old.month) return;
+    final step = widget.month.isAfter(old.month) ? 1.0 : -1.0;
+    // After a drag the new month is already in place (−1 + 1 = 0); after
+    // the arrows or Today it starts on its side and slides in.
+    _offset.value = context.reduceMotion
+        ? 0
+        : (_offset.value + step).clamp(-1.0, 1.0);
+    unawaited(_settle(0));
+  }
+
+  @override
+  void dispose() {
+    _offset.dispose();
+    super.dispose();
+  }
+
+  Future<void> _settle(double target) => _offset.animateTo(
+    target,
+    duration: context.motion(AppMotion.medium),
+    curve: AppMotion.decelerate,
+  );
+
+  void _drag(DragUpdateDetails details) {
+    final delta = (details.primaryDelta ?? 0) / _width;
+    _offset.value = (_offset.value + delta).clamp(-1.0, 1.0);
+  }
+
+  Future<void> _release(DragEndDetails details) async {
+    final velocity = details.primaryVelocity ?? 0;
+    final at = _offset.value;
+    final double target = velocity.abs() > _fling
+        ? velocity.sign
+        : at.abs() > 0.5
+        ? at.sign
+        : 0;
+    // Never completes when a new drag stops it, which then decides instead.
+    await _settle(target);
+    // Left (−1) shows the next month.
+    if (target != 0 && mounted) widget.onShift(-target.toInt());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final month = widget.month;
+    Widget page(int delta, double at) => FractionalTranslation(
+      translation: Offset(at, 0),
+      child: widget.builder(DateTime(month.year, month.month + delta)),
+    );
+    return GestureDetector(
+      onHorizontalDragStart: (_) => _offset.stop(),
+      onHorizontalDragUpdate: _drag,
+      onHorizontalDragEnd: (details) => unawaited(_release(details)),
+      // A five-week month and a six-week one: the height eases between them.
+      child: AnimatedSize(
+        duration: context.motion(AppMotion.medium),
+        curve: AppMotion.standard,
+        alignment: Alignment.topCenter,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            _width = constraints.maxWidth;
+            return AnimatedBuilder(
+              animation: _offset,
+              builder: (context, _) {
+                final at = _offset.value;
+                // Clipped, so the months slide under the page's padding.
+                return ClipRect(
+                  child: Stack(
+                    children: [
+                      page(0, at),
+                      // Only while moving; it sizes nothing, so a taller
+                      // neighbour is cut to this month's height meanwhile.
+                      if (at != 0)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: ExcludeSemantics(
+                            child: at < 0 ? page(1, at + 1) : page(-1, at - 1),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
