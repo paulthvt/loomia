@@ -143,9 +143,9 @@ grant execute on function public.complete_reminder(uuid, date) to authenticated;
 - Modify: `test/features/contacts/fake_people_repository.dart`
 - Test: `test/features/contacts/data/people_repository_test.dart` (row mapping), `test/features/contacts/fake_people_repository_test.dart`
 
-- [ ] **Step 1: Failing tests.** In `people_repository_test.dart`: `personFromRow` with `'reminder': [{'id': 'r2', 'text': 'B', 'due_on': '2026-10-12', 'created_at': '…T10'}, {'id': 'r1', 'text': 'A', 'due_on': '2026-10-10', …}]` gives `reminders` ids `['r1', 'r2']` and `dueOn == DateTime(2026, 10, 10)`; no `reminder` key gives `const []`. `activityFromRow` with `kind: 'reminder'` gives `ActivityKind.reminder`, and `ActivityKind.reminder.byUser` is false.
-- [ ] **Step 2: Run** `flutter test test/features/contacts/data`. Expected: compile errors.
-- [ ] **Step 3: Implement.**
+- [x] **Step 1: Failing tests.** In `people_repository_test.dart`: `personFromRow` with `'reminder': [{'id': 'r2', 'text': 'B', 'due_on': '2026-10-12', 'created_at': '…T10'}, {'id': 'r1', 'text': 'A', 'due_on': '2026-10-10', …}]` gives `reminders` ids `['r1', 'r2']` and `dueOn == DateTime(2026, 10, 10)`; no `reminder` key gives `const []`. `activityFromRow` with `kind: 'reminder'` gives `ActivityKind.reminder`, and `ActivityKind.reminder.byUser` is false.
+- [x] **Step 2: Run** `flutter test test/features/contacts/data`. Expected: compile errors.
+- [x] **Step 3: Implement.**
   - `person.dart`: `typedef Reminder = ({String id, String text, DateTime dueOn, DateTime createdAt});` with a doc line. `Person` gains `this.reminders = const []` / `final List<Reminder> reminders;` ("Open reminders, soonest first; from the book's select"). Move `withStatus`'s body into `Person _copy({ProspectStatus? Function()? status, List<Reminder>? reminders})` and add `Person withReminders(List<Reminder> reminders) => _copy(reminders: sortedReminders(reminders));`. Top-level `List<Reminder> sortedReminders(Iterable<Reminder>)`: by `dueOn`, then `createdAt`.
   - `activity.dart`: `ActivityKind.reminder`; `byUser` also excludes it.
   - `people_copy.dart` `kindLabel`: `ActivityKind.reminder => l10n.activityKindReminder`.
@@ -172,8 +172,8 @@ grant execute on function public.complete_reminder(uuid, date) to authenticated;
 ```
 
   - `FakePeopleRepository`: a `Map<String, List<Reminder>> reminders` store; `_served` attaches `reminders[id]`; the four methods record `addReminder(personId)` etc., `completeReminder` throws `PeopleFailure.unknown` for an unknown id, removes it and sets `lastContactOn: on` through `_with`. A test in `fake_people_repository_test.dart` pins the tick.
-- [ ] **Step 4: Run** `flutter gen-l10n && flutter test`. Expected: pass (the `kindLabel` switch is exhaustive: analyze catches a missed case).
-- [ ] **Step 5: Commit** `feat(reminders): reminders on Person and the repository`.
+- [x] **Step 4: Run** `flutter gen-l10n && flutter test`. Expected: pass (the `kindLabel` switch is exhaustive: analyze catches a missed case).
+- [x] **Step 5: Commit** `feat(reminders): reminders on Person and the repository`.
 
 ### Task 3: `PeopleController` writes
 

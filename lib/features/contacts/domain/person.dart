@@ -48,6 +48,7 @@ class Person {
     this.currentStepId,
     this.dueOn,
     this.lastContactOn,
+    this.reminders = const [],
   }) : assert(
          prospectStatus == null || stage == Stage.prospect,
          'Only prospects have a status',
@@ -122,12 +123,26 @@ class Person {
   /// logged with them, stage changes aside. Local midnight. Read-only.
   final DateTime? lastContactOn;
 
-  Person withStatus(ProspectStatus? status) => Person(
+  /// Their open reminders, soonest first (#217). Read with the book.
+  final List<Reminder> reminders;
+
+  Person withStatus(ProspectStatus? status) =>
+      _copy(prospectStatus: status, reminders: reminders);
+
+  Person withReminders(Iterable<Reminder> reminders) => _copy(
+    prospectStatus: prospectStatus,
+    reminders: sortedReminders(reminders),
+  );
+
+  Person _copy({
+    required ProspectStatus? prospectStatus,
+    required List<Reminder> reminders,
+  }) => Person(
     id: id,
     name: name,
     stage: stage,
     stageSince: stageSince,
-    prospectStatus: status,
+    prospectStatus: prospectStatus,
     phone: phone,
     email: email,
     instagram: instagram,
@@ -151,8 +166,29 @@ class Person {
     currentStepId: currentStepId,
     dueOn: dueOn,
     lastContactOn: lastContactOn,
+    reminders: reminders,
   );
 }
+
+/// Something the user promised to do with one person, due on a day, outside
+/// any workflow (#217). Ticked once: the history keeps it, the row goes.
+typedef Reminder = ({
+  String id,
+  String text,
+
+  /// Local midnight.
+  DateTime dueOn,
+
+  /// Breaks a tie between reminders due the same day.
+  DateTime createdAt,
+});
+
+/// Soonest first; the same day, the oldest first.
+List<Reminder> sortedReminders(Iterable<Reminder> reminders) =>
+    [...reminders]..sort((a, b) {
+      final byDay = a.dueOn.compareTo(b.dueOn);
+      return byDay != 0 ? byDay : a.createdAt.compareTo(b.createdAt);
+    });
 
 /// What Add someone collects.
 typedef PersonDraft = ({

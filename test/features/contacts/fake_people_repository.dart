@@ -15,10 +15,15 @@ class FakePeopleRepository implements PeopleRepository {
   FakePeopleRepository([Iterable<Person> people = const []]) {
     for (final person in people) {
       store[person.id] = person;
+      if (person.reminders.isNotEmpty) reminders[person.id] = person.reminders;
     }
   }
 
   final Map<String, Person> store = {};
+
+  /// Open reminders by person id, as the embedded `reminder(...)` reads them.
+  /// Seeded from the people given.
+  final Map<String, List<Reminder>> reminders = {};
 
   /// One entry per call, e.g. `update(p1)`.
   final List<String> calls = <String>[];
@@ -38,7 +43,10 @@ class FakePeopleRepository implements PeopleRepository {
   List<Workflow> workflows = FakeWorkflowRepository.samples();
 
   Person _served(Person person) {
-    final served = withServerFields(person, workflows);
+    final served = withServerFields(
+      person,
+      workflows,
+    ).withReminders(reminders[person.id] ?? const []);
     final history = activities;
     if (history == null) return served;
     // As last_contact_on: the latest entry that is not a stage change.
@@ -260,6 +268,82 @@ class FakePeopleRepository implements PeopleRepository {
       ),
       pausedAt: before.pausedAt,
     );
+  }
+
+  @override
+  Future<Reminder> addReminder(
+    String personId,
+    String text,
+    DateTime dueOn,
+  ) async {
+    await _record('addReminder($personId)');
+    final Reminder reminder = (
+      id: 'r-${_next++}',
+      text: text.trim(),
+      dueOn: dueOn,
+      createdAt: DateTime.utc(2026, 10, 8, 12, 0, _next),
+    );
+    (reminders[personId] ??= []).add(reminder);
+    return reminder;
+  }
+
+  @override
+  Future<Reminder> updateReminder(
+    String id,
+    String text,
+    DateTime dueOn,
+  ) async {
+    await _record('updateReminder($id)');
+    for (final list in reminders.values) {
+      final index = list.indexWhere((reminder) => reminder.id == id);
+      if (index < 0) continue;
+      final Reminder saved = (
+        id: id,
+        text: text.trim(),
+        dueOn: dueOn,
+        createdAt: list[index].createdAt,
+      );
+      list[index] = saved;
+      return saved;
+    }
+    throw PeopleFailure.unknown;
+  }
+
+  @override
+  Future<void> deleteReminder(String id) async {
+    await _record('deleteReminder($id)');
+    for (final list in reminders.values) {
+      list.removeWhere((reminder) => reminder.id == id);
+    }
+  }
+
+  /// As `complete_reminder`: the entry, the delete; one already gone is
+  /// refused.
+  @override
+  Future<Person> completeReminder(String id, DateTime on) async {
+    await _record('completeReminder($id)');
+    final MapEntry(key: personId, value: list) = reminders.entries.firstWhere(
+      (entry) => entry.value.any((reminder) => reminder.id == id),
+      orElse: () => throw PeopleFailure.unknown,
+    );
+    final reminder = list.firstWhere((reminder) => reminder.id == id);
+    list.remove(reminder);
+    final history = activities;
+    if (history == null) {
+      store[personId] = withLastContact(store[personId]!, on);
+    } else {
+      history.store.add(
+        Activity(
+          id: 'a-$id',
+          personId: personId,
+          kind: ActivityKind.reminder,
+          happenedOn: on,
+          text: reminder.text,
+          createdAt: DateTime.utc(2026, 10, 8, 12),
+        ),
+      );
+    }
+    return _served(store[personId]!);
   }
 
   /// [before] with the given fields replaced, stored and returned. Stage and

@@ -90,6 +90,41 @@ void main() {
       expect(person.monthlyVolumeTarget, isNull);
     });
 
+    test('reads the reminders, soonest first, the day as local midnight', () {
+      final person = personFromRow(
+        _row({
+          'reminder': [
+            {
+              'id': 'r2',
+              'text': 'Price list',
+              'due_on': '2026-10-12',
+              'created_at': '2026-10-01T10:00:00+00:00',
+            },
+            {
+              'id': 'r3',
+              'text': 'Samples',
+              'due_on': '2026-10-10',
+              'created_at': '2026-10-02T10:00:00+00:00',
+            },
+            {
+              'id': 'r1',
+              'text': 'Call back',
+              'due_on': '2026-10-10',
+              'created_at': '2026-10-01T10:00:00+00:00',
+            },
+          ],
+        }),
+      );
+
+      expect([for (final r in person.reminders) r.id], ['r1', 'r3', 'r2']);
+      expect(person.reminders.first.text, 'Call back');
+      expect(person.reminders.first.dueOn, DateTime(2026, 10, 10));
+    });
+
+    test('reads no reminders as none', () {
+      expect(personFromRow(_row()).reminders, isEmpty);
+    });
+
     test('reads blank text as null', () {
       final person = personFromRow(_row());
       expect(person.email, isNull);
