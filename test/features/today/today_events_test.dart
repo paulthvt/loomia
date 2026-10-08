@@ -136,10 +136,7 @@ void main() {
     expect(find.text('Mark who was there'), findsOneWidget);
 
     expect(find.text("Remind everyone it's tomorrow"), findsOneWidget);
-    expect(
-      find.text('Essential oils for sleep · Thu'),
-      findsOneWidget,
-    );
+    expect(find.text('Essential oils for sleep · Thu'), findsOneWidget);
   });
 
   testWidgets('each row does what it says', (tester) async {
