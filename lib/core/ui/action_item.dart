@@ -35,8 +35,7 @@ class ActionItem extends StatelessWidget {
   /// Opening the row opens the person.
   final VoidCallback? onOpen;
 
-  /// Resolves in one tap; the caller collapses the row over
-  /// `AppMotion.medium`.
+  /// Resolves in one tap; the caller slides the row out with `SlideSwap`.
   final VoidCallback? onResolve;
 
   /// Label of the resolve button. Defaults to the localized "Mark as done".

@@ -127,8 +127,8 @@ minutes, never a percentage of a target.
 check, 48px touch target; a bare check read as a status, not a button — #190).
 *Props:* `name`, `reason`, `showMeta` (+ nested avatar initials and chip label).
 *States:* pressed = whole row opens the contact; the ring resolves in one tap and
-stays filled (primary, white check) while the tick saves; resolving collapses the
-row over 240ms.
+stays filled (primary, white check) while the tick saves; resolving slides the
+card out to the start over 320ms, the next step sliding in from the end.
 *Rules:* max ~5 on Today (principle #3). The reason is mandatory — it is what
 makes the item an offer instead of a demand (principle #4).
 

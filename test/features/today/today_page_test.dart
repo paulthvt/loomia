@@ -93,6 +93,25 @@ void main() {
     expect(find.text('You are up to date'), findsOneWidget);
   });
 
+  testWidgets('a ticked row slides out while the others stay', (tester) async {
+    final people = FakePeopleRepository([
+      _on('p1', 'Anna'),
+      _on('p2', 'Bruno', ago: 2),
+    ]);
+    await pumpLoomia(tester, size: _phone, people: people);
+    final left = tester.getTopLeft(find.text('Anna')).dx;
+
+    await tester.tap(find.byTooltip(_markFirst).last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(tester.getTopLeft(find.text('Anna')).dx, lessThan(left));
+    expect(tester.getTopLeft(find.text('Bruno')).dx, left);
+    await tester.pumpAndSettle();
+    expect(find.text('Anna'), findsNothing);
+    expect(find.text('Bruno'), findsOneWidget);
+  });
+
   testWidgets('a tick in flight takes no second tap: one step, not two', (
     tester,
   ) async {

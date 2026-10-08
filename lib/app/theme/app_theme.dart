@@ -337,10 +337,11 @@ abstract final class AppMotion {
   /// Chip/toggle state, small fades.
   static const quick = Duration(milliseconds: 180);
 
-  /// Row collapse on completion, list reorder, tab change.
+  /// List reorder, tab change.
   static const medium = Duration(milliseconds: 240);
 
-  /// Sheet and dialog present/dismiss, page transition.
+  /// Sheet and dialog present/dismiss, page transition, a completed card
+  /// sliding out (and its next one in).
   static const slow = Duration(milliseconds: 320);
 
   static const standard = Cubic(0.2, 0, 0, 1);

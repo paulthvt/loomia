@@ -8,6 +8,7 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
+import 'package:loomia/core/ui/slide_swap.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
@@ -156,47 +157,54 @@ class NextStepCard extends StatelessWidget {
       child: Text(l10n.nextStepFollowWith),
     );
 
-    return switch (progress) {
-      final OnStep on => _step(l10n, on),
-      Done(:final workflow) when person.stage == Stage.prospect => _Panel(
-        onOpen: onOpen,
-        header: l10n.nextStepDoneTitle(workflow.name),
-        title: l10n.nextStepHowDidItEnd(name),
-        body: l10n.nextStepAllDoneProspect(workflow.steps.length),
-        actions: [
-          FilledButton(
-            onPressed: _unlessBusy(onBecameCustomer),
-            child: Text(l10n.nextStepBecameCustomer),
+    // A new state (the last step ticked: Done) slides in whole; a new step
+    // slides in just its card, in `_step`.
+    return SlideSwap(
+      child: KeyedSubtree(
+        key: ValueKey(progress.runtimeType),
+        child: switch (progress) {
+          final OnStep on => _step(l10n, on),
+          Done(:final workflow) when person.stage == Stage.prospect => _Panel(
+            onOpen: onOpen,
+            header: l10n.nextStepDoneTitle(workflow.name),
+            title: l10n.nextStepHowDidItEnd(name),
+            body: l10n.nextStepAllDoneProspect(workflow.steps.length),
+            actions: [
+              FilledButton(
+                onPressed: _unlessBusy(onBecameCustomer),
+                child: Text(l10n.nextStepBecameCustomer),
+              ),
+              OutlinedButton(
+                onPressed: _unlessBusy(onNotNow),
+                child: Text(l10n.statusNotNow),
+              ),
+            ],
           ),
-          OutlinedButton(
-            onPressed: _unlessBusy(onNotNow),
-            child: Text(l10n.statusNotNow),
+          Done(:final workflow) => _Panel(
+            onOpen: onOpen,
+            header: l10n.nextStepDoneTitle(workflow.name),
+            body: l10n.nextStepAllDoneWith(workflow.steps.length, name),
+            actions: [followWith],
           ),
-        ],
-      ),
-      Done(:final workflow) => _Panel(
-        onOpen: onOpen,
-        header: l10n.nextStepDoneTitle(workflow.name),
-        body: l10n.nextStepAllDoneWith(workflow.steps.length, name),
-        actions: [followWith],
-      ),
-      Paused(:final since) => _Panel(
-        onOpen: onOpen,
-        header: l10n.nextStepTitle,
-        body: l10n.nextStepPausedSince(since.toLocal()),
-        actions: [
-          OutlinedButton(
-            onPressed: _unlessBusy(onResume),
-            child: Text(l10n.contactResume),
+          Paused(:final since) => _Panel(
+            onOpen: onOpen,
+            header: l10n.nextStepTitle,
+            body: l10n.nextStepPausedSince(since.toLocal()),
+            actions: [
+              OutlinedButton(
+                onPressed: _unlessBusy(onResume),
+                child: Text(l10n.contactResume),
+              ),
+            ],
           ),
-        ],
+          null => _Panel(
+            header: l10n.nextStepTitle,
+            body: l10n.nextStepNothingPlanned,
+            actions: [followWith],
+          ),
+        },
       ),
-      null => _Panel(
-        header: l10n.nextStepTitle,
-        body: l10n.nextStepNothingPlanned,
-        actions: [followWith],
-      ),
-    };
+    );
   }
 
   Widget _step(AppLocalizations l10n, OnStep on) {
@@ -212,17 +220,20 @@ class NextStepCard extends StatelessWidget {
             on.total,
           ),
         ),
-        ActionItem(
-          name: person.name,
-          title: on.step.label,
-          reason: switch (on.step.note) {
-            final note? => l10n.nextStepWithNote(due, note),
-            null => due,
-          },
-          onOpen: onOpen,
-          onResolve: () => onTick(on),
-          resolved: busy,
-          resolveLabel: l10n.nextStepMarkDone(on.step.label),
+        SlideSwap(
+          child: ActionItem(
+            key: ValueKey(on.step.id),
+            name: person.name,
+            title: on.step.label,
+            reason: switch (on.step.note) {
+              final note? => l10n.nextStepWithNote(due, note),
+              null => due,
+            },
+            onOpen: onOpen,
+            onResolve: () => onTick(on),
+            resolved: busy,
+            resolveLabel: l10n.nextStepMarkDone(on.step.label),
+          ),
         ),
       ],
     );
