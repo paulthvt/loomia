@@ -141,7 +141,13 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     _replace(
       await _repository.completeStep(person.id, progress.step.id, today),
     );
-    if (ref.mounted) ref.invalidate(historyProvider(person.id));
+    if (!ref.mounted) return;
+    // The row's step and day are right, but its last contact was read
+    // before the step's history entry (the RPC's own snapshot, #222): the
+    // book reloads behind for it.
+    ref
+      ..invalidate(historyProvider(person.id))
+      ..invalidateSelf();
   }
 
   Future<void> addReminder(Person person, String text, DateTime dueOn) async {
