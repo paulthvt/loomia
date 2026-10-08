@@ -383,11 +383,11 @@ grant execute on function public.log_with_reminder(uuid, public.activity_kind, t
 - Modify: `lib/features/contacts/data/activity_repository.dart`, `lib/features/contacts/presentation/history_controller.dart`, `test/features/contacts/fake_activity_repository.dart`
 - Test: `test/features/contacts/presentation/history_controller_test.dart`
 
-- [ ] **Step 1: Failing test:** `HistoryController.add(draft, remind: (text: 'Call back', dueOn: day))` calls the fake's `addWithReminder(p1)`, then reloads the history (the entry is listed) and invalidates `peopleProvider` (the book reloads, so the reminder arrives with it).
-- [ ] **Step 2: Run.** Expected: fail.
-- [ ] **Step 3: Implement.** `ActivityRepository.addWithReminder(String personId, ActivityDraft draft, String remind, DateTime remindOn)` → `rpc('log_with_reminder', params: {...})`, returns void. `HistoryController.add(ActivityDraft draft, {({String text, DateTime dueOn})? remind})`: without `remind`, as today; with it, call `addWithReminder`, then `ref.invalidateSelf()` instead of appending (the RPC returns nothing), then `_reloadBook()`. The fake records `addWithReminder(personId)` and stores the activity.
-- [ ] **Step 4: Run** `flutter test`. Expected: pass.
-- [ ] **Step 5: Commit** `feat(reminders): log an entry and a reminder in one save`.
+- [x] **Step 1: Failing test:** `HistoryController.add(draft, remind: (text: 'Call back', dueOn: day))` calls the fake's `addWithReminder(p1)`, then reloads the history (the entry is listed) and invalidates `peopleProvider` (the book reloads, so the reminder arrives with it).
+- [x] **Step 2: Run.** Expected: fail.
+- [x] **Step 3: Implement.** `ActivityRepository.addWithReminder(String personId, ActivityDraft draft, String remind, DateTime remindOn)` → `rpc('log_with_reminder', params: {...})`, returns void. `HistoryController.add(ActivityDraft draft, {({String text, DateTime dueOn})? remind})`: without `remind`, as today; with it, call `addWithReminder`, then `ref.invalidateSelf()` instead of appending (the RPC returns nothing), then `_reloadBook()`. The fake records `addWithReminder(personId)`, stores the activity and lists the reminder in `remindersAdded`.
+- [x] **Step 4: Run** `flutter test`. Expected: pass.
+- [x] **Step 5: Commit** `feat(reminders): log an entry and a reminder in one save`.
 
 ### Task 10: The Remind me switch
 

@@ -28,13 +28,28 @@ class HistoryController extends AsyncNotifier<List<Activity>> {
       _sorted(await ref.watch(activityRepositoryProvider).list(personId));
 
   /// Waits for the server; a failure rethrows and leaves the list as it was.
-  Future<void> add(ActivityDraft draft) async {
+  /// With [remind], the reminder is saved with the entry (#219); the history
+  /// and the book reload, since that call returns neither.
+  Future<void> add(
+    ActivityDraft draft, {
+    ({String text, DateTime dueOn})? remind,
+  }) async {
     // Alive until the save lands, even if the sheet closes: the book must
     // still reload.
     final alive = ref.keepAlive();
     try {
-      final activity = await _repository.add(personId, draft);
-      _change((entries) => [...entries, activity]);
+      if (remind == null) {
+        final activity = await _repository.add(personId, draft);
+        _change((entries) => [...entries, activity]);
+      } else {
+        await _repository.addWithReminder(
+          personId,
+          draft,
+          remind.text,
+          remind.dueOn,
+        );
+        if (ref.mounted) ref.invalidateSelf();
+      }
       _reloadBook();
     } finally {
       alive.close();

@@ -12,6 +12,10 @@ class FakeActivityRepository implements ActivityRepository {
 
   final List<Activity> store = [];
 
+  /// What [addWithReminder] wrote besides the entry.
+  final List<({String personId, String text, DateTime dueOn})> remindersAdded =
+      [];
+
   /// One entry per call, e.g. `delete(a-0)`.
   final List<String> calls = <String>[];
 
@@ -57,6 +61,34 @@ class FakeActivityRepository implements ActivityRepository {
 
   /// Person id to name, for [ordersIn].
   final Map<String, String> names = {};
+
+  /// As `log_with_reminder`: both, or neither.
+  @override
+  Future<void> addWithReminder(
+    String personId,
+    ActivityDraft draft,
+    String remind,
+    DateTime remindOn,
+  ) async {
+    await _record('addWithReminder($personId)');
+    final text = draft.text.trim();
+    store.add(
+      Activity(
+        id: 'a-${_next++}',
+        personId: personId,
+        kind: draft.kind,
+        happenedOn: draft.happenedOn,
+        text: text.isEmpty ? null : text,
+        amount: draft.amount,
+        createdAt: DateTime.utc(2026, 9, 28, 12),
+      ),
+    );
+    remindersAdded.add((
+      personId: personId,
+      text: remind.trim(),
+      dueOn: remindOn,
+    ));
+  }
 
   @override
   Future<Activity> addOwnOrder(ActivityDraft draft) async {
