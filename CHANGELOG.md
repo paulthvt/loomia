@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.3.0](https://github.com/paulthvt/loomia/compare/0.2.0...0.3.0) (2026-10-08)
+
+
+### ✨ Features
+
+* **calendar:** event workflows — a checklist per event, and what people start ([#201](https://github.com/paulthvt/loomia/issues/201)) ([8d1e592](https://github.com/paulthvt/loomia/commit/8d1e59212b9b4b96233a91ee1aea46c54769408a))
+* **calendar:** events and the Calendar tab ([#197](https://github.com/paulthvt/loomia/issues/197)) ([a149507](https://github.com/paulthvt/loomia/commit/a149507de8b9371e26f1299635bf02adac120e74))
+* **calendar:** invite people to an event and mark who was there ([#199](https://github.com/paulthvt/loomia/issues/199)) ([4d9b14d](https://github.com/paulthvt/loomia/commit/4d9b14d0522bbb98324487e37f701c3f41bcabdb))
+* **calendar:** the month follows the finger when swiped ([#206](https://github.com/paulthvt/loomia/issues/206)) ([aab65d9](https://github.com/paulthvt/loomia/commit/aab65d99b75fccf2e1ac90998089a61ba51a286d))
+* **today:** slide a checked card out, and its next step in ([#208](https://github.com/paulthvt/loomia/issues/208)) ([2184353](https://github.com/paulthvt/loomia/commit/2184353b5291079d0d4633381b60dcc554b857de))
+* **today:** today's events, events to mark, and steps due ([#203](https://github.com/paulthvt/loomia/issues/203)) ([41e8531](https://github.com/paulthvt/loomia/commit/41e8531fade39ef88af5697c5437e29e028e0455))
+
+
+### 🐛 Bug Fixes
+
+* **calendar:** cap the month's width, centre the day hover ([#209](https://github.com/paulthvt/loomia/issues/209)) ([4d8d55f](https://github.com/paulthvt/loomia/commit/4d8d55f7882da6ec42257267b57a7d626014f8ff))
+* **today:** hide an event's prep steps from its day on ([#210](https://github.com/paulthvt/loomia/issues/210)) ([62ce541](https://github.com/paulthvt/loomia/commit/62ce541a03786a5e69bce7e66e1b815fadb5b9ee))
+
+
+### 🔧 Miscellaneous
+
+* **deps:** update actions/upload-artifact digest to cf430e0 ([#198](https://github.com/paulthvt/loomia/issues/198)) ([9e85f1a](https://github.com/paulthvt/loomia/commit/9e85f1a0d6e3dec899a018fbd13c83be16bfd79a))
+* **deps:** update dependency flutter to v3.47.6 ([#130](https://github.com/paulthvt/loomia/issues/130)) ([c23a14e](https://github.com/paulthvt/loomia/commit/c23a14e6b70cbebf6238bc860c62e7951f658e04))
+* **deps:** update dependency supabase to v2.120.0 ([#188](https://github.com/paulthvt/loomia/issues/188)) ([70ae449](https://github.com/paulthvt/loomia/commit/70ae449b4e086f815674e0c74f686799aa8eb966))
+* **deps:** update gradle to v9.8.1 ([#202](https://github.com/paulthvt/loomia/issues/202)) ([422daf4](https://github.com/paulthvt/loomia/commit/422daf4894685814b8f33c5e1e5d70b7e9439a4c))
+* **l10n:** sync translations ([#200](https://github.com/paulthvt/loomia/issues/200)) ([a1727cc](https://github.com/paulthvt/loomia/commit/a1727cca1d4d44d517a26367dc6bcae17dfad9a3))
+* share agent instructions in AGENTS.md and add Kiro steering ([#205](https://github.com/paulthvt/loomia/issues/205)) ([9c92607](https://github.com/paulthvt/loomia/commit/9c9260737ee944ac18ce9c8c563ef793fb63821b))
+
 ## [0.2.0](https://github.com/paulthvt/loomia/compare/v0.1.3...0.2.0) (2026-10-06)
 
 
