@@ -228,6 +228,22 @@ void main() {
     );
   });
 
+  testWidgets('desktop: a wide window caps the month', (tester) async {
+    await _pump(tester, size: const Size(2400, 900), pane: const Text('pane'));
+
+    expect(tester.getSize(find.byType(MonthGrid)).width, lessThan(840));
+  });
+
+  testWidgets('the ink of a day centres on its number', (tester) async {
+    await _pump(tester, events: [_workshop]);
+
+    final day = find.ancestor(
+      of: find.text('8'),
+      matching: find.byType(InkWell),
+    );
+    expect(tester.getCenter(day), tester.getCenter(find.text('8')));
+  });
+
   testWidgets('in the app: deleting a contact updates the count', (
     tester,
   ) async {

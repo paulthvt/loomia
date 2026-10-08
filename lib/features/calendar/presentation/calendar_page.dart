@@ -146,6 +146,10 @@ class CalendarView extends StatelessWidget {
   /// Fixed, like the Contacts list, so a resized window narrows the month.
   static const double _paneWidth = 440;
 
+  /// Desktop: the month column, padding included, stops growing here, so a
+  /// wide window doesn't spread the days out of reach of each other.
+  static const double _monthMax = 840;
+
   final AsyncValue<List<CalendarEvent>> events;
   final CalendarSelection selection;
 
@@ -219,16 +223,23 @@ class CalendarView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xxl,
-                    vertical: AppSpacing.xl,
+                // From the start edge, as the other desktop pages.
+                child: Align(
+                  alignment: AlignmentDirectional.topStart,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: _monthMax),
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xxl,
+                        vertical: AppSpacing.xl,
+                      ),
+                      children: [
+                        header,
+                        const SizedBox(height: AppSpacing.lg),
+                        grid,
+                      ],
+                    ),
                   ),
-                  children: [
-                    header,
-                    const SizedBox(height: AppSpacing.lg),
-                    grid,
-                  ],
                 ),
               ),
               Container(
