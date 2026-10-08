@@ -406,4 +406,4 @@ grant execute on function public.log_with_reminder(uuid, public.activity_kind, t
   - `app_en.arb`: `logRemindMe` "Remind me", `logRemindOn` "Remind me on", `logReminder` "Reminder", `logRemindCallBack` "Call {name} back", `logRemindFollowUp` "Follow up with {name}", each with a description and the `name` placeholder.
 - [x] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass.
 - [x] **Step 5: Commit** `feat(contacts): Remind me in Log something`.
-- [ ] **Step 6: PR** `feat(contacts): Remind me in Log something`, `Closes #219`. After both are merged, close #217 and `supabase db push` by hand.
+- [x] **Step 6: PR** `feat(contacts): Remind me in Log something`, `Closes #219`. After both are merged, close #217 and `supabase db push` by hand.
