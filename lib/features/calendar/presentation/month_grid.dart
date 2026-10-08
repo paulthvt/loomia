@@ -125,48 +125,57 @@ class _Day extends StatelessWidget {
       selected: selected,
       label: AppLocalizations.of(context).calendarDaySemantics(day, count),
       excludeSemantics: true,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: AppSpacing.xs,
-            children: [
-              Container(
-                width: _circle,
-                height: _circle,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected ? scheme.primary : null,
-                  border: today && !selected
-                      ? Border.all(color: scheme.primary, width: _ring)
-                      : null,
+      // The ink only on the number, so hover and splash centre on it; the
+      // square is the minimum tap size, and has the number's spacing.
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox.square(
+              dimension: kMinInteractiveDimension,
+              child: InkWell(
+                onTap: onTap,
+                customBorder: const CircleBorder(),
+                child: Center(
+                  child: Container(
+                    width: _circle,
+                    height: _circle,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? scheme.primary : null,
+                      border: today && !selected
+                          ? Border.all(color: scheme.primary, width: _ring)
+                          : null,
+                    ),
+                    child: Text(
+                      '${day.day}',
+                      style: number?.copyWith(color: ink),
+                    ),
+                  ),
                 ),
-                child: Text('${day.day}', style: number?.copyWith(color: ink)),
               ),
-              SizedBox(
-                height: _dot,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: AppSpacing.xs,
-                  children: [
-                    for (var i = 0; i < count.clamp(0, _maxDots); i++)
-                      Container(
-                        width: _dot,
-                        height: _dot,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: past ? colors.textMuted : scheme.primary,
-                        ),
+            ),
+            SizedBox(
+              height: _dot,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: AppSpacing.xs,
+                children: [
+                  for (var i = 0; i < count.clamp(0, _maxDots); i++)
+                    Container(
+                      width: _dot,
+                      height: _dot,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: past ? colors.textMuted : scheme.primary,
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
