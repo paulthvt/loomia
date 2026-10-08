@@ -3,7 +3,7 @@
 -- Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -81,6 +81,35 @@ select throws_ok(
      '00000000-0000-0000-0000-0000000000c2', '2026-10-09') $$,
   'P0002', null,
   'nor ticks theirs'
+);
+
+-- Log something with Remind me (#219): both rows, or neither.
+set local request.jwt.claims =
+  '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
+select public.log_with_reminder(
+  '00000000-0000-0000-0000-0000000000a1', 'call', ' Called her ', '2026-10-08',
+  null, ' Call Claire back ', '2026-10-15');
+select results_eq(
+  $$ select kind::text, text, happened_on from public.activity
+     where kind = 'call' $$,
+  $$ values ('call'::text, 'Called her'::text, '2026-10-08'::date) $$,
+  'logging with a reminder writes the entry'
+);
+select results_eq(
+  $$ select text, due_on from public.reminder where text like 'Call Claire%' $$,
+  $$ values ('Call Claire back'::text, '2026-10-15'::date) $$,
+  'and the reminder'
+);
+select throws_ok(
+  $$ select public.log_with_reminder(
+     '00000000-0000-0000-0000-0000000000a1', 'note', 'Talked', '2026-10-08',
+     null, '  ', '2026-10-15') $$,
+  '23514', null,
+  'a blank reminder is refused'
+);
+select is(
+  (select count(*)::int from public.activity where text = 'Talked'), 0,
+  'and the entry with it'
 );
 
 select * from finish();

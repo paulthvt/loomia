@@ -351,9 +351,9 @@ final class DueReminder extends Due {
 - Create: `supabase/migrations/<timestamp>_log_with_reminder.sql`
 - Modify: `supabase/tests/reminders_test.sql`
 
-- [ ] **Step 1: Failing assertions** appended (raise `plan`): `log_with_reminder(…a1, 'call', 'Called her', '2026-10-08', null, 'Call Claire back', '2026-10-15')` → one `call` entry and one reminder; with `p_remind = ' '` → `throws_ok '23514'` and no new `call` entry (count unchanged); with `p_kind = 'stage'` → refused by the activity policy, nothing written.
-- [ ] **Step 2: Run** `supabase db reset && supabase test db`. Expected: fail.
-- [ ] **Step 3: Implement.**
+- [x] **Step 1: Failing assertions** appended (raise `plan`): `log_with_reminder(…a1, 'call', 'Called her', '2026-10-08', null, 'Call Claire back', '2026-10-15')` → one `call` entry and one reminder; with `p_remind = ' '` → `throws_ok '23514'` and no new `call` entry (count unchanged). A `stage` kind is left to `activity_test.sql`, which already pins the insert policy that refuses it.
+- [x] **Step 2: Run** `supabase db reset && supabase test db`. Expected: fail.
+- [x] **Step 3: Implement.**
 
 ```sql
 -- Log something with Remind me (#219): the entry and the reminder together,
@@ -374,8 +374,8 @@ grant execute on function public.log_with_reminder(uuid, public.activity_kind, t
 ```
 
   Match the text normalisation to `activityDraftToRow` (read it first; if it does not `nullif`, neither does this).
-- [ ] **Step 4: Run.** Expected: pass.
-- [ ] **Step 5: Commit** `feat(reminders): log_with_reminder`.
+- [x] **Step 4: Run.** Expected: pass.
+- [x] **Step 5: Commit** `feat(reminders): log_with_reminder`.
 
 ### Task 9: `addWithReminder` through the history
 
@@ -383,11 +383,11 @@ grant execute on function public.log_with_reminder(uuid, public.activity_kind, t
 - Modify: `lib/features/contacts/data/activity_repository.dart`, `lib/features/contacts/presentation/history_controller.dart`, `test/features/contacts/fake_activity_repository.dart`
 - Test: `test/features/contacts/presentation/history_controller_test.dart`
 
-- [ ] **Step 1: Failing test:** `HistoryController.add(draft, remind: (text: 'Call back', dueOn: day))` calls the fake's `addWithReminder(p1)`, then reloads the history (the entry is listed) and invalidates `peopleProvider` (the book reloads, so the reminder arrives with it).
-- [ ] **Step 2: Run.** Expected: fail.
-- [ ] **Step 3: Implement.** `ActivityRepository.addWithReminder(String personId, ActivityDraft draft, String remind, DateTime remindOn)` → `rpc('log_with_reminder', params: {...})`, returns void. `HistoryController.add(ActivityDraft draft, {({String text, DateTime dueOn})? remind})`: without `remind`, as today; with it, call `addWithReminder`, then `ref.invalidateSelf()` instead of appending (the RPC returns nothing), then `_reloadBook()`. The fake records `addWithReminder(personId)` and stores the activity.
-- [ ] **Step 4: Run** `flutter test`. Expected: pass.
-- [ ] **Step 5: Commit** `feat(reminders): log an entry and a reminder in one save`.
+- [x] **Step 1: Failing test:** `HistoryController.add(draft, remind: (text: 'Call back', dueOn: day))` calls the fake's `addWithReminder(p1)`, then reloads the history (the entry is listed) and invalidates `peopleProvider` (the book reloads, so the reminder arrives with it).
+- [x] **Step 2: Run.** Expected: fail.
+- [x] **Step 3: Implement.** `ActivityRepository.addWithReminder(String personId, ActivityDraft draft, String remind, DateTime remindOn)` → `rpc('log_with_reminder', params: {...})`, returns void. `HistoryController.add(ActivityDraft draft, {({String text, DateTime dueOn})? remind})`: without `remind`, as today; with it, call `addWithReminder`, then `ref.invalidateSelf()` instead of appending (the RPC returns nothing), then `_reloadBook()`. The fake records `addWithReminder(personId)`, stores the activity and lists the reminder in `remindersAdded`.
+- [x] **Step 4: Run** `flutter test`. Expected: pass.
+- [x] **Step 5: Commit** `feat(reminders): log an entry and a reminder in one save`.
 
 ### Task 10: The Remind me switch
 
@@ -395,15 +395,15 @@ grant execute on function public.log_with_reminder(uuid, public.activity_kind, t
 - Modify: `lib/features/contacts/presentation/log_activity_sheet.dart`, `lib/l10n/app_en.arb`
 - Test: `test/features/contacts/presentation/log_activity_sheet_test.dart`
 
-- [ ] **Step 1: Failing widget tests:**
+- [x] **Step 1: Failing widget tests:**
   - the switch "Remind me" is off; Save writes `add(p1)` as before;
   - on, after a Call: "Remind me on" chips with In a week selected and "Thursday, October 15" under them; "Reminder" prefilled "Call Claire back"; Save → `addWithReminder(p1)`;
   - on, after a Note: prefilled "Follow up with Claire"; switching kind after editing the reminder text keeps the typed text;
   - a blank reminder text: "Say what to do.", nothing saved;
   - not shown when editing an entry or logging an own order.
-- [ ] **Step 2: Run.** Expected: fail.
-- [ ] **Step 3: Implement.** In `_LogActivityFormState`: `_remind = false`, `_remindOn = addDays(today(), 7)`, `_remindText` controller, `_remindEdited` (set by its `onChanged`). Under What, when `person != null && _editing == null`: `SwitchListTile(title: Text(l10n.logRemindMe), value: _remind, onChanged: …)` (copy the loyalty switch row's styling if the sheet has one, as in Figma), then, when on, `ReminderDayField(label: l10n.logRemindOn, …)` and a `LabeledField(label: l10n.logReminder)` `TextFormField` with `reminderWhatRequired`. While `!_remindEdited`, the text follows the kind: `call` → `l10n.logRemindCallBack(firstName(person))`, else `l10n.logRemindFollowUp(firstName(person))`. `_submit` passes `remind:` to `HistoryController.add` when on.
+- [x] **Step 2: Run.** Expected: fail.
+- [x] **Step 3: Implement.** In `_LogActivityFormState`: `_remind = false`, `_remindOn = addDays(today(), 7)`, `_remindText` controller, `_remindEdited` (set by its `onChanged`). Under What, when `person != null && _editing == null`: `SwitchListTile(title: Text(l10n.logRemindMe), value: _remind, onChanged: …)` (plain, `contentPadding: EdgeInsets.zero`, the step sheet's one switch style), then, when on, `ReminderDayField(label: l10n.logRemindOn, …)` and a `LabeledField(label: l10n.logReminder)` `TextFormField` with `reminderWhatRequired`. While `!_remindEdited`, the text follows the kind: `call` → `l10n.logRemindCallBack(firstName(person))`, else `l10n.logRemindFollowUp(firstName(person))`. `_submit` passes `remind:` to `HistoryController.add` when on.
   - `app_en.arb`: `logRemindMe` "Remind me", `logRemindOn` "Remind me on", `logReminder` "Reminder", `logRemindCallBack` "Call {name} back", `logRemindFollowUp` "Follow up with {name}", each with a description and the `name` placeholder.
-- [ ] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass.
-- [ ] **Step 5: Commit** `feat(contacts): Remind me in Log something`.
-- [ ] **Step 6: PR** `feat(contacts): Remind me in Log something`, `Closes #219`. After both are merged, close #217 and `supabase db push` by hand.
+- [x] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass.
+- [x] **Step 5: Commit** `feat(contacts): Remind me in Log something`.
+- [x] **Step 6: PR** `feat(contacts): Remind me in Log something`, `Closes #219`. After both are merged, close #217 and `supabase db push` by hand.

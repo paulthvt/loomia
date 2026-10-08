@@ -36,6 +36,29 @@ class ActivityRepository {
         return activityFromRow(row);
       });
 
+  /// The entry and a reminder about [personId] (#219), in one transaction on
+  /// the server: both are saved, or neither.
+  Future<void> addWithReminder(
+    String personId,
+    ActivityDraft draft,
+    String remind,
+    DateTime remindOn,
+  ) => guardPeople(() async {
+    final row = activityDraftToRow(personId, draft);
+    await _client.rpc<Object?>(
+      'log_with_reminder',
+      params: {
+        'p_person': personId,
+        'p_kind': row['kind'],
+        'p_text': row['text'],
+        'p_on': row['happened_on'],
+        'p_amount': row['amount'],
+        'p_remind': remind.trim(),
+        'p_remind_on': dayColumn(remindOn),
+      },
+    );
+  });
+
   /// The user's own order, with no person. Needs an amount (the database
   /// refuses one without).
   Future<Activity> addOwnOrder(ActivityDraft draft) => guardPeople(() async {

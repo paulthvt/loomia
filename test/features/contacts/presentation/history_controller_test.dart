@@ -83,6 +83,40 @@ void main() {
     expect(world.activities.calls.last, 'add(p1)');
   });
 
+  test(
+    'add with a reminder: one call for both, then the history reloads',
+    () async {
+      final world = _world([_note('old', 3)]);
+      await world.container.read(historyProvider('p1').future);
+      final ActivityDraft draft = (
+        kind: ActivityKind.call,
+        happenedOn: DateTime(2026, 9, 28),
+        text: 'Called her',
+        amount: null,
+      );
+
+      await world.container
+          .read(historyProvider('p1').notifier)
+          .add(
+            draft,
+            remind: (text: 'Call back', dueOn: DateTime(2026, 10, 5)),
+          );
+      final entries = await world.container.read(historyProvider('p1').future);
+
+      expect(world.activities.calls, [
+        'list(p1)',
+        'addWithReminder(p1)',
+        'list(p1)',
+      ]);
+      expect(world.activities.remindersAdded.single, (
+        personId: 'p1',
+        text: 'Call back',
+        dueOn: DateTime(2026, 10, 5),
+      ));
+      expect(entries.first.text, 'Called her');
+    },
+  );
+
   test('a failed add rethrows and keeps the list', () async {
     final world = _world([_note('old', 3)]);
     await world.container.read(historyProvider('p1').future);
