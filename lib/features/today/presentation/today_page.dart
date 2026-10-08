@@ -56,6 +56,30 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   /// takes no tap, so a second tap can't tick the next step too.
   final Set<String> _busy = {};
 
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onResume: _onResume);
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  /// Back in the app, maybe on another day: what is due is worked out again
+  /// from the device's today, and a stale book reloads, quietly, as on
+  /// Contacts.
+  void _onResume() {
+    setState(() {});
+    final people = peopleProvider(ref.read(accountProvider)?.email);
+    if (!ref.read(people.notifier).isStaleAt(DateTime.now())) return;
+    ref.refresh(people.future).ignore();
+  }
+
   Future<void> _tick(Due due) async {
     final key = due.key;
     if (!_busy.add(key)) return;
