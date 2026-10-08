@@ -1857,6 +1857,10 @@
       "date": { "type": "DateTime", "format": "yMMMd" }
     }
   },
+  "importStartWorkflow": "Start their workflow",
+  "@importStartWorkflow": {
+    "description": "Switch on the import screen, under the 'Since' button; the name of the stage's default workflow (a series of follow-up steps, e.g. 'New customer') is shown under it. On, everyone imported starts that workflow today. Off by default when an earlier day is picked: those people are already in that stage."
+  },
   "importAction": "{count, plural, =0{Import} =1{Import one person} other{Import {count} people}}",
   "@importAction": {
     "description": "Button that imports the ticked contacts.",
