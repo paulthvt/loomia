@@ -35,6 +35,9 @@ Future<FakePeopleRepository> _openImport(
   return people;
 }
 
+SwitchListTile _start(WidgetTester tester) =>
+    tester.widget<SwitchListTile>(find.byType(SwitchListTile));
+
 void main() {
   testWidgets('imports the ticked contacts at the chosen stage', (
     tester,
@@ -94,6 +97,46 @@ void main() {
 
     final denis = people.store.values.singleWhere((p) => p.name == 'Denis');
     expect(denis.stageSince, DateTime(2025, 3, 4));
+    // Already in their stage: onboarding is behind them (#225).
+    expect(denis.place, isNull);
+  });
+
+  testWidgets('since today starts the default workflow', (tester) async {
+    final people = await _openImport(
+      tester,
+      FakePhoneContactsRepository([(name: 'Denis', phone: null, email: null)]),
+    );
+
+    await tester.tap(find.text('Denis'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Customer'));
+    await tester.pump();
+    expect(find.text('New customer'), findsOneWidget);
+    expect(_start(tester).value, isTrue);
+
+    await tester.tap(find.text('Import one person'));
+    await tester.pumpAndSettle();
+
+    final denis = people.store.values.singleWhere((p) => p.name == 'Denis');
+    expect(denis.place?.workflowId, 'new-customer');
+  });
+
+  testWidgets('the workflow switch can be turned off', (tester) async {
+    final people = await _openImport(
+      tester,
+      FakePhoneContactsRepository([(name: 'Denis', phone: null, email: null)]),
+    );
+
+    await tester.tap(find.text('Denis'));
+    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pump();
+    expect(_start(tester).value, isFalse);
+
+    await tester.tap(find.text('Import one person'));
+    await tester.pumpAndSettle();
+
+    final denis = people.store.values.singleWhere((p) => p.name == 'Denis');
+    expect(denis.place, isNull);
   });
 
   testWidgets('search narrows the list and keeps what is ticked', (

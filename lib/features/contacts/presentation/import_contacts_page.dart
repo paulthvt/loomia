@@ -32,7 +32,9 @@ final phoneContactsProvider = FutureProvider.autoDispose<List<PhoneContact>?>(
 /// Pick people from the phone's contacts and bring them in, all at one stage,
 /// since today or an earlier day (#179): most are customers or on the team
 /// already. Nobody is ticked to start with; someone who looks already in
-/// Loomia says so, and can still be ticked.
+/// Loomia says so, and can still be ticked. They start the stage's default
+/// workflow only if the switch says so (#225): on for since today, off for an
+/// earlier day, so an existing customer base doesn't start onboarding.
 class ImportContactsPage extends ConsumerStatefulWidget {
   const ImportContactsPage({super.key});
 
@@ -51,6 +53,11 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
 
   /// Null is today: picking is optional, each person can be corrected later.
   DateTime? _since;
+
+  /// The user's flip of the workflow switch; null follows [_since]. Reset
+  /// whenever the stage or the day changes.
+  bool? _startPicked;
+  bool get _start => _startPicked ?? _since == null;
   bool _saving = false;
 
   @override
@@ -92,7 +99,7 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
                   instagram: null,
                 ),
             ],
-            workflow: defaultFor(workflows, _stage),
+            workflow: _start ? defaultFor(workflows, _stage) : null,
             today: today(),
             stageSince: _since,
           );
@@ -114,7 +121,7 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
     final owner = ref.watch(accountProvider)?.email;
     // Loads the workflows, so the default is there by the time Import is
     // tapped.
-    ref.watch(workflowsProvider(owner));
+    final workflows = ref.watch(workflowsProvider(owner)).value ?? const [];
     final phone = ref.watch(phoneContactsProvider);
 
     final Widget body = switch (phone) {
@@ -138,6 +145,7 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
         l10n,
         contacts,
         ref.watch(peopleProvider(owner)).value ?? const [],
+        defaultFor(workflows, _stage),
       ),
       AsyncError() => _centered(
         EmptyState(
@@ -166,6 +174,7 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
     AppLocalizations l10n,
     List<PhoneContact> contacts,
     List<Person> people,
+    Workflow? workflow,
   ) {
     final query = searchKey(_query);
     final muted = LoomiaColors.of(context).textMuted;
@@ -226,7 +235,10 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
                     ChoiceChip(
                       label: Text(stageLabel(l10n, stage)),
                       selected: _stage == stage,
-                      onSelected: (_) => setState(() => _stage = stage),
+                      onSelected: (_) => setState(() {
+                        _stage = stage;
+                        _startPicked = null;
+                      }),
                     ),
                 ],
               ),
@@ -241,6 +253,15 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
                   }),
                 ),
               ),
+              if (workflow != null)
+                // The app's one switch style, as in the step sheet.
+                SwitchListTile(
+                  value: _start,
+                  title: Text(l10n.importStartWorkflow),
+                  subtitle: Text(workflow.name),
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (on) => setState(() => _startPicked = on),
+                ),
               const SizedBox(height: AppSpacing.ms),
               FilledButton(
                 onPressed: count == 0 || _saving
@@ -264,7 +285,10 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
     final now = today();
     final since = await pickDay(context, initial: _since ?? now, last: now);
     if (since != null && mounted) {
-      setState(() => _since = since == now ? null : since);
+      setState(() {
+        _since = since == now ? null : since;
+        _startPicked = null;
+      });
     }
   }
 
