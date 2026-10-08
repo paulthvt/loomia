@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.4.0](https://github.com/paulthvt/loomia/compare/0.3.0...0.4.0) (2026-10-08)
+
+
+### ✨ Features
+
+* **calendar:** filter the Add people sheet by stage ([#216](https://github.com/paulthvt/loomia/issues/216)) ([b68f9c2](https://github.com/paulthvt/loomia/commit/b68f9c2657d4fa0c6be7af81d41eed42772c23ff))
+* **contacts:** choose whether import starts the default workflow ([#226](https://github.com/paulthvt/loomia/issues/226)) ([a15451f](https://github.com/paulthvt/loomia/commit/a15451fab2a74dc4994e0a53e8c0fc11c5f5326e))
+* **contacts:** Remind me in Log something ([#221](https://github.com/paulthvt/loomia/issues/221)) ([cdb296f](https://github.com/paulthvt/loomia/commit/cdb296fb14bcf91c21aa289b1b2993ceffdf9ce5))
+* **reminders:** reminders on contacts and Today ([#220](https://github.com/paulthvt/loomia/issues/220)) ([776e312](https://github.com/paulthvt/loomia/commit/776e312d5bfa4d00efaba66a1913ca1fcaef4f41))
+* **today:** show each person's stage on Priority cards ([#228](https://github.com/paulthvt/loomia/issues/228)) ([6007cc0](https://github.com/paulthvt/loomia/commit/6007cc000e16e2e5924dbdad8ce4cceb4ae97d7b))
+
+
+### 🐛 Bug Fixes
+
+* **contacts:** ticking a step counts as contact at once ([#223](https://github.com/paulthvt/loomia/issues/223)) ([53ed7c7](https://github.com/paulthvt/loomia/commit/53ed7c73d80dedbc301025a843c83ec0e69e792a))
+* **shell:** back on a tab returns to Today instead of exiting ([#213](https://github.com/paulthvt/loomia/issues/213)) ([6c24846](https://github.com/paulthvt/loomia/commit/6c248465a6b8723a2d4f0ac754a7ffeaa0221833))
+
+
+### 🔧 Miscellaneous
+
+* **l10n:** sync translations ([#224](https://github.com/paulthvt/loomia/issues/224)) ([dc88f65](https://github.com/paulthvt/loomia/commit/dc88f650a1c2e3fca37ecf42baf5c6e6f8fafd03))
+
 ## [0.3.0](https://github.com/paulthvt/loomia/compare/0.2.0...0.3.0) (2026-10-08)
 
 
