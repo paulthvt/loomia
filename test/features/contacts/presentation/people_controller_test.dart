@@ -554,9 +554,28 @@ void main() {
       atPosition: 3,
       lastTick: DateTime(2026, 9, 30),
     ));
-    expect(world.people.calls.last, 'completeStep(p1, samples-2)');
+    expect(world.people.calls, contains('completeStep(p1, samples-2)'));
     await world.container.read(historyProvider('p1').future);
     expect(world.activities.calls, ['list(p1)', 'list(p1)']);
+  });
+
+  test('completeStep counts as contact once the book is back (#222)', () async {
+    final world = _world([onSamples(2)]);
+    final book = _book(world.container);
+    await world.container.read(book.future);
+    final marie = world.container.read(book).value!.single;
+
+    await world.container
+        .read(book.notifier)
+        .completeStep(
+          marie,
+          progressOf(marie, samples)! as OnStep,
+          DateTime(2026, 9, 30),
+        );
+    final [moved] = await world.container.read(book.future);
+
+    expect(moved.lastContactOn, DateTime(2026, 9, 30));
+    expect(moved.place?.atPosition, 3);
   });
 
   test('a stale tick is refused and changes nothing', () async {

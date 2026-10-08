@@ -256,7 +256,7 @@ class FakePeopleRepository implements PeopleRepository {
     // The database refuses anything but the current step (a stale tick).
     if (before.currentStepId != stepId) throw PeopleFailure.unknown;
     final place = before.place!;
-    return _with(
+    final moved = _with(
       before,
       place: (
         workflowId: place.workflowId,
@@ -268,6 +268,23 @@ class FakePeopleRepository implements PeopleRepository {
       ),
       pausedAt: before.pausedAt,
     );
+    // As complete_step's step entry. The row comes back as PostgREST reads
+    // it: last_contact_on from before that entry, in the call's snapshot.
+    final step = findWorkflow(
+      workflows,
+      place.workflowId,
+    )!.steps.firstWhere((step) => step.id == stepId);
+    activities?.store.add(
+      Activity(
+        id: 'a-step-${_next++}',
+        personId: personId,
+        kind: ActivityKind.step,
+        happenedOn: on,
+        text: step.label,
+        createdAt: DateTime.utc(2026, 10, 8, 12),
+      ),
+    );
+    return withLastContact(moved, before.lastContactOn);
   }
 
   @override
