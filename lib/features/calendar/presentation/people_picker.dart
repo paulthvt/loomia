@@ -6,11 +6,13 @@ import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/stage_filter.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// People to invite: [people] (the book, sorted by name) without [except],
-/// searchable, several at once. A sheet on mobile, a dialog elsewhere.
+/// searchable and filtered by stage, several at once. A sheet on mobile, a
+/// dialog elsewhere.
 /// Resolves to the ids picked, or null when dismissed.
 Future<Set<String>?> pickPeople(
   BuildContext context, {
@@ -39,6 +41,9 @@ class _PeoplePickerState extends State<_PeoplePicker> {
   final Set<String> _picked = {};
   String _query = '';
 
+  /// Null is everyone.
+  Stage? _stage;
+
   void _toggle(String id) => setState(() {
     if (!_picked.remove(id)) _picked.add(id);
   });
@@ -49,12 +54,13 @@ class _PeoplePickerState extends State<_PeoplePicker> {
     final query = searchKey(_query);
     // ponytail: builds every row, inside the dialog's scroll view; a lazy
     // list if a book of thousands makes the sheet slow to open.
-    final shown = query.isEmpty
-        ? widget.people
-        : [
-            for (final person in widget.people)
-              if (searchKey(person.name).contains(query)) person,
-          ];
+    // Who is picked stays picked when filtered out.
+    final shown = [
+      for (final person in widget.people)
+        if (StageFilter.shows(_stage, person) &&
+            searchKey(person.name).contains(query))
+          person,
+    ];
 
     return LoomiaDialog(
       title: l10n.peoplePickerTitle,
@@ -82,6 +88,10 @@ class _PeoplePickerState extends State<_PeoplePicker> {
               prefixIcon: const Icon(Icons.search_rounded),
             ),
             onChanged: (value) => setState(() => _query = value),
+          ),
+          StageFilter(
+            value: _stage,
+            onChanged: (stage) => setState(() => _stage = stage),
           ),
           if (shown.isEmpty)
             Padding(

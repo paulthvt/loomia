@@ -91,6 +91,26 @@ void main() {
     expect(picked, {'p1', 'p2'});
   });
 
+  testWidgets('the stage filter narrows the list and keeps who is picked', (
+    tester,
+  ) async {
+    Set<String>? picked;
+    await _open(tester, result: (value) => picked = value);
+
+    await tester.tap(find.text('Claire Moreau'));
+    await tester.tap(find.text('Customers'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Claire Moreau'), findsNothing);
+    expect(find.text('Sarah Lemaire'), findsNothing);
+    await tester.tap(find.text('Marie Dupont'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add 2 people'));
+    await tester.pumpAndSettle();
+
+    expect(picked, {'p1', 'p2'});
+  });
+
   testWidgets('nobody left to add says so', (tester) async {
     await _open(tester, except: {'p1', 'p2', 'p3'}, result: (_) {});
 
