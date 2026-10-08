@@ -10,6 +10,7 @@ import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/stage_filter.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -173,7 +174,7 @@ class _ContactListState extends State<ContactList> {
     final query = searchKey(_query);
     final shown = [
       for (final person in people)
-        if ((_stage == null || person.stage == _stage) &&
+        if (StageFilter.shows(_stage, person) &&
             searchKey(person.name).contains(query))
           person,
     ];
@@ -300,21 +301,9 @@ class _ContactListState extends State<ContactList> {
               ),
             ),
             const SizedBox(height: AppSpacing.ms),
-            Wrap(
-              spacing: AppSpacing.sm,
-              children: [
-                for (final (stage, label) in [
-                  (null, l10n.contactsFilterEveryone),
-                  (Stage.prospect, l10n.contactsFilterProspects),
-                  (Stage.customer, l10n.contactsFilterCustomers),
-                  (Stage.team, l10n.contactsFilterTeam),
-                ])
-                  ChoiceChip(
-                    label: Text(label),
-                    selected: _stage == stage,
-                    onSelected: (_) => setState(() => _stage = stage),
-                  ),
-              ],
+            StageFilter(
+              value: _stage,
+              onChanged: (stage) => setState(() => _stage = stage),
             ),
             const SizedBox(height: AppSpacing.ms),
             if (shown.isEmpty)
