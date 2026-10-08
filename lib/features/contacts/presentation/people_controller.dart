@@ -144,6 +144,55 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     if (ref.mounted) ref.invalidate(historyProvider(person.id));
   }
 
+  Future<void> addReminder(Person person, String text, DateTime dueOn) async {
+    final added = await _repository.addReminder(person.id, text, dueOn);
+    _changeReminders(person.id, (reminders) => [...reminders, added]);
+  }
+
+  Future<void> editReminder(
+    Person person,
+    Reminder reminder,
+    String text,
+    DateTime dueOn,
+  ) async {
+    final saved = await _repository.updateReminder(reminder.id, text, dueOn);
+    _changeReminders(
+      person.id,
+      (reminders) => [
+        for (final other in reminders) other.id == saved.id ? saved : other,
+      ],
+    );
+  }
+
+  Future<void> deleteReminder(Person person, Reminder reminder) async {
+    await _repository.deleteReminder(reminder.id);
+    _changeReminders(
+      person.id,
+      (reminders) => [...reminders.where((other) => other.id != reminder.id)],
+    );
+  }
+
+  /// The history entry and the delete, on the server; the person comes back
+  /// as it left them, contact counted.
+  Future<void> completeReminder(
+    Person person,
+    Reminder reminder,
+    DateTime today,
+  ) async {
+    _replace(await _repository.completeReminder(reminder.id, today));
+    if (ref.mounted) ref.invalidate(historyProvider(person.id));
+  }
+
+  void _changeReminders(
+    String id,
+    List<Reminder> Function(List<Reminder> reminders) change,
+  ) => _change(
+    (people) => [
+      for (final other in people)
+        other.id == id ? other.withReminders(change(other.reminders)) : other,
+    ],
+  );
+
   /// Hides the next step; a prospect also becomes Not now.
   Future<void> pause(Person person) async {
     _replace(

@@ -577,6 +577,101 @@ void main() {
     expect(world.container.read(book).value!.single.place?.atPosition, 2);
   });
 
+  group('reminders', () {
+    final day = DateTime(2026, 10, 15);
+    List<String> texts(ProviderContainer container) => [
+      for (final reminder
+          in container.read(_book(container)).value!.single.reminders)
+        reminder.text,
+    ];
+
+    test('add and edit keep them soonest first', () async {
+      final world = _world([_person('p1', 'Marie')]);
+      final book = _book(world.container);
+      await world.container.read(book.future);
+      final notifier = world.container.read(book.notifier);
+      Person marie() => world.container.read(book).value!.single;
+
+      await notifier.addReminder(marie(), 'Later', DateTime(2026, 10, 20));
+      await notifier.addReminder(marie(), 'Sooner', day);
+      expect(texts(world.container), ['Sooner', 'Later']);
+
+      final later = marie().reminders.last;
+      await notifier.editReminder(
+        marie(),
+        later,
+        'Now first',
+        DateTime(2026, 10, 9),
+      );
+      expect(texts(world.container), ['Now first', 'Sooner']);
+      expect(world.people.calls.last, 'updateReminder(${later.id})');
+    });
+
+    test('delete drops it', () async {
+      final world = _world([_person('p1', 'Marie')]);
+      final book = _book(world.container);
+      await world.container.read(book.future);
+      final notifier = world.container.read(book.notifier);
+      await notifier.addReminder(
+        world.container.read(book).value!.single,
+        'Call back',
+        day,
+      );
+      final marie = world.container.read(book).value!.single;
+
+      await notifier.deleteReminder(marie, marie.reminders.single);
+
+      expect(texts(world.container), isEmpty);
+    });
+
+    test(
+      'complete drops it, counts as contact and reloads the history',
+      () async {
+        final world = _world([_person('p1', 'Marie')]);
+        final book = _book(world.container);
+        await world.container.read(book.future);
+        final notifier = world.container.read(book.notifier);
+        await notifier.addReminder(
+          world.container.read(book).value!.single,
+          'Call back',
+          day,
+        );
+        world.container.listen(historyProvider('p1'), (_, _) {});
+        await world.container.read(historyProvider('p1').future);
+        final marie = world.container.read(book).value!.single;
+
+        await notifier.completeReminder(
+          marie,
+          marie.reminders.single,
+          DateTime(2026, 10, 9),
+        );
+
+        final done = world.container.read(book).value!.single;
+        expect(done.reminders, isEmpty);
+        expect(done.lastContactOn, DateTime(2026, 10, 9));
+        final history = await world.container.read(
+          historyProvider('p1').future,
+        );
+        expect(history.single.kind, ActivityKind.reminder);
+      },
+    );
+
+    test('a failed add rethrows and changes nothing', () async {
+      final world = _world([_person('p1', 'Marie')]);
+      final book = _book(world.container);
+      await world.container.read(book.future);
+      world.people.failWith = PeopleFailure.network;
+
+      await expectLater(
+        world.container
+            .read(book.notifier)
+            .addReminder(world.container.read(book).value!.single, 'X', day),
+        throwsA(PeopleFailure.network),
+      );
+      expect(texts(world.container), isEmpty);
+    });
+  });
+
   test('pause marks a prospect Not now; resume counts from today', () async {
     final world = _world([onSamples(2)]);
     final book = _book(world.container);

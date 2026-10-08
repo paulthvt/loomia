@@ -181,9 +181,9 @@ grant execute on function public.complete_reminder(uuid, date) to authenticated;
 - Modify: `lib/features/contacts/presentation/people_controller.dart`
 - Test: `test/features/contacts/presentation/people_controller_test.dart`
 
-- [ ] **Step 1: Failing tests** with `FakePeopleRepository`: `addReminder(person, 'Call back', day)` → the book's person has it, sorted before a later one; `editReminder(person, reminder, 'X', day)` replaces it in place and re-sorts; `deleteReminder(person, reminder)` removes it; `completeReminder(person, reminder, today)` drops it, sets `lastContactOn`, invalidates `historyProvider(person.id)` (a listener counts a rebuild, as the `completeStep` test does); a failure rethrows `PeopleFailure` and leaves the book as it was.
-- [ ] **Step 2: Run** the file. Expected: fail.
-- [ ] **Step 3: Implement** next to `completeStep`:
+- [x] **Step 1: Failing tests** with `FakePeopleRepository`: `addReminder(person, 'Call back', day)` → the book's person has it, sorted before a later one; `editReminder(person, reminder, 'X', day)` replaces it in place and re-sorts; `deleteReminder(person, reminder)` removes it; `completeReminder(person, reminder, today)` drops it, sets `lastContactOn`, invalidates `historyProvider(person.id)` (a listener counts a rebuild, as the `completeStep` test does); a failure rethrows `PeopleFailure` and leaves the book as it was.
+- [x] **Step 2: Run** the file. Expected: fail.
+- [x] **Step 3: Implement** next to `completeStep`:
 
 ```dart
   Future<void> addReminder(Person person, String text, DateTime dueOn) async {
@@ -212,8 +212,8 @@ grant execute on function public.complete_reminder(uuid, date) to authenticated;
   );
 ```
 
-- [ ] **Step 4: Run** `flutter test`. Expected: pass.
-- [ ] **Step 5: Commit** `feat(reminders): add, edit, delete and tick through the book`.
+- [x] **Step 4: Run** `flutter test`. Expected: pass.
+- [x] **Step 5: Commit** `feat(reminders): add, edit, delete and tick through the book`.
 
 ### Task 4: `Due` with steps and reminders
 
