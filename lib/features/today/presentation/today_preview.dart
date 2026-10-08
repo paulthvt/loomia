@@ -88,14 +88,16 @@ final _samples = Workflow(
   ],
 );
 
-Due _due(String name, int step, DateTime due) => (
-  person: Person(
-    id: name,
-    name: name,
-    stage: Stage.prospect,
-    stageSince: DateTime.utc(2026, 9),
-  ),
-  step: OnStep(
+Person _sample(String name) => Person(
+  id: name,
+  name: name,
+  stage: Stage.prospect,
+  stageSince: DateTime.utc(2026, 9),
+);
+
+Due _due(String name, int step, DateTime due) => DueStep(
+  _sample(name),
+  OnStep(
     workflow: _samples,
     step: _samples.steps[step - 1],
     index: step,
@@ -104,10 +106,20 @@ Due _due(String name, int step, DateTime due) => (
   ),
 );
 
+Due _reminder(String name, String text, DateTime due) => DueReminder(
+  _sample(name),
+  (id: 'r-$name', text: text, dueOn: due, createdAt: DateTime.utc(2026, 9)),
+);
+
 /// Oldest first, then by name, as `dueToday` sorts.
 final _book = [
   _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
   _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
+  _reminder(
+    'Julie Bernard',
+    'Call back about the diffuser',
+    DateTime(2026, 9, 29),
+  ),
   _due('Julie Bernard', 1, DateTime(2026, 9, 29)),
   _due('Léa Petit', 2, DateTime(2026, 9, 29)),
   _due('Marie Lefèvre', 3, DateTime(2026, 9, 29)),

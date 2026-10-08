@@ -284,6 +284,13 @@
       "total": { "type": "int" }
     }
   },
+  "todayReminderReason": "{text} · Reminder",
+  "@todayReminderReason": {
+    "description": "Second line of a reminder's row on Today, under the person's name: what the user wrote for themselves, then the word Reminder. E.g. 'Call back about the diffuser · Reminder'.",
+    "placeholders": {
+      "text": { "type": "String" }
+    }
+  },
   "todayShowMore": "{count, plural, =1{And one more waiting} other{And {count} more waiting}}",
   "@todayShowMore": {
     "description": "Button under the first rows on Today; shows the rest in place. count is how many are not shown yet.",

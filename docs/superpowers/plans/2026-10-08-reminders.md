@@ -30,7 +30,7 @@
 - **Reminders are sorted on the client**, not by PostgREST: `personFromRow` and `withReminders` sort by `due_on`, then `created_at`. `Reminder` keeps `createdAt` so an add or edit re-sorts locally without a fetch.
 - **Add, edit and delete are not optimistic.** They wait for the server, then swap the person's reminders, like every other book write but `setStatus`.
 - **Ticking is `completeReminder` → `_replace(person)`** plus `historyProvider(person.id)` invalidated, exactly like `completeStep`.
-- **Today's slots and busy set are keyed by `Due.key`** (the step or reminder id) instead of the person id. A ticked step's slot still slides to the next step: the next step has a new key, so it slides in as a new row, which is what the step row already does inside its slot (`ValueKey(step.step.id)`).
+- **Today's slots and busy set are keyed by `Due.key`**: a step row's key is the person id (one current step each, as today, so a ticked step's slot still swaps to the next step), a reminder row's is the reminder id. Corrected while implementing: keying a step row by its step id collides when two people are on the same step.
 - **`DueReminder` before `DueStep`** on the same day for the same person, as in the Figma Today frame.
 - **The Today mock's "0 of 3 done", "about 10 minutes" and "See all"** are template leftovers; Today does not have them and this plan does not add them.
 - **No confirmation on deleting a reminder**, from the edit sheet only.
@@ -222,14 +222,14 @@ grant execute on function public.complete_reminder(uuid, date) to authenticated;
 - Modify (callers): `lib/features/today/presentation/today_preview.dart`, `test/features/today/today_goals_test.dart`, `test/features/today/today_events_test.dart`
 - Test: `test/features/today/domain/due_test.dart`
 
-- [ ] **Step 1: Failing tests** in `due_test.dart` (existing two kept, reading `(row as DueStep).step`):
+- [x] **Step 1: Failing tests** in `due_test.dart` (existing two kept, reading `(row as DueStep).step`):
   - a reminder due today and one late stay, one tomorrow falls out;
   - a paused person's due reminder stays (their step does not);
   - a person with no workflow and a due reminder is in;
-  - one person with a reminder and a step on the same late day gives two rows, reminder first; `key`s are the reminder and step ids;
+  - one person with a reminder and a step on the same late day gives two rows, reminder first; `key`s are the reminder id and the person id;
   - order across people: by day, then name.
-- [ ] **Step 2: Run** the file. Expected: compile errors.
-- [ ] **Step 3: Implement.**
+- [x] **Step 2: Run** the file. Expected: compile errors.
+- [x] **Step 3: Implement.**
 
 ```dart
 /// Something worth doing with someone today: a workflow step or a reminder.
@@ -240,7 +240,8 @@ sealed class Due {
   /// The day it is due, local midnight.
   DateTime get day;
 
-  /// The step's or the reminder's id: one person can have both on Today.
+  /// Unique on Today: the person's id for their step (one current step
+  /// each), the reminder's id for a reminder.
   String get key;
 }
 
@@ -248,7 +249,7 @@ final class DueStep extends Due {
   const DueStep(super.person, this.step);
   final OnStep step;
   @override DateTime get day => step.due;
-  @override String get key => step.step.id;
+  @override String get key => person.id;
 }
 
 final class DueReminder extends Due {
@@ -260,8 +261,8 @@ final class DueReminder extends Due {
 ```
 
   `dueToday` collects `DueStep`s as today and, for every person (paused or not), `DueReminder`s with `!dueOn.isAfter(today)`; sorts by `day`, then `searchKey(name)`, then `person.id` (keeps a person's rows together), then reminders before the step, then the reminder order. Update the three callers' `_due` helpers to `DueStep(person, OnStep(...))`.
-- [ ] **Step 4: Run** `flutter test test/features/today`. Expected: the domain passes; `today_page.dart` fails to compile until Task 5 (do Step 3 of Task 5's `_row` switch in the same commit if needed to keep the tree green).
-- [ ] **Step 5: Commit** together with Task 5.
+- [x] **Step 4: Run** `flutter test test/features/today`. Expected: the domain passes; `today_page.dart` fails to compile until Task 5 (do Step 3 of Task 5's `_row` switch in the same commit if needed to keep the tree green).
+- [x] **Step 5: Commit** together with Task 5.
 
 ### Task 5: Today's Priority, mixed
 
@@ -269,13 +270,13 @@ final class DueReminder extends Due {
 - Modify: `lib/features/today/presentation/today_page.dart`, `lib/features/today/presentation/today_preview.dart`, `lib/l10n/app_en.arb`
 - Test: `test/features/today/today_page_test.dart`
 
-- [ ] **Step 1: Failing widget tests** (with the fake book):
+- [x] **Step 1: Failing widget tests** (with the fake book):
   - Claire with a late reminder "Send her the price list" and a late step: two rows, "Send her the price list · Reminder" above the step's reason; the headline reads "One person is worth a message today".
   - ticking the reminder's ring calls `completeReminder(…)` on the fake and leaves the step ring enabled while it is in flight (a `Completer` in the fake holds it);
   - ticking the step leaves the reminder ring enabled;
   - a late reminder shows the `DateChip` ("2 days late"); one due today has none.
-- [ ] **Step 2: Run.** Expected: fail.
-- [ ] **Step 3: Implement.**
+- [x] **Step 2: Run.** Expected: fail.
+- [x] **Step 3: Implement.**
   - `todayHeadline`'s count becomes `{for (final d in due) d.person.id}.length`.
   - `_busy` holds `Due.key`; `_tick(Due due)` switches: `DueStep(:final person, :final step)` → `completeStep`, `DueReminder(:final person, :final reminder)` → `completeReminder(person, reminder, today())`, both through `writePeople`.
   - `_slots` / `_slotted` key by `due.key`.
@@ -290,14 +291,14 @@ final class DueReminder extends Due {
         onOpen: () => widget.onOpen(person),
         onResolve: () => widget.onTick(due),
         resolved: widget.busy.contains(due.key),
-        resolveLabel: l10n.reminderMarkDone(reminder.text),
+        resolveLabel: l10n.nextStepMarkDone(reminder.text),
       ),
 ```
 
-  - `app_en.arb`: `todayReminderReason` "{text} · Reminder" ("Second line of a reminder row on Today: what the user wrote, then the word Reminder, e.g. 'Call back about the diffuser · Reminder'."), `reminderMarkDone` "Mark '{text}' done" (screen-reader label of the ring).
+  - `app_en.arb`: `todayReminderReason` "{text} · Reminder" ("Second line of a reminder row on Today: what the user wrote, then the word Reminder, e.g. 'Call back about the diffuser · Reminder'."). The ring's label reuses `nextStepMarkDone` ('Mark "{step}" done'), which reads the same for a reminder.
   - `today_preview.dart`: the mobile and desktop samples gain one `DueReminder` (Sarah Lemaire, "Call back about the diffuser", due today), as in the Figma frame. Goldens change: regenerate through CI.
-- [ ] **Step 4: Run** `flutter gen-l10n && flutter test`. Expected: pass but the Today goldens (Linux only; locally skipped).
-- [ ] **Step 5: Commit** `feat(today): due reminders in Priority`.
+- [x] **Step 4: Run** `flutter gen-l10n && flutter test`. Expected: pass but the Today goldens (Linux only; locally skipped).
+- [x] **Step 5: Commit** `feat(today): due reminders in Priority`.
 
 ### Task 6: The reminder sheet
 
@@ -332,7 +333,7 @@ final class DueReminder extends Due {
   - `NextStepSection` while workflows load: the reminders and Add a reminder still show above the spinner card.
 - [ ] **Step 2: Run.** Expected: fail.
 - [ ] **Step 3: Implement.**
-  - `NextStepCard` gains `onTickReminder`, `onEditReminder`, `onAddReminder` and `busyReminders` (`Set<String>`, default empty). Its `build` becomes a `Column`: one `SlideSwap(child: ActionItem(key: ValueKey(r.id), name: person.name, title: r.text, reason: dueLabel(l10n, r.dueOn, today), onOpen: () => onEditReminder(r), onResolve: () => onTickReminder(r), resolved: busyReminders.contains(r.id), resolveLabel: l10n.reminderMarkDone(r.text)))` per reminder with `AppSpacing.ms` gaps, then the existing `SlideSwap` card, then `Align(start, TextButton.icon(icon: Icons.add_rounded, label: l10n.reminderAdd))`. The `SectionHeader` moves above the reminders, so it is not repeated: `_step` and `_Panel` take `showHeader: false` from here (or the header is lifted out of them; pick whichever leaves the smaller diff). With `null` progress and reminders, body `l10n.nextStepNoWorkflow`.
+  - `NextStepCard` gains `onTickReminder`, `onEditReminder`, `onAddReminder` and `busyReminders` (`Set<String>`, default empty). Its `build` becomes a `Column`: one `SlideSwap(child: ActionItem(key: ValueKey(r.id), name: person.name, title: r.text, reason: dueLabel(l10n, r.dueOn, today), onOpen: () => onEditReminder(r), onResolve: () => onTickReminder(r), resolved: busyReminders.contains(r.id), resolveLabel: l10n.nextStepMarkDone(r.text)))` per reminder with `AppSpacing.ms` gaps, then the existing `SlideSwap` card, then `Align(start, TextButton.icon(icon: Icons.add_rounded, label: l10n.reminderAdd))`. The `SectionHeader` moves above the reminders, so it is not repeated: `_step` and `_Panel` take `showHeader: false` from here (or the header is lifted out of them; pick whichever leaves the smaller diff). With `null` progress and reminders, body `l10n.nextStepNoWorkflow`.
   - `NextStepSection`: `_busyReminders` set; `onTickReminder` → `_runReminder(r.id, (people) => people.completeReminder(person, r, today()))` through `writePeople`; `onEditReminder` → `showReminder(context, person, editing: r)`; `onAddReminder` → `showReminder(context, person)`. `_Waiting` gets the same reminders above it (pass them through, or render them from the section before `_Waiting`).
   - `app_en.arb`: `reminderAdd` "Add a reminder", `nextStepNoWorkflow` "No workflow".
   - Preview: a `NextStepCard` sample with the two reminders, as in Figma 273:5278. Goldens: regenerate through CI.

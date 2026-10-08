@@ -52,22 +52,30 @@ class TodayPage extends ConsumerStatefulWidget {
 }
 
 class _TodayPageState extends ConsumerState<TodayPage> {
-  /// People whose tick is in flight: their ring stays filled and takes no
-  /// tap, so a second tap can't tick the next step too.
+  /// Rows ([Due.key]) whose tick is in flight: their ring stays filled and
+  /// takes no tap, so a second tap can't tick the next step too.
   final Set<String> _busy = {};
 
   Future<void> _tick(Due due) async {
-    final id = due.person.id;
-    if (!_busy.add(id)) return;
+    final key = due.key;
+    if (!_busy.add(key)) return;
     setState(() {});
     try {
       await writePeople(
         context,
         ref,
-        (people) => people.completeStep(due.person, due.step, today()),
+        (people) => switch (due) {
+          DueStep(:final person, :final step) => people.completeStep(
+            person,
+            step,
+            today(),
+          ),
+          DueReminder(:final person, :final reminder) =>
+            people.completeReminder(person, reminder, today()),
+        },
       );
     } finally {
-      if (mounted) setState(() => _busy.remove(id));
+      if (mounted) setState(() => _busy.remove(key));
     }
   }
 
@@ -225,7 +233,7 @@ class TodayView extends StatefulWidget {
   /// Empty when the account has none: the greeting goes without.
   final String firstName;
 
-  /// Ids of people whose tick is in flight.
+  /// [Due.key]s whose tick is in flight.
   final Set<String> busy;
 
   final void Function(Due due) onTick;
@@ -449,7 +457,10 @@ class _TodayViewState extends State<TodayView> {
     return [
       TodayHero(
         eyebrow: l10n.todayTitle,
-        headline: l10n.todayHeadline(due.length),
+        // People, not rows: a step and a reminder are one person to message.
+        headline: l10n.todayHeadline(
+          {for (final row in due) row.person.id}.length,
+        ),
       ),
       ...goalWidgets,
       SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
@@ -479,7 +490,7 @@ class _TodayViewState extends State<TodayView> {
   // per row ticked away during a visit; prune them on a timer if that grows.
   List<Widget> _slotted(List<Due> shown, Widget Function(Due due) row) {
     final next = <({String id, Due? due})>[
-      for (final due in shown) (id: due.person.id, due: due),
+      for (final due in shown) (id: due.key, due: due),
     ];
     final live = {for (final slot in next) slot.id};
     for (final (index, slot) in _slots.indexed) {
@@ -515,25 +526,36 @@ class _TodayViewState extends State<TodayView> {
   }
 
   Widget _row(AppLocalizations l10n, Due due, DateTime day) {
-    final (:person, :step) = due;
-    return ActionItem(
-      // A new step is a new card: it slides in.
-      key: ValueKey(step.step.id),
-      name: person.name,
-      reason: l10n.todayReason(
+    // A new step or reminder is a new card: it slides in.
+    final (key, reason, label) = switch (due) {
+      DueStep(:final step) => (
+        step.step.id,
+        l10n.todayReason(
+          step.step.label,
+          step.workflow.name,
+          step.index,
+          step.total,
+        ),
         step.step.label,
-        step.workflow.name,
-        step.index,
-        step.total,
       ),
+      DueReminder(:final reminder) => (
+        reminder.id,
+        l10n.todayReminderReason(reminder.text),
+        reminder.text,
+      ),
+    };
+    return ActionItem(
+      key: ValueKey(key),
+      name: due.person.name,
+      reason: reason,
       // The accent chip only when a real date drives it: late.
-      chip: step.due.isBefore(day)
-          ? DateChip(dueLabel(l10n, step.due, day))
+      chip: due.day.isBefore(day)
+          ? DateChip(dueLabel(l10n, due.day, day))
           : null,
-      onOpen: () => widget.onOpen(person),
+      onOpen: () => widget.onOpen(due.person),
       onResolve: () => widget.onTick(due),
-      resolved: widget.busy.contains(person.id),
-      resolveLabel: l10n.nextStepMarkDone(step.step.label),
+      resolved: widget.busy.contains(due.key),
+      resolveLabel: l10n.nextStepMarkDone(label),
     );
   }
 }
