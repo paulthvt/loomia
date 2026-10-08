@@ -122,6 +122,39 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
   });
 
+  testWidgets('mobile: back on a tab returns to Today, not out of the app', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      people: FakePeopleRepository([_marie]),
+    );
+    String path() =>
+        container.read(routerProvider).routerDelegate.state.uri.path;
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Contacts'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Marie Dupont'));
+    await tester.pumpAndSettle();
+
+    // A person pops to the list first, then the tab to Today.
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(path(), Routes.contacts);
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(path(), Routes.today);
+
+    await tester.tap(find.text('Calendar'));
+    await tester.pumpAndSettle();
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(path(), Routes.today);
+
+    // On Today, back is left to the system: the app closes.
+    expect(await tester.binding.handlePopRoute(), isFalse);
+  });
+
   testWidgets('desktop: the sidebar has Contacts', (tester) async {
     await pumpLoomia(tester, size: const Size(1440, 900));
 
