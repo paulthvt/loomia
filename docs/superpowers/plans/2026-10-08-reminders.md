@@ -55,7 +55,7 @@
 - Create: `supabase/migrations/<timestamp>_reminders.sql` (`supabase migration new reminders`)
 - Create: `supabase/tests/reminders_test.sql`
 
-- [ ] **Step 1: Write the failing pgTAP test** `supabase/tests/reminders_test.sql`, shaped like `loyalty_step_test.sql`: two users `…0a` and `…0b`; as `a`, a person `…a1`; then `plan(9)`:
+- [x] **Step 1: Write the failing pgTAP test** `supabase/tests/reminders_test.sql`, shaped like `loyalty_step_test.sql`: two users `…0a` and `…0b`; as `a`, a person `…a1`; then `plan(9)`:
   - `lives_ok`: insert a reminder for `…a1` (`'Call back', '2026-10-15'`).
   - `throws_ok … '23514'`: a blank text (`'  '`).
   - `is(due_on)`: the row reads back `2026-10-15`.
@@ -65,8 +65,8 @@
   - `throws_ok … 'P0002'`: `complete_reminder` on the same id again.
   - `a` inserts another reminder; with claims switched to `b`, `is(count(*) from reminder, 0)`: `b` sees none.
   - as `b`: `throws_ok … '23503'`: insert a reminder on `…a1`. Its `owner_id` defaults to `b`, so the composite FK `(person_id, owner_id)` finds no person.
-- [ ] **Step 2: Run** `supabase db reset && supabase test db`. Expected: `reminders_test.sql` fails (no table); `schema_rls_test.sql` passes.
-- [ ] **Step 3: Write the migration.**
+- [x] **Step 2: Run** `supabase db reset && supabase test db`. Expected: `reminders_test.sql` fails (no table); `schema_rls_test.sql` passes.
+- [x] **Step 3: Write the migration.**
 
 ```sql
 -- Reminders (#217): a line of text for one person, due on a day, outside any
@@ -133,8 +133,8 @@ grant execute on function public.complete_reminder(uuid, date) to authenticated;
 ```
 
   `alter type ... add value` cannot be used in the same transaction as the value: the function body is not checked until it runs, so this is fine, but if `supabase db reset` complains, split the enum value into its own migration file first (`reminder_kind`).
-- [ ] **Step 4: Run** `supabase db reset && supabase test db`. Expected: all pass.
-- [ ] **Step 5: Commit** `feat(reminders): reminder table and complete_reminder`.
+- [x] **Step 4: Run** `supabase db reset && supabase test db`. Expected: all pass.
+- [x] **Step 5: Commit** `feat(reminders): reminder table and complete_reminder`.
 
 ### Task 2: `Reminder` on `Person`, the `reminder` kind, the repository
 
