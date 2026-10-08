@@ -395,15 +395,15 @@ grant execute on function public.log_with_reminder(uuid, public.activity_kind, t
 - Modify: `lib/features/contacts/presentation/log_activity_sheet.dart`, `lib/l10n/app_en.arb`
 - Test: `test/features/contacts/presentation/log_activity_sheet_test.dart`
 
-- [ ] **Step 1: Failing widget tests:**
+- [x] **Step 1: Failing widget tests:**
   - the switch "Remind me" is off; Save writes `add(p1)` as before;
   - on, after a Call: "Remind me on" chips with In a week selected and "Thursday, October 15" under them; "Reminder" prefilled "Call Claire back"; Save → `addWithReminder(p1)`;
   - on, after a Note: prefilled "Follow up with Claire"; switching kind after editing the reminder text keeps the typed text;
   - a blank reminder text: "Say what to do.", nothing saved;
   - not shown when editing an entry or logging an own order.
-- [ ] **Step 2: Run.** Expected: fail.
-- [ ] **Step 3: Implement.** In `_LogActivityFormState`: `_remind = false`, `_remindOn = addDays(today(), 7)`, `_remindText` controller, `_remindEdited` (set by its `onChanged`). Under What, when `person != null && _editing == null`: `SwitchListTile(title: Text(l10n.logRemindMe), value: _remind, onChanged: …)` (copy the loyalty switch row's styling if the sheet has one, as in Figma), then, when on, `ReminderDayField(label: l10n.logRemindOn, …)` and a `LabeledField(label: l10n.logReminder)` `TextFormField` with `reminderWhatRequired`. While `!_remindEdited`, the text follows the kind: `call` → `l10n.logRemindCallBack(firstName(person))`, else `l10n.logRemindFollowUp(firstName(person))`. `_submit` passes `remind:` to `HistoryController.add` when on.
+- [x] **Step 2: Run.** Expected: fail.
+- [x] **Step 3: Implement.** In `_LogActivityFormState`: `_remind = false`, `_remindOn = addDays(today(), 7)`, `_remindText` controller, `_remindEdited` (set by its `onChanged`). Under What, when `person != null && _editing == null`: `SwitchListTile(title: Text(l10n.logRemindMe), value: _remind, onChanged: …)` (plain, `contentPadding: EdgeInsets.zero`, the step sheet's one switch style), then, when on, `ReminderDayField(label: l10n.logRemindOn, …)` and a `LabeledField(label: l10n.logReminder)` `TextFormField` with `reminderWhatRequired`. While `!_remindEdited`, the text follows the kind: `call` → `l10n.logRemindCallBack(firstName(person))`, else `l10n.logRemindFollowUp(firstName(person))`. `_submit` passes `remind:` to `HistoryController.add` when on.
   - `app_en.arb`: `logRemindMe` "Remind me", `logRemindOn` "Remind me on", `logReminder` "Reminder", `logRemindCallBack` "Call {name} back", `logRemindFollowUp` "Follow up with {name}", each with a description and the `name` placeholder.
-- [ ] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass.
-- [ ] **Step 5: Commit** `feat(contacts): Remind me in Log something`.
+- [x] **Step 4: Run** `flutter gen-l10n && dart format . && flutter analyze && flutter test`. Expected: pass.
+- [x] **Step 5: Commit** `feat(contacts): Remind me in Log something`.
 - [ ] **Step 6: PR** `feat(contacts): Remind me in Log something`, `Closes #219`. After both are merged, close #217 and `supabase db push` by hand.

@@ -13,6 +13,8 @@ import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/reminder_sheet.dart';
+import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -77,11 +79,31 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
   bool _saving = false;
   PeopleFailure? _failure;
 
+  /// Remind me (#219): a reminder saved with the entry.
+  bool _remind = false;
+  late DateTime _remindOn = addDays(today(), 7);
+  final _remindText = TextEditingController();
+
+  /// Typed in: the text stops following the kind.
+  bool _remindTyped = false;
+
   @override
   void dispose() {
     _text.dispose();
     _amount.dispose();
+    _remindText.dispose();
     super.dispose();
+  }
+
+  /// "Call Claire back" after a call, "Follow up with Claire" otherwise,
+  /// until the user writes their own.
+  void _suggestReminder() {
+    if (_remindTyped) return;
+    final l10n = AppLocalizations.of(context);
+    final name = firstName(widget.person!);
+    _remindText.text = _kind == ActivityKind.call
+        ? l10n.logRemindCallBack(name)
+        : l10n.logRemindFollowUp(name);
   }
 
   bool get _stage => _editing?.kind == ActivityKind.stage;
@@ -134,7 +156,14 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
         await ref.read(activityRepositoryProvider).addOwnOrder(draft);
         widget.onSaved?.call();
       } else if (editing == null) {
-        await ref.read(historyProvider(person.id).notifier).add(draft);
+        await ref
+            .read(historyProvider(person.id).notifier)
+            .add(
+              draft,
+              remind: _remind
+                  ? (text: _remindText.text, dueOn: _remindOn)
+                  : null,
+            );
       } else if (_stage) {
         // The same day keeps its time, and its place among that day's.
         if (_day != editing.day) {
@@ -215,7 +244,10 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
                       ChoiceChip(
                         label: Text(kindLabel(l10n, kind)!),
                         selected: _kind == kind,
-                        onSelected: (_) => setState(() => _kind = kind),
+                        onSelected: (_) => setState(() {
+                          _kind = kind;
+                          _suggestReminder();
+                        }),
                       ),
                 ],
               ),
@@ -295,6 +327,40 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
                   },
                 ),
               ),
+            if (person != null && _editing == null) ...[
+              // The app's one switch style, as in the step sheet.
+              SwitchListTile(
+                value: _remind,
+                title: Text(l10n.logRemindMe),
+                contentPadding: EdgeInsets.zero,
+                onChanged: _saving
+                    ? null
+                    : (on) => setState(() {
+                        _remind = on;
+                        if (on) _suggestReminder();
+                      }),
+              ),
+              if (_remind) ...[
+                ReminderDayField(
+                  label: l10n.logRemindOn,
+                  value: _remindOn,
+                  onChanged: (day) => setState(() => _remindOn = day),
+                ),
+                LabeledField(
+                  label: l10n.logReminder,
+                  child: TextFormField(
+                    controller: _remindText,
+                    minLines: 1,
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: (_) => _remindTyped = true,
+                    validator: (value) => (value ?? '').trim().isEmpty
+                        ? l10n.reminderWhatRequired
+                        : null,
+                  ),
+                ),
+              ],
+            ],
           ],
         ),
       ),

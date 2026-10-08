@@ -839,6 +839,32 @@
   "@activityKindEvent": {
     "description": "Kind of history entry: the person was at one of the user's events (a workshop, a training). The entry's title is the event's title."
   },
+  "logRemindMe": "Remind me",
+  "@logRemindMe": {
+    "description": "Switch in Log something: also write a reminder about this person, outside any workflow, saved with the entry."
+  },
+  "logRemindOn": "Remind me on",
+  "@logRemindOn": {
+    "description": "Label of the day chips under the Remind me switch in Log something (the sheet already has a When for the entry itself)."
+  },
+  "logReminder": "Reminder",
+  "@logReminder": {
+    "description": "Label of the reminder's text field under the Remind me switch in Log something."
+  },
+  "logRemindCallBack": "Call {name} back",
+  "@logRemindCallBack": {
+    "description": "Reminder text suggested after logging a call; the user can change it. name is the person's first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "logRemindFollowUp": "Follow up with {name}",
+  "@logRemindFollowUp": {
+    "description": "Reminder text suggested after logging anything but a call; the user can change it. name is the person's first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "logWhen": "When",
   "@logWhen": {
     "description": "Label of the day field in Log something."

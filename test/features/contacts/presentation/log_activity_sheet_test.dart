@@ -1,5 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoDatePicker;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/auth/domain/account.dart';
@@ -7,6 +8,7 @@ import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
+import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../fake_activity_repository.dart';
@@ -117,6 +119,103 @@ void main() {
     expect(saved.happenedOn, _today());
     expect(saved.text, 'Asked about the cream');
     expect(find.text('Log something with Claire'), findsNothing);
+  });
+
+  group('Remind me', () {
+    final what = find.descendant(
+      of: find.widgetWithText(LabeledField, 'What happened'),
+      matching: find.byType(TextFormField),
+    );
+    final reminder = find.descendant(
+      of: find.widgetWithText(LabeledField, 'Reminder'),
+      matching: find.byType(TextFormField),
+    );
+    String written(DateTime day) =>
+        (day.year == _today().year
+                ? DateFormat.MMMMEEEEd('en')
+                : DateFormat.yMMMMEEEEd('en'))
+            .format(day);
+
+    testWidgets('off: no reminder fields, the entry saves alone', (
+      tester,
+    ) async {
+      await open(tester);
+
+      expect(find.text('Remind me'), findsOneWidget);
+      expect(find.text('Remind me on'), findsNothing);
+      await tester.enterText(what, 'Talked');
+      await save(tester);
+
+      expect(activities.calls, contains('add(p1)'));
+      expect(activities.remindersAdded, isEmpty);
+    });
+
+    testWidgets('on after a call: in a week, "Call Claire back"; one save', (
+      tester,
+    ) async {
+      await open(tester);
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Call'));
+      await tester.tap(find.text('Remind me'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Remind me on'), findsOneWidget);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'In a week'))
+            .selected,
+        isTrue,
+      );
+      expect(find.text(written(addDays(_today(), 7))), findsOneWidget);
+      expect(
+        tester.widget<TextFormField>(reminder).controller!.text,
+        'Call Claire back',
+      );
+
+      await tester.enterText(what, 'Called her');
+      await save(tester);
+
+      expect(activities.calls, contains('addWithReminder(p1)'));
+      expect(activities.calls, isNot(contains('add(p1)')));
+      expect(activities.remindersAdded.single, (
+        personId: 'p1',
+        text: 'Call Claire back',
+        dueOn: addDays(_today(), 7),
+      ));
+      expect(activities.store.single.text, 'Called her');
+      expect(find.text('Log something with Claire'), findsNothing);
+    });
+
+    testWidgets('the text follows the kind until it is typed in', (
+      tester,
+    ) async {
+      await open(tester);
+      await tester.tap(find.text('Remind me'));
+      await tester.pumpAndSettle();
+      String text() => tester.widget<TextFormField>(reminder).controller!.text;
+
+      expect(text(), 'Follow up with Claire');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Call'));
+      await tester.pumpAndSettle();
+      expect(text(), 'Call Claire back');
+
+      await tester.enterText(reminder, 'Send the price list');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Note'));
+      await tester.pumpAndSettle();
+      expect(text(), 'Send the price list');
+    });
+
+    testWidgets('a blank reminder is refused, nothing saved', (tester) async {
+      await open(tester);
+      await tester.tap(find.text('Remind me'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(what, 'Talked');
+      await tester.enterText(reminder, '  ');
+      await save(tester);
+
+      expect(find.text('Say what to do.'), findsOneWidget);
+      expect(activities.store, isEmpty);
+    });
   });
 
   testWidgets('a failed save says so and keeps what was typed', (tester) async {
@@ -320,6 +419,7 @@ void main() {
 
       expect(find.text('Your own order'), findsOneWidget);
       expect(find.byType(ChoiceChip), findsNothing);
+      expect(find.text('Remind me'), findsNothing);
       await save(tester);
       expect(find.text('Enter the amount.'), findsOneWidget);
       expect(activities.store, isEmpty);
@@ -393,6 +493,7 @@ void main() {
 
       expect(find.text('Edit'), findsOneWidget);
       expect(find.byType(ChoiceChip), findsNothing);
+      expect(find.text('Remind me'), findsNothing);
       await tester.enterText(field('What happened'), 'Asked about the cream');
       await save(tester);
 
