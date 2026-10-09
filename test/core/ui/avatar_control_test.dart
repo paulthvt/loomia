@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
@@ -87,6 +88,25 @@ void main() {
     expect(chosen, 1);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byIcon(Icons.photo_camera_outlined), findsOneWidget);
+  });
+
+  testWidgets('Remove photo is red, Choose photo is not', (tester) async {
+    await _pump(
+      tester,
+      AvatarControl(
+        name: 'Marie Dupont',
+        onChoose: () async {},
+        onRemove: () async {},
+      ),
+    );
+    await tester.tap(find.byType(AvatarControl));
+    await tester.pumpAndSettle();
+
+    final error = AppTheme.light.colorScheme.error;
+    Color? colour(String text) =>
+        tester.renderObject<RenderParagraph>(find.text(text)).text.style?.color;
+    expect(colour('Remove photo'), error);
+    expect(colour('Choose photo'), isNot(error));
   });
 
   testWidgets('the ink is round, like the avatar', (tester) async {

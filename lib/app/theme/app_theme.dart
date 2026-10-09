@@ -200,10 +200,17 @@ abstract final class AppTheme {
           ),
         ),
       ),
+      // Menus are raised (design-system §5): a soft shadow lifts the white
+      // menu off the near-white canvas; in dark the surface steps up instead.
       popupMenuTheme: PopupMenuThemeData(
         color: colors.surfaceRaised,
         surfaceTintColor: Colors.transparent,
-        elevation: 0,
+        elevation: 3,
+        shadowColor: scheme.shadow,
+        menuPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        labelTextStyle: WidgetStatePropertyAll(
+          AppTypography.body.copyWith(color: scheme.onSurface),
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.md),
         ),

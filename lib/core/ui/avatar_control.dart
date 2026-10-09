@@ -68,9 +68,11 @@ class _AvatarControlState extends State<AvatarControl> {
         if (remove != null)
           PopupMenuItem(
             value: remove,
+            // Red: it throws the photo away, as in the Figma menu.
             child: _Item(
               icon: Icons.delete_outline_rounded,
               label: l10n.photoRemove,
+              color: scheme.error,
             ),
           ),
       ],
@@ -121,12 +123,20 @@ class _AvatarControlState extends State<AvatarControl> {
 }
 
 class _Item extends StatelessWidget {
-  const _Item({required this.icon, required this.label});
+  const _Item({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;
 
+  /// Null: the menu's own colours.
+  final Color? color;
+
   @override
-  Widget build(BuildContext context) =>
-      Row(spacing: AppSpacing.ms, children: [Icon(icon), Text(label)]);
+  Widget build(BuildContext context) => Row(
+    spacing: AppSpacing.ms,
+    children: [
+      Icon(icon, size: 20, color: color),
+      Text(label, style: TextStyle(color: color)),
+    ],
+  );
 }
