@@ -62,6 +62,7 @@
   "todayGreeting": "{part, select, morning{Bonjour} afternoon{Bon après-midi} other{Bonsoir}}",
   "todayGreetingNamed": "{part, select, morning{Bonjour, {name}} afternoon{Bon après-midi, {name}} other{Bonsoir, {name}}}",
   "todayHeadline": "{count, plural, =1{Une personne mérite un message aujourd’hui} other{{count} personnes méritent un message aujourd’hui}}",
+  "todayReminderDetail": "Rappel",
   "todayShowMore": "{count, plural, =1{Et une de plus en attente} other{Et {count} de plus en attente}}",
   "todayLoadFailed": "Impossible de charger ta journée.",
   "actionMarkAsDone": "Marquer comme fait",
