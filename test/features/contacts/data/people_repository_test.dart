@@ -247,6 +247,10 @@ void main() {
 
     test('a server refusal is unknown', () {
       expect(
+        peopleFailureFrom(const StorageException('Payload too large')),
+        PeopleFailure.unknown,
+      );
+      expect(
         peopleFailureFrom(const PostgrestException(message: 'denied')),
         PeopleFailure.unknown,
       );

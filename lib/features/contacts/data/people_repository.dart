@@ -204,6 +204,9 @@ final peopleRepositoryProvider = Provider<PeopleRepository>(
 PeopleFailure peopleFailureFrom(Object error) => switch (error) {
   final PeopleFailure failure => failure,
   PostgrestException() => PeopleFailure.unknown,
+  // A refusal from Storage (too large, wrong type, a policy): not the
+  // connection.
+  StorageException() => PeopleFailure.unknown,
   FormatException() => PeopleFailure.unknown,
   Exception() => PeopleFailure.network,
   _ => PeopleFailure.unknown,

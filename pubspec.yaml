@@ -26,6 +26,9 @@ dependencies:
   go_router: ^18.0.1
   # ICU message formatting for the generated AppLocalizations class. The version
   # is whatever flutter_localizations pins — do not float it independently.
+  # The photo picker on Android and iOS, a file dialog on the web, resized on
+  # the device (#239). Nothing in the SDK opens either.
+  image_picker: ^1.2.4
   intl: any
   # Material widgets and localizations. Since Flutter 3.47 they live here, not in
   # the framework, whose flutter/material.dart is frozen. Brings cupertino_ui.

@@ -30,7 +30,8 @@
 - **Random file name from `Random.secure()`** (16 bytes, hex), not the transitive `uuid` package: no new direct dependency for one call.
 - **The old file is discarded by the controller and the account screen, not by `PeopleRepository.delete`.** The controller already holds the people being removed, so no extra select. `PhotoRepository.discard` never throws: a failure goes to `Sentry.captureException` and is otherwise silent.
 - **`StorageException` maps to `PeopleFailure.unknown`** in `peopleFailureFrom`. A refusal from Storage (too large, wrong type, policy) is not a connection problem. Photo errors reuse `peopleFailureCopy`; no new failure copy.
-- **No content-type copy for an unusable image.** `imageType` sniffs JPEG / PNG / WebP. Anything else (an HEIC the picker did not re-encode) throws `PeopleFailure.unknown` before upload: "Something went wrong. Try again."
+- **`core/photos` throws what it gets, callers map it** (found while implementing): `PeopleFailure` lives in a feature, and `core` may not import one. `PeopleController.setPhoto` and the account screen wrap `swapPhoto` in `guardPeople`.
+- **No content-type copy for an unusable image.** `imageType` sniffs JPEG / PNG / WebP. Anything else (an HEIC the picker did not re-encode) throws a `FormatException` before upload, `PeopleFailure.unknown` once guarded: "Something went wrong. Try again."
   `// ponytail: HEIC is refused, not converted; add a decode/re-encode if users hit it.`
 - **The busy ring is the control's own `setState`.** `AvatarControl` awaits its `onChoose` / `onRemove` future. That is purely local state, so no provider.
 - **Photos show in previews only on the component board** (`ui_preview.dart`) and in one contact header preview, from `previewPhoto`: a generated 64×64 PNG embedded as bytes in `lib/core/ui/preview_photo.dart`, never the network. `previews_test.dart` precaches images under `runAsync` before the golden.
@@ -109,7 +110,7 @@ alter table public.person add column photo_path text;
 - Create: `lib/core/photos/photo.dart`, `lib/core/photos/photo_repository.dart`, `lib/core/photos/photo_picker.dart`
 - Create: `test/core/photos/photo_test.dart`, `test/core/photos/swap_photo_test.dart`, `test/core/photos/fake_photo_repository.dart`, `test/core/photos/fake_photo_picker.dart`
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   - `photo_test.dart`: `imageType` returns `image/jpeg` for `[0xFF, 0xD8, 0xFF, …]`, `image/png` for the 8-byte PNG signature, `image/webp` for `RIFF????WEBP`, null for `[0, 1, 2]` and for an empty list. `peopleFailureFrom(StorageException('x'))` is `PeopleFailure.unknown`.
   - `swap_photo_test.dart`, with `FakePhotoRepository` (records `upload(<type>)` / `discard(<paths>)`, returns `u1/new` from upload, `failWith`):
     - bytes and an old path: calls are `upload(image/jpeg)`, the write receives `u1/new`, then `discard(u1/old)`.
@@ -117,8 +118,8 @@ alter table public.person add column photo_path text;
     - no old path: nothing discarded.
     - the write throws: `discard(u1/new)`, `u1/old` kept, the error rethrown.
     - unknown bytes: throws `PeopleFailure.unknown`, no upload, no write.
-- [ ] **Step 2: Run** `flutter test test/core/photos`. Expected: compile failure.
-- [ ] **Step 3: `flutter pub add image_picker`** (1.2.4 at planning time), then put the comment above it in `pubspec.yaml`:
+- [x] **Step 2: Run** `flutter test test/core/photos`. Expected: compile failure.
+- [x] **Step 3: `flutter pub add image_picker`** (1.2.4 at planning time), then put the comment above it in `pubspec.yaml`:
 
 ```yaml
   # The photo picker on Android and iOS, a file dialog on the web, resized on
@@ -133,7 +134,7 @@ alter table public.person add column photo_path text;
 	<string>Loomia uses the photo you pick as a contact's or your own picture.</string>
 ```
 
-- [ ] **Step 4: `lib/core/photos/photo.dart`**: the pure part.
+- [x] **Step 4: `lib/core/photos/photo.dart`**: the pure part.
 
 ```dart
 import 'dart:typed_data';
@@ -151,7 +152,7 @@ String? imageType(Uint8List bytes) {
 }
 ```
 
-- [ ] **Step 5: `lib/core/photos/photo_repository.dart`.**
+- [x] **Step 5: `lib/core/photos/photo_repository.dart`.**
   - `PhotoRepository(SupabaseClient client)` on bucket `avatars`.
   - `Future<String> upload(Uint8List bytes)`: `imageType(bytes) ?? (throw PeopleFailure.unknown)`. Path `'${uid}/${_name()}'` where `uid = _client.auth.currentUser!.id` and `_name()` is 16 `Random.secure()` bytes as hex. `uploadBinary(path, bytes, fileOptions: FileOptions(contentType: type, cacheControl: '604800'))`, through `guardPeople`. Returns the path.
   - `Future<void> discard(List<String> paths)`: empty → return. `storage.from('avatars').remove(paths)`; `catch (error, stack)` → `Sentry.captureException(error, stackTrace: stack)`, never rethrows.
@@ -161,9 +162,9 @@ String? imageType(Uint8List bytes) {
   - `photoUrlProvider = FutureProvider.family<String, String>((ref, path) => ref.watch(photoRepositoryProvider).signedUrl(path))`. Not auto-dispose: kept for the session. Add the comment `// ponytail: one signed-URL request per photo on screen; createSignedUrls in a batch if long lists feel slow.`
   - `photoProvider = Provider.family<ImageProvider?, String?>`: null path → null; else `ref.watch(photoUrlProvider(path)).value`, wrapped in `NetworkImage`, null while loading or failed.
   - In `people_repository.dart`, `peopleFailureFrom` gains `StorageException() => PeopleFailure.unknown,` before `Exception()`.
-- [ ] **Step 6: `lib/core/photos/photo_picker.dart`.** `PhotoPicker.pick() → Future<Uint8List?>`: `ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 256, maxHeight: 256, imageQuality: 85)`; null when cancelled, else `readAsBytes()`. `photoPickerProvider = Provider((ref) => const PhotoPicker())`. `FakePhotoPicker` returns a set `Uint8List?` and counts calls.
-- [ ] **Step 7: Run** `flutter test test/core/photos`, then the gate. Expected: green.
-- [ ] **Step 8: Commit** `feat(contacts): photo storage, picker and swap (#239)`.
+- [x] **Step 6: `lib/core/photos/photo_picker.dart`.** `PhotoPicker.pick() → Future<Uint8List?>`: `ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 256, maxHeight: 256, imageQuality: 85)`; null when cancelled, else `readAsBytes()`. `photoPickerProvider = Provider((ref) => const PhotoPicker())`. `FakePhotoPicker` returns a set `Uint8List?` and counts calls.
+- [x] **Step 7: Run** `flutter test test/core/photos`, then the gate. Expected: green.
+- [x] **Step 8: Commit** `feat(contacts): photo storage, picker and swap (#239)`.
 
 ### Task 3: Avatars show photos; the avatar control
 

@@ -1,0 +1,67 @@
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
+
+import 'fake_photo_repository.dart';
+
+void main() {
+  late FakePhotoRepository photos;
+  late List<String?> written;
+
+  setUp(() {
+    photos = FakePhotoRepository();
+    written = [];
+  });
+
+  Future<void> write(String? path) async => written.add(path);
+
+  test('uploads, writes the new path, then discards the old file', () async {
+    await swapPhoto(photos, bytes: jpegBytes, old: 'u1/old', write: write);
+
+    expect(written, ['u1/new']);
+    expect(photos.calls, ['upload(image/jpeg)', 'discard(u1/old)']);
+  });
+
+  test('no bytes removes: writes null, discards the old file', () async {
+    await swapPhoto(photos, bytes: null, old: 'u1/old', write: write);
+
+    expect(written, [null]);
+    expect(photos.calls, ['discard(u1/old)']);
+  });
+
+  test('nothing to discard without an old file', () async {
+    await swapPhoto(photos, bytes: jpegBytes, old: null, write: write);
+
+    expect(photos.calls, ['upload(image/jpeg)']);
+  });
+
+  test('a failed write discards the new file and keeps the old', () async {
+    await expectLater(
+      swapPhoto(
+        photos,
+        bytes: jpegBytes,
+        old: 'u1/old',
+        write: (_) async => throw StateError('write'),
+      ),
+      throwsStateError,
+    );
+
+    expect(photos.calls, ['upload(image/jpeg)', 'discard(u1/new)']);
+  });
+
+  test('bytes that are no image: no upload, no write', () async {
+    await expectLater(
+      swapPhoto(
+        photos,
+        bytes: Uint8List.fromList([0, 1, 2]),
+        old: 'u1/old',
+        write: write,
+      ),
+      throwsFormatException,
+    );
+
+    expect(written, isEmpty);
+    expect(photos.calls, isEmpty);
+  });
+}
