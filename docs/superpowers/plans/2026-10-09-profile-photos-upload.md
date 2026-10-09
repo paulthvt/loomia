@@ -53,7 +53,7 @@
 - Create: `supabase/migrations/<timestamp>_avatars.sql` (`supabase migration new avatars`)
 - Create: `supabase/tests/avatars_test.sql`
 
-- [ ] **Step 1: Write the failing pgTAP test** `supabase/tests/avatars_test.sql`, shaped like `person_rls_test.sql`: users `…0a` and `…0b`; `plan(10)`:
+- [x] **Step 1: Write the failing pgTAP test** `supabase/tests/avatars_test.sql`, shaped like `person_rls_test.sql`: users `…0a` and `…0b`; `plan(10)`:
   - `results_eq` on `select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'avatars'` → `(false, 262144, '{image/jpeg,image/png,image/webp}')`.
   - `has_column('public', 'person', 'photo_path')`.
   - As `a`: `lives_ok`: `insert into storage.objects (bucket_id, name) values ('avatars', '0000…000a/f1')`.
@@ -64,8 +64,8 @@
   - As `b`, with `set local storage.allow_delete_query = 'true'`: `delete from storage.objects where name = '0000…000a/f1'`; back as `a`, `is(count(*) …, 1)`: still there.
   - As `a`, the same delete: `is(count(*) …, 0)`.
   - As `anon`: `is(count(*) from storage.objects where bucket_id = 'avatars', 0)`.
-- [ ] **Step 2: Run** `supabase db reset && supabase test db`. Expected: `avatars_test.sql` fails (no bucket).
-- [ ] **Step 3: Write the migration.**
+- [x] **Step 2: Run** `supabase db reset && supabase test db`. Expected: `avatars_test.sql` fails (no bucket).
+- [x] **Step 3: Write the migration.**
 
 ```sql
 -- Profile photos (#239). A private bucket: contacts' photos are third
@@ -98,8 +98,8 @@ create policy avatars_delete_own on storage.objects
 alter table public.person add column photo_path text;
 ```
 
-- [ ] **Step 4: Run** `supabase db reset && supabase test db`. Expected: all pass, `schema_rls_test.sql` included (the new column needs no grant change: `person` grants update on the table).
-- [ ] **Step 5: Commit** `feat(contacts): avatars bucket and photo_path (#239)`.
+- [x] **Step 4: Run** `supabase db reset && supabase test db`. Expected: all pass, `schema_rls_test.sql` included (the new column needs no grant change: `person` grants update on the table).
+- [x] **Step 5: Commit** `feat(contacts): avatars bucket and photo_path (#239)`.
 
 ### Task 2: `lib/core/photos/`: sniff, repository, swap, provider, picker
 
