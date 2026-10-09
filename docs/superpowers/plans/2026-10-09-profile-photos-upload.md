@@ -305,7 +305,7 @@ String? imageType(Uint8List bytes) {
 **Files:**
 - Modify: `supabase/functions/delete-account/index.ts`, `docs/architecture.md`
 
-- [ ] **Step 1: `delete-account`** empties the folder before deleting the user (Storage objects don't cascade):
+- [x] **Step 1: `delete-account`** empties the folder before deleting the user (Storage objects don't cascade):
 
 ```ts
     const id = ctx.userClaims!.id
@@ -327,7 +327,7 @@ String? imageType(Uint8List bytes) {
 ```
 
   Leave the existing `deleteUser(id)` call after it, unchanged.
-- [ ] **Step 2: `docs/architecture.md` → Backend:** one bullet: "Files live in Storage buckets created by migration. `avatars` is private, one folder per user (`<uid>/…`), guarded by policies on `storage.objects`; a row holds the path, never a URL, and the device signs URLs. Objects do not cascade with the user: `delete-account` empties the folder." In *Not yet present*, keep `profiles` and add "(the user's photo path is in `user_metadata` too, until linking users needs a profile others can read, #238)".
+- [x] **Step 2: `docs/architecture.md` → Backend:** one bullet: "Files live in Storage buckets created by migration. `avatars` is private, one folder per user (`<uid>/…`), guarded by policies on `storage.objects`; a row holds the path, never a URL, and the device signs URLs. Objects do not cascade with the user: `delete-account` empties the folder." In *Not yet present*, keep `profiles` and add "(the user's photo path is in `user_metadata` too, until linking users needs a profile others can read, #238)".
 - [ ] **Step 3: Device check**, local stack (`supabase start`, `supabase functions serve`):
   - Android: choose a photo for Marie. It shows in the list, the header, Today and an event's attendees.
   - iOS: the same, with no permission prompt.
@@ -337,5 +337,16 @@ String? imageType(Uint8List bytes) {
   - Delete the account: the folder is empty.
 
   Note anything that does not hold in the PR.
-- [ ] **Step 4: Run** the gate, then `graphify update .`.
-- [ ] **Step 5: Commit** `feat(auth): delete-account removes photos (#239)` and `docs: storage conventions (#239)`. Push `feature/239-photo-upload`, open the PR with `Closes #239`, then let CI regenerate the goldens.
+
+  Done while implementing, against the local stack through the Storage API:
+  - Own folder: 200.
+  - 300 KB: 413.
+  - `text/plain`: 415.
+  - Another user's folder: 403 (RLS).
+  - The signed URL serves the file; the public URL does not.
+  - `delete-account` returns 204, leaving no objects and no user.
+  - `flutter build web --release`, `apk --debug` and `ios --debug --no-codesign` all build.
+
+  Left for a device: the photo picker on Android and iOS, the web file dialog's resize, and a photo showing in each place.
+- [x] **Step 4: Run** the gate, then `graphify update .`.
+- [x] **Step 5: Commit** `feat(auth): delete-account removes photos (#239)` and `docs: storage conventions (#239)`. Push `feature/239-photo-upload`, open the PR with `Closes #239`, then let CI regenerate the goldens.
