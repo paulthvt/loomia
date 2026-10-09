@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/back.dart';
@@ -86,23 +88,34 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
     try {
       final owner = ref.read(accountProvider)?.email;
       final workflows = ref.read(workflowsProvider(owner)).value ?? const [];
-      final added = await ref
-          .read(peopleProvider(owner).notifier)
-          .addAll(
-            [
-              for (final index in _selected.toList()..sort())
-                (
-                  name: contacts[index].name,
-                  stage: _stage,
-                  phone: contacts[index].phone,
-                  email: contacts[index].email,
-                  instagram: null,
-                ),
-            ],
-            workflow: _start ? defaultFor(workflows, _stage) : null,
-            today: today(),
-            stageSince: _since,
-          );
+      final book = ref.read(peopleProvider(owner).notifier);
+      final ticked = [
+        for (final index in _selected.toList()..sort()) contacts[index],
+      ];
+      final added = await book.addAll(
+        [
+          for (final contact in ticked)
+            (
+              name: contact.name,
+              stage: _stage,
+              phone: contact.phone,
+              email: contact.email,
+              instagram: null,
+            ),
+        ],
+        workflow: _start ? defaultFor(workflows, _stage) : null,
+        today: today(),
+        stageSince: _since,
+      );
+      // One insert, rows back in its order: the i-th added is the i-th
+      // ticked.
+      // ponytail: relies on insert order; match on a client-sent id if it
+      // ever breaks.
+      unawaited(
+        book.addPhotos({
+          for (final (i, person) in added.indexed) person.id: ?ticked[i].photo,
+        }),
+      );
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.importDone(added.length))),
       );

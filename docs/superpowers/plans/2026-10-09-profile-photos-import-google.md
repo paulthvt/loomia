@@ -63,11 +63,11 @@
 - Modify: `lib/features/contacts/presentation/people_controller.dart`, `lib/features/contacts/presentation/import_contacts_page.dart`
 - Modify: `test/features/contacts/presentation/people_controller_test.dart`, `test/features/contacts/presentation/import_contacts_page_test.dart`
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   - Controller: `addPhotos({'1': jpegBytes, '3': jpegBytes})` records `setPhoto(1, u1/new)` and `setPhoto(3, u1/new)`, and both have `photoPath` in the book. With `FakePhotoRepository.failWith` set, it completes without throwing and the book is unchanged.
   - Import page: tick a contact with a photo and one without, then Import. After `pumpAndSettle`, the people fake has exactly one `setPhoto(new-…, u1/new)`, for the person with the photo. The `importDone` snackbar shows as before.
-- [ ] **Step 2: Run** them. Expected: failures.
-- [ ] **Step 3: `PeopleController.addPhotos(Map<String, Uint8List> photos)`**:
+- [x] **Step 2: Run** them. Expected: failures.
+- [x] **Step 3: `PeopleController.addPhotos(Map<String, Uint8List> photos)`**:
 
 ```dart
   /// Photos for people just added, by person id: four at a time, in the
@@ -91,10 +91,10 @@
   }
 ```
 
-- [ ] **Step 4: Import page:** after `addAll` returns `added`, pair `added[i]` with the i-th ticked contact (the same sorted `_selected` order the drafts used). Collect those with a photo, then `unawaited(controller.addPhotos({...}))` before the snackbar. Read the controller before the first `await`.
-- [ ] **Step 5: Run** the gate.
+- [x] **Step 4: Import page:** after `addAll` returns `added`, pair `added[i]` with the i-th ticked contact (the same sorted `_selected` order the drafts used). Collect those with a photo, then `unawaited(controller.addPhotos({...}))` before the snackbar. Read the controller before the first `await`.
+- [x] **Step 5: Run** the gate.
 - [ ] **Step 6: Device check** (Android): import two contacts, one with a photo in the address book. The photo appears in the list within seconds; the other keeps initials.
-- [ ] **Step 7: Commit** `feat(contacts): bring photos from the phone import (#240)`. Push, PR `Closes #240`.
+- [x] **Step 7: Commit** `feat(contacts): bring photos from the phone import (#240)`. Push, PR `Closes #240`.
 
 ## #241 — the Google picture
 

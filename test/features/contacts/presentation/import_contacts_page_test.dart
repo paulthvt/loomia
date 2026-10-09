@@ -103,6 +103,30 @@ void main() {
     expect(avatar('Denis').photo, isNull);
   });
 
+  testWidgets('the photos of the people imported follow them', (tester) async {
+    final people = await _openImport(
+      tester,
+      FakePhoneContactsRepository([
+        (name: 'Chloé Bernard', phone: null, email: null, photo: jpegBytes),
+        (name: 'Denis', phone: null, email: null, photo: null),
+      ]),
+    );
+
+    await tester.tap(find.text('Chloé Bernard'));
+    await tester.tap(find.text('Denis'));
+    await tester.pump();
+    await tester.tap(find.text('Import 2 people'));
+    await tester.pumpAndSettle();
+
+    final chloe = people.store.values.singleWhere(
+      (person) => person.name == 'Chloé Bernard',
+    );
+    expect(people.calls.where((call) => call.startsWith('setPhoto')), [
+      'setPhoto(${chloe.id}, u1/new)',
+    ]);
+    expect(find.text('2 people imported'), findsOneWidget);
+  });
+
   testWidgets('everyone imported can start their stage on an earlier day', (
     tester,
   ) async {

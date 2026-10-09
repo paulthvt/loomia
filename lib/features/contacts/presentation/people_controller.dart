@@ -256,6 +256,27 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     ),
   );
 
+  /// Photos for people just added, by person id: four at a time, in the
+  /// background. One that fails is left out; that person keeps initials.
+  Future<void> addPhotos(Map<String, Uint8List> photos) async {
+    final storage = ref.read(photoRepositoryProvider);
+    final people = _repository;
+    final queue = photos.entries.toList();
+    for (var at = 0; at < queue.length; at += 4) {
+      await Future.wait([
+        for (final MapEntry(key: id, value: bytes) in queue.skip(at).take(4))
+          swapPhoto(
+            storage,
+            bytes: bytes,
+            old: null,
+            write: (path) async => _replace(await people.setPhoto(id, path)),
+          ).catchError((Object _) {}),
+      ]);
+      // Signed out meanwhile: the rest is not theirs to upload any more.
+      if (!ref.mounted) return;
+    }
+  }
+
   static List<String> _ids(List<Person> people) => [
     for (final person in people) person.id,
   ];

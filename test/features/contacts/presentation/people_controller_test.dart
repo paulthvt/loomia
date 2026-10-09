@@ -236,6 +236,47 @@ void main() {
     });
   });
 
+  group('addPhotos', () {
+    test('uploads each and saves its path', () async {
+      final world = _world([
+        _person('1', 'Anne'),
+        _person('2', 'Bruno'),
+        _person('3', 'Chloé'),
+      ]);
+      await world.container.read(_book(world.container).future);
+
+      await world.container.read(_book(world.container).notifier).addPhotos({
+        '1': jpegBytes,
+        '3': jpegBytes,
+      });
+
+      expect(world.people.calls.where((call) => call.startsWith('setPhoto')), [
+        'setPhoto(1, u1/new)',
+        'setPhoto(3, u1/new)',
+      ]);
+      final book = world.container.read(_book(world.container)).value!;
+      expect(
+        [for (final person in book) person.photoPath],
+        ['u1/new', null, 'u1/new'],
+      );
+    });
+
+    test('a failed upload is left out, silently', () async {
+      final world = _world([_person('1', 'Anne')]);
+      await world.container.read(_book(world.container).future);
+      world.photos.failWith = PeopleFailure.network;
+
+      await world.container.read(_book(world.container).notifier).addPhotos({
+        '1': jpegBytes,
+      });
+
+      expect(
+        world.container.read(_book(world.container)).value!.single.photoPath,
+        isNull,
+      );
+    });
+  });
+
   test('remove discards the photos of the people removed', () async {
     final world = _world([
       _person('1', 'Anne', photoPath: 'u1/anne'),
