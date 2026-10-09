@@ -2,6 +2,7 @@ import 'package:flutter/widget_previews.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/ui/preview_photo.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
@@ -27,6 +28,14 @@ Widget contactMobileLight() => _app(AppTheme.light, _details());
 
 @Preview(group: 'Contacts', name: 'Person — dark', size: Size(390, 844))
 Widget contactMobileDark() => _app(AppTheme.dark, _details());
+
+@Preview(
+  group: 'Contacts',
+  name: 'Person — photo — light',
+  size: Size(390, 844),
+)
+Widget contactPhotoMobileLight() =>
+    _app(AppTheme.light, _details(photo: MemoryImage(previewPhoto)));
 
 @Preview(group: 'Contacts', name: 'Team member — light', size: Size(390, 844))
 Widget teamMemberMobileLight() =>
@@ -135,8 +144,11 @@ Widget _list({String? selectedId, bool showRefresh = false}) => ContactList(
 );
 
 /// The person, with no next step unless it is Marie's.
-Widget _details({Person? person}) => ContactDetails(
+Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
   person: person ?? _sample.first,
+  photo: photo,
+  onChoosePhoto: () async {},
+  onRemovePhoto: () async {},
   model: BusinessModel.other,
   onStatus: (_) {},
   onEdit: (_) {},

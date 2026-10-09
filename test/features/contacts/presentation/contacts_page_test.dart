@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/domain/account.dart';
@@ -20,6 +21,8 @@ import 'package:loomia/features/contacts/presentation/next_step_section.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
+import '../../../core/photos/fake_photo_picker.dart';
+import '../../../core/photos/fake_photo_repository.dart';
 import '../../auth/fake_auth_repository.dart';
 import '../../workflows/fake_workflow_repository.dart';
 import '../fake_activity_repository.dart';
@@ -80,8 +83,12 @@ List<CustomSemanticsAction> _customActions(
 void main() {
   late FakePeopleRepository people;
   late FakeActivityRepository activities;
+  late FakePhotoRepository photos;
+  late FakePhotoPicker picker;
 
   setUp(() {
+    photos = FakePhotoRepository();
+    picker = FakePhotoPicker(jpegBytes);
     activities = FakeActivityRepository();
     people = FakePeopleRepository([_marie, _lucas])..activities = activities;
   });
@@ -99,6 +106,8 @@ void main() {
       people: people,
       activities: activities,
       workflows: workflows,
+      photos: photos,
+      picker: picker,
     );
     container.read(routerProvider).go(Routes.contacts);
     await tester.pumpAndSettle();
@@ -113,6 +122,52 @@ void main() {
     await tester.tap(find.text('Marie Dupont'));
     await tester.pumpAndSettle();
   }
+
+  group('photo', () {
+    Future<void> choose(WidgetTester tester) async {
+      await tester.tap(find.byType(AvatarControl));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose photo'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('choosing one uploads it and saves its path', (tester) async {
+      await openMarie(tester);
+
+      await choose(tester);
+
+      expect(photos.calls, contains('upload(image/jpeg)'));
+      expect(people.calls, contains('setPhoto(${_marie.id}, u1/new)'));
+      await tester.tap(find.byType(AvatarControl));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove photo'), findsOneWidget);
+    });
+
+    testWidgets('cancelling the picker uploads nothing', (tester) async {
+      picker.picked = null;
+      await openMarie(tester);
+
+      await choose(tester);
+
+      expect(picker.picks, 1);
+      expect(photos.calls.where((call) => call.startsWith('upload')), isEmpty);
+    });
+
+    testWidgets('a failed save says so and discards the upload', (
+      tester,
+    ) async {
+      await openMarie(tester);
+      people.failWith = PeopleFailure.network;
+
+      await choose(tester);
+
+      expect(
+        find.text("Couldn't save. Check your connection and try again."),
+        findsOneWidget,
+      );
+      expect(photos.calls, contains('discard(u1/new)'));
+    });
+  });
 
   /// HISTORY sits below the fold on a phone, and the list builds lazily.
   Future<void> reveal(WidgetTester tester, Finder finder) async {

@@ -249,15 +249,15 @@ String? imageType(Uint8List bytes) {
 - Modify: `lib/features/calendar/presentation/people_picker.dart`, `event_page.dart`; `lib/features/today/presentation/today_page.dart`; `lib/features/team/presentation/check_in_items.dart`
 - Modify: `test/features/contacts/presentation/contact_details_test.dart`, `contacts_page_test.dart`, `test/previews_test.dart`
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   - `contact_details_test.dart`: the header is an `AvatarControl`. With `photo: null`, its menu has no "Remove photo". With a photo, it has one, and tapping it calls `onRemovePhoto`.
   - `contacts_page_test.dart`, on Marie's page via `pumpLoomia` with a `FakePhotoPicker` returning JPEG bytes:
     - Tap the avatar, then "Choose photo": the fakes record `upload(image/jpeg)` and `setPhoto(p1, …)`, and the menu now offers "Remove photo".
     - Picker returns null: no upload.
     - `FakePeopleRepository.failWith = PeopleFailure.network` on `setPhoto`: the snackbar shows `peopleFailureNetwork`, and the new file is discarded.
-- [ ] **Step 2: Run** them. Expected: failures.
-- [ ] **Step 3: `ContactDetails`** gains `ImageProvider? photo`, `Future<void> Function() onChoosePhoto`, `Future<void> Function()? onRemovePhoto`. The header's `LoomiaAvatar` becomes `AvatarControl(name: person.name, photo: photo, onChoose: onChoosePhoto, onRemove: person.photoPath == null ? null : onRemovePhoto)`.
-- [ ] **Step 4: `ContactPage`** passes `photo: ref.watch(photoProvider(person.photoPath))` and both handlers:
+- [x] **Step 2: Run** them. Expected: failures.
+- [x] **Step 3: `ContactDetails`** gains `ImageProvider? photo`, `Future<void> Function() onChoosePhoto`, `Future<void> Function()? onRemovePhoto`. The header's `LoomiaAvatar` becomes `AvatarControl(name: person.name, photo: photo, onChoose: onChoosePhoto, onRemove: person.photoPath == null ? null : onRemovePhoto)`.
+- [x] **Step 4: `ContactPage`** passes `photo: ref.watch(photoProvider(person.photoPath))` and both handlers:
 
 ```dart
       onChoosePhoto: () async {
@@ -270,10 +270,10 @@ String? imageType(Uint8List bytes) {
 ```
 
   `writePeople` returns `Future<bool>`; wrap the remove as `() async { await writePeople(...); }` to match the type.
-- [ ] **Step 5: Every row passes `photoPath: person.photoPath`**: `contact_list.dart:321`, `people_picker.dart:107`, `event_page.dart:433` (`ContactRow`); `today_page.dart:567`, `next_step_section.dart:294` and `:314`, `check_in_items.dart:23` (`ActionItem`). Leave `import_contacts_page.dart` alone (#240).
-- [ ] **Step 6: Preview**: in `contacts_preview.dart`, add `@Preview(group: 'Contacts', name: 'Person — photo — light', size: Size(390, 844))`, built from `_details(photo: MemoryImage(previewPhoto))`. Add `'contact_photo_mobile_light'` to `previews_test.dart`. Existing contact goldens change (the camera badge).
-- [ ] **Step 7: Run** the gate. Expected: green.
-- [ ] **Step 8: Commit** `feat(contacts): choose and remove a contact's photo (#239)`.
+- [x] **Step 5: Every row passes `photoPath: person.photoPath`**: `contact_list.dart:321`, `people_picker.dart:107`, `event_page.dart:433` (`ContactRow`); `today_page.dart:567`, `check_in_items.dart:23` (`ActionItem`). Not `next_step_section.dart`: its items show an icon instead of the avatar, the person being on screen already. Leave `import_contacts_page.dart` alone (#240).
+- [x] **Step 6: Preview**: in `contacts_preview.dart`, add `@Preview(group: 'Contacts', name: 'Person — photo — light', size: Size(390, 844))`, built from `_details(photo: MemoryImage(previewPhoto))`. Add `'contact_photo_mobile_light'` to `previews_test.dart`. Existing contact goldens change (the camera badge).
+- [x] **Step 7: Run** the gate. Expected: green.
+- [x] **Step 8: Commit** `feat(contacts): choose and remove a contact's photo (#239)`.
 
 ### Task 6: The user's photo
 

@@ -46,6 +46,10 @@ void main() {
     'contacts_mobile_light': (const Size(390, 844), contactsMobileLight),
     'contacts_mobile_dark': (const Size(390, 844), contactsMobileDark),
     'contact_mobile_light': (const Size(390, 844), contactMobileLight),
+    'contact_photo_mobile_light': (
+      const Size(390, 844),
+      contactPhotoMobileLight,
+    ),
     'contact_mobile_dark': (const Size(390, 844), contactMobileDark),
     'team_member_mobile_light': (const Size(390, 844), teamMemberMobileLight),
     'contacts_desktop_light': (const Size(1440, 900), contactsDesktopLight),
