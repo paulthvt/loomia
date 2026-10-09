@@ -79,6 +79,12 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(preview());
+      // Photos decode outside the fake clock.
+      await tester.runAsync(() async {
+        for (final element in find.byType(Image).evaluate()) {
+          await precacheImage((element.widget as Image).image, element);
+        }
+      });
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);

@@ -174,7 +174,7 @@ String? imageType(Uint8List bytes) {
 - Modify: `lib/l10n/app_en.arb`, `test/previews_test.dart`
 - Create: `test/core/ui/loomia_avatar_test.dart`, `test/core/ui/avatar_control_test.dart`
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   - `loomia_avatar_test.dart`:
     - Without a photo: `find.text('MD')`.
     - With `MemoryImage(previewPhoto)`, after `tester.runAsync(precacheImage…)` and a pump: an `Image` is shown and the initials sit under it (still in the tree).
@@ -185,28 +185,28 @@ String? imageType(Uint8List bytes) {
     - Tapping opens a menu with "Choose photo" only when `onRemove` is null, and with both otherwise.
     - "Choose photo" calls `onChoose`. While its `Completer` is pending, a `CircularProgressIndicator` shows, the camera badge is gone and the control ignores taps. Once completed, the badge is back.
     - The control has a button semantics label "Change photo".
-- [ ] **Step 2: Run** them. Expected: compile failure.
-- [ ] **Step 3: `LoomiaAvatar`** gains `final ImageProvider? photo`. With one, the initials container is under, in a `Stack`, `ClipOval(child: Image(image: photo, width: d, height: d, fit: BoxFit.cover, frameBuilder: (_, child, frame, sync) => frame == null && !sync ? const SizedBox.shrink() : child, errorBuilder: (_, _, _) => const SizedBox.shrink(), excludeFromSemantics: true))`. `Semantics(label: name)` unchanged.
+- [x] **Step 2: Run** them. Expected: compile failure.
+- [x] **Step 3: `LoomiaAvatar`** gains `final ImageProvider? photo`. With one, the initials container is under, in a `Stack`, `ClipOval(child: Image(image: photo, width: d, height: d, fit: BoxFit.cover, frameBuilder: (_, child, frame, sync) => frame == null && !sync ? const SizedBox.shrink() : child, errorBuilder: (_, _, _) => const SizedBox.shrink(), excludeFromSemantics: true))`. `Semantics(label: name)` unchanged.
   `PhotoAvatar({required String name, String? photoPath, AvatarSize size})`: `photoPath == null` → `LoomiaAvatar(name:, size:)`; else `Consumer(builder: (_, ref, _) => LoomiaAvatar(name:, size:, photo: ref.watch(photoProvider(photoPath))))`.
   `ContactRow` and `ActionItem` gain `String? photoPath`, and use `PhotoAvatar` where they used `LoomiaAvatar`. `ContactRow`'s `_Face` passes it through.
-- [ ] **Step 4: `AvatarControl`** (`StatefulWidget`): `name`, `ImageProvider? photo`, `Future<void> Function() onChoose`, `Future<void> Function()? onRemove`.
+- [x] **Step 4: `AvatarControl`** (`StatefulWidget`): `name`, `ImageProvider? photo`, `Future<void> Function() onChoose`, `Future<void> Function()? onRemove`.
   - Layout: a `MenuAnchor` around a `Stack` of `LoomiaAvatar(size: header, photo:)` and either a bottom-right camera badge or, while busy, a `CircularProgressIndicator` sized to the header diameter. The badge is a `primary` circle, `Icons.photo_camera_outlined` in `onPrimary`, 2 px `surface` ring, size `AvatarSize.inline.diameter`.
   - Menu items:
     - `MenuItemButton(leadingIcon: Icon(Icons.image_outlined), child: Text(l10n.photoChoose))`.
     - When `onRemove != null`, `MenuItemButton(leadingIcon: Icon(Icons.delete_outline_rounded), child: Text(l10n.photoRemove))`.
   - The tap target is an `InkWell(customBorder: CircleBorder())`, wrapped in `Semantics(button: true, label: l10n.photoChange)` with a `Tooltip` of the same text. Disabled while busy.
   - Busy: `setState(() => _busy = true)`, `try { await run(); } finally { if (mounted) setState(() => _busy = false); }`. Errors are the caller's to show.
-- [ ] **Step 5: Copy** in `app_en.arb`:
+- [x] **Step 5: Copy** in `app_en.arb`:
   - `photoChoose`: "Choose photo". Description: menu item on a contact's or your own avatar, opens the photo picker or a file dialog.
   - `photoRemove`: "Remove photo". Description: menu item, back to initials, or to the Google picture for your own.
   - `photoChange`: "Change photo". Description: screen-reader label and tooltip of the tappable avatar.
 
   Then run `flutter gen-l10n`.
-- [ ] **Step 6: Preview photo.** Generate a 64×64 PNG (two warm tones, a circle "face"): `python3 -c` with `zlib`/`struct`, no package. Embed it as `final Uint8List previewPhoto = base64Decode('…')` in `lib/core/ui/preview_photo.dart`, with the comment "Stand-in for previews and tests: never a real face, never the network."
-- [ ] **Step 7: `ui_preview.dart`**: under the Avatar row, a second row with `LoomiaAvatar(photo: MemoryImage(previewPhoto))` at each size. Below it, the three `AvatarControl` states from the Figma board: photo, no photo, and uploading. The uploading one uses an `initiallyBusy` constructor flag (default false, previews only), so a static preview can show the ring. Raise the `components_*` preview height in `previews_test.dart` if the board outgrows 1800.
+- [x] **Step 6: Preview photo.** Generate a 64×64 PNG (two warm tones, a circle "face"): `python3 -c` with `zlib`/`struct`, no package. Embed it as `final Uint8List previewPhoto = base64Decode('…')` in `lib/core/ui/preview_photo.dart`, with the comment "Stand-in for previews and tests: never a real face, never the network."
+- [x] **Step 7: `ui_preview.dart`**: under the Avatar row, a second row with `LoomiaAvatar(photo: MemoryImage(previewPhoto))` at each size. Below it, the three `AvatarControl` states from the Figma board: photo, no photo, and uploading. The uploading one uses an `initiallyBusy` constructor flag (default false, previews only), so a static preview can show the ring. Raise the `components_*` preview height in `previews_test.dart` if the board outgrows 1800.
   In `previews_test.dart`, after `pumpAndSettle`: `await tester.runAsync(() async { for (final element in find.byType(Image).evaluate()) { await precacheImage((element.widget as Image).image, element); } }); await tester.pumpAndSettle();`.
-- [ ] **Step 8: Run** the gate. Expected: green; `components_*` goldens differ on Linux (regenerated in CI).
-- [ ] **Step 9: Commit** `feat(ui): photo avatars and the avatar control (#239)`.
+- [x] **Step 8: Run** the gate. Expected: green; `components_*` goldens differ on Linux (regenerated in CI).
+- [x] **Step 9: Commit** `feat(ui): photo avatars and the avatar control (#239)`.
 
 ### Task 4: A person's photo in the book
 

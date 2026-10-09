@@ -535,6 +535,18 @@
   "@contactCall": {
     "description": "Button on a person's detail screen that opens the phone dialer with their number."
   },
+  "photoChoose": "Choose photo",
+  "@photoChoose": {
+    "description": "Menu item on a contact's avatar, or on the user's own in Settings → Account. Opens the phone's photo picker, or a file dialog on a computer."
+  },
+  "photoRemove": "Remove photo",
+  "@photoRemove": {
+    "description": "Menu item on an avatar that has a photo. Goes back to the person's initials (for the user's own, to their Google picture when they have one)."
+  },
+  "photoChange": "Change photo",
+  "@photoChange": {
+    "description": "Screen-reader label and tooltip of the tappable avatar on a contact's page and in Settings → Account; tapping it opens the photo menu."
+  },
   "contactMore": "More",
   "@contactMore": {
     "description": "Tooltip of the ⋯ button on a person's detail screen that opens more actions."

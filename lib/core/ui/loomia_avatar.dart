@@ -1,6 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The four sizes the product uses (`docs/design/components.md` #4): inline in a
@@ -24,16 +26,19 @@ enum AvatarSize {
 }
 
 /// A person. Circular at every size, initials never a generic glyph
-/// (design principle #2).
+/// (design principle #2). A [photo] covers the initials once it loads; while
+/// it loads and if it fails, the initials show.
 class LoomiaAvatar extends StatelessWidget {
   const LoomiaAvatar({
     required this.name,
     this.size = AvatarSize.row,
+    this.photo,
     super.key,
   });
 
   final String name;
   final AvatarSize size;
+  final ImageProvider? photo;
 
   /// First letters of the first and last word — "Marie Dupont" → "MD".
   static String initialsOf(String name) {
@@ -48,23 +53,75 @@ class LoomiaAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final diameter = size.diameter;
+    final initials = Container(
+      width: diameter,
+      height: diameter,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        initialsOf(name),
+        style: size._style.copyWith(
+          color: scheme.onPrimaryContainer,
+          letterSpacing: diameter * 0.02,
+        ),
+      ),
+    );
+    final image = photo;
     return Semantics(
       label: name,
-      child: Container(
-        width: size.diameter,
-        height: size.diameter,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: scheme.primaryContainer,
-          shape: BoxShape.circle,
-        ),
-        child: Text(
-          initialsOf(name),
-          style: size._style.copyWith(
-            color: scheme.onPrimaryContainer,
-            letterSpacing: size.diameter * 0.02,
-          ),
-        ),
+      child: image == null
+          ? initials
+          : Stack(
+              children: [
+                initials,
+                ClipOval(
+                  child: Image(
+                    image: image,
+                    width: diameter,
+                    height: diameter,
+                    fit: BoxFit.cover,
+                    excludeFromSemantics: true,
+                    // Nothing over the initials until a frame is ready.
+                    frameBuilder: (_, child, frame, sync) =>
+                        frame == null && !sync
+                        ? const SizedBox.shrink()
+                        : child,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+/// [LoomiaAvatar] for a Storage path: the photo once its URL is signed.
+/// Without a path it is a plain avatar, needing no `ProviderScope`.
+class PhotoAvatar extends StatelessWidget {
+  const PhotoAvatar({
+    required this.name,
+    this.photoPath,
+    this.size = AvatarSize.row,
+    super.key,
+  });
+
+  final String name;
+  final String? photoPath;
+  final AvatarSize size;
+
+  @override
+  Widget build(BuildContext context) {
+    final path = photoPath;
+    if (path == null) return LoomiaAvatar(name: name, size: size);
+    return Consumer(
+      builder: (context, ref, _) => LoomiaAvatar(
+        name: name,
+        size: size,
+        photo: ref.watch(photoProvider(path)),
       ),
     );
   }
