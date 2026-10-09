@@ -104,9 +104,12 @@ void main() {
     final calls = await _pump(tester, onStep(4, _today));
 
     expect(find.text('NEXT STEP'), findsOneWidget);
-    expect(find.text('Samples · 4 of 5'), findsOneWidget);
     expect(find.text('Ask how the samples went'), findsOneWidget);
+    // Where it is goes on the step's row, under when: the header also sits
+    // above the reminders.
     expect(find.text('Due today'), findsOneWidget);
+    expect(find.text('Samples · 4 of 5'), findsOneWidget);
+    expect(find.byIcon(Icons.route_rounded), findsOneWidget);
     await tester.tap(find.byTooltip('Mark "Ask how the samples went" done'));
 
     expect(calls.ticks.single.step.id, 'samples-4');
@@ -129,6 +132,7 @@ void main() {
     await _pump(tester, step);
 
     expect(find.text('3 days late — Keep it short'), findsOneWidget);
+    expect(find.text('Samples · 1 of 5'), findsOneWidget);
   });
 
   testWidgets('busy: the ring stays filled and takes no second tap', (
@@ -193,20 +197,28 @@ void main() {
   group('reminders', () {
     final reminders = _sarah(reminders: [_late, _later]);
 
-    testWidgets('above the step, soonest first, no date chip', (tester) async {
+    testWidgets('sorted with the step by day, no date chip', (tester) async {
       await _pump(tester, onStep(4, _today), person: reminders);
 
       final late = tester.getTopLeft(find.text(_late.text)).dy;
       final later = tester.getTopLeft(find.text(_later.text)).dy;
       final step = tester.getTopLeft(find.text('Ask how the samples went')).dy;
-      expect(late, lessThan(later));
-      expect(later, lessThan(step));
+      expect(late, lessThan(step));
+      expect(step, lessThan(later));
       expect(find.text('2 days late'), findsOneWidget);
       expect(find.text('Due in 5 days'), findsOneWidget);
+      expect(find.byIcon(Icons.schedule_rounded), findsNWidgets(2));
       expect(find.byType(DateChip), findsNothing);
       expect(find.text('NEXT STEP'), findsOneWidget);
-      expect(find.text('Samples · 4 of 5'), findsOneWidget);
       expect(find.text('Add a reminder'), findsOneWidget);
+    });
+
+    testWidgets('on the same day, the step first', (tester) async {
+      await _pump(tester, onStep(4, _later.dueOn), person: reminders);
+
+      final later = tester.getTopLeft(find.text(_later.text)).dy;
+      final step = tester.getTopLeft(find.text('Ask how the samples went')).dy;
+      expect(step, lessThan(later));
     });
 
     testWidgets('tick, edit and add', (tester) async {

@@ -169,24 +169,31 @@ class NextStepCard extends StatelessWidget {
       child: Text(l10n.nextStepFollowWith),
     );
 
-    final (header, progressLabel) = switch (progress) {
-      final OnStep on when !waiting => (
-        l10n.nextStepTitle,
-        l10n.nextStepProgress(on.workflow.name, on.index, on.total),
+    // The workflow's name and "2 of 4" go on the step's own row: the header
+    // sits above reminders too.
+    final header = switch (progress) {
+      Done(:final workflow) when !waiting => l10n.nextStepDoneTitle(
+        workflow.name,
       ),
-      Done(:final workflow) when !waiting => (
-        l10n.nextStepDoneTitle(workflow.name),
-        null,
-      ),
-      _ => (l10n.nextStepTitle, null),
+      _ => l10n.nextStepTitle,
     };
     final retry = onRetry;
+    final reminders = person.reminders;
+    // Soonest first, the step among the reminders; on a tie, the step first.
+    // Reminders are sorted, so those before the step are a prefix.
+    final cut = switch (progress) {
+      final OnStep on when !waiting => reminders.indexWhere(
+        (reminder) => !reminder.dueOn.isBefore(on.due),
+      ),
+      _ => -1,
+    };
+    final before = cut == -1 ? reminders.length : cut;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(title: header, actionLabel: progressLabel),
-        for (final reminder in person.reminders) ...[
+        SectionHeader(title: header),
+        for (final reminder in reminders.take(before)) ...[
           _reminder(l10n, reminder),
           const SizedBox(height: AppSpacing.ms),
         ],
@@ -260,6 +267,10 @@ class NextStepCard extends StatelessWidget {
                   },
           ),
         ),
+        for (final reminder in reminders.skip(before)) ...[
+          const SizedBox(height: AppSpacing.ms),
+          _reminder(l10n, reminder),
+        ],
         if (onAddReminder case final add?)
           Align(
             alignment: AlignmentDirectional.centerStart,
@@ -283,6 +294,7 @@ class NextStepCard extends StatelessWidget {
     return ActionItem(
       key: ValueKey(reminder.id),
       name: person.name,
+      icon: Icons.schedule_rounded,
       title: reminder.text,
       reason: dueLabel(l10n, reminder.dueOn, today),
       onOpen: edit == null ? null : () => edit(reminder),
@@ -294,15 +306,18 @@ class NextStepCard extends StatelessWidget {
 
   Widget _step(AppLocalizations l10n, OnStep on) {
     final due = dueLabel(l10n, on.due, today);
+    final when = switch (on.step.note) {
+      final note? => l10n.nextStepWithNote(due, note),
+      null => due,
+    };
     return SlideSwap(
       child: ActionItem(
         key: ValueKey(on.step.id),
         name: person.name,
+        icon: Icons.route_rounded,
         title: on.step.label,
-        reason: switch (on.step.note) {
-          final note? => l10n.nextStepWithNote(due, note),
-          null => due,
-        },
+        reason: when,
+        detail: l10n.nextStepProgress(on.workflow.name, on.index, on.total),
         onOpen: onOpen,
         onResolve: () => onTick(on),
         resolved: busy,
