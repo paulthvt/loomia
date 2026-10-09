@@ -19,7 +19,13 @@ class PhoneContactsRepository {
       return null;
     }
     final contacts = await FlutterContacts.getAll(
-      properties: {ContactProperty.phone, ContactProperty.email},
+      properties: {
+        ContactProperty.phone,
+        ContactProperty.email,
+        // Small (typically 96–150 px): uploaded as is if the person is
+        // imported.
+        ContactProperty.photoThumbnail,
+      },
     );
     return [
       for (final contact in contacts)
@@ -29,6 +35,7 @@ class PhoneContactsRepository {
             name: name,
             phone: contact.phones.firstOrNull?.number,
             email: contact.emails.firstOrNull?.address,
+            photo: contact.photo?.thumbnail,
           ),
     ];
   }

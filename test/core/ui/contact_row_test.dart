@@ -3,6 +3,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/fact_row.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
+import 'package:loomia/core/ui/preview_photo.dart';
 import 'package:material_ui/material_ui.dart';
 
 Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(
@@ -33,6 +34,14 @@ void main() {
     expect(find.text('Prospect'), findsOneWidget);
     await tester.tap(find.text('Marie Dupont'));
     expect(taps, 1);
+  });
+
+  testWidgets('a photo of bytes shows without a ProviderScope', (tester) async {
+    final photo = MemoryImage(previewPhoto);
+    await _pump(tester, ContactRow(name: 'Marie Dupont', photo: photo));
+
+    expect(tester.takeException(), isNull);
+    expect(tester.widget<LoomiaAvatar>(find.byType(LoomiaAvatar)).photo, photo);
   });
 
   testWidgets('FactRow wraps a long value instead of clipping it', (

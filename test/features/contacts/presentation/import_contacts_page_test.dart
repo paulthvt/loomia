@@ -1,11 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/core/ui/contact_row.dart';
+import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
+import '../../../core/photos/fake_photo_repository.dart';
 import '../fake_people_repository.dart';
 import '../fake_phone_contacts_repository.dart';
 
@@ -45,9 +48,14 @@ void main() {
     final people = await _openImport(
       tester,
       FakePhoneContactsRepository([
-        (name: 'Maman', phone: '+33 6 12 34 56 78', email: null),
-        (name: 'Chloé Bernard', phone: '07 11 22 33 44', email: null),
-        (name: 'Denis', phone: null, email: 'denis@example.com'),
+        (name: 'Maman', phone: '+33 6 12 34 56 78', email: null, photo: null),
+        (
+          name: 'Chloé Bernard',
+          phone: '07 11 22 33 44',
+          email: null,
+          photo: null,
+        ),
+        (name: 'Denis', phone: null, email: 'denis@example.com', photo: null),
       ]),
     );
 
@@ -74,12 +82,35 @@ void main() {
     expect(find.text('2 people imported'), findsOneWidget);
   });
 
+  testWidgets('a contact with a photo shows it, one without its initials', (
+    tester,
+  ) async {
+    await _openImport(
+      tester,
+      FakePhoneContactsRepository([
+        (name: 'Chloé Bernard', phone: null, email: null, photo: jpegBytes),
+        (name: 'Denis', phone: null, email: null, photo: null),
+      ]),
+    );
+
+    LoomiaAvatar avatar(String name) => tester.widget<LoomiaAvatar>(
+      find.descendant(
+        of: find.widgetWithText(ContactRow, name),
+        matching: find.byType(LoomiaAvatar),
+      ),
+    );
+    expect(avatar('Chloé Bernard').photo, isA<MemoryImage>());
+    expect(avatar('Denis').photo, isNull);
+  });
+
   testWidgets('everyone imported can start their stage on an earlier day', (
     tester,
   ) async {
     final people = await _openImport(
       tester,
-      FakePhoneContactsRepository([(name: 'Denis', phone: null, email: null)]),
+      FakePhoneContactsRepository([
+        (name: 'Denis', phone: null, email: null, photo: null),
+      ]),
     );
 
     await tester.tap(find.text('Denis'));
@@ -104,7 +135,9 @@ void main() {
   testWidgets('since today starts the default workflow', (tester) async {
     final people = await _openImport(
       tester,
-      FakePhoneContactsRepository([(name: 'Denis', phone: null, email: null)]),
+      FakePhoneContactsRepository([
+        (name: 'Denis', phone: null, email: null, photo: null),
+      ]),
     );
 
     await tester.tap(find.text('Denis'));
@@ -123,7 +156,9 @@ void main() {
   testWidgets('the workflow switch can be turned off', (tester) async {
     final people = await _openImport(
       tester,
-      FakePhoneContactsRepository([(name: 'Denis', phone: null, email: null)]),
+      FakePhoneContactsRepository([
+        (name: 'Denis', phone: null, email: null, photo: null),
+      ]),
     );
 
     await tester.tap(find.text('Denis'));
@@ -145,8 +180,8 @@ void main() {
     await _openImport(
       tester,
       FakePhoneContactsRepository([
-        (name: 'Chloé Bernard', phone: null, email: null),
-        (name: 'Denis', phone: null, email: null),
+        (name: 'Chloé Bernard', phone: null, email: null, photo: null),
+        (name: 'Denis', phone: null, email: null, photo: null),
       ]),
     );
 
@@ -176,7 +211,7 @@ void main() {
 
   testWidgets('a failed read offers Try again', (tester) async {
     final phone = FakePhoneContactsRepository([
-      (name: 'Denis', phone: null, email: null),
+      (name: 'Denis', phone: null, email: null, photo: null),
     ])..failWith = Exception('boom');
     await _openImport(tester, phone);
     expect(find.text("Couldn't read your contacts"), findsOneWidget);

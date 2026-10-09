@@ -22,6 +22,7 @@ void main() {
         name: 'Maman',
         phone: '+33 6 12 34 56 78',
         email: null,
+        photo: null,
       ), people),
       isTrue,
     );
@@ -33,6 +34,7 @@ void main() {
         name: 'Marie Dupont',
         phone: '06 99 88 77 66',
         email: null,
+        photo: null,
       ), people),
       isFalse,
     );
@@ -40,18 +42,28 @@ void main() {
 
   test('without a number, the name decides, accents and case ignored', () {
     expect(
-      alreadyIn((name: 'helene MARTIN', phone: null, email: null), people),
+      alreadyIn((
+        name: 'helene MARTIN',
+        phone: null,
+        email: null,
+        photo: null,
+      ), people),
       isTrue,
     );
     expect(
-      alreadyIn((name: 'Anne', phone: null, email: null), people),
+      alreadyIn((name: 'Anne', phone: null, email: null, photo: null), people),
       isFalse,
     );
   });
 
   test('a number too short to tell falls back to the name', () {
     expect(
-      alreadyIn((name: 'Hélène Martin', phone: '3615', email: null), people),
+      alreadyIn((
+        name: 'Hélène Martin',
+        phone: '3615',
+        email: null,
+        photo: null,
+      ), people),
       isTrue,
     );
   });

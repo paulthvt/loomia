@@ -210,6 +210,10 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
                 if (searchKey(contact.name).contains(query))
                   ContactRow(
                     name: contact.name,
+                    photo: switch (contact.photo) {
+                      final bytes? => MemoryImage(bytes),
+                      null => null,
+                    },
                     subtitle: alreadyIn(contact, people)
                         ? l10n.importAlreadyIn
                         : contact.phone ?? contact.email,
