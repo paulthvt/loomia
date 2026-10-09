@@ -22,10 +22,10 @@ import 'package:material_ui/material_ui.dart';
 
 /// Every shared component in one sheet, both modes, for
 /// `flutter widget-preview start`. Nothing in the app imports this file.
-@Preview(group: 'Components', name: 'Light', size: Size(420, 1800))
+@Preview(group: 'Components', name: 'Light', size: Size(420, 2000))
 Widget uiComponentsLight() => _sheet(AppTheme.light);
 
-@Preview(group: 'Components', name: 'Dark', size: Size(420, 1800))
+@Preview(group: 'Components', name: 'Dark', size: Size(420, 2000))
 Widget uiComponentsDark() => _sheet(AppTheme.dark);
 
 Widget _sheet(ThemeData theme) {
