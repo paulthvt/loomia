@@ -12,6 +12,7 @@ import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
+import 'package:loomia/features/auth/presentation/account_photo.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
 import 'package:loomia/features/auth/presentation/auth_validation_copy.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
@@ -146,7 +147,7 @@ class _AccountSettingsState extends ConsumerState<AccountSettings>
           Center(
             child: AvatarControl(
               name: account.displayName,
-              photo: ref.watch(photoProvider(account.avatarPath)),
+              photo: ref.watch(accountPhotoProvider),
               onChoose: () async {
                 final bytes = await ref.read(photoPickerProvider).pick();
                 if (bytes == null || !mounted) return;

@@ -7,6 +7,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_wordmark.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/auth/presentation/account_photo.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -188,9 +189,9 @@ class _Sidebar extends ConsumerWidget {
                 const Spacer(),
                 if (account != null)
                   _SidebarItem(
-                    icon: PhotoAvatar(
+                    icon: LoomiaAvatar(
                       name: account.displayName,
-                      photoPath: account.avatarPath,
+                      photo: ref.watch(accountPhotoProvider),
                       size: AvatarSize.dense,
                     ),
                     label: account.displayName,
@@ -278,9 +279,9 @@ class AccountButton extends ConsumerWidget {
       icon: Semantics(
         label: AppLocalizations.of(context).settingsTitle,
         excludeSemantics: true,
-        child: PhotoAvatar(
+        child: LoomiaAvatar(
           name: account.displayName,
-          photoPath: account.avatarPath,
+          photo: ref.watch(accountPhotoProvider),
           size: AvatarSize.dense,
         ),
       ),

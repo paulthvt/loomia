@@ -83,6 +83,7 @@ class FakeAuthRepository implements AuthRepository {
       onboarded: current.onboarded,
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
+      googlePicture: current.googlePicture,
     );
     emit(AuthChange.userUpdated);
   }
@@ -100,6 +101,7 @@ class FakeAuthRepository implements AuthRepository {
       onboarded: current.onboarded,
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
+      googlePicture: current.googlePicture,
     );
     emit(AuthChange.userUpdated);
   }
@@ -117,6 +119,7 @@ class FakeAuthRepository implements AuthRepository {
       onboarded: current.onboarded,
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
+      googlePicture: current.googlePicture,
     );
     emit(AuthChange.userUpdated);
   }
@@ -134,6 +137,7 @@ class FakeAuthRepository implements AuthRepository {
       onboarded: current.onboarded,
       businessModel: model,
       avatarPath: current.avatarPath,
+      googlePicture: current.googlePicture,
     );
     emit(AuthChange.userUpdated);
   }
@@ -150,6 +154,7 @@ class FakeAuthRepository implements AuthRepository {
       appearance: current.appearance,
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
+      googlePicture: current.googlePicture,
     );
     emit(AuthChange.userUpdated);
   }
@@ -167,6 +172,7 @@ class FakeAuthRepository implements AuthRepository {
       onboarded: current.onboarded,
       businessModel: current.businessModel,
       avatarPath: path,
+      googlePicture: current.googlePicture,
     );
     emit(AuthChange.userUpdated);
   }

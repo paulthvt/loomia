@@ -14,6 +14,7 @@ class Account {
     this.onboarded = true,
     this.businessModel = BusinessModel.other,
     this.avatarPath,
+    this.googlePicture,
   });
 
   /// Empty when the user never gave one (an email sign-up always does).
@@ -35,6 +36,10 @@ class Account {
   /// The Storage path of the user's own photo (`avatar_path`, #239); null
   /// shows initials.
   final String? avatarPath;
+
+  /// The picture Google gave at sign-in (`avatar_url`, refreshed by Supabase
+  /// on each Google sign-in, #241); null for email and Apple accounts.
+  final String? googlePicture;
 
   /// What to show where a name is expected: the first name, else the email.
   String get displayName => firstName.isEmpty ? email : firstName;
