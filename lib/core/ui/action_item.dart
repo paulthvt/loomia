@@ -43,8 +43,8 @@ class ActionItem extends StatelessWidget {
   /// Usually an accent chip, and only when a real date drives the item.
   final Widget? chip;
 
-  /// A neutral chip at the end of the name line: who the person is to the
-  /// user (Prospect, Customer, Team).
+  /// A neutral chip right after the name: who the person is to the user
+  /// (Prospect, Customer, Team).
   final Widget? tag;
 
   /// Opening the row opens the person.
@@ -113,7 +113,9 @@ class ActionItem extends StatelessWidget {
                       Row(
                         spacing: AppSpacing.sm,
                         children: [
-                          Expanded(
+                          // Flexible, not Expanded: the tag sits right after
+                          // the name instead of floating at the line's end.
+                          Flexible(
                             child: Text(
                               title ?? name,
                               style: theme.textTheme.titleMedium,
