@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.0](https://github.com/paulthvt/loomia/compare/0.4.0...0.5.0) (2026-10-09)
+
+
+### ✨ Features
+
+* **contacts:** sort Next step by due date, tell reminders from steps ([#231](https://github.com/paulthvt/loomia/issues/231)) ([d59850c](https://github.com/paulthvt/loomia/commit/d59850c39333a7db38ba0465da32585ec291c2b1))
+* **today:** put the stage chip right after the name ([#234](https://github.com/paulthvt/loomia/issues/234)) ([a9cc7f3](https://github.com/paulthvt/loomia/commit/a9cc7f3c3dd9d18a5b6ef3f3349c55f72bfe1fa3))
+* **today:** split Priority rows into the action and a quiet line ([#236](https://github.com/paulthvt/loomia/issues/236)) ([7904af7](https://github.com/paulthvt/loomia/commit/7904af7cea461f442a519cb1849fe49d7561e6cc))
+
 ## [0.4.0](https://github.com/paulthvt/loomia/compare/0.3.0...0.4.0) (2026-10-08)
 
 
