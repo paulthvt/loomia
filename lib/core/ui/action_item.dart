@@ -1,6 +1,7 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -15,6 +16,8 @@ class ActionItem extends StatelessWidget {
     required this.name,
     required this.reason,
     this.title,
+    this.icon,
+    this.detail,
     this.chip,
     this.tag,
     this.onOpen,
@@ -29,6 +32,13 @@ class ActionItem extends StatelessWidget {
 
   /// The first line; defaults to [name]. The avatar always reads [name].
   final String? title;
+
+  /// Replaces the avatar where the person is already on screen (their own
+  /// page): says what kind of item this is instead.
+  final IconData? icon;
+
+  /// Metadata under [reason], quieter than it: where the item comes from.
+  final String? detail;
 
   /// Usually an accent chip, and only when a real date drives the item.
   final Widget? chip;
@@ -70,13 +80,31 @@ class ActionItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.lg),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          // Intrinsic height so the ring can centre on the card while the
-          // avatar and text stay top-aligned.
+          // Intrinsic height so the ring (and an icon) can centre on the card
+          // while the avatar and text stay top-aligned.
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                LoomiaAvatar(name: name),
+                // A kind-of-item icon centres like the ring; an avatar stays
+                // beside the name.
+                if (icon case final glyph?)
+                  Center(
+                    child: Container(
+                      width: AvatarSize.row.diameter,
+                      height: AvatarSize.row.diameter,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        glyph,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  )
+                else
+                  LoomiaAvatar(name: name),
                 const SizedBox(width: AppSpacing.ms),
                 Expanded(
                   child: Column(
@@ -96,6 +124,17 @@ class ActionItem extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(reason, style: theme.textTheme.bodySmall),
+                      if (detail case final meta?) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          meta,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.caption.copyWith(
+                            color: colors.textMuted,
+                          ),
+                        ),
+                      ],
                       if (chipWidget != null) ...[
                         const SizedBox(height: AppSpacing.sm),
                         chipWidget,
