@@ -552,27 +552,23 @@ class _TodayViewState extends State<TodayView> {
 
   Widget _row(AppLocalizations l10n, Due due, DateTime day) {
     // A new step or reminder is a new card: it slides in.
-    final (key, reason, label) = switch (due) {
+    final (key, reason, detail) = switch (due) {
       DueStep(:final step) => (
         step.step.id,
-        l10n.todayReason(
-          step.step.label,
-          step.workflow.name,
-          step.index,
-          step.total,
-        ),
         step.step.label,
+        l10n.nextStepProgress(step.workflow.name, step.index, step.total),
       ),
       DueReminder(:final reminder) => (
         reminder.id,
-        l10n.todayReminderReason(reminder.text),
         reminder.text,
+        l10n.todayReminderDetail,
       ),
     };
     return ActionItem(
       key: ValueKey(key),
       name: due.person.name,
       reason: reason,
+      detail: detail,
       tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),
       // The accent chip only when a real date drives it: late.
       chip: due.day.isBefore(day)
@@ -581,7 +577,7 @@ class _TodayViewState extends State<TodayView> {
       onOpen: () => widget.onOpen(due.person),
       onResolve: () => widget.onTick(due),
       resolved: widget.busy.contains(due.key),
-      resolveLabel: l10n.nextStepMarkDone(label),
+      resolveLabel: l10n.nextStepMarkDone(reason),
     );
   }
 }
