@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.0](https://github.com/paulthvt/loomia/compare/0.5.0...0.6.0) (2026-10-09)
+
+
+### ✨ Features
+
+* **auth:** the Google picture as your photo ([#248](https://github.com/paulthvt/loomia/issues/248)) ([20b31e2](https://github.com/paulthvt/loomia/commit/20b31e2927edebdb9a4c25391d3a7274f740a43b))
+* **contacts:** bring photos from the phone import ([#247](https://github.com/paulthvt/loomia/issues/247)) ([f07f3ad](https://github.com/paulthvt/loomia/commit/f07f3ade470fdbd5a9b5eda0083525f1e8725919))
+* **contacts:** profile photos for contacts and yourself ([#244](https://github.com/paulthvt/loomia/issues/244)) ([06a7f90](https://github.com/paulthvt/loomia/commit/06a7f90ac864e26f4bb9be251a04db2638389dc7))
+
+
+### 📚 Documentation
+
+* profile photos design and upload plan ([#242](https://github.com/paulthvt/loomia/issues/242)) ([5a8f0f9](https://github.com/paulthvt/loomia/commit/5a8f0f9f0da341eb135d4c086492071b06cd341b))
+
+
+### 🔧 Miscellaneous
+
+* **l10n:** sync translations ([#237](https://github.com/paulthvt/loomia/issues/237)) ([3fefd2f](https://github.com/paulthvt/loomia/commit/3fefd2f5964365753f419b5735017f5b3e30294d))
+* **l10n:** sync translations ([#245](https://github.com/paulthvt/loomia/issues/245)) ([fb69e96](https://github.com/paulthvt/loomia/commit/fb69e96fee6da19e0306b98f77bb076c003f977b))
+
 ## [0.5.0](https://github.com/paulthvt/loomia/compare/0.4.0...0.5.0) (2026-10-09)
 
 
