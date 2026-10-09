@@ -1,9 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
 
 /// Someone in the phone's address book, as the import sees them: only what
-/// Add someone would take.
-typedef PhoneContact = ({String name, String? phone, String? email});
+/// Add someone would take, and the thumbnail of their photo (#240).
+typedef PhoneContact = ({
+  String name,
+  String? phone,
+  String? email,
+  Uint8List? photo,
+});
 
 /// Whether [contact] looks like someone already in [people]: the same phone
 /// number, or else the same name. Flagged for the user to decide, never

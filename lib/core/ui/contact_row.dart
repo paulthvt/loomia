@@ -10,6 +10,7 @@ class ContactRow extends StatelessWidget {
   const ContactRow({
     required this.name,
     this.photoPath,
+    this.photo,
     this.subtitle,
     this.trailing,
     this.selected = false,
@@ -23,6 +24,10 @@ class ContactRow extends StatelessWidget {
 
   /// Their photo's Storage path; null shows initials.
   final String? photoPath;
+
+  /// Shown instead of [photoPath]'s: bytes not yet in Storage, as on the
+  /// import.
+  final ImageProvider? photo;
   final String? subtitle;
   final Widget? trailing;
 
@@ -49,6 +54,7 @@ class ContactRow extends StatelessWidget {
         child: _Face(
           name: name,
           photoPath: photoPath,
+          photo: photo,
           turned: checked ?? false,
         ),
       ),
@@ -70,16 +76,21 @@ class _Face extends StatelessWidget {
   const _Face({
     required this.name,
     required this.photoPath,
+    required this.photo,
     required this.turned,
   });
 
   final String name;
   final String? photoPath;
+  final ImageProvider? photo;
   final bool turned;
 
   @override
   Widget build(BuildContext context) {
-    final front = PhotoAvatar(name: name, photoPath: photoPath);
+    final bytes = photo;
+    final front = bytes != null
+        ? LoomiaAvatar(name: name, photo: bytes)
+        : PhotoAvatar(name: name, photoPath: photoPath);
     const back = _Check();
     if (context.reduceMotion) {
       return AnimatedSwitcher(
