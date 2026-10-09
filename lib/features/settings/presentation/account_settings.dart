@@ -1,20 +1,28 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/business_model/business_model_copy.dart';
+import 'package:loomia/core/photos/photo_picker.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
+import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/auth/domain/auth_failure.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
 import 'package:loomia/features/auth/presentation/auth_validation_copy.dart';
+import 'package:loomia/features/contacts/data/people_repository.dart';
+import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/settings/presentation/settings_action.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_option.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Name, email, company, delete account.
+/// Photo, name, email, company, delete account.
 ///
 /// Deleting needs no navigation here: the session ends, and the router's
 /// redirect takes the user to /welcome.
@@ -27,6 +35,34 @@ class AccountSettings extends ConsumerStatefulWidget {
 
 class _AccountSettingsState extends ConsumerState<AccountSettings>
     with SettingsAction {
+  /// Saves [bytes] (null: removes) as the user's photo. Errors show in a
+  /// SnackBar: the avatar carries the busy state, not the form.
+  Future<void> _photo(Uint8List? bytes, String? old) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final photos = ref.read(photoRepositoryProvider);
+    final auth = ref.read(authRepositoryProvider);
+    try {
+      await swapPhoto(
+        photos,
+        bytes: bytes,
+        old: old,
+        write: auth.updateAvatarPath,
+      );
+    } on AuthFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(authFailureCopy(l10n, failure))),
+      );
+    } catch (error) {
+      // The upload: Storage, the connection, or bytes that are no image.
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(peopleFailureCopy(l10n, peopleFailureFrom(error))),
+        ),
+      );
+    }
+  }
+
   Future<void> _editName(String current) async {
     final name = await LoomiaDialog.show<String>(
       context,
@@ -107,6 +143,21 @@ class _AccountSettingsState extends ConsumerState<AccountSettings>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (account != null) ...[
+          Center(
+            child: AvatarControl(
+              name: account.displayName,
+              photo: ref.watch(photoProvider(account.avatarPath)),
+              onChoose: () async {
+                final bytes = await ref.read(photoPickerProvider).pick();
+                if (bytes == null || !mounted) return;
+                await _photo(bytes, account.avatarPath);
+              },
+              onRemove: account.avatarPath == null
+                  ? null
+                  : () => _photo(null, account.avatarPath),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
           SettingsGroup(
             children: [
               ListTile(

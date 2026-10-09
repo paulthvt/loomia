@@ -188,8 +188,9 @@ class _Sidebar extends ConsumerWidget {
                 const Spacer(),
                 if (account != null)
                   _SidebarItem(
-                    icon: LoomiaAvatar(
+                    icon: PhotoAvatar(
                       name: account.displayName,
+                      photoPath: account.avatarPath,
                       size: AvatarSize.dense,
                     ),
                     label: account.displayName,
@@ -277,7 +278,11 @@ class AccountButton extends ConsumerWidget {
       icon: Semantics(
         label: AppLocalizations.of(context).settingsTitle,
         excludeSemantics: true,
-        child: LoomiaAvatar(name: account.displayName, size: AvatarSize.dense),
+        child: PhotoAvatar(
+          name: account.displayName,
+          photoPath: account.avatarPath,
+          size: AvatarSize.dense,
+        ),
       ),
     );
   }

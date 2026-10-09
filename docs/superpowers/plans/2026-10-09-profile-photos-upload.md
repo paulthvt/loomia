@@ -282,23 +282,23 @@ String? imageType(Uint8List bytes) {
 - Modify: `lib/features/settings/presentation/account_settings.dart`, `settings_page.dart`; `lib/app/shell/app_shell.dart`
 - Modify: `test/features/settings/presentation/settings_page_test.dart` (the real `account` getter has no unit test today; reading `avatar_path` is one line next to `locale`, checked on device in Task 7)
 
-- [ ] **Step 1: Write the failing tests** in `settings_page_test.dart`, Account section open, `FakePhotoPicker` returning JPEG bytes:
+- [x] **Step 1: Write the failing tests** in `settings_page_test.dart`, Account section open, `FakePhotoPicker` returning JPEG bytes:
   - "Choose photo" records `upload(image/jpeg)` then `updateAvatarPath(u1/new)` on the fake auth. Then "Remove photo" records `updateAvatarPath(null)` and discards `u1/new`.
   - `updateAvatarPath` failing with an `AuthFailure`: a snackbar with `authFailureCopy`, and the new file discarded.
   - With `account.avatarPath` set and `photoProvider` overridden to a `MemoryImage`, the sidebar (desktop), the top-bar `AccountButton` (mobile) and the Settings list's leading avatar each show an `Image`.
-- [ ] **Step 2: Run** them. Expected: failures.
-- [ ] **Step 3: `Account.avatarPath`** (`String?`, doc: "The Storage path of the user's own photo (`avatar_path`); null shows initials."). `AuthRepository.account` reads `metadata['avatar_path'] as String?`. `updateAvatarPath(String? path) => _guard(() => _auth.updateUser(UserAttributes(data: {'avatar_path': path})))`. The fake records the call, rebuilds `account` with the path and emits `userUpdated`, like `updateLocale`.
-- [ ] **Step 4: `AccountSettings`**: above the first `SettingsGroup`, centred, an `AvatarControl` with:
+- [x] **Step 2: Run** them. Expected: failures.
+- [x] **Step 3: `Account.avatarPath`** (`String?`, doc: "The Storage path of the user's own photo (`avatar_path`); null shows initials."). `AuthRepository.account` reads `metadata['avatar_path'] as String?`. `updateAvatarPath(String? path) => _guard(() => _auth.updateUser(UserAttributes(data: {'avatar_path': path})))`. The fake records the call, rebuilds `account` with the path and emits `userUpdated`, like `updateLocale`.
+- [x] **Step 4: `AccountSettings`**: above the first `SettingsGroup`, centred, an `AvatarControl` with:
   - `name: account.displayName`
   - `photo: ref.watch(photoProvider(account.avatarPath))`
   - `onChoose`: pick, then `_photo(bytes)`
   - `onRemove`: `account.avatarPath == null ? null : () => _photo(null)`
   - then `SizedBox(height: AppSpacing.xl)`.
 
-  `_photo` captures the messenger and l10n, then `swapPhoto(ref.read(photoRepositoryProvider), bytes:, old: account.avatarPath, write: ref.read(authRepositoryProvider).updateAvatarPath)`. `on PeopleFailure` / `on AuthFailure` shows the matching copy in a `SnackBar`. It does not go through `run`/`FormError`: the Figma shows the ring on the avatar, not a form error.
-- [ ] **Step 5: The shell and the Settings list:** `app_shell.dart:191` and `:280`, `settings_page.dart:244` pass `photo: ref.watch(photoProvider(account.avatarPath))` to their `LoomiaAvatar`. Each is already in a `ConsumerWidget` / `ConsumerState`.
-- [ ] **Step 6: Run** the gate. Expected: green.
-- [ ] **Step 7: Commit** `feat(settings): your own photo (#239)`.
+  `_photo` captures the messenger and l10n, then `swapPhoto(ref.read(photoRepositoryProvider), bytes:, old: account.avatarPath, write: ref.read(authRepositoryProvider).updateAvatarPath)`. `on AuthFailure` shows `authFailureCopy`; anything else (the upload) `peopleFailureCopy(peopleFailureFrom(error))`, in a `SnackBar`. Not `guardPeople`: it would turn an `AuthFailure` into a generic one. It does not go through `run`/`FormError`: the Figma shows the ring on the avatar, not a form error.
+- [x] **Step 5: The shell and the Settings list:** `app_shell.dart:191` and `:280`, `settings_page.dart:244` become `PhotoAvatar(photoPath: account.avatarPath)`: one argument each, the same resolver as the rows.
+- [x] **Step 6: Run** the gate. Expected: green.
+- [x] **Step 7: Commit** `feat(settings): your own photo (#239)`.
 
 ### Task 7: Account deletion, docs, device check
 

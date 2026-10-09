@@ -6,7 +6,8 @@ import 'package:loomia/core/photos/photo_repository.dart';
 
 /// Records calls; uploads return `u1/new` unless [nextPath] says otherwise.
 class FakePhotoRepository implements PhotoRepository {
-  /// One entry per call, e.g. `upload(image/jpeg)`, `discard(u1/old)`.
+  /// One entry per upload or discard, e.g. `upload(image/jpeg)`,
+  /// `discard(u1/old)`. Signing is not recorded: every avatar on screen does it.
   final List<String> calls = <String>[];
 
   String nextPath = 'u1/new';
@@ -31,7 +32,6 @@ class FakePhotoRepository implements PhotoRepository {
 
   @override
   Future<String> signedUrl(String path) async {
-    calls.add('signedUrl($path)');
     return 'https://photos.test/$path';
   }
 }
