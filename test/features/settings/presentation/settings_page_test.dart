@@ -26,6 +26,7 @@ Future<FakeAuthRepository> _openSettings(
   WidgetTester tester, {
   Size size = const Size(390, 844),
   String? avatarPath,
+  String? googlePicture,
   FakePhotoRepository? photos,
   FakePhotoPicker? picker,
 }) async {
@@ -38,6 +39,7 @@ Future<FakeAuthRepository> _openSettings(
       firstName: 'Pauline',
       email: 'p@example.com',
       avatarPath: avatarPath,
+      googlePicture: googlePicture,
     );
   addTearDown(fake.dispose);
   await tester.pumpWidget(
@@ -185,6 +187,37 @@ void main() {
       await tester.tap(find.text(item));
       await tester.pumpAndSettle();
     }
+
+    testWidgets('a Google picture shows; nothing to remove until an upload', (
+      tester,
+    ) async {
+      final auth = await _openSettings(
+        tester,
+        googlePicture: 'https://lh3.googleusercontent.com/a/abc=s96-c',
+        picker: FakePhotoPicker(jpegBytes),
+      );
+      await tester.tap(find.text('Pauline'));
+      await tester.pumpAndSettle();
+      final control = find.byType(AvatarControl);
+      expect(tester.widget<AvatarControl>(control).photo, isA<NetworkImage>());
+
+      await tester.tap(control);
+      await tester.pumpAndSettle();
+      expect(find.text('Remove photo'), findsNothing);
+      await tester.tap(find.text('Choose photo'));
+      await tester.pumpAndSettle();
+      await tapMenu(tester, 'Remove photo');
+
+      expect(auth.calls, [
+        'updateAvatarPath(u1/new)',
+        'updateAvatarPath(null)',
+      ]);
+      // Back to Google's.
+      expect(
+        (tester.widget<AvatarControl>(control).photo! as NetworkImage).url,
+        'https://lh3.googleusercontent.com/a/abc=s256-c',
+      );
+    });
 
     testWidgets('choose then remove: saved on the account, files swapped', (
       tester,

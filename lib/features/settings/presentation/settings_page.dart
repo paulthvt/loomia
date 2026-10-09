@@ -11,6 +11,7 @@ import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/auth/presentation/account_photo.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
 import 'package:loomia/features/settings/presentation/account_settings.dart';
 import 'package:loomia/features/settings/presentation/appearance_settings.dart';
@@ -241,9 +242,9 @@ class _SettingsListState extends ConsumerState<_SettingsList>
             children: [
               ListTile(
                 selected: selected == SettingsSection.account,
-                leading: PhotoAvatar(
+                leading: LoomiaAvatar(
                   name: account.displayName,
-                  photoPath: account.avatarPath,
+                  photo: ref.watch(accountPhotoProvider),
                 ),
                 // One line each: this row only says whose account it is; the
                 // full email is on the Account screen.

@@ -41,6 +41,7 @@ class AuthRepository {
       onboarded: metadata['onboarded'] == true,
       businessModel: BusinessModel.parse(metadata['business_model']),
       avatarPath: metadata['avatar_path'] as String?,
+      googlePicture: metadata['avatar_url'] as String?,
     );
   }
 

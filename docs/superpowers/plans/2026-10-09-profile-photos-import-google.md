@@ -93,7 +93,7 @@
 
 - [x] **Step 4: Import page:** after `addAll` returns `added`, pair `added[i]` with the i-th ticked contact (the same sorted `_selected` order the drafts used). Collect those with a photo, then `unawaited(controller.addPhotos({...}))` before the snackbar. Read the controller before the first `await`.
 - [x] **Step 5: Run** the gate.
-- [ ] **Step 6: Device check** (Android): import two contacts, one with a photo in the address book. The photo appears in the list within seconds; the other keeps initials.
+- [x] **Step 6: Device check** (Android): import two contacts, one with a photo in the address book. The photo appears in the list within seconds; the other keeps initials. Done by the user before #247 was merged.
 - [x] **Step 7: Commit** `feat(contacts): bring photos from the phone import (#240)`. Push, PR `Closes #240`.
 
 ## #241 — the Google picture
@@ -102,14 +102,13 @@
 
 **Files:**
 - Modify: `lib/features/auth/domain/account.dart`, `lib/features/auth/data/auth_repository.dart`, `test/features/auth/fake_auth_repository.dart`
-- Create: `lib/features/auth/presentation/account_photo.dart`, `test/features/auth/presentation/account_photo_test.dart`, `test/features/auth/domain/account_test.dart` (if absent; else add to it)
+- Create: `lib/features/auth/presentation/account_photo.dart`, `test/features/auth/presentation/account_photo_test.dart`
 - Modify: `lib/app/shell/app_shell.dart`, `lib/features/settings/presentation/settings_page.dart`, `lib/features/settings/presentation/account_settings.dart`, `test/features/settings/presentation/settings_page_test.dart`
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   - `googlePictureAt`:
     - `https://lh3.googleusercontent.com/a/x=s96-c` becomes `…=s256-c`;
-    - a URL with no `=s<n>` suffix is unchanged;
-    - null stays null.
+    - a URL with no `=s<n>` suffix is unchanged. (It takes a non-null URL: the provider only calls it with one, so no null case.)
   - `accountPhotoProvider`, with a container, overriding `accountProvider` and `photoRepositoryProvider`:
     - with an `avatarPath`: a `NetworkImage` of the signed URL;
     - with only `googlePicture`: a `NetworkImage` of the 256 px Google URL;
@@ -118,15 +117,15 @@
     - the Account control shows an image;
     - its menu has no Remove photo;
     - after Choose photo, Remove photo appears, and removing it calls `updateAvatarPath(null)`.
-- [ ] **Step 2: Run** them. Expected: failures.
-- [ ] **Step 3:** `Account.googlePicture` (`String?`, doc: "The picture Google gave at sign-in (`avatar_url`, refreshed by Supabase on each Google sign-in); null for email and Apple accounts."). `AuthRepository.account` reads `metadata['avatar_url'] as String?`. The fake carries it through each copy.
-- [ ] **Step 4: `account_photo.dart`.**
+- [x] **Step 2: Run** them. Expected: failures.
+- [x] **Step 3:** `Account.googlePicture` (`String?`, doc: "The picture Google gave at sign-in (`avatar_url`, refreshed by Supabase on each Google sign-in); null for email and Apple accounts."). `AuthRepository.account` reads `metadata['avatar_url'] as String?`. The fake carries it through each copy.
+- [x] **Step 4: `account_photo.dart`.**
   - `googlePictureAt(String? url, int px)`: replaces a trailing `=s\d+(-c)?` with `=s$px-c`.
   - `accountPhotoProvider = Provider<ImageProvider?>`:
     - `account?.avatarPath` set → `ref.watch(photoProvider(path))`;
     - else `googlePicture` set → `NetworkImage(googlePictureAt(url, 256))`;
     - else null.
-- [ ] **Step 5:** The shell sidebar and `AccountButton` (`app_shell.dart`) and the Settings list (`settings_page.dart`) go back from `PhotoAvatar(photoPath: account.avatarPath)` to `LoomiaAvatar(photo: ref.watch(accountPhotoProvider))`. So does `AccountSettings`'s control. Its `onRemove` stays tied to `avatarPath`.
-- [ ] **Step 6: Run** the gate.
+- [x] **Step 5:** The shell sidebar and `AccountButton` (`app_shell.dart`) and the Settings list (`settings_page.dart`) go back from `PhotoAvatar(photoPath: account.avatarPath)` to `LoomiaAvatar(photo: ref.watch(accountPhotoProvider))`. So does `AccountSettings`'s control. Its `onRemove` stays tied to `avatarPath`.
+- [x] **Step 6: Run** the gate.
 - [ ] **Step 7: Device check:** sign in with Google on the web and on Android. The Google picture shows in the sidebar or top bar and in Settings. Upload a photo: it replaces the Google one. Remove it: the Google one is back.
-- [ ] **Step 8: Commit** `feat(auth): the Google picture as your photo (#241)`. Push, PR `Closes #241`.
+- [x] **Step 8: Commit** `feat(auth): the Google picture as your photo (#241)`. Push, PR `Closes #241`.
