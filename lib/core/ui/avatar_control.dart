@@ -55,6 +55,8 @@ class _AvatarControlState extends State<AvatarControl> {
     return PopupMenuButton<Future<void> Function()>(
       tooltip: l10n.photoChange,
       enabled: !_busy,
+      // The ink follows the avatar, not the square box it sits in.
+      borderRadius: BorderRadius.circular(size.diameter / 2),
       onSelected: (action) => _run(action),
       // Under the avatar, as the Figma frames place it.
       position: PopupMenuPosition.under,

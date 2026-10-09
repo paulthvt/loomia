@@ -89,6 +89,21 @@ void main() {
     expect(find.byIcon(Icons.photo_camera_outlined), findsOneWidget);
   });
 
+  testWidgets('the ink is round, like the avatar', (tester) async {
+    await _pump(
+      tester,
+      AvatarControl(name: 'Marie Dupont', onChoose: () async {}),
+    );
+
+    final ink = tester.widget<InkWell>(
+      find.descendant(
+        of: find.byType(AvatarControl),
+        matching: find.byType(InkWell),
+      ),
+    );
+    expect(ink.borderRadius, BorderRadius.circular(28));
+  });
+
   testWidgets('reads as a button: Change photo', (tester) async {
     final semantics = tester.ensureSemantics();
     await _pump(
