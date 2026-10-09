@@ -214,7 +214,7 @@ String? imageType(Uint8List bytes) {
 - Modify: `lib/features/contacts/domain/person.dart`, `lib/features/contacts/data/people_repository.dart`, `lib/features/contacts/presentation/people_controller.dart`
 - Modify: `test/features/contacts/fake_people_repository.dart`, `test/features/contacts/data/people_repository_test.dart`, `test/features/contacts/presentation/people_controller_test.dart`
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   - Repository:
     - `personFromRow(_row({'photo_path': 'u1/abc'})).photoPath == 'u1/abc'`, and a blank path reads as null.
     - `personToRow(person)` has no `photo_path` key.
@@ -222,10 +222,10 @@ String? imageType(Uint8List bytes) {
     - `setPhoto(marie, bytes)`: the fake records `setPhoto(p1, u1/new)`, the book's Marie has `photoPath == 'u1/new'`, and her old `u1/old` is discarded.
     - `setPhoto(marie, null)`: the path is cleared and the old file discarded.
     - `remove(['p1', 'p2'])`, with only p1 having a photo, discards `[u1/old]` after the delete. A failed delete discards nothing.
-- [ ] **Step 2: Run** them. Expected: failures.
-- [ ] **Step 3: `Person.photoPath`** (`String?`, doc: "The Storage path of their photo; null shows initials."). Add it to the constructor and to `_copy`. `personFromRow` reads `photoPath: _text(row['photo_path'])`. Leave `personToRow` alone and say why in its doc: "nor the photo: only setPhoto writes it".
-- [ ] **Step 4: `PeopleRepository.setPhoto(String id, String? path) => _write(id, {'photo_path': path})`.** In the fake, record `setPhoto(id, path)` and update the store.
-- [ ] **Step 5: `PeopleController`:**
+- [x] **Step 2: Run** them. Expected: failures.
+- [x] **Step 3: `Person.photoPath`** (`String?`, doc: "The Storage path of their photo; null shows initials."). Add it to the constructor and to `_copy`. `personFromRow` reads `photoPath: _text(row['photo_path'])`. Leave `personToRow` alone and say why in its doc: "nor the photo: only setPhoto writes it".
+- [x] **Step 4: `PeopleRepository.setPhoto(String id, String? path) => _write(id, {'photo_path': path})`.** In the fake, record `setPhoto(id, path)` and update the store.
+- [x] **Step 5: `PeopleController`:**
 
 ```dart
   /// [bytes] null removes it. The old file goes once the new path is saved.
@@ -239,8 +239,8 @@ String? imageType(Uint8List bytes) {
 ```
 
   In `remove`, read `final photos = [for (final id in ids) ?_find(id)?.photoPath];` before the delete. After `_change`, call `unawaited(ref.read(photoRepositoryProvider).discard(photos))`. Capture the repository before the `await`.
-- [ ] **Step 6:** In `test/app/app_harness.dart`, `pumpLoomia` gains `FakePhotoRepository? photos` and `FakePhotoPicker? picker`, overriding `photoRepositoryProvider` and `photoPickerProvider` (defaults: new fakes). Run the gate. Expected: green.
-- [ ] **Step 7: Commit** `feat(contacts): a person's photo (#239)`.
+- [x] **Step 6:** In `test/app/app_harness.dart`, `pumpLoomia` gains `FakePhotoRepository? photos` and `FakePhotoPicker? picker`, overriding `photoRepositoryProvider` and `photoPickerProvider` (defaults: new fakes). Run the gate. Expected: green.
+- [x] **Step 7: Commit** `feat(contacts): a person's photo (#239)`.
 
 ### Task 5: Photos on the contact page and everywhere people show
 

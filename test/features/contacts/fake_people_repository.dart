@@ -149,11 +149,25 @@ class FakePeopleRepository implements PeopleRepository {
       monthlyVolumeTarget: person.monthlyVolumeTarget,
       place: stored.place,
       pausedAt: stored.pausedAt,
+      // As personToRow: an update never writes the photo.
+      photoPath: stored.photoPath,
     );
     store[person.id] = saved;
     // As the trigger: the latest stage entry follows a corrected since.
     if (stageSince != null) activities?.moveLatestStage(person.id, stageSince);
     return _served(saved);
+  }
+
+  @override
+  Future<Person> setPhoto(String id, String? path) async {
+    await _record('setPhoto($id, $path)');
+    final before = store[id]!;
+    return _with(
+      before,
+      place: before.place,
+      pausedAt: before.pausedAt,
+      photoPath: () => path,
+    );
   }
 
   @override
@@ -371,6 +385,7 @@ class FakePeopleRepository implements PeopleRepository {
     ProspectStatus? status,
     required WorkflowPlace? place,
     required DateTime? pausedAt,
+    String? Function()? photoPath,
   }) {
     final newStage = stage ?? before.stage;
     final person = Person(
@@ -401,6 +416,7 @@ class FakePeopleRepository implements PeopleRepository {
       monthlyVolumeTarget: before.monthlyVolumeTarget,
       place: place,
       pausedAt: pausedAt,
+      photoPath: photoPath == null ? before.photoPath : photoPath(),
     );
     store[person.id] = person;
     return _served(person);

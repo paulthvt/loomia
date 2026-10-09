@@ -91,6 +91,10 @@ class PeopleRepository {
   Future<List<Person>> setPlace(List<String> ids, WorkflowPlace? place) =>
       _writeAll(ids, {...placeToRow(place), 'paused_at': null});
 
+  /// Null: no photo. The file itself is the caller's (`swapPhoto`).
+  Future<Person> setPhoto(String id, String? path) =>
+      _write(id, {'photo_path': path});
+
   /// [notNow] also sets a prospect's status to Not now.
   /// Corrects the day their stage began. The database moves the latest stage
   /// entry in the history with it.
@@ -290,6 +294,7 @@ Person personFromRow(Map<String, dynamic> row) {
       final String day => DateTime.parse(day),
       _ => null,
     },
+    photoPath: _text(row['photo_path']),
     reminders: sortedReminders([
       for (final reminder in (row['reminder'] as List?) ?? const [])
         reminderFromRow(reminder as Map<String, dynamic>),
@@ -307,7 +312,9 @@ Reminder reminderFromRow(Map<String, dynamic> row) => (
 
 /// What an update writes: everything the user can edit, except the stage and
 /// the workflow fields. Only [PeopleRepository.setStage] writes it, so a stale
-/// copy never moves someone back (and into the history).
+/// copy never moves someone back (and into the history). Nor the photo: only
+/// [PeopleRepository.setPhoto] writes it, so a stale copy never brings a
+/// removed one back.
 Map<String, dynamic> personToRow(Person person) => {
   'name': person.name.trim(),
   'prospect_status': _statusColumn[person.prospectStatus],

@@ -1,6 +1,11 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
@@ -227,13 +232,29 @@ class PeopleController extends AsyncNotifier<List<Person>> {
       follow == null ? null : start(follow.workflow, firstDue: follow.firstDue);
 
   /// All of [ids] in one write.
+  /// Their photos' files go after the rows, best effort.
   Future<void> remove(List<String> ids) async {
+    final photos = ref.read(photoRepositoryProvider);
+    final paths = [for (final id in ids) ?_find(id)?.photoPath];
     await _repository.delete(ids);
+    unawaited(photos.discard(paths));
     _change((people) => [...people.where((other) => !ids.contains(other.id))]);
     // The database also took them off their events: the calendar's counts
     // are stale until it reads them again.
     if (ref.mounted) ref.invalidate(eventsProvider(owner));
   }
+
+  /// [bytes] null removes it. The old file goes once the new path is saved;
+  /// a failed save discards the new one. Throws [PeopleFailure] only.
+  Future<void> setPhoto(Person person, Uint8List? bytes) => guardPeople(
+    () => swapPhoto(
+      ref.read(photoRepositoryProvider),
+      bytes: bytes,
+      old: (_find(person.id) ?? person).photoPath,
+      write: (path) async =>
+          _replace(await _repository.setPhoto(person.id, path)),
+    ),
+  );
 
   static List<String> _ids(List<Person> people) => [
     for (final person in people) person.id,

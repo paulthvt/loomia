@@ -29,6 +29,18 @@ Map<String, dynamic> _row([Map<String, dynamic> changes = const {}]) => {
 
 void main() {
   group('personFromRow', () {
+    test('reads the photo path, blank as none', () {
+      expect(personFromRow(_row({'photo_path': 'u1/abc'})).photoPath, 'u1/abc');
+      expect(personFromRow(_row({'photo_path': ' '})).photoPath, isNull);
+      expect(personFromRow(_row()).photoPath, isNull);
+    });
+
+    test('an edit never writes the photo: only setPhoto does', () {
+      final person = personFromRow(_row({'photo_path': 'u1/abc'}));
+
+      expect(personToRow(person).containsKey('photo_path'), isFalse);
+    });
+
     test('maps columns to fields', () {
       final person = personFromRow(_row());
 
