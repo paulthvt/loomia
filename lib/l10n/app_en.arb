@@ -274,22 +274,9 @@
       "count": { "type": "int" }
     }
   },
-  "todayReason": "{step} · {workflow}, step {index} of {total}",
-  "@todayReason": {
-    "description": "Line under a person's name on Today: the step to do, then the workflow and where they are in it, e.g. 'Send the samples · Samples, step 2 of 5'.",
-    "placeholders": {
-      "step": { "type": "String", "example": "Send the samples" },
-      "workflow": { "type": "String", "example": "Samples" },
-      "index": { "type": "int" },
-      "total": { "type": "int" }
-    }
-  },
-  "todayReminderReason": "{text} · Reminder",
-  "@todayReminderReason": {
-    "description": "Second line of a reminder's row on Today, under the person's name: what the user wrote for themselves, then the word Reminder. E.g. 'Call back about the diffuser · Reminder'.",
-    "placeholders": {
-      "text": { "type": "String" }
-    }
+  "todayReminderDetail": "Reminder",
+  "@todayReminderDetail": {
+    "description": "Quiet line under a reminder on Today, below what the user wrote for themselves: says the row is a reminder they set, not a workflow step."
   },
   "todayShowMore": "{count, plural, =1{And one more waiting} other{And {count} more waiting}}",
   "@todayShowMore": {
@@ -1053,7 +1040,7 @@
   },
   "nextStepProgress": "{workflow} · {index} of {total}",
   "@nextStepProgress": {
-    "description": "Trailing text of the Next step header: the workflow's name and which step this is, e.g. 'Samples · 3 of 5'.",
+    "description": "Quiet line under a workflow step's due date on a contact's page, and under the step on Today: the workflow's name and which step this is, e.g. 'Samples · 3 of 5'.",
     "placeholders": {
       "workflow": { "type": "String" },
       "index": { "type": "int" },

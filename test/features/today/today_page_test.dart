@@ -83,10 +83,8 @@ void main() {
       tester.getTopLeft(find.text('Bruno')).dy,
       lessThan(tester.getTopLeft(find.text('Anna')).dy),
     );
-    expect(
-      find.text('Send a first message · Samples, step 1 of 5'),
-      findsNWidgets(2),
-    );
+    expect(find.text('Send a first message'), findsNWidgets(2));
+    expect(find.text('Samples · 1 of 5'), findsNWidgets(2));
     // The accent chip only where the date says something: late.
     expect(find.text('2 days late'), findsOneWidget);
     expect(find.text('Due today'), findsNothing);
@@ -179,18 +177,15 @@ void main() {
     await pumpLoomia(tester, size: _tallPhone, people: people);
 
     expect(find.text('2 people are worth a message today'), findsOneWidget);
-    expect(find.text('Send her the price list · Reminder'), findsOneWidget);
-    expect(find.text('Call back · Reminder'), findsOneWidget);
+    expect(find.text('Send her the price list'), findsOneWidget);
+    expect(find.text('Call back'), findsOneWidget);
+    expect(find.text('Reminder'), findsNWidgets(2));
     expect(find.textContaining('Next week'), findsNothing);
     // Late: the accent chip; due today: none.
     expect(find.text('2 days late'), findsOneWidget);
     expect(find.text('Due today'), findsNothing);
-    final reminder = tester.getTopLeft(
-      find.text('Send her the price list · Reminder'),
-    );
-    final step = tester.getTopLeft(
-      find.text('Send a first message · Samples, step 1 of 5'),
-    );
+    final reminder = tester.getTopLeft(find.text('Send her the price list'));
+    final step = tester.getTopLeft(find.text('Send a first message'));
     expect(reminder.dy, lessThan(step.dy));
   });
 
@@ -224,7 +219,7 @@ void main() {
       people.calls,
       contains('completeReminder(r-Send her the price list)'),
     );
-    expect(find.text('Send her the price list · Reminder'), findsNothing);
+    expect(find.text('Send her the price list'), findsNothing);
     expect(find.byTooltip(_markFirst), findsOneWidget);
   });
 
