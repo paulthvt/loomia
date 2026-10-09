@@ -4,8 +4,8 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
+import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/fact_row.dart';
-import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
@@ -62,6 +62,9 @@ class ContactDetails extends StatelessWidget {
     required this.onResume,
     required this.onLaunch,
     required this.onRefresh,
+    required this.onChoosePhoto,
+    required this.onRemovePhoto,
+    this.photo,
     this.workflowName,
     this.nextStep,
     this.history,
@@ -91,6 +94,16 @@ class ContactDetails extends StatelessWidget {
   final VoidCallback onChangeWorkflow;
   final VoidCallback onPause;
   final VoidCallback onResume;
+
+  /// Their photo, resolved by the page; null shows initials.
+  final ImageProvider? photo;
+
+  /// Opens the picker and saves what comes back. The avatar shows a ring
+  /// until it completes.
+  final Future<void> Function() onChoosePhoto;
+
+  /// Offered only when they have a photo.
+  final Future<void> Function() onRemovePhoto;
 
   /// The current workflow's name, shown beside Change workflow in ⋯.
   final String? workflowName;
@@ -267,7 +280,12 @@ class ContactDetails extends StatelessWidget {
           ? CrossAxisAlignment.center
           : CrossAxisAlignment.start,
       children: [
-        LoomiaAvatar(name: person.name, size: AvatarSize.header),
+        AvatarControl(
+          name: person.name,
+          photo: photo,
+          onChoose: onChoosePhoto,
+          onRemove: person.photoPath == null ? null : onRemovePhoto,
+        ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(

@@ -3,6 +3,7 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/activity_item.dart';
+import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/fact_row.dart';
@@ -12,6 +13,7 @@ import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/loomia_wordmark.dart';
+import 'package:loomia/core/ui/preview_photo.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/stat_tile.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -20,10 +22,10 @@ import 'package:material_ui/material_ui.dart';
 
 /// Every shared component in one sheet, both modes, for
 /// `flutter widget-preview start`. Nothing in the app imports this file.
-@Preview(group: 'Components', name: 'Light', size: Size(420, 1800))
+@Preview(group: 'Components', name: 'Light', size: Size(420, 2000))
 Widget uiComponentsLight() => _sheet(AppTheme.light);
 
-@Preview(group: 'Components', name: 'Dark', size: Size(420, 1800))
+@Preview(group: 'Components', name: 'Dark', size: Size(420, 2000))
 Widget uiComponentsDark() => _sheet(AppTheme.dark);
 
 Widget _sheet(ThemeData theme) {
@@ -67,6 +69,39 @@ class _Gallery extends StatelessWidget {
             ],
             const LoomiaAvatarGroup(
               names: ['Marie Dupont', 'Lucas Morel', 'Amina Haddad', 'Karim B'],
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (final size in AvatarSize.values) ...[
+              LoomiaAvatar(
+                name: 'Claire Martin',
+                size: size,
+                photo: MemoryImage(previewPhoto),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          spacing: AppSpacing.lg,
+          children: [
+            AvatarControl(
+              name: 'Claire Martin',
+              photo: MemoryImage(previewPhoto),
+              onChoose: () async {},
+              onRemove: () async {},
+            ),
+            AvatarControl(name: 'Claire Martin', onChoose: () async {}),
+            AvatarControl(
+              name: 'Claire Martin',
+              photo: MemoryImage(previewPhoto),
+              onChoose: () async {},
+              initiallyBusy: true,
             ),
           ],
         ),

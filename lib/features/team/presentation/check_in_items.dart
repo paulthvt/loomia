@@ -22,6 +22,7 @@ List<Widget> checkInItems(
       if (index > 0) const SizedBox(height: AppSpacing.ms),
       ActionItem(
         name: checkIn.person.name,
+        photoPath: checkIn.person.photoPath,
         reason: checkInReason(l10n, checkIn),
         chip: DateChip(switch (checkIn.reason) {
           CheckInReason.isNew => l10n.teamChipNew,

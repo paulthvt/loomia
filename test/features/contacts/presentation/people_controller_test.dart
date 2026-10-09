@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
@@ -14,6 +16,7 @@ import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 
+import '../../../core/photos/fake_photo_repository.dart';
 import '../../auth/fake_auth_repository.dart';
 import '../../workflows/fake_workflow_repository.dart';
 import '../fake_activity_repository.dart';
@@ -24,11 +27,13 @@ Person _person(
   String name, {
   Stage stage = Stage.prospect,
   ProspectStatus? status,
+  String? photoPath,
 }) => Person(
   id: id,
   name: name,
   stage: stage,
   prospectStatus: status,
+  photoPath: photoPath,
   stageSince: DateTime.utc(2026, 3, 4),
 );
 
@@ -37,6 +42,7 @@ typedef _World = ({
   FakePeopleRepository people,
   FakeActivityRepository activities,
   FakeAuthRepository auth,
+  FakePhotoRepository photos,
 });
 
 _World _world(List<Person> people) {
@@ -46,11 +52,13 @@ _World _world(List<Person> people) {
   addTearDown(auth.dispose);
   final activities = FakeActivityRepository();
   final repository = FakePeopleRepository(people)..activities = activities;
+  final photos = FakePhotoRepository();
   final container = ProviderContainer.test(
     overrides: [
       authRepositoryProvider.overrideWithValue(auth),
       peopleRepositoryProvider.overrideWithValue(repository),
       activityRepositoryProvider.overrideWithValue(activities),
+      photoRepositoryProvider.overrideWithValue(photos),
     ],
   );
   return (
@@ -58,6 +66,7 @@ _World _world(List<Person> people) {
     people: repository,
     activities: activities,
     auth: auth,
+    photos: photos,
   );
 }
 
@@ -156,6 +165,105 @@ void main() {
 
     expect(_names(world.container), ['Bruno']);
     expect(world.people.calls.last, 'delete(1, 3)');
+  });
+
+  group('setPhoto', () {
+    test('saves the new path and discards the old file', () async {
+      final marie = _person('1', 'Marie', photoPath: 'u1/old');
+      final world = _world([marie]);
+      await world.container.read(_book(world.container).future);
+
+      await world.container
+          .read(_book(world.container).notifier)
+          .setPhoto(marie, jpegBytes);
+
+      expect(world.people.calls.last, 'setPhoto(1, u1/new)');
+      expect(
+        world.container.read(_book(world.container)).value!.single.photoPath,
+        'u1/new',
+      );
+      expect(world.photos.calls, ['upload(image/jpeg)', 'discard(u1/old)']);
+    });
+
+    test('no bytes clears it and discards the file', () async {
+      final marie = _person('1', 'Marie', photoPath: 'u1/old');
+      final world = _world([marie]);
+      await world.container.read(_book(world.container).future);
+
+      await world.container
+          .read(_book(world.container).notifier)
+          .setPhoto(marie, null);
+
+      expect(world.people.calls.last, 'setPhoto(1, null)');
+      expect(
+        world.container.read(_book(world.container)).value!.single.photoPath,
+        isNull,
+      );
+      expect(world.photos.calls, ['discard(u1/old)']);
+    });
+
+    test('a failed write is a PeopleFailure, the new file discarded', () async {
+      final marie = _person('1', 'Marie', photoPath: 'u1/old');
+      final world = _world([marie]);
+      await world.container.read(_book(world.container).future);
+      world.people.failWith = PeopleFailure.network;
+
+      await expectLater(
+        world.container
+            .read(_book(world.container).notifier)
+            .setPhoto(marie, jpegBytes),
+        throwsA(PeopleFailure.network),
+      );
+
+      expect(world.photos.calls, ['upload(image/jpeg)', 'discard(u1/new)']);
+      expect(
+        world.container.read(_book(world.container)).value!.single.photoPath,
+        'u1/old',
+      );
+    });
+
+    test('bytes that are no image: PeopleFailure.unknown', () async {
+      final marie = _person('1', 'Marie');
+      final world = _world([marie]);
+      await world.container.read(_book(world.container).future);
+
+      await expectLater(
+        world.container
+            .read(_book(world.container).notifier)
+            .setPhoto(marie, Uint8List.fromList([0, 1, 2])),
+        throwsA(PeopleFailure.unknown),
+      );
+    });
+  });
+
+  test('remove discards the photos of the people removed', () async {
+    final world = _world([
+      _person('1', 'Anne', photoPath: 'u1/anne'),
+      _person('2', 'Bruno'),
+      _person('3', 'Chloé', photoPath: 'u1/chloe'),
+    ]);
+    await world.container.read(_book(world.container).future);
+
+    await world.container.read(_book(world.container).notifier).remove([
+      '1',
+      '2',
+    ]);
+    await pumpEventQueue();
+
+    expect(world.photos.calls, ['discard(u1/anne)']);
+  });
+
+  test('a failed remove discards nothing', () async {
+    final world = _world([_person('1', 'Anne', photoPath: 'u1/anne')]);
+    await world.container.read(_book(world.container).future);
+    world.people.failWith = PeopleFailure.network;
+
+    await expectLater(
+      world.container.read(_book(world.container).notifier).remove(['1']),
+      throwsA(PeopleFailure.network),
+    );
+
+    expect(world.photos.calls, isEmpty);
   });
 
   test('a failed save rethrows and keeps the list', () async {

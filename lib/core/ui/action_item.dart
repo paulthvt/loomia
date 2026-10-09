@@ -15,6 +15,7 @@ class ActionItem extends StatelessWidget {
   const ActionItem({
     required this.name,
     required this.reason,
+    this.photoPath,
     this.title,
     this.icon,
     this.detail,
@@ -29,6 +30,9 @@ class ActionItem extends StatelessWidget {
 
   final String name;
   final String reason;
+
+  /// The person's photo's Storage path; null shows initials.
+  final String? photoPath;
 
   /// The first line; defaults to [name]. The avatar always reads [name].
   final String? title;
@@ -104,7 +108,7 @@ class ActionItem extends StatelessWidget {
                     ),
                   )
                 else
-                  LoomiaAvatar(name: name),
+                  PhotoAvatar(name: name, photoPath: photoPath),
                 const SizedBox(width: AppSpacing.ms),
                 Expanded(
                   child: Column(

@@ -241,9 +241,9 @@ class _SettingsListState extends ConsumerState<_SettingsList>
             children: [
               ListTile(
                 selected: selected == SettingsSection.account,
-                leading: LoomiaAvatar(
+                leading: PhotoAvatar(
                   name: account.displayName,
-                  size: AvatarSize.row,
+                  photoPath: account.avatarPath,
                 ),
                 // One line each: this row only says whose account it is; the
                 // full email is on the Account screen.

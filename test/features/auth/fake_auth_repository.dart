@@ -82,6 +82,7 @@ class FakeAuthRepository implements AuthRepository {
       appearance: current.appearance,
       onboarded: current.onboarded,
       businessModel: current.businessModel,
+      avatarPath: current.avatarPath,
     );
     emit(AuthChange.userUpdated);
   }
@@ -98,6 +99,7 @@ class FakeAuthRepository implements AuthRepository {
       appearance: current.appearance,
       onboarded: current.onboarded,
       businessModel: current.businessModel,
+      avatarPath: current.avatarPath,
     );
     emit(AuthChange.userUpdated);
   }
@@ -114,6 +116,7 @@ class FakeAuthRepository implements AuthRepository {
       appearance: appearance,
       onboarded: current.onboarded,
       businessModel: current.businessModel,
+      avatarPath: current.avatarPath,
     );
     emit(AuthChange.userUpdated);
   }
@@ -130,6 +133,7 @@ class FakeAuthRepository implements AuthRepository {
       appearance: current.appearance,
       onboarded: current.onboarded,
       businessModel: model,
+      avatarPath: current.avatarPath,
     );
     emit(AuthChange.userUpdated);
   }
@@ -145,6 +149,24 @@ class FakeAuthRepository implements AuthRepository {
       locale: current.locale,
       appearance: current.appearance,
       businessModel: current.businessModel,
+      avatarPath: current.avatarPath,
+    );
+    emit(AuthChange.userUpdated);
+  }
+
+  @override
+  Future<void> updateAvatarPath(String? path) async {
+    await _record('updateAvatarPath($path)');
+    final current = account;
+    if (current == null) return;
+    account = Account(
+      firstName: current.firstName,
+      email: current.email,
+      locale: current.locale,
+      appearance: current.appearance,
+      onboarded: current.onboarded,
+      businessModel: current.businessModel,
+      avatarPath: path,
     );
     emit(AuthChange.userUpdated);
   }

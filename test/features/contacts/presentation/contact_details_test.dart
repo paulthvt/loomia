@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
@@ -19,6 +20,7 @@ Person _person({
   String? ownGoal,
   String? stuckOn,
   DateTime? pausedAt,
+  String? photoPath,
 }) => Person(
   id: 'p1',
   name: 'Marie Dupont',
@@ -32,6 +34,7 @@ Person _person({
   ownGoal: ownGoal,
   stuckOn: stuckOn,
   pausedAt: pausedAt,
+  photoPath: photoPath,
 );
 
 class _Calls {
@@ -44,6 +47,8 @@ class _Calls {
   var workflowChanges = 0;
   var pauses = 0;
   var resumes = 0;
+  var photoChoices = 0;
+  var photoRemovals = 0;
 }
 
 Future<_Calls> _pump(
@@ -77,6 +82,8 @@ Future<_Calls> _pump(
           onChangeWorkflow: () => calls.workflowChanges++,
           onPause: () => calls.pauses++,
           onResume: () => calls.resumes++,
+          onChoosePhoto: () async => calls.photoChoices++,
+          onRemovePhoto: () async => calls.photoRemovals++,
           workflowName: workflowName,
         ),
       ),
@@ -92,6 +99,29 @@ void main() {
 
     expect(find.text('Marie Dupont'), findsOneWidget);
     expect(find.text('Prospect since March 2026'), findsOneWidget);
+  });
+
+  testWidgets('no photo: the avatar offers Choose photo only', (tester) async {
+    final calls = await _pump(tester, _person());
+
+    await tester.tap(find.byType(AvatarControl));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove photo'), findsNothing);
+    await tester.tap(find.text('Choose photo'));
+    await tester.pumpAndSettle();
+
+    expect(calls.photoChoices, 1);
+  });
+
+  testWidgets('a photo: Remove photo too', (tester) async {
+    final calls = await _pump(tester, _person(photoPath: 'u1/abc'));
+
+    await tester.tap(find.byType(AvatarControl));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove photo'));
+    await tester.pumpAndSettle();
+
+    expect(calls.photoRemovals, 1);
   });
 
   testWidgets('a status chip saves it; tapping it again clears it', (

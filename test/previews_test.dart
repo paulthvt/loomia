@@ -46,6 +46,10 @@ void main() {
     'contacts_mobile_light': (const Size(390, 844), contactsMobileLight),
     'contacts_mobile_dark': (const Size(390, 844), contactsMobileDark),
     'contact_mobile_light': (const Size(390, 844), contactMobileLight),
+    'contact_photo_mobile_light': (
+      const Size(390, 844),
+      contactPhotoMobileLight,
+    ),
     'contact_mobile_dark': (const Size(390, 844), contactMobileDark),
     'team_member_mobile_light': (const Size(390, 844), teamMemberMobileLight),
     'contacts_desktop_light': (const Size(1440, 900), contactsDesktopLight),
@@ -58,8 +62,8 @@ void main() {
       const Size(390, 844),
       eventWorkflowEditorLight,
     ),
-    'components_light': (const Size(420, 1800), uiComponentsLight),
-    'components_dark': (const Size(420, 1800), uiComponentsDark),
+    'components_light': (const Size(420, 2000), uiComponentsLight),
+    'components_dark': (const Size(420, 2000), uiComponentsDark),
     'tokens_colour_light': (const Size(420, 900), colourTokensLight),
     'tokens_colour_dark': (const Size(420, 900), colourTokensDark),
     'tokens_type_light': (const Size(420, 900), typeRampLight),
@@ -79,6 +83,12 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(preview());
+      // Photos decode outside the fake clock.
+      await tester.runAsync(() async {
+        for (final element in find.byType(Image).evaluate()) {
+          await precacheImage((element.widget as Image).image, element);
+        }
+      });
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);

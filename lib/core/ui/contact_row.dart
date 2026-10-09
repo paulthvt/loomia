@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 class ContactRow extends StatelessWidget {
   const ContactRow({
     required this.name,
+    this.photoPath,
     this.subtitle,
     this.trailing,
     this.selected = false,
@@ -19,6 +20,9 @@ class ContactRow extends StatelessWidget {
   });
 
   final String name;
+
+  /// Their photo's Storage path; null shows initials.
+  final String? photoPath;
   final String? subtitle;
   final Widget? trailing;
 
@@ -42,7 +46,11 @@ class ContactRow extends StatelessWidget {
       hoverColor: LoomiaColors.of(context).surfaceSunken,
       leading: Semantics(
         checked: checked,
-        child: _Face(name: name, turned: checked ?? false),
+        child: _Face(
+          name: name,
+          photoPath: photoPath,
+          turned: checked ?? false,
+        ),
       ),
       title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: text == null
@@ -59,14 +67,19 @@ class ContactRow extends StatelessWidget {
 /// vertical axis, narrowing to an edge then widening as the other face.
 /// Reduce motion: a crossfade.
 class _Face extends StatelessWidget {
-  const _Face({required this.name, required this.turned});
+  const _Face({
+    required this.name,
+    required this.photoPath,
+    required this.turned,
+  });
 
   final String name;
+  final String? photoPath;
   final bool turned;
 
   @override
   Widget build(BuildContext context) {
-    final front = LoomiaAvatar(name: name, size: AvatarSize.row);
+    final front = PhotoAvatar(name: name, photoPath: photoPath);
     const back = _Check();
     if (context.reduceMotion) {
       return AnimatedSwitcher(

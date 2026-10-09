@@ -4,13 +4,20 @@ import 'package:loomia/app/app.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/photos/photo_picker.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
+import 'package:loomia/core/ui/avatar_control.dart';
+import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../core/photos/fake_photo_picker.dart';
+import '../../../core/photos/fake_photo_repository.dart';
 import '../../auth/fake_auth_repository.dart';
 
 /// Through the real app, so the redirect after sign-out and the locale switch
@@ -18,17 +25,30 @@ import '../../auth/fake_auth_repository.dart';
 Future<FakeAuthRepository> _openSettings(
   WidgetTester tester, {
   Size size = const Size(390, 844),
+  String? avatarPath,
+  FakePhotoRepository? photos,
+  FakePhotoPicker? picker,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final fake = FakeAuthRepository()
     ..session = true
-    ..account = const Account(firstName: 'Pauline', email: 'p@example.com');
+    ..account = Account(
+      firstName: 'Pauline',
+      email: 'p@example.com',
+      avatarPath: avatarPath,
+    );
   addTearDown(fake.dispose);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [authRepositoryProvider.overrideWithValue(fake)],
+      overrides: [
+        authRepositoryProvider.overrideWithValue(fake),
+        photoRepositoryProvider.overrideWithValue(
+          photos ?? FakePhotoRepository(),
+        ),
+        photoPickerProvider.overrideWithValue(picker ?? FakePhotoPicker()),
+      ],
       child: const LoomiaApp(),
     ),
   );
@@ -156,6 +176,103 @@ void main() {
     expect(fake.calls.last, 'updateAppearance(system)');
     // The test device is light.
     expect(Theme.of(context).brightness, Brightness.light);
+  });
+
+  group('your photo', () {
+    Future<void> tapMenu(WidgetTester tester, String item) async {
+      await tester.tap(find.byType(AvatarControl));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(item));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('choose then remove: saved on the account, files swapped', (
+      tester,
+    ) async {
+      final photos = FakePhotoRepository();
+      await _openSettings(
+        tester,
+        photos: photos,
+        picker: FakePhotoPicker(jpegBytes),
+      );
+      await tester.tap(find.text('Pauline'));
+      await tester.pumpAndSettle();
+
+      await tapMenu(tester, 'Choose photo');
+      await tapMenu(tester, 'Remove photo');
+
+      expect(photos.calls, ['upload(image/jpeg)', 'discard(u1/new)']);
+    });
+
+    testWidgets('the account remembers the path', (tester) async {
+      final auth = await _openSettings(
+        tester,
+        picker: FakePhotoPicker(jpegBytes),
+      );
+      await tester.tap(find.text('Pauline'));
+      await tester.pumpAndSettle();
+
+      await tapMenu(tester, 'Choose photo');
+      await tapMenu(tester, 'Remove photo');
+
+      expect(auth.calls, [
+        'updateAvatarPath(u1/new)',
+        'updateAvatarPath(null)',
+      ]);
+    });
+
+    testWidgets('a failed save says so and discards the upload', (
+      tester,
+    ) async {
+      final photos = FakePhotoRepository();
+      final auth = await _openSettings(
+        tester,
+        photos: photos,
+        picker: FakePhotoPicker(jpegBytes),
+      );
+      await tester.tap(find.text('Pauline'));
+      await tester.pumpAndSettle();
+      auth.failWith = AuthFailure.network;
+
+      await tapMenu(tester, 'Choose photo');
+
+      expect(
+        find.text('We could not reach Loomia. Check your connection.'),
+        findsOneWidget,
+      );
+      expect(photos.calls, ['upload(image/jpeg)', 'discard(u1/new)']);
+    });
+
+    testWidgets('a refused upload says so', (tester) async {
+      final photos = FakePhotoRepository()..failWith = PeopleFailure.unknown;
+      await _openSettings(
+        tester,
+        photos: photos,
+        picker: FakePhotoPicker(jpegBytes),
+      );
+      await tester.tap(find.text('Pauline'));
+      await tester.pumpAndSettle();
+
+      await tapMenu(tester, 'Choose photo');
+
+      expect(find.text('Something went wrong. Try again.'), findsOneWidget);
+    });
+
+    for (final (label, size) in [
+      ('mobile', const Size(390, 844)),
+      ('desktop', const Size(1440, 900)),
+    ]) {
+      testWidgets('$label: the shell and the list show it', (tester) async {
+        await _openSettings(tester, size: size, avatarPath: 'u1/me');
+
+        final withPhoto = find.byWidgetPredicate(
+          (widget) => widget is LoomiaAvatar && widget.photo != null,
+        );
+        // The list's leading avatar, and the sidebar (desktop) or the top
+        // bar (mobile, hidden on Settings, so only the list there).
+        expect(withPhoto, findsAtLeastNWidgets(size.width > 1000 ? 2 : 1));
+      });
+    }
   });
 
   testWidgets('editing the name saves it', (tester) async {

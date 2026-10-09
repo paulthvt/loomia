@@ -106,6 +106,7 @@ class _PeoplePickerState extends State<_PeoplePicker> {
             for (final person in shown)
               ContactRow(
                 name: person.name,
+                photoPath: person.photoPath,
                 subtitle: stageLabel(l10n, person.stage),
                 checked: _picked.contains(person.id),
                 onTap: () => _toggle(person.id),

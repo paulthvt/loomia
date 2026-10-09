@@ -6,6 +6,8 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/photos/photo_picker.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -123,6 +125,23 @@ class ContactPane extends ConsumerWidget {
       onResume: () => unawaited(
         writePeople(context, ref, (people) => people.resume(person, today())),
       ),
+      photo: ref.watch(photoProvider(person.photoPath)),
+      onChoosePhoto: () async {
+        final bytes = await ref.read(photoPickerProvider).pick();
+        if (bytes == null || !context.mounted) return;
+        await writePeople(
+          context,
+          ref,
+          (people) => people.setPhoto(person, bytes),
+        );
+      },
+      onRemovePhoto: () async {
+        await writePeople(
+          context,
+          ref,
+          (people) => people.setPhoto(person, null),
+        );
+      },
       onLaunch: (uri) => unawaited(openExternal(context, uri)),
       onRefresh: () {
         ref.invalidate(historyProvider(person.id));

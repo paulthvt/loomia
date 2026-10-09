@@ -320,6 +320,7 @@ class _ContactListState extends State<ContactList> {
               for (final person in shown)
                 ContactRow(
                   name: person.name,
+                  photoPath: person.photoPath,
                   subtitle: contactSubtitle(l10n, person),
                   trailing: LoomiaChip(label: stageLabel(l10n, person.stage)),
                   selected: person.id == widget.selectedId,

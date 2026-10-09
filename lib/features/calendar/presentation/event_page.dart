@@ -432,6 +432,7 @@ class EventView extends StatelessWidget {
           for (final (:person, :came) in people)
             ContactRow(
               name: person.name,
+              photoPath: person.photoPath,
               subtitle: _status(l10n, person, came),
               onTap: () => onOpenPerson(person),
               trailing: event.done

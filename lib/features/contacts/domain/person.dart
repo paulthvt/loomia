@@ -49,6 +49,7 @@ class Person {
     this.dueOn,
     this.lastContactOn,
     this.reminders = const [],
+    this.photoPath,
   }) : assert(
          prospectStatus == null || stage == Stage.prospect,
          'Only prospects have a status',
@@ -126,6 +127,10 @@ class Person {
   /// Their open reminders, soonest first (#217). Read with the book.
   final List<Reminder> reminders;
 
+  /// The Storage path of their photo (#239); null shows initials. Written
+  /// only by `PeopleRepository.setPhoto`.
+  final String? photoPath;
+
   Person withStatus(ProspectStatus? status) =>
       _copy(prospectStatus: status, reminders: reminders);
 
@@ -167,6 +172,7 @@ class Person {
     dueOn: dueOn,
     lastContactOn: lastContactOn,
     reminders: reminders,
+    photoPath: photoPath,
   );
 }
 

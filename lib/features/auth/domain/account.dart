@@ -13,6 +13,7 @@ class Account {
     this.appearance = Appearance.system,
     this.onboarded = true,
     this.businessModel = BusinessModel.other,
+    this.avatarPath,
   });
 
   /// Empty when the user never gave one (an email sign-up always does).
@@ -30,6 +31,10 @@ class Account {
 
   /// Which company's words the app uses. Other until the user picks one.
   final BusinessModel businessModel;
+
+  /// The Storage path of the user's own photo (`avatar_path`, #239); null
+  /// shows initials.
+  final String? avatarPath;
 
   /// What to show where a name is expected: the first name, else the email.
   String get displayName => firstName.isEmpty ? email : firstName;

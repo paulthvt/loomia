@@ -4,6 +4,8 @@
 <dict>
 	<key>NSContactsUsageDescription</key>
 	<string>Loomia shows your contacts so you can pick who to bring in. Only the people you pick are saved.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Loomia uses the photo you pick as a contact's or your own picture.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

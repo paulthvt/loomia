@@ -180,6 +180,13 @@ Every table follows the same conventions (#48), first applied to `person`:
   `security_invoker`, a `security definer` function must check
   `auth.uid()` itself.
 
+Files live in Storage buckets created by migration (#239). `avatars` is
+private, one folder per user (`<uid>/…`), guarded by policies on
+`storage.objects`; its size and type limits are on the bucket row. A table row
+holds the path, never a URL: the device signs a URL to show it, and every
+upload gets a new path, so a cached image is never stale. Objects do not
+cascade with the user: `delete-account` empties the folder first.
+
 Anything the client must not do with its own key runs in an Edge Function in
 `supabase/functions/` — so far only `delete-account`, which deletes the caller
 and nobody else. The user's language choice is in `user_metadata`, next to their
@@ -191,7 +198,8 @@ migrations: a deploy job would be more secrets than it saves. Automate it when e
 
 ### Not yet present, by design
 
-Firebase Cloud Messaging, a `profiles` table (the user's first name lives in
-auth `user_metadata` until something needs more),
+Firebase Cloud Messaging, a `profiles` table (the user's first name and photo
+path live in auth `user_metadata` until linking users needs a profile others
+can read, #238),
 local persistence beyond the Supabase session, analytics.
 Each will be added when the feature that needs it is built.

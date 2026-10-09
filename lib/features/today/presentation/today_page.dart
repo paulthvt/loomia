@@ -567,6 +567,7 @@ class _TodayViewState extends State<TodayView> {
     return ActionItem(
       key: ValueKey(key),
       name: due.person.name,
+      photoPath: due.person.photoPath,
       reason: reason,
       detail: detail,
       tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),

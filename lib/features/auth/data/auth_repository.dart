@@ -40,6 +40,7 @@ class AuthRepository {
           Appearance.values.asNameMap()[metadata['theme']] ?? Appearance.system,
       onboarded: metadata['onboarded'] == true,
       businessModel: BusinessModel.parse(metadata['business_model']),
+      avatarPath: metadata['avatar_path'] as String?,
     );
   }
 
@@ -142,6 +143,12 @@ class AuthRepository {
     () => _auth.updateUser(
       UserAttributes(data: {'business_model': model.stored}),
     ),
+  );
+
+  /// Stored as `avatar_path`, removed for null. The file is the caller's
+  /// (`swapPhoto`).
+  Future<void> updateAvatarPath(String? path) => _guard(
+    () => _auth.updateUser(UserAttributes(data: {'avatar_path': path})),
   );
 
   /// The first-run screen is done with, on every device.
