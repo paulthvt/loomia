@@ -17,12 +17,12 @@ for the user, the Google picture. Initials stay the fallback everywhere.
 | Where files live | A private Supabase Storage bucket `avatars`, folder `<owner_id>/`. Photos of contacts are third parties' personal data: never public. |
 | Size | 256 px on the long side, resized on the device. The largest avatar is 56 dp, 168 px at 3×. About 15–20 KB a photo: the free tier's 1 GB holds ~50,000, and its 10 GB egress a month is the real limit. No server-side transform (Pro plan only on hosted). |
 | Bucket limits | 256 KB per file, `image/jpeg`, `image/png`, `image/webp`. A larger file is refused by Storage, not just by the app. |
-| File names | A new random name per upload (`<owner_id>/<uuid>`), the old file deleted after. A URL then never points at a changed image, so no cache goes stale. |
+| File names | A new random name per upload (`<owner_id>/<random>`), the old file deleted after. A URL then never points at a changed image, so no cache goes stale. |
 | Showing | A signed URL per path, valid 7 days, cached in a Riverpod family for the session; `Image.network` caches the bytes. One request per avatar on screen. |
 | Picker | `image_picker` (flutter.dev): the system photo picker on Android and iOS (no permission prompt), a file dialog on the web. It resizes with `maxWidth`/`maxHeight`. |
 | Camera | Not now: a camera permission on both phones for little gain. Add when asked. |
 | Cropping | None: centre-cropped into the circle (`BoxFit.cover`). A crop screen means another package. Add if centre-cropping proves wrong. |
-| The user's photo | `avatar_path` in user metadata (like `locale`), file `<owner_id>/<uuid>`. No `person` row for the user. |
+| The user's photo | `avatar_path` in user metadata (like `locale`), file `<owner_id>/<random>`. No `person` row for the user. |
 | Order for the user | Uploaded photo, else the Google picture, else initials. Removing the upload shows the Google picture again. |
 | Google picture | `avatar_url` from user metadata. Supabase fills it from Google's default `profile` scope and refreshes it on each Google sign-in: used as is, not copied. Apple and email accounts have none. |
 | Phone import | The thumbnail (`ContactProperty.photoThumbnail`) of the people ticked only, uploaded as is (already small, typically 96–150 px). Over 256 KB: skipped. A failed upload never fails the import. |
@@ -53,21 +53,22 @@ folder signs nothing.
   columns.
 - `Account.avatarPath` (from `avatar_path`) and `Account.googlePicture` (from
   `avatar_url`), read in `AuthRepository`.
-- `lib/features/contacts/data/photo_repository.dart`:
-  - `upload(Uint8List bytes, String contentType) → path`: puts
-    `<uid>/<uuid>`.
-  - `remove(List<String> paths)`.
+- `lib/core/photos/photo_repository.dart` (core, not a feature: contacts,
+  Settings and the shell all show photos):
+  - `upload(Uint8List bytes) → path`: the type sniffed from the bytes, puts
+    `<uid>/<random>`.
+  - `discard(List<String> paths)`: never throws, a failure goes to Sentry.
   - `signedUrl(String path) → String`.
-- `photoUrlProvider`: a family on the path, `keepAlive`, returning the signed
-  URL.
+- `photoUrlProvider`: a family on the path, kept for the session, returning
+  the signed URL.
   `// ponytail: one request per avatar; createSignedUrls in a batch if lists
   feel slow.`
-- Setting a photo: upload, write the new path, remove the old file. Writing
-  the path fails: remove the new file. The old one stays until the write
-  succeeds.
-- `PeopleRepository.delete(ids)`: reads their paths, deletes the rows, then
-  removes the files. A failed file removal is reported to Sentry, not to the
-  user.
+- Setting a photo (`swapPhoto`): upload, write the new path, discard the old
+  file. Writing the path fails: discard the new file. The old one stays until
+  the write succeeds.
+- Deleting people: `PeopleController.remove` takes their paths from the book,
+  deletes the rows, then discards the files. A failed discard is reported to
+  Sentry, not to the user.
   `// ponytail: an orphan file is possible; sweep the bucket against person.photo_path if it ever matters.`
 
 ## 3. Screens
