@@ -290,7 +290,13 @@ class ContactDetails extends StatelessWidget {
         child: TextButton.icon(
           onPressed: onLoyalty,
           iconAlignment: IconAlignment.end,
-          style: TextButton.styleFrom(padding: EdgeInsets.zero),
+          // 32px, as the SectionHeader action: it sits tight under the
+          // chip in Figma, and 32 still clears the 24px minimum target.
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: const Size(0, 32),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
           icon: const Icon(Icons.chevron_right),
           label: Text(
             since == null

@@ -149,7 +149,7 @@ Widget _list({String? selectedId, bool showRefresh = false}) => ContactList(
   onMove: (_, _) async => false,
   onChangeWorkflow: (_) async => false,
   onDelete: (_) async => false,
-  model: BusinessModel.doterra,
+  model: BusinessModel.other,
   selectedId: selectedId,
   showRefresh: showRefresh,
 );
