@@ -207,6 +207,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.importContacts,
         name: Routes.importContactsName,
         builder: (context, state) => const ImportContactsPage(),
+        routes: [
+          GoRoute(
+            path: Routes.contactSegment,
+            name: Routes.importedContactName,
+            builder: (context, state) =>
+                ContactPage(id: state.pathParameters['id']!),
+            routes: [
+              GoRoute(
+                path: Routes.contactWorkflowSegment,
+                name: Routes.importedContactWorkflowName,
+                builder: (context, state) =>
+                    WorkflowTimelinePage(id: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.welcome,

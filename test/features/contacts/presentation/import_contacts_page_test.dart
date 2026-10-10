@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
@@ -35,7 +37,10 @@ Future<FakePeopleRepository> _openImport(
     people: people,
     phoneContacts: phone,
   );
-  container.read(routerProvider).go(Routes.importContacts);
+  // As in the app: pushed above the Contacts list, never reached on its own.
+  final router = container.read(routerProvider)..go(Routes.contacts);
+  await tester.pumpAndSettle();
+  unawaited(router.push(Routes.importContacts));
   await tester.pumpAndSettle();
   return people;
 }
@@ -149,6 +154,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ContactPage), findsOneWidget);
     expect(find.text('Marie Dupont'), findsWidgets);
+    expect(tester.takeException(), isNull);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
