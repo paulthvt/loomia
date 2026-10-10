@@ -81,8 +81,13 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
           : null,
       onOpen: workflow == null
           ? null
+          // Relative to wherever the person is open: under Contacts or above
+          // the import screen (see Routes.importedContactLocation).
           : () => unawaited(
-              context.push(Routes.contactWorkflowLocation(person.id)),
+              context.push(
+                '${GoRouterState.of(context).matchedLocation}/'
+                '${Routes.contactWorkflowSegment}',
+              ),
             ),
       today: today(),
       busy: _busy,

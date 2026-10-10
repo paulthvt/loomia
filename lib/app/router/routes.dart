@@ -90,6 +90,16 @@ abstract final class Routes {
   static const String importContacts = '/import-contacts';
   static const String importContactsName = 'importContacts';
 
+  /// Someone already in Loomia, opened from [importContacts] and stacked above
+  /// it so back returns to the ticks. Not [contactLocation]: that sits inside
+  /// the app shell, which is already below the import screen, and go_router
+  /// can't stack the same shell twice (duplicate page keys, blank screen).
+  static const String importedContactName = 'importedContact';
+  static const String importedContactWorkflowName = 'importedContactWorkflow';
+
+  static String importedContactLocation(String id) =>
+      '$importContacts/${Uri.encodeComponent(id)}';
+
   /// Reachable before the first-run screen is passed.
   static const Set<String> onboardingPaths = {start, importContacts};
 

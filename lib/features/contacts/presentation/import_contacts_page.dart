@@ -252,7 +252,7 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
                       subtitle: l10n.importAlreadyIn,
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => unawaited(
-                        context.push(Routes.contactLocation(known.id)),
+                        context.push(Routes.importedContactLocation(known.id)),
                       ),
                     )
                   else

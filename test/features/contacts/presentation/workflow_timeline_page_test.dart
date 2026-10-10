@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
@@ -128,6 +130,28 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.byType(WorkflowTimelinePage), findsNothing);
+    expect(find.byType(ContactDetails), findsOneWidget);
+  });
+
+  testWidgets('from the import screen too, without stacking the shell twice', (
+    tester,
+  ) async {
+    people = FakePeopleRepository([_marie(position: 1)]);
+    final container = await pumpLoomia(tester, size: _phone, people: people);
+    final router = container.read(routerProvider)..go(Routes.contacts);
+    await tester.pumpAndSettle();
+    unawaited(router.push(Routes.importContacts));
+    await tester.pumpAndSettle();
+    unawaited(router.push(Routes.importedContactLocation('p1')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Send a first message'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(WorkflowTimelinePage), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     expect(find.byType(ContactDetails), findsOneWidget);
   });
 
