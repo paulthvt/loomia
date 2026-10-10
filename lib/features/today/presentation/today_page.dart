@@ -10,6 +10,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/open_external.dart';
@@ -395,10 +396,14 @@ class _TodayViewState extends State<TodayView> {
         goalWidgets,
         eventsBlock,
       ),
-      AsyncError() => [
+      AsyncError(:final error) => [
         ...goalWidgets,
         ...eventsBlock,
-        _Failed(onRetry: widget.onRetry),
+        LoadFailed(
+          offline: error == PeopleFailure.network,
+          title: l10n.todayLoadFailed,
+          onRetry: widget.onRetry,
+        ),
       ],
       _ => [
         ...goalWidgets,
@@ -579,24 +584,6 @@ class _TodayViewState extends State<TodayView> {
       onResolve: () => widget.onTick(due),
       resolved: widget.busy.contains(due.key),
       resolveLabel: l10n.nextStepMarkDone(reason),
-    );
-  }
-}
-
-class _Failed extends StatelessWidget {
-  const _Failed({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return EmptyState(
-      icon: Icons.cloud_off_outlined,
-      title: l10n.todayLoadFailed,
-      body: l10n.contactsLoadErrorBody,
-      actionLabel: l10n.contactsRetry,
-      onAction: onRetry,
     );
   }
 }

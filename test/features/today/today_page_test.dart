@@ -274,12 +274,26 @@ void main() {
       ..failWith = PeopleFailure.network;
     await pumpLoomia(tester, size: _phone, people: people);
 
-    expect(find.text("Couldn't load today."), findsOneWidget);
+    expect(find.text("You're offline"), findsOneWidget);
     people.failWith = null;
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
 
     expect(find.text('Anna'), findsOneWidget);
+  });
+
+  testWidgets('a failed load that is not the connection does not blame it', (
+    tester,
+  ) async {
+    final people = FakePeopleRepository()..failWith = PeopleFailure.unknown;
+    await pumpLoomia(tester, size: _phone, people: people);
+
+    expect(find.text("Couldn't load today."), findsOneWidget);
+    expect(
+      find.text('Something went wrong on our side. Try again in a moment.'),
+      findsOneWidget,
+    );
+    expect(find.text("You're offline"), findsNothing);
   });
 
   testWidgets('nobody due: up to date', (tester) async {
@@ -301,7 +315,7 @@ void main() {
       find.text("Couldn't refresh. You're seeing the last loaded list."),
       findsOneWidget,
     );
-    expect(find.text("Couldn't load today."), findsNothing);
+    expect(find.text("You're offline"), findsNothing);
   });
 
   testWidgets('tapping a row opens the person', (tester) async {
@@ -319,7 +333,7 @@ void main() {
       ..failWith = PeopleFailure.network;
     await pumpLoomia(tester, size: _tallDesktop, people: people);
 
-    expect(find.text("Couldn't load today."), findsOneWidget);
+    expect(find.text("You're offline"), findsOneWidget);
     people.failWith = null;
     final l10n = lookupAppLocalizations(const Locale('en'));
     await tester.tap(find.byTooltip(l10n.contactsRefresh));

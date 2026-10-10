@@ -269,11 +269,22 @@ void main() {
         peopleFailureFrom(TimeoutException('slow')),
         PeopleFailure.network,
       );
+      // storage_client wraps a socket error, its type as the status.
+      expect(
+        peopleFailureFrom(
+          const StorageException('offline', statusCode: 'ClientException'),
+        ),
+        PeopleFailure.network,
+      );
     });
 
     test('a server refusal is unknown', () {
       expect(
         peopleFailureFrom(const StorageException('Payload too large')),
+        PeopleFailure.unknown,
+      );
+      expect(
+        peopleFailureFrom(const StorageException('x', statusCode: '413')),
         PeopleFailure.unknown,
       );
       expect(

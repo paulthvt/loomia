@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -227,6 +228,7 @@ final peopleRepositoryProvider = Provider<PeopleRepository>(
 PeopleFailure peopleFailureFrom(Object error) => switch (error) {
   final PeopleFailure failure => failure,
   PostgrestException() => PeopleFailure.unknown,
+  final StorageException e when storageUnreachable(e) => PeopleFailure.network,
   // A refusal from Storage (too large, wrong type, a policy): not the
   // connection.
   StorageException() => PeopleFailure.unknown,

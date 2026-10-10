@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:loomia/features/auth/domain/auth_failure.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -34,8 +31,9 @@ AuthFailure authFailureFrom(Object error) {
     }
     return AuthFailure.unknown;
   }
-  if (error is SocketException || error is TimeoutException) {
-    return AuthFailure.network;
-  }
+  // A malformed answer is not the connection; any other exception on the way
+  // (socket, timeout, the http.ClientException functions.invoke throws) is.
+  if (error is FormatException) return AuthFailure.unknown;
+  if (error is Exception) return AuthFailure.network;
   return AuthFailure.unknown;
 }

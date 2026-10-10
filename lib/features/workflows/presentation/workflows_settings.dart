@@ -6,9 +6,9 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
-import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -37,7 +37,11 @@ class WorkflowsSettings extends ConsumerWidget {
     final eventState = ref.watch(eventWorkflows);
     if (list == null) {
       return state.hasError
-          ? WorkflowsLoadError(onRetry: () => ref.invalidate(workflows))
+          ? LoadFailed(
+              offline: state.error == PeopleFailure.network,
+              title: AppLocalizations.of(context).nextStepLoadFailed,
+              onRetry: () => ref.invalidate(workflows),
+            )
           : const Center(
               child: Padding(
                 padding: EdgeInsets.all(AppSpacing.xl),
@@ -55,6 +59,7 @@ class WorkflowsSettings extends ConsumerWidget {
       onRetryEvents: eventState.hasError && !eventState.isLoading
           ? () => ref.invalidate(eventWorkflows)
           : null,
+      eventsOffline: eventState.error == PeopleFailure.network,
     );
   }
 }
@@ -70,6 +75,7 @@ class WorkflowsView extends StatelessWidget {
     required this.onOpenEvent,
     required this.onNewEvent,
     this.onRetryEvents,
+    this.eventsOffline = false,
     super.key,
   });
 
@@ -82,6 +88,9 @@ class WorkflowsView extends StatelessWidget {
 
   /// Set when the event workflows failed to load: their section says so.
   final VoidCallback? onRetryEvents;
+
+  /// Why they failed: the connection, or anything else.
+  final bool eventsOffline;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +139,11 @@ class WorkflowsView extends StatelessWidget {
         const SizedBox(height: AppSpacing.xl),
         SectionHeader(title: l10n.workflowsEvents),
         if (onRetryEvents case final retry?)
-          WorkflowsLoadError(onRetry: retry)
+          LoadFailed(
+            offline: eventsOffline,
+            title: l10n.nextStepLoadFailed,
+            onRetry: retry,
+          )
         else if (eventWorkflows.isNotEmpty)
           SettingsGroup(
             children: [
@@ -177,27 +190,6 @@ class WorkflowsView extends StatelessWidget {
   static String _steps(AppLocalizations l10n, Workflow workflow) {
     final steps = l10n.followWithSteps(workflow.steps.length);
     return workflow.isDefault ? l10n.workflowsDefaultSteps(steps) : steps;
-  }
-}
-
-/// The workflows did not load. Existing copy: Next step says the same.
-class WorkflowsLoadError extends StatelessWidget {
-  const WorkflowsLoadError({required this.onRetry, super.key});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Center(
-      child: EmptyState(
-        icon: Icons.cloud_off_outlined,
-        title: l10n.nextStepLoadFailed,
-        body: l10n.contactsLoadErrorBody,
-        actionLabel: l10n.contactsRetry,
-        onAction: onRetry,
-      ),
-    );
   }
 }
 

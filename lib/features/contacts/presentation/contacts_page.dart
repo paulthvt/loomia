@@ -8,7 +8,7 @@ import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
-import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -177,7 +177,11 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
         accountAction: sideNavigation ? null : const AccountButton(),
       );
     } else if (people.hasError) {
-      body = PeopleLoadError(onRetry: () => ref.invalidate(book));
+      body = LoadFailed(
+        offline: people.error == PeopleFailure.network,
+        title: AppLocalizations.of(context).contactsLoadError,
+        onRetry: () => ref.invalidate(book),
+      );
     } else {
       body = const Center(child: CircularProgressIndicator());
     }
@@ -203,28 +207,6 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
                   Expanded(child: pane),
                 ],
               ),
-      ),
-    );
-  }
-}
-
-/// The book could not be loaded and there is nothing to show instead. #46
-/// replaces it with the shared offline presentation.
-class PeopleLoadError extends StatelessWidget {
-  const PeopleLoadError({required this.onRetry, super.key});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Center(
-      child: EmptyState(
-        icon: Icons.cloud_off_outlined,
-        title: l10n.contactsLoadError,
-        body: l10n.contactsLoadErrorBody,
-        actionLabel: l10n.contactsRetry,
-        onAction: onRetry,
       ),
     );
   }

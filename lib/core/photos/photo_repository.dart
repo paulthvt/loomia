@@ -48,6 +48,8 @@ class PhotoRepository {
     try {
       await _files.remove(paths);
     } catch (error, stack) {
+      // Offline, the file staying behind is expected, not a bug.
+      if (error is StorageException && storageUnreachable(error)) return;
       await Sentry.captureException(error, stackTrace: stack);
     }
   }
@@ -66,6 +68,13 @@ class PhotoRepository {
 final photoRepositoryProvider = Provider<PhotoRepository>(
   (ref) => PhotoRepository(ref.watch(supabaseClientProvider)),
 );
+
+/// Storage never answered: `storage_client` wraps the socket or client error
+/// and puts its type, not an HTTP status, in [StorageException.statusCode].
+bool storageUnreachable(StorageException error) {
+  final status = error.statusCode;
+  return status != null && int.tryParse(status) == null;
+}
 
 /// Puts [bytes] (null: no photo) where [old] was. The new file first, then
 /// [write] saves its path, then the old file goes. [write] failing: the new

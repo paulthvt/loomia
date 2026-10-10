@@ -9,6 +9,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/photos/photo_picker.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -80,7 +81,11 @@ class ContactPane extends ConsumerWidget {
     final list = people.value;
     if (list == null) {
       return people.hasError
-          ? PeopleLoadError(onRetry: () => ref.invalidate(book))
+          ? LoadFailed(
+              offline: people.error == PeopleFailure.network,
+              title: l10n.contactsLoadError,
+              onRetry: () => ref.invalidate(book),
+            )
           : const Center(child: CircularProgressIndicator());
     }
 

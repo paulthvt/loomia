@@ -112,7 +112,6 @@
   "contactsEmptyBody": "Ajoute les personnes avec qui tu échanges, et Loomia t’aide à garder le lien.",
   "contactsNoMatch": "Personne ne correspond.",
   "contactsLoadError": "Impossible de charger tes contacts.",
-  "contactsLoadErrorBody": "Vérifie ta connexion, puis réessaie.",
   "contactsRetry": "Réessayer",
   "contactsRefreshFailed": "Actualisation impossible. Tu vois la dernière liste chargée.",
   "peopleFailureNetwork": "Impossible d’enregistrer. Vérifie ta connexion et réessaie.",
