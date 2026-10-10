@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../fake_auth_repository.dart';
 
@@ -58,5 +59,40 @@ void main() {
     addTearDown(container.dispose);
 
     expect(container.read(authRepositoryProvider), same(fake));
+  });
+
+  group('changes on the real client', () {
+    late SupabaseClient client;
+    late AuthRepository repository;
+
+    setUp(() {
+      client = SupabaseClient('http://localhost', 'publishable');
+      repository = AuthRepository(client);
+    });
+    tearDown(() => client.dispose());
+
+    // Offline, every failed background refresh lands on onAuthStateChange
+    // (#260); a listener without onError would make each one uncaught.
+    test('drops a failed token refresh', () async {
+      final errors = <Object>[];
+      repository.changes.listen((_) {}, onError: errors.add);
+
+      // ignore: invalid_use_of_internal_member, how gotrue reports it.
+      client.auth.notifyException(AuthRetryableFetchException());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(errors, isEmpty);
+    });
+
+    test('lets any other error through', () async {
+      final errors = <Object>[];
+      repository.changes.listen((_) {}, onError: errors.add);
+
+      // ignore: invalid_use_of_internal_member, how gotrue reports it.
+      client.auth.notifyException(const AuthException('boom'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(errors, hasLength(1));
+    });
   });
 }
