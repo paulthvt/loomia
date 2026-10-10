@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.7.0](https://github.com/paulthvt/loomia/compare/0.6.0...0.7.0) (2026-10-10)
+
+
+### ✨ Features
+
+* **contacts:** import in two steps, known numbers not ticked twice ([#250](https://github.com/paulthvt/loomia/issues/250)) ([39344f1](https://github.com/paulthvt/loomia/commit/39344f15c477d13811bceb8f9fbdcbbc9f235f70))
+* **contacts:** LRP on the contact, counted in goals ([#256](https://github.com/paulthvt/loomia/issues/256)) ([37b2612](https://github.com/paulthvt/loomia/commit/37b2612faf6a35506572bd22074a660706c0076e))
+
+
+### 🐛 Bug Fixes
+
+* **ui:** centre the avatar vertically on action items ([#254](https://github.com/paulthvt/loomia/issues/254)) ([26dcec8](https://github.com/paulthvt/loomia/commit/26dcec8663f1c57aa4012dda3651fc3f6b163ca2))
+
+
+### 🔧 Miscellaneous
+
+* **l10n:** sync translations ([#252](https://github.com/paulthvt/loomia/issues/252)) ([cccb465](https://github.com/paulthvt/loomia/commit/cccb4653df0b6e167d581b4e8b74a855f845e679))
+* **l10n:** sync translations ([#257](https://github.com/paulthvt/loomia/issues/257)) ([52e95b5](https://github.com/paulthvt/loomia/commit/52e95b5390298c2737940f69a31b86f5fc0d9a91))
+
 ## [0.6.0](https://github.com/paulthvt/loomia/compare/0.5.0...0.6.0) (2026-10-09)
 
 
