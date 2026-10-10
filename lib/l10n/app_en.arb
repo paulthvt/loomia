@@ -527,6 +527,41 @@
       "date": { "type": "DateTime", "format": "yMMMM" }
     }
   },
+  "loyaltyLabel": "{model, select, doterra{LRP} other{Loyalty orders}}",
+  "@loyaltyLabel": {
+    "description": "A person's loyalty setup: the line on their page, the sheet's title and the Contacts filter chip. dōTERRA: LRP (Loyalty Rewards Program, not translated).",
+    "placeholders": { "model": { "type": "String" } }
+  },
+  "contactLoyaltySince": "{label} · Since {date}",
+  "@contactLoyaltySince": {
+    "description": "Under a customer's or team member's stage: the loyalty label and the day it started this year, e.g. 'LRP · Since Oct 2'. Tapping it changes or stops it.",
+    "placeholders": {
+      "label": { "type": "String" },
+      "date": { "type": "DateTime", "format": "MMMd" }
+    }
+  },
+  "contactLoyaltySinceWithYear": "{label} · Since {date}",
+  "@contactLoyaltySinceWithYear": {
+    "description": "As contactLoyaltySince, for a day in an earlier year, e.g. 'LRP · Since Oct 2, 2024'.",
+    "placeholders": {
+      "label": { "type": "String" },
+      "date": { "type": "DateTime", "format": "yMMMd" }
+    }
+  },
+  "contactLoyaltyNone": "{label} · None",
+  "@contactLoyaltyNone": {
+    "description": "Under a customer's or team member's stage when they have no loyalty setup, e.g. 'LRP · None'. Tapping it sets one.",
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "loyaltySheetQuestion": "When did it start?",
+  "@loyaltySheetQuestion": {
+    "description": "Label of the day field in the loyalty sheet: the day the person's loyalty setup (LRP) started."
+  },
+  "loyaltySheetStop": "{model, select, doterra{Stopped their LRP} other{Stopped their loyalty orders}}",
+  "@loyaltySheetStop": {
+    "description": "Button in the loyalty sheet, shown when the person has one: they no longer have a loyalty setup.",
+    "placeholders": { "model": { "type": "String" } }
+  },
   "contactMessage": "Message",
   "@contactMessage": {
     "description": "Button on a person's detail screen that opens a text message (or Instagram) to them."
@@ -961,6 +996,16 @@
   "historyJoinedTeam": "Joined your team",
   "@historyJoinedTeam": {
     "description": "History entry recorded when the person joined the user's team."
+  },
+  "historyLoyaltyStarted": "{model, select, doterra{Started LRP} other{Started loyalty orders}}",
+  "@historyLoyaltyStarted": {
+    "description": "History entry recorded when the person's loyalty setup started.",
+    "placeholders": { "model": { "type": "String" } }
+  },
+  "historyLoyaltyStopped": "{model, select, doterra{Stopped LRP} other{Stopped loyalty orders}}",
+  "@historyLoyaltyStopped": {
+    "description": "History entry recorded when the person's loyalty setup stopped.",
+    "placeholders": { "model": { "type": "String" } }
   },
   "historyDay": "{day}",
   "@historyDay": {

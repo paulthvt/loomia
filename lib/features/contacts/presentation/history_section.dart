@@ -112,11 +112,16 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
               today: today,
               model: model,
               last: index == shown.length - 1,
+              // A loyalty entry follows the person's LRP: changed from the
+              // LRP line, never here.
               onTap:
-                  activity.kind == ActivityKind.stage && activity != latestStage
+                  activity.kind.isLoyalty ||
+                      (activity.kind == ActivityKind.stage &&
+                          activity != latestStage)
                   ? null
                   : () => _edit(activity),
-              onDelete: activity.kind == ActivityKind.stage
+              onDelete:
+                  activity.kind == ActivityKind.stage || activity.kind.isLoyalty
                   ? null
                   : () => _delete(activity),
             ),
@@ -136,7 +141,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
 
 /// One entry. Tap edits it. Long-press, right-click, or the screen reader's
 /// Delete action removes it; stage entries can't be removed, and only the
-/// latest opens.
+/// latest opens; loyalty entries do neither.
 class _Entry extends StatelessWidget {
   const _Entry({
     required this.activity,

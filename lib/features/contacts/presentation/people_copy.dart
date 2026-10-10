@@ -88,8 +88,8 @@ String? kindLabel(AppLocalizations l10n, ActivityKind kind) => switch (kind) {
   ActivityKind.loyaltyStart || ActivityKind.loyaltyStop => null,
 };
 
-/// What the user wrote; for a stage entry, what changed; for an order with an
-/// amount, "Order · 100 PV". A person is never created with a stage entry, so
+/// What the user wrote; for a stage or loyalty entry, what changed; for an
+/// order with an amount, "Order · 100 PV". A person is never created with a stage entry, so
 /// one to prospects is always a way back.
 String activityTitle(
   AppLocalizations l10n,
@@ -98,6 +98,12 @@ String activityTitle(
 ) {
   final amount = activity.amount;
   if (amount != null) return l10n.historyOrder(model.name, amount);
+  if (activity.kind == ActivityKind.loyaltyStart) {
+    return l10n.historyLoyaltyStarted(model.name);
+  }
+  if (activity.kind == ActivityKind.loyaltyStop) {
+    return l10n.historyLoyaltyStopped(model.name);
+  }
   return switch (activity.stage) {
     null => activity.text!,
     Stage.prospect => l10n.historyBackToProspects,

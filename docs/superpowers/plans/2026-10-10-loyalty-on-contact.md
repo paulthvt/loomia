@@ -137,7 +137,7 @@ alter type public.activity_kind add value 'loyalty_stop';
 - Modify: `lib/features/contacts/presentation/people_copy.dart`, `lib/features/contacts/presentation/history_section.dart`
 - Test: `test/features/contacts/presentation/people_copy_test.dart`, `test/features/contacts/presentation/history_section_test.dart` (or the history widget test that exists)
 
-- [ ] **Step 1: ARB keys**, each with a description and the `model` String placeholder where it selects:
+- [x] **Step 1: ARB keys**, each with a description and the `model` String placeholder where it selects:
   - `loyaltyLabel`: `{model, select, doterra{LRP} other{Loyalty orders}}`
   - `contactLoyaltySince`: `{label} · Since {date}`, with `date` as DateTime, format `MMMd`
   - `contactLoyaltySinceWithYear`: the same, format `yMMMd`
@@ -146,16 +146,16 @@ alter type public.activity_kind add value 'loyalty_stop';
   - `loyaltySheetStop`: `{model, select, doterra{Stopped their LRP} other{Stopped their loyalty orders}}`
   - `historyLoyaltyStarted`: `{model, select, doterra{Started LRP} other{Started loyalty orders}}`
   - `historyLoyaltyStopped`: `{model, select, doterra{Stopped LRP} other{Stopped loyalty orders}}`
-- [ ] **Step 2: Failing tests.**
+- [x] **Step 2: Failing tests.**
   - The `kindLabel` test becomes "null for stage and loyalty entries".
   - `activityTitle` returns "Started LRP" / "Stopped LRP" for dōTERRA and "Started loyalty orders" for Other.
   - `activityMeta` for a loyalty entry is the day alone.
   - The history widget test: a loyalty row has no edit or delete action.
-- [ ] **Step 3: Code.**
+- [x] **Step 3: Code.**
   - `kindLabel`: `ActivityKind.loyaltyStart || ActivityKind.loyaltyStop => null`.
   - `activityTitle`: before the stage switch, `if (activity.kind == ActivityKind.loyaltyStart) return l10n.historyLoyaltyStarted(model.name);`, and the same for stop.
   - `HistorySection`: `onTap` and `onDelete` are null when `activity.kind.isLoyalty`.
-- [ ] **Step 4: Gate, then commit** `feat(contacts): LRP rows in the history (#255)`.
+- [x] **Step 4: Gate, then commit** `feat(contacts): LRP rows in the history (#255)`.
 
 ### Task 4: The LRP line and sheet
 
