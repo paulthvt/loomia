@@ -42,7 +42,7 @@ dependencies:
   # Reports uncaught errors from release builds. Uncaught Dart exceptions don't
   # crash the app, so Play vitals never sees them. Chosen over Crashlytics
   # because it covers Web and needs no Firebase (#47).
-  sentry_flutter: ^9.30.1
+  sentry_flutter: ^10.0.0
   # Turns `logging` records into Sentry breadcrumbs, logs and events (#265).
   # Pinned to sentry_flutter's exact version: they release together and must
   # match.
