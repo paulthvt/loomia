@@ -84,14 +84,12 @@ class ActionItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.lg),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          // Intrinsic height so the ring (and an icon) can centre on the card
-          // while the avatar and text stay top-aligned.
+          // Intrinsic height so the avatar (or icon) and the ring can centre
+          // on the card while the text stays top-aligned.
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // A kind-of-item icon centres like the ring; an avatar stays
-                // beside the name.
                 if (icon case final glyph?)
                   Center(
                     child: Container(
@@ -108,7 +106,9 @@ class ActionItem extends StatelessWidget {
                     ),
                   )
                 else
-                  PhotoAvatar(name: name, photoPath: photoPath),
+                  Center(
+                    child: PhotoAvatar(name: name, photoPath: photoPath),
+                  ),
                 const SizedBox(width: AppSpacing.ms),
                 Expanded(
                   child: Column(
