@@ -164,7 +164,7 @@ alter type public.activity_kind add value 'loyalty_stop';
 - Modify: `lib/features/contacts/presentation/people_controller.dart`, `contact_details.dart`, `contact_page.dart`
 - Test: `test/features/contacts/presentation/loyalty_sheet_test.dart` (create), `contact_details_test.dart`, `people_controller_test.dart`
 
-- [ ] **Step 1: Failing tests.**
+- [x] **Step 1: Failing tests.**
   - Controller: `setLoyalty(person, DateTime(2026, 10, 2), today)` replaces the person, and the history provider is invalidated (the same check as the `completeStep` test).
   - `ContactDetails`:
     - a customer with `loyaltySince` shows "LRP · Since Oct 2";
@@ -177,7 +177,7 @@ alter type public.activity_kind add value 'loyalty_stop';
     - not set: "When did it start?", the field reads "Today, October 10", and there is no stop button. Save calls `setLoyalty(id)` with today and closes.
     - set: the field reads the stored day, and "Stopped their LRP" calls `setLoyalty` with null and closes.
     - a failure shows `peopleFailureCopy` and keeps the sheet open.
-- [ ] **Step 2: Controller.**
+- [x] **Step 2: Controller.**
 
 ```dart
 /// Starts, moves or stops (null [since]) their LRP; the server writes the
@@ -189,18 +189,18 @@ Future<void> setLoyalty(Person person, DateTime? since, DateTime today) async {
 }
 ```
 
-- [ ] **Step 3: Sheet.** `Future<void> showLoyalty(BuildContext context, Person person) => LoomiaDialog.show<void>(...)`, a `ConsumerStatefulWidget` copying `reminder_sheet.dart`'s saving, failure and actions pattern.
+- [x] **Step 3: Sheet.** `Future<void> showLoyalty(BuildContext context, Person person) => LoomiaDialog.show<void>(...)`, a `ConsumerStatefulWidget` copying `reminder_sheet.dart`'s saving, failure and actions pattern.
   - Title: `loyaltyLabel`. Body: `loyaltySheetQuestion`.
   - The day field reads `logWhenToday(day)` when the day is today, else `dayLabel`. Tapping it calls `pickDay(context, initial: _day, first: DateTime(2000), last: today())`.
   - Actions: Cancel, then Save (`material.saveButtonLabel`).
   - When `person.loyaltySince != null`, the `footer` is a `TextButton(loyaltySheetStop)`.
   - Read the model from `accountProvider`, as `HistorySection` does.
-- [ ] **Step 4: Header line.**
+- [x] **Step 4: Header line.**
   - `ContactDetails` gains `required VoidCallback onLoyalty`. Under the `LoomiaChip`, when `person.stage != Stage.prospect`, add an `InkWell` with `borderRadius: AppRadii…`, a 48 px minimum height and `Semantics(button: true)`.
   - Its content is a `Row(mainAxisSize: min)`: the text (`contactLoyaltySince` / `…WithYear` / `contactLoyaltyNone`, styled like the `SectionHeader` action, primary, as in Figma) and `Icon(Icons.chevron_right)` sized to the text.
   - `ContactPage` passes `onLoyalty: () => unawaited(showLoyalty(context, person))`.
   - Update every other `ContactDetails(` call site (previews, tests) with a no-op.
-- [ ] **Step 5: Gate, then commit** `feat(contacts): LRP line and sheet on the contact page (#255)`.
+- [x] **Step 5: Gate, then commit** `feat(contacts): LRP line and sheet on the contact page (#255)`.
 
 ### Task 5: LRP filter on the contacts list
 

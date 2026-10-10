@@ -1,6 +1,7 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
@@ -64,6 +65,7 @@ class ContactDetails extends StatelessWidget {
     required this.onRefresh,
     required this.onChoosePhoto,
     required this.onRemovePhoto,
+    required this.onLoyalty,
     this.photo,
     this.workflowName,
     this.nextStep,
@@ -104,6 +106,9 @@ class ContactDetails extends StatelessWidget {
 
   /// Offered only when they have a photo.
   final Future<void> Function() onRemovePhoto;
+
+  /// Opens the LRP sheet; offered to customers and team members.
+  final VoidCallback onLoyalty;
 
   /// The current workflow's name, shown beside Change workflow in ⋯.
   final String? workflowName;
@@ -275,6 +280,30 @@ class ContactDetails extends StatelessWidget {
         ),
     ];
 
+    // "LRP · Since Oct 2" or "LRP · None", in the action colour: it opens
+    // the LRP sheet (#255).
+    Widget loyalty() {
+      final label = l10n.loyaltyLabel(model.name);
+      final since = person.loyaltySince;
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          onPressed: onLoyalty,
+          iconAlignment: IconAlignment.end,
+          style: TextButton.styleFrom(padding: EdgeInsets.zero),
+          icon: const Icon(Icons.chevron_right),
+          label: Text(
+            since == null
+                ? l10n.contactLoyaltyNone(label)
+                : since.year == DateTime.now().year
+                ? l10n.contactLoyaltySince(label, since)
+                : l10n.contactLoyaltySinceWithYear(label, since),
+            style: AppTypography.label,
+          ),
+        ),
+      );
+    }
+
     final header = Row(
       crossAxisAlignment: desktop
           ? CrossAxisAlignment.center
@@ -308,6 +337,7 @@ class ContactDetails extends StatelessWidget {
                 ),
               ),
               LoomiaChip(label: stageLabel(l10n, person.stage)),
+              if (person.stage != Stage.prospect) loyalty(),
             ],
           ),
         ),

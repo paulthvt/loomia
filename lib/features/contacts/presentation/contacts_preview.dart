@@ -149,6 +149,7 @@ Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
   photo: photo,
   onChoosePhoto: () async {},
   onRemovePhoto: () async {},
+  onLoyalty: () {},
   model: BusinessModel.other,
   onStatus: (_) {},
   onEdit: (_) {},

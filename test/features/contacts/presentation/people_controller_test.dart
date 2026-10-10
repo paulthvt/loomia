@@ -141,6 +141,28 @@ void main() {
     expect(_names(world.container), ['Anne Martin']);
   });
 
+  test('setLoyalty replaces the person and reloads their history', () async {
+    final world = _world([_person('1', 'Anne')]);
+    await world.container.read(_book(world.container).future);
+    world.container.listen(historyProvider('1'), (_, _) {});
+    expect(await world.container.read(historyProvider('1').future), isEmpty);
+
+    await world.container
+        .read(_book(world.container).notifier)
+        .setLoyalty(
+          world.container.read(_book(world.container)).value!.single,
+          DateTime(2026, 10, 2),
+          DateTime(2026, 10, 10),
+        );
+
+    expect(
+      world.container.read(_book(world.container)).value!.single.loyaltySince,
+      DateTime(2026, 10, 2),
+    );
+    final history = await world.container.read(historyProvider('1').future);
+    expect(history.single.kind, ActivityKind.loyaltyStart);
+  });
+
   test('remove drops the person', () async {
     final world = _world([_person('1', 'Anne'), _person('2', 'Bruno')]);
     await world.container.read(_book(world.container).future);

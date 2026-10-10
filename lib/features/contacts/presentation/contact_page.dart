@@ -21,6 +21,7 @@ import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/history_section.dart';
 import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
+import 'package:loomia/features/contacts/presentation/loyalty_sheet.dart';
 import 'package:loomia/features/contacts/presentation/next_step_section.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
@@ -142,6 +143,7 @@ class ContactPane extends ConsumerWidget {
           (people) => people.setPhoto(person, null),
         );
       },
+      onLoyalty: () => unawaited(showLoyalty(context, person)),
       onLaunch: (uri) => unawaited(openExternal(context, uri)),
       onRefresh: () {
         ref.invalidate(historyProvider(person.id));
