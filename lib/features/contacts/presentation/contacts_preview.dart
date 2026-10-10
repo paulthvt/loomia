@@ -37,6 +37,14 @@ Widget contactMobileDark() => _app(AppTheme.dark, _details());
 Widget contactPhotoMobileLight() =>
     _app(AppTheme.light, _details(photo: MemoryImage(previewPhoto)));
 
+@Preview(
+  group: 'Contacts',
+  name: 'Customer — LRP — light',
+  size: Size(390, 844),
+)
+Widget customerMobileLight() =>
+    _app(AppTheme.light, _details(person: _sample[1]));
+
 @Preview(group: 'Contacts', name: 'Team member — light', size: Size(390, 844))
 Widget teamMemberMobileLight() =>
     _app(AppTheme.light, _details(person: _sample[2]));
@@ -108,6 +116,8 @@ final _sample = [
     products: 'Lavender, Peppermint',
     needs: 'Headaches',
     stageSince: DateTime.utc(2026, 5, 1),
+    // An earlier year, so the line always reads the same date.
+    loyaltySince: DateTime(2025, 11, 12),
   ),
   Person(
     id: 'p3',

@@ -230,6 +230,7 @@ Future<void> setLoyalty(Person person, DateTime? since, DateTime today) async {
 - Modify: `docs/superpowers/specs/2026-10-02-goals-design.md` (one line under *Which step is a loyalty setup*, pointing to the #255 spec)
 - Regenerate through CI: `test/goldens/contact_mobile_light.png`, `contact_mobile_dark.png`, `contacts_mobile_*.png`, `team_member_mobile_light.png`, `contacts_desktop_light.png`, plus any new one
 
-- [ ] **Step 1:** Give the sample customer in `contacts_preview.dart` `loyaltySince: DateTime(2026, 10, 2)`, so the contact preview shows the line and the list preview shows the chip. Add one `@Preview` for the sheet, `loyaltySheetMobileLight`.
+- [x] **Step 1:** Give the sample customer in `contacts_preview.dart` `loyaltySince: DateTime(2025, 11, 12)`, an earlier year so the line never changes with the calendar. The list preview shows the chip. Add `customerMobileLight` ("Customer — LRP — light") and its golden `customer_mobile_light`.
+  *Changed while implementing:* there's no sheet preview. `LoyaltyForm` needs a `ProviderScope`, and its "Today, …" moves with the clock. It's built from `LoomiaDialog` and `LabeledField`, which have goldens already, and `loyalty_sheet_test.dart` pins it.
 - [ ] **Step 2:** Run the gate, push the branch, and regenerate the goldens through CI (testing steering). Open each PNG and check it against the Figma frames before committing them.
 - [ ] **Step 3:** Run `graphify update .`. Open the PR "feat(contacts): LRP on the contact, counted in goals" with `Closes #255`. List the manual step: `supabase db push` after merge.

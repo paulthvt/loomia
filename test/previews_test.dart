@@ -51,6 +51,7 @@ void main() {
       contactPhotoMobileLight,
     ),
     'contact_mobile_dark': (const Size(390, 844), contactMobileDark),
+    'customer_mobile_light': (const Size(390, 844), customerMobileLight),
     'team_member_mobile_light': (const Size(390, 844), teamMemberMobileLight),
     'contacts_desktop_light': (const Size(1440, 900), contactsDesktopLight),
     'first_run_company_light': (const Size(390, 844), firstRunCompanyLight),
