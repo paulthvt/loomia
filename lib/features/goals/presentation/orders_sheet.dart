@@ -127,9 +127,15 @@ class _OrdersListState extends ConsumerState<OrdersList> {
                 ),
             ],
           ),
-          AsyncError() => Row(
+          AsyncError(:final error) => Row(
             children: [
-              Expanded(child: muted(l10n.ordersLoadFailed)),
+              Expanded(
+                child: muted(
+                  error == PeopleFailure.network
+                      ? l10n.offlineInline
+                      : l10n.ordersLoadFailed,
+                ),
+              ),
               TextButton(
                 onPressed: () => ref.invalidate(ordersProvider(month)),
                 child: Text(l10n.contactsRetry),

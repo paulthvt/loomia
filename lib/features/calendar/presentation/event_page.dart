@@ -11,6 +11,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -85,14 +86,10 @@ class EventPane extends ConsumerWidget {
     final list = events.value;
     if (list == null) {
       return events.hasError
-          ? Center(
-              child: EmptyState(
-                icon: Icons.cloud_off_outlined,
-                title: l10n.calendarLoadFailed,
-                body: l10n.contactsLoadErrorBody,
-                actionLabel: l10n.contactsRetry,
-                onAction: () => ref.invalidate(provider),
-              ),
+          ? LoadFailed(
+              offline: events.error == PeopleFailure.network,
+              title: l10n.calendarLoadFailed,
+              onRetry: () => ref.invalidate(provider),
             )
           : const Center(child: CircularProgressIndicator());
     }
@@ -110,15 +107,11 @@ class EventPane extends ConsumerWidget {
     final bookPeople = book.value;
     if (bookPeople == null) {
       return book.hasError
-          ? Center(
-              child: EmptyState(
-                icon: Icons.cloud_off_outlined,
-                title: l10n.contactsLoadError,
-                body: l10n.contactsLoadErrorBody,
-                actionLabel: l10n.contactsRetry,
-                onAction: () => ref.invalidate(
-                  peopleProvider(ref.watch(accountProvider)?.email),
-                ),
+          ? LoadFailed(
+              offline: book.error == PeopleFailure.network,
+              title: l10n.contactsLoadError,
+              onRetry: () => ref.invalidate(
+                peopleProvider(ref.read(accountProvider)?.email),
               ),
             )
           : const Center(child: CircularProgressIndicator());

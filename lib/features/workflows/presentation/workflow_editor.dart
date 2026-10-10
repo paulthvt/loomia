@@ -9,6 +9,7 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -21,7 +22,6 @@ import 'package:loomia/features/settings/presentation/widgets/settings_scroll.da
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/step_sheet.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
-import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -51,7 +51,11 @@ class WorkflowEditor extends ConsumerWidget {
         return const Center(child: CircularProgressIndicator());
       }
       if (list == null) {
-        return WorkflowsLoadError(onRetry: () => ref.invalidate(workflows));
+        return LoadFailed(
+          offline: state.error == PeopleFailure.network,
+          title: l10n.nextStepLoadFailed,
+          onRetry: () => ref.invalidate(workflows),
+        );
       }
       // Deleted elsewhere, or a bad link.
       return Center(

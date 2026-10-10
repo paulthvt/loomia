@@ -3,8 +3,10 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/goals/data/goals_repository.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/close_form.dart';
@@ -106,12 +108,10 @@ class _ClosePageState extends ConsumerState<ClosePage> {
             onSave: (plan) => savePlan(container, plan),
             onSaved: _done,
           ),
-          AsyncError() => EmptyState(
-            icon: Icons.cloud_off_outlined,
+          AsyncError(:final error) => LoadFailed(
+            offline: error == PeopleFailure.network,
             title: l10n.goalsLoadFailed,
-            body: l10n.contactsLoadErrorBody,
-            actionLabel: l10n.contactsRetry,
-            onAction: () => ref.invalidate(provider),
+            onRetry: () => ref.invalidate(provider),
           ),
           _ => const Center(child: CircularProgressIndicator()),
         },

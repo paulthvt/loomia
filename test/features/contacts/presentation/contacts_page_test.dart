@@ -189,7 +189,7 @@ void main() {
     people.failWith = PeopleFailure.network;
     await openContacts(tester);
 
-    expect(find.text("Couldn't load your contacts."), findsOneWidget);
+    expect(find.text("You're offline"), findsOneWidget);
     people.failWith = null;
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
@@ -209,7 +209,7 @@ void main() {
       find.text("Couldn't refresh. You're seeing the last loaded list."),
       findsOneWidget,
     );
-    expect(find.text("Couldn't load your contacts."), findsNothing);
+    expect(find.text("You're offline"), findsNothing);
   });
 
   testWidgets('Add someone opens the new person', (tester) async {
@@ -405,7 +405,7 @@ void main() {
     activities.failWith = PeopleFailure.network;
     await openMarie(tester);
 
-    await reveal(tester, find.text("Couldn't load the history."));
+    await reveal(tester, find.text("You're offline."));
     // The rest of the page still works: scroll back up to the header.
     await tester.scrollUntilVisible(
       find.text('Marie Dupont'),
@@ -421,7 +421,7 @@ void main() {
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
 
-    expect(find.text("Couldn't load the history."), findsNothing);
+    expect(find.text("You're offline."), findsNothing);
     expect(find.text('Nothing logged yet.'), findsOneWidget);
   });
 
@@ -430,7 +430,7 @@ void main() {
   ) async {
     activities.failWith = PeopleFailure.network;
     await openMarie(tester);
-    await reveal(tester, find.text("Couldn't load the history."));
+    await reveal(tester, find.text("You're offline."));
 
     activities
       ..failWith = null
@@ -438,7 +438,7 @@ void main() {
     await tester.tap(find.text('Try again'));
     await tester.pump();
 
-    expect(find.text("Couldn't load the history."), findsNothing);
+    expect(find.text("You're offline."), findsNothing);
     expect(
       find.descendant(
         of: find.byType(HistorySection),
@@ -947,7 +947,7 @@ void main() {
     people.store['p1'] = _marieOn(1);
     await openMarie(tester, workflows: workflows);
 
-    expect(find.text("Couldn't load the workflows"), findsOneWidget);
+    expect(find.text("You're offline."), findsOneWidget);
     workflows.failWith = null;
     await tester.tap(
       find.descendant(

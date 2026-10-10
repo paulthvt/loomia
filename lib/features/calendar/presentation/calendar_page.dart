@@ -8,7 +8,7 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
-import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -476,12 +476,10 @@ class DaySection extends StatelessWidget {
             ];
     } else if (events.hasError) {
       body = [
-        EmptyState(
-          icon: Icons.cloud_off_outlined,
+        LoadFailed(
+          offline: events.error == PeopleFailure.network,
           title: l10n.calendarLoadFailed,
-          body: l10n.contactsLoadErrorBody,
-          actionLabel: l10n.contactsRetry,
-          onAction: onRetry,
+          onRetry: onRetry,
         ),
       ];
     } else {

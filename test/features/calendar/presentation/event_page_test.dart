@@ -424,7 +424,7 @@ void main() {
     container.read(routerProvider).go(Routes.eventLocation('e1'));
     await tester.pumpAndSettle();
 
-    expect(find.text("Couldn't load your contacts."), findsOneWidget);
+    expect(find.text("You're offline"), findsOneWidget);
     expect(find.text('Mark who was there'), findsNothing);
     expect(find.text('Try again'), findsOneWidget);
   });

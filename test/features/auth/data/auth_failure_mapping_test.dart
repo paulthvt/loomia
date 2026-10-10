@@ -70,6 +70,15 @@ void main() {
     );
   });
 
+  test('any other exception on the way is network', () {
+    // functions.invoke throws http.ClientException, not a SocketException.
+    expect(authFailureFrom(_Offline()), AuthFailure.network);
+  });
+
+  test('a malformed answer is unknown', () {
+    expect(authFailureFrom(const FormatException('bad')), AuthFailure.unknown);
+  });
+
   test('anything unrecognised maps to unknown', () {
     expect(authFailureFrom(StateError('boom')), AuthFailure.unknown);
   });
@@ -78,3 +87,5 @@ void main() {
     expect(authFailureFrom(AuthFailure.network), AuthFailure.network);
   });
 }
+
+class _Offline implements Exception {}

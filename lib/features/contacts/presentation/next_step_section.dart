@@ -10,6 +10,7 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/slide_swap.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
 import 'package:loomia/features/contacts/presentation/change_workflow_sheet.dart';
@@ -79,6 +80,7 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
       onRetry: waiting && workflows.hasError
           ? () => ref.invalidate(provider)
           : null,
+      offline: workflows.error == PeopleFailure.network,
       onOpen: workflow == null
           ? null
           // Relative to wherever the person is open: under Contacts or above
@@ -124,6 +126,7 @@ class NextStepCard extends StatelessWidget {
     this.busy = false,
     this.waiting = false,
     this.onRetry,
+    this.offline = false,
     this.busyReminders = const {},
     this.onTickReminder,
     this.onEditReminder,
@@ -154,6 +157,9 @@ class NextStepCard extends StatelessWidget {
   /// card says so, the reminders are there already.
   final bool waiting;
   final VoidCallback? onRetry;
+
+  /// With [onRetry]: the workflows failed because the server is unreachable.
+  final bool offline;
 
   /// Reminders whose tick is in flight.
   final Set<String> busyReminders;
@@ -209,7 +215,11 @@ class NextStepCard extends StatelessWidget {
             key: ValueKey(waiting ? 'waiting' : progress.runtimeType),
             child: waiting
                 ? _Panel(
-                    body: retry != null ? l10n.nextStepLoadFailed : null,
+                    body: retry == null
+                        ? null
+                        : offline
+                        ? l10n.offlineInline
+                        : l10n.nextStepLoadFailed,
                     actions: [
                       if (retry != null)
                         TextButton(

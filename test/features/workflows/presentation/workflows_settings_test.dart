@@ -90,7 +90,7 @@ void main() {
       ..failWith = PeopleFailure.network;
     await openWorkflows(tester, Routes.settingsWorkflows, workflows: workflows);
 
-    expect(find.text("Couldn't load the workflows"), findsOneWidget);
+    expect(find.text("You're offline"), findsOneWidget);
 
     workflows.failWith = null;
     await tester.tap(find.text('Try again'));

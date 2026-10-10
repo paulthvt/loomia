@@ -13,11 +13,13 @@ import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/stat_tile.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
@@ -179,13 +181,11 @@ class GoalsView extends StatelessWidget {
                       ],
                       (:final main, :final past) => [...main, ...past],
                     },
-                    AsyncError() => [
-                      EmptyState(
-                        icon: Icons.cloud_off_outlined,
+                    AsyncError(:final error) => [
+                      LoadFailed(
+                        offline: error == PeopleFailure.network,
                         title: l10n.goalsLoadFailed,
-                        body: l10n.contactsLoadErrorBody,
-                        actionLabel: l10n.contactsRetry,
-                        onAction: onRetry,
+                        onRetry: onRetry,
                       ),
                     ],
                     _ => const [Center(child: CircularProgressIndicator())],

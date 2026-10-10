@@ -92,7 +92,13 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
           history.hasError && !history.isLoading
               ? Row(
                   children: [
-                    Expanded(child: muted(l10n.historyLoadError)),
+                    Expanded(
+                      child: muted(
+                        history.error == PeopleFailure.network
+                            ? l10n.offlineInline
+                            : l10n.historyLoadError,
+                      ),
+                    ),
                     TextButton(
                       onPressed: () => ref.invalidate(provider),
                       child: Text(l10n.contactsRetry),

@@ -90,7 +90,7 @@ void main() {
       const AsyncError(PeopleFailure.network, StackTrace.empty),
     );
 
-    expect(find.text("Couldn't load your goals."), findsOneWidget);
+    expect(find.text("You're offline"), findsOneWidget);
     await tester.tap(find.text('Try again'));
     expect(retries, 1);
   });

@@ -7,9 +7,9 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
-import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -52,12 +52,10 @@ class PlanPage extends ConsumerWidget {
             ),
             onSaved: onSaved ?? () => backOr(context, Routes.goals),
           ),
-          AsyncError() => EmptyState(
-            icon: Icons.cloud_off_outlined,
+          AsyncError(:final error) => LoadFailed(
+            offline: error == PeopleFailure.network,
             title: l10n.goalsLoadFailed,
-            body: l10n.contactsLoadErrorBody,
-            actionLabel: l10n.contactsRetry,
-            onAction: () => ref.invalidate(provider),
+            onRetry: () => ref.invalidate(provider),
           ),
           _ => const Center(child: CircularProgressIndicator()),
         },

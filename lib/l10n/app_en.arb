@@ -287,7 +287,7 @@
   },
   "todayLoadFailed": "Couldn't load today.",
   "@todayLoadFailed": {
-    "description": "Heading in place of Today when the contacts or the workflows could not be loaded. Above contactsLoadErrorBody and a Try again button."
+    "description": "Heading in place of Today when the contacts or the workflows could not be loaded. Above loadFailedBody and a Try again button."
   },
   "actionMarkAsDone": "Mark as done",
   "@actionMarkAsDone": {
@@ -499,17 +499,29 @@
   "@contactsLoadError": {
     "description": "Message in place of the Contacts list when it could not be loaded."
   },
-  "contactsLoadErrorBody": "Check your connection, then try again.",
-  "@contactsLoadErrorBody": {
-    "description": "Body under contactsLoadError."
-  },
   "contactsRetry": "Try again",
   "@contactsRetry": {
-    "description": "Button under contactsLoadError that loads the list again."
+    "description": "Button under a load failure (offlineTitle or a 'Couldn't load …' title) that loads it again."
   },
   "contactsRefreshFailed": "Couldn't refresh. You're seeing the last loaded list.",
   "@contactsRefreshFailed": {
     "description": "Snackbar when pull to refresh fails; the list already on screen stays."
+  },
+  "offlineTitle": "You're offline",
+  "@offlineTitle": {
+    "description": "Title in place of any screen or section that could not load because the server could not be reached."
+  },
+  "offlineBody": "Loomia can't be reached. Check your connection, then try again.",
+  "@offlineBody": {
+    "description": "Body under offlineTitle, above the Try again button."
+  },
+  "offlineInline": "You're offline.",
+  "@offlineInline": {
+    "description": "One line in place of a section inside a page (orders, history, next step) that could not load because the server could not be reached; a Try again button follows."
+  },
+  "loadFailedBody": "Something went wrong on our side. Try again in a moment.",
+  "@loadFailedBody": {
+    "description": "Body under a 'Couldn't load …' title when loading failed for a reason other than the connection."
   },
   "peopleFailureNetwork": "Couldn't save. Check your connection and try again.",
   "@peopleFailureNetwork": {

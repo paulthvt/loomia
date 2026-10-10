@@ -9,9 +9,11 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
@@ -75,11 +77,10 @@ class _WorkflowTimelinePageState extends ConsumerState<WorkflowTimelinePage> {
         _ when list.isLoading => const Center(
           child: CircularProgressIndicator(),
         ),
-        _ when list.hasError => _Gone(
+        _ when list.hasError => LoadFailed(
+          offline: list.error == PeopleFailure.network,
           title: l10n.nextStepLoadFailed,
-          body: l10n.contactsLoadErrorBody,
-          action: l10n.contactsRetry,
-          onAction: () => ref.invalidate(workflows),
+          onRetry: () => ref.invalidate(workflows),
         ),
         // Taken off the workflow, or it was deleted, elsewhere.
         (final person?, _) => _Gone(
@@ -91,7 +92,11 @@ class _WorkflowTimelinePageState extends ConsumerState<WorkflowTimelinePage> {
       };
     } else {
       body = people.hasError
-          ? PeopleLoadError(onRetry: () => ref.invalidate(book))
+          ? LoadFailed(
+              offline: people.error == PeopleFailure.network,
+              title: l10n.contactsLoadError,
+              onRetry: () => ref.invalidate(book),
+            )
           : const Center(child: CircularProgressIndicator());
     }
 

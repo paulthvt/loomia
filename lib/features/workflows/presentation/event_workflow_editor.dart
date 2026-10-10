@@ -7,6 +7,7 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -22,7 +23,6 @@ import 'package:loomia/features/workflows/presentation/event_step_sheet.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/follow_up_picker.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
-import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -50,7 +50,9 @@ class EventWorkflowEditor extends ConsumerWidget {
         return const Center(child: CircularProgressIndicator());
       }
       if (list == null) {
-        return WorkflowsLoadError(
+        return LoadFailed(
+          offline: state.error == PeopleFailure.network,
+          title: l10n.nextStepLoadFailed,
           onRetry: () => ref
             ..invalidate(workflowsProvider(owner))
             ..invalidate(eventWorkflows),

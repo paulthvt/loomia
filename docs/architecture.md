@@ -203,3 +203,11 @@ path live in auth `user_metadata` until linking users needs a profile others
 can read, #238),
 local persistence beyond the Supabase session, analytics.
 Each will be added when the feature that needs it is built.
+
+**Online-only** (#46). No data lives on the device beyond the Supabase session:
+no cache, no sync, no offline mode. A failed request is the offline signal, not
+a connectivity package. `peopleFailureFrom` and `authFailureFrom` alone decide
+what is the connection (`PeopleFailure.network`, `AuthFailure.network`); a
+screen that could not load shows `LoadFailed` (`core/ui/`), which says "You're
+offline" for those and keeps its own title otherwise. Background auth refresh
+failures are dropped at `AuthRepository.changes` (#260): the SDK retries.
