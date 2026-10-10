@@ -47,19 +47,25 @@ class AuthRepository {
 
   /// One shared subscription, so the backfill below runs once per sign-in
   /// however many listeners there are.
-  late final Stream<AuthChange> changes = _auth.onAuthStateChange.map((state) {
-    final change = switch (state.event) {
-      AuthChangeEvent.signedIn => AuthChange.signedIn,
-      AuthChangeEvent.signedOut => AuthChange.signedOut,
-      AuthChangeEvent.passwordRecovery => AuthChange.passwordRecovery,
-      AuthChangeEvent.userUpdated => AuthChange.userUpdated,
-      _ => AuthChange.other,
-    };
-    if (change == AuthChange.signedIn) {
-      _backfillFirstName(state.session?.user);
-    }
-    return change;
-  }).asBroadcastStream();
+  late final Stream<AuthChange> changes = _auth.onAuthStateChange
+      // Offline, every failed background token refresh arrives here as an
+      // error; the SDK retries on its own and an invalid token arrives as
+      // signedOut, so there is nothing to do. Any other error still surfaces.
+      .handleError((_) {}, test: (e) => e is AuthRetryableFetchException)
+      .map((state) {
+        final change = switch (state.event) {
+          AuthChangeEvent.signedIn => AuthChange.signedIn,
+          AuthChangeEvent.signedOut => AuthChange.signedOut,
+          AuthChangeEvent.passwordRecovery => AuthChange.passwordRecovery,
+          AuthChangeEvent.userUpdated => AuthChange.userUpdated,
+          _ => AuthChange.other,
+        };
+        if (change == AuthChange.signedIn) {
+          _backfillFirstName(state.session?.user);
+        }
+        return change;
+      })
+      .asBroadcastStream();
 
   /// Google and Apple return a name; keep it where the email flow puts it, so
   /// the greeting has one place to read from. Best effort — a failure here must
