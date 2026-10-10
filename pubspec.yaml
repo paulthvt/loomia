@@ -30,6 +30,9 @@ dependencies:
   # the device (#239). Nothing in the SDK opens either.
   image_picker: ^1.2.4
   intl: any
+  # Named loggers and levels for the whole app (#265). Already resolved through
+  # Supabase; direct because lib/ imports it.
+  logging: ^1.3.0
   # Material widgets and localizations. Since Flutter 3.47 they live here, not in
   # the framework, whose flutter/material.dart is frozen. Brings cupertino_ui.
   material_ui: ^1.4.0
@@ -40,6 +43,10 @@ dependencies:
   # crash the app, so Play vitals never sees them. Chosen over Crashlytics
   # because it covers Web and needs no Firebase (#47).
   sentry_flutter: ^9.30.1
+  # Turns `logging` records into Sentry breadcrumbs, logs and events (#265).
+  # Pinned to sentry_flutter's exact version: they release together and must
+  # match.
+  sentry_logging: 9.30.1
   # Auth, session persistence and email/OAuth deep links in one package, so
   # this feature needs no app_links, shared_preferences or provider SDKs.
   supabase_flutter: ^2.17.2

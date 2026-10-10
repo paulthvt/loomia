@@ -2,10 +2,10 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:loomia/core/photos/photo.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Photos in the private `avatars` bucket, one folder per user (#239). Rows
@@ -50,7 +50,7 @@ class PhotoRepository {
     } catch (error, stack) {
       // Offline, the file staying behind is expected, not a bug.
       if (error is StorageException && storageUnreachable(error)) return;
-      await Sentry.captureException(error, stackTrace: stack);
+      _log.severe('discard failed', error, stack);
     }
   }
 
@@ -68,6 +68,8 @@ class PhotoRepository {
 final photoRepositoryProvider = Provider<PhotoRepository>(
   (ref) => PhotoRepository(ref.watch(supabaseClientProvider)),
 );
+
+final _log = Logger('photos');
 
 /// Storage never answered: `storage_client` wraps the socket or client error
 /// and puts its type, not an HTTP status, in [StorageException.statusCode].

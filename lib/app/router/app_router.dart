@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:loomia/app/router/auth_redirect.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
@@ -261,9 +262,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  // A breadcrumb per screen. Path only: no query.
+  router.routerDelegate.addListener(
+    () => _log.info('→ ${router.routerDelegate.currentConfiguration.uri.path}'),
+  );
   ref.onDispose(router.dispose);
   return router;
 });
+
+final _log = Logger('router');
 
 /// On desktop a section only swaps the right-hand pane beside a list that stays
 /// put; the platform transition would slide the whole screen in instead.
