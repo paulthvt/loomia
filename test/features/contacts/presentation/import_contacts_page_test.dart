@@ -3,8 +3,10 @@ import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
+import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
+import 'package:loomia/features/contacts/presentation/contact_page.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
@@ -38,6 +40,25 @@ Future<FakePeopleRepository> _openImport(
   return people;
 }
 
+/// Taps Import on the list: the sheet with the stage, the day and the
+/// workflow opens.
+Future<void> _openSheet(WidgetTester tester, String action) async {
+  await tester.tap(find.widgetWithText(FilledButton, action));
+  await tester.pumpAndSettle();
+  expect(find.byType(LoomiaDialog), findsOneWidget);
+}
+
+/// Confirms the sheet.
+Future<void> _confirm(WidgetTester tester) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(LoomiaDialog),
+      matching: find.widgetWithText(FilledButton, 'Import'),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 SwitchListTile _start(WidgetTester tester) =>
     tester.widget<SwitchListTile>(find.byType(SwitchListTile));
 
@@ -64,15 +85,19 @@ void main() {
     expect(find.text('0 selected'.toUpperCase()), findsOneWidget);
     final import = find.widgetWithText(FilledButton, 'Import');
     expect(tester.widget<FilledButton>(import).onPressed, isNull);
+    // The settings wait for the second step.
+    expect(find.byType(ChoiceChip), findsNothing);
 
     await tester.tap(find.text('Chloé Bernard'));
     await tester.tap(find.text('Denis'));
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Customer'));
     await tester.pump();
     expect(find.text('2 selected'.toUpperCase()), findsOneWidget);
 
-    await tester.tap(find.text('Import 2 people'));
-    await tester.pumpAndSettle();
+    await _openSheet(tester, 'Import 2 people');
+    expect(find.text('Add 2 people as'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Customer'));
+    await tester.pump();
+    await _confirm(tester);
 
     expect(people.calls.last, 'addAll(Chloé Bernard, Denis)');
     final added = people.store.values.where((person) => person.id != 'p1');
@@ -80,6 +105,70 @@ void main() {
     expect(added.map((person) => person.email), contains('denis@example.com'));
     expect(find.byType(ContactList), findsOneWidget);
     expect(find.text('2 people imported'), findsOneWidget);
+  });
+
+  testWidgets('Cancel in the sheet imports nothing and keeps the ticks', (
+    tester,
+  ) async {
+    final people = await _openImport(
+      tester,
+      FakePhoneContactsRepository([
+        (name: 'Denis', phone: null, email: null, photo: null),
+      ]),
+    );
+
+    await tester.tap(find.text('Denis'));
+    await tester.pump();
+    await _openSheet(tester, 'Import one person');
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoomiaDialog), findsNothing);
+    expect(people.calls.where((call) => call.startsWith('addAll')), isEmpty);
+    expect(find.text('1 selected'.toUpperCase()), findsOneWidget);
+  });
+
+  testWidgets('someone on a known line opens them instead of being ticked', (
+    tester,
+  ) async {
+    await _openImport(
+      tester,
+      FakePhoneContactsRepository([
+        (name: 'Denis', phone: null, email: null, photo: null),
+        (name: 'Maman', phone: '+33 6 12 34 56 78', email: null, photo: null),
+      ]),
+    );
+    final maman = find.widgetWithText(ContactRow, 'Maman');
+    expect(
+      find.descendant(of: maman, matching: find.byType(Checkbox)),
+      findsNothing,
+    );
+
+    await tester.tap(find.text('Denis'));
+    await tester.tap(maman);
+    await tester.pumpAndSettle();
+    expect(find.byType(ContactPage), findsOneWidget);
+    expect(find.text('Marie Dupont'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('1 selected'.toUpperCase()), findsOneWidget);
+  });
+
+  testWidgets('a namesake without a number is flagged and can be ticked', (
+    tester,
+  ) async {
+    await _openImport(
+      tester,
+      FakePhoneContactsRepository([
+        (name: 'marie dupont', phone: null, email: null, photo: null),
+      ]),
+    );
+
+    expect(find.text('Same name as someone in Loomia'), findsOneWidget);
+    await tester.tap(find.text('marie dupont'));
+    await tester.pump();
+    expect(find.text('Import one person'), findsOneWidget);
   });
 
   testWidgets('a contact with a photo shows it, one without its initials', (
@@ -115,8 +204,8 @@ void main() {
     await tester.tap(find.text('Chloé Bernard'));
     await tester.tap(find.text('Denis'));
     await tester.pump();
-    await tester.tap(find.text('Import 2 people'));
-    await tester.pumpAndSettle();
+    await _openSheet(tester, 'Import 2 people');
+    await _confirm(tester);
 
     final chloe = people.store.values.singleWhere(
       (person) => person.name == 'Chloé Bernard',
@@ -138,6 +227,8 @@ void main() {
     );
 
     await tester.tap(find.text('Denis'));
+    await tester.pump();
+    await _openSheet(tester, 'Import one person');
     await tester.tap(find.text('Since today'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.edit_outlined));
@@ -147,8 +238,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Since Mar 4, 2025'), findsOneWidget);
 
-    await tester.tap(find.text('Import one person'));
-    await tester.pumpAndSettle();
+    await _confirm(tester);
 
     final denis = people.store.values.singleWhere((p) => p.name == 'Denis');
     expect(denis.stageSince, DateTime(2025, 3, 4));
@@ -165,13 +255,14 @@ void main() {
     );
 
     await tester.tap(find.text('Denis'));
+    await tester.pump();
+    await _openSheet(tester, 'Import one person');
     await tester.tap(find.widgetWithText(ChoiceChip, 'Customer'));
     await tester.pump();
     expect(find.text('New customer'), findsOneWidget);
     expect(_start(tester).value, isTrue);
 
-    await tester.tap(find.text('Import one person'));
-    await tester.pumpAndSettle();
+    await _confirm(tester);
 
     final denis = people.store.values.singleWhere((p) => p.name == 'Denis');
     expect(denis.place?.workflowId, 'new-customer');
@@ -186,13 +277,13 @@ void main() {
     );
 
     await tester.tap(find.text('Denis'));
-    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.pump();
+    await _openSheet(tester, 'Import one person');
     await tester.tap(find.byType(SwitchListTile));
     await tester.pump();
     expect(_start(tester).value, isFalse);
 
-    await tester.tap(find.text('Import one person'));
-    await tester.pumpAndSettle();
+    await _confirm(tester);
 
     final denis = people.store.values.singleWhere((p) => p.name == 'Denis');
     expect(denis.place, isNull);
@@ -216,6 +307,30 @@ void main() {
     expect(find.text('Denis'), findsNothing);
     expect(find.text('Chloé Bernard'), findsOneWidget);
     expect(find.text('Import one person'), findsOneWidget);
+  });
+
+  testWidgets('with the keyboard up the list keeps the room', (tester) async {
+    await _openImport(
+      tester,
+      FakePhoneContactsRepository([
+        (name: 'Chloé Bernard', phone: null, email: null, photo: null),
+        (name: 'Denis', phone: null, email: null, photo: null),
+      ]),
+    );
+    await tester.tap(find.text('Denis'));
+    await tester.enterText(find.byType(TextField), 'chlo');
+    // Roughly a phone keyboard with its suggestion bar.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 430);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final chloe = tester.getRect(find.text('Chloé Bernard'));
+    final search = tester.getRect(find.byType(TextField));
+    final import = tester.getRect(find.text('Import one person'));
+    expect(search.bottom, lessThan(chloe.top));
+    expect(chloe.bottom, lessThan(import.top));
+    expect(import.bottom, lessThanOrEqualTo(_phone.height - 430));
   });
 
   testWidgets('refused access points to the settings', (tester) async {

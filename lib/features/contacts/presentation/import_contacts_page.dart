@@ -9,9 +9,9 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/pick_day.dart';
-import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/data/phone_contacts_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -31,12 +31,16 @@ final phoneContactsProvider = FutureProvider.autoDispose<List<PhoneContact>?>(
   retry: (error, _) => null,
 );
 
+/// What everyone ticked comes in as, picked in [_ImportSheet].
+typedef _ImportChoice = ({Stage stage, DateTime? since, Workflow? workflow});
+
 /// Pick people from the phone's contacts and bring them in, all at one stage,
 /// since today or an earlier day (#179): most are customers or on the team
-/// already. Nobody is ticked to start with; someone who looks already in
-/// Loomia says so, and can still be ticked. They start the stage's default
-/// workflow only if the switch says so (#225): on for since today, off for an
-/// earlier day, so an existing customer base doesn't start onboarding.
+/// already. Nobody is ticked to start with. Someone on the phone line of a
+/// person in Loomia can't be ticked again, and opens that person instead;
+/// one who only shares a name is flagged, and can still be ticked. Two steps: the list, then a sheet
+/// for the stage, the day and the workflow, so nobody imports without seeing
+/// them.
 class ImportContactsPage extends ConsumerStatefulWidget {
   const ImportContactsPage({super.key});
 
@@ -51,15 +55,6 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
   /// Indexes into the phone's list, so two contacts with the same name stay
   /// apart.
   final Set<int> _selected = {};
-  Stage _stage = Stage.prospect;
-
-  /// Null is today: picking is optional, each person can be corrected later.
-  DateTime? _since;
-
-  /// The user's flip of the workflow switch; null follows [_since]. Reset
-  /// whenever the stage or the day changes.
-  bool? _startPicked;
-  bool get _start => _startPicked ?? _since == null;
   bool _saving = false;
 
   @override
@@ -84,28 +79,34 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
   Future<void> _import(List<PhoneContact> contacts) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
+    final owner = ref.read(accountProvider)?.email;
+    final book = ref.read(peopleProvider(owner).notifier);
+    final ticked = [
+      for (final index in _selected.toList()..sort()) contacts[index],
+    ];
+    FocusScope.of(context).unfocus();
+    final choice = await LoomiaDialog.show<_ImportChoice>(
+      context,
+      (_) => _ImportSheet(count: ticked.length),
+    );
+    if (choice == null || !mounted) return;
+
     setState(() => _saving = true);
     try {
-      final owner = ref.read(accountProvider)?.email;
-      final workflows = ref.read(workflowsProvider(owner)).value ?? const [];
-      final book = ref.read(peopleProvider(owner).notifier);
-      final ticked = [
-        for (final index in _selected.toList()..sort()) contacts[index],
-      ];
       final added = await book.addAll(
         [
           for (final contact in ticked)
             (
               name: contact.name,
-              stage: _stage,
+              stage: choice.stage,
               phone: contact.phone,
               email: contact.email,
               instagram: null,
             ),
         ],
-        workflow: _start ? defaultFor(workflows, _stage) : null,
+        workflow: choice.workflow,
         today: today(),
-        stageSince: _since,
+        stageSince: choice.since,
       );
       // One insert, rows back in its order: the i-th added is the i-th
       // ticked.
@@ -132,9 +133,8 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final owner = ref.watch(accountProvider)?.email;
-    // Loads the workflows, so the default is there by the time Import is
-    // tapped.
-    final workflows = ref.watch(workflowsProvider(owner)).value ?? const [];
+    // Loads the workflows, so the default is there when the sheet opens.
+    ref.watch(workflowsProvider(owner));
     final phone = ref.watch(phoneContactsProvider);
 
     final Widget body = switch (phone) {
@@ -158,7 +158,6 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
         l10n,
         contacts,
         ref.watch(peopleProvider(owner)).value ?? const [],
-        defaultFor(workflows, _stage),
       ),
       AsyncError() => _centered(
         EmptyState(
@@ -187,23 +186,36 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
     AppLocalizations l10n,
     List<PhoneContact> contacts,
     List<Person> people,
-    Workflow? workflow,
   ) {
     final query = searchKey(_query);
     final muted = LoomiaColors.of(context).textMuted;
     final count = _selected.length;
+    ImageProvider? photoOf(PhoneContact contact) => switch (contact.photo) {
+      final bytes? => MemoryImage(bytes),
+      null => null,
+    };
+    // Keyboard up: the title steps aside so the list keeps the room; the
+    // search stays pinned and Import carries the count.
+    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              LoomiaTopBar(
-                eyebrow: l10n.importSelected(count),
-                title: l10n.importTitle,
-              ),
+              if (!typing)
+                LoomiaTopBar(
+                  eyebrow: l10n.importSelected(count),
+                  title: l10n.importTitle,
+                ),
               TextField(
                 onChanged: (value) => setState(() => _query = value),
                 textInputAction: TextInputAction.search,
@@ -212,7 +224,18 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
                   prefixIcon: const Icon(Icons.search_rounded),
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            children: [
               Text(
                 l10n.importHint,
                 style: Theme.of(context).textTheme.bodySmall
@@ -221,82 +244,79 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
               const SizedBox(height: AppSpacing.ms),
               for (final (index, contact) in contacts.indexed)
                 if (searchKey(contact.name).contains(query))
-                  ContactRow(
-                    name: contact.name,
-                    photo: switch (contact.photo) {
-                      final bytes? => MemoryImage(bytes),
-                      null => null,
-                    },
-                    subtitle: alreadyIn(contact, people)
-                        ? l10n.importAlreadyIn
-                        : contact.phone ?? contact.email,
-                    trailing: Checkbox(
-                      value: _selected.contains(index),
-                      onChanged: (_) => _toggle(index),
+                  if (samePhone(contact, people) case final known?)
+                    // Already in Loomia: not tickable, opens them instead.
+                    ContactRow(
+                      name: contact.name,
+                      photo: photoOf(contact),
+                      subtitle: l10n.importAlreadyIn,
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => unawaited(
+                        context.push(Routes.contactLocation(known.id)),
+                      ),
+                    )
+                  else
+                    ContactRow(
+                      name: contact.name,
+                      photo: photoOf(contact),
+                      subtitle: sameName(contact, people)
+                          ? l10n.importSameName
+                          : contact.phone ?? contact.email,
+                      trailing: Checkbox(
+                        value: _selected.contains(index),
+                        onChanged: (_) => _toggle(index),
+                      ),
+                      onTap: () => _toggle(index),
                     ),
-                    onTap: () => _toggle(index),
-                  ),
             ],
           ),
         ),
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SectionHeader(title: l10n.importStage),
-              Wrap(
-                spacing: AppSpacing.sm,
-                children: [
-                  for (final stage in Stage.values)
-                    ChoiceChip(
-                      label: Text(stageLabel(l10n, stage)),
-                      selected: _stage == stage,
-                      onSelected: (_) => setState(() {
-                        _stage = stage;
-                        _startPicked = null;
-                      }),
-                    ),
-                ],
-              ),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: _pickSince,
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  label: Text(switch (_since) {
-                    final DateTime since => l10n.importSince(since),
-                    null => l10n.importSinceToday,
-                  }),
-                ),
-              ),
-              if (workflow != null)
-                // The app's one switch style, as in the step sheet.
-                SwitchListTile(
-                  value: _start,
-                  title: Text(l10n.importStartWorkflow),
-                  subtitle: Text(workflow.name),
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (on) => setState(() => _startPicked = on),
-                ),
-              const SizedBox(height: AppSpacing.ms),
-              FilledButton(
-                onPressed: count == 0 || _saving
-                    ? null
-                    : () => _import(contacts),
-                child: _saving
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(l10n.importAction(count)),
-              ),
-            ],
+          child: FilledButton(
+            onPressed: count == 0 || _saving ? null : () => _import(contacts),
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(l10n.importAction(count)),
           ),
         ),
       ],
     );
   }
+
+  void _toggle(int index) => setState(
+    () => _selected.contains(index)
+        ? _selected.remove(index)
+        : _selected.add(index),
+  );
+}
+
+/// The second step: the stage, the day and the workflow for everyone ticked.
+/// They start the stage's default workflow only if the switch says so (#225):
+/// on for since today, off for an earlier day, so an existing customer base
+/// doesn't start onboarding.
+class _ImportSheet extends ConsumerStatefulWidget {
+  const _ImportSheet({required this.count});
+
+  final int count;
+
+  @override
+  ConsumerState<_ImportSheet> createState() => _ImportSheetState();
+}
+
+class _ImportSheetState extends ConsumerState<_ImportSheet> {
+  Stage _stage = Stage.prospect;
+
+  /// Null is today: picking is optional, each person can be corrected later.
+  DateTime? _since;
+
+  /// The user's flip of the workflow switch; null follows [_since]. Reset
+  /// whenever the stage or the day changes.
+  bool? _startPicked;
+  bool get _start => _startPicked ?? _since == null;
 
   Future<void> _pickSince() async {
     final now = today();
@@ -309,9 +329,68 @@ class _ImportContactsPageState extends ConsumerState<ImportContactsPage> {
     }
   }
 
-  void _toggle(int index) => setState(
-    () => _selected.contains(index)
-        ? _selected.remove(index)
-        : _selected.add(index),
-  );
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final owner = ref.watch(accountProvider)?.email;
+    final workflows = ref.watch(workflowsProvider(owner)).value ?? const [];
+    final workflow = defaultFor(workflows, _stage);
+
+    return LoomiaDialog(
+      title: l10n.importStage(widget.count),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop<_ImportChoice>(context, (
+            stage: _stage,
+            since: _since,
+            workflow: _start ? workflow : null,
+          )),
+          child: Text(l10n.importConfirm),
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: AppSpacing.sm,
+            children: [
+              for (final stage in Stage.values)
+                ChoiceChip(
+                  label: Text(stageLabel(l10n, stage)),
+                  selected: _stage == stage,
+                  onSelected: (_) => setState(() {
+                    _stage = stage;
+                    _startPicked = null;
+                  }),
+                ),
+            ],
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: _pickSince,
+              icon: const Icon(Icons.calendar_today_outlined),
+              label: Text(switch (_since) {
+                final DateTime since => l10n.importSince(since),
+                null => l10n.importSinceToday,
+              }),
+            ),
+          ),
+          if (workflow != null)
+            // The app's one switch style, as in the step sheet.
+            SwitchListTile(
+              value: _start,
+              title: Text(l10n.importStartWorkflow),
+              subtitle: Text(workflow.name),
+              contentPadding: EdgeInsets.zero,
+              onChanged: (on) => setState(() => _startPicked = on),
+            ),
+        ],
+      ),
+    );
+  }
 }
