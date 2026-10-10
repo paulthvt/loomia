@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -397,6 +398,57 @@ void main() {
 
       expect(person.place?.workflowId, 'w1');
       expect(person.pausedAt, isNotNull);
+    });
+  });
+
+  group('guardPeople logs', () {
+    late List<LogRecord> records;
+    late StreamSubscription<LogRecord> subscription;
+
+    setUp(() {
+      Logger.root.level = Level.ALL;
+      records = [];
+      subscription = Logger('people').onRecord.listen(records.add);
+    });
+    tearDown(() => subscription.cancel());
+
+    Future<void> guard(Object error, Object failure) => expectLater(
+      guardPeople<void>(() async => throw error),
+      throwsA(failure),
+    );
+
+    test('a lost connection is info only', () async {
+      await guard(const SocketException('offline'), PeopleFailure.network);
+      expect(records.map((r) => r.level), [Level.INFO]);
+    });
+
+    test('a server refusal is severe, without its details', () async {
+      await guard(
+        const PostgrestException(
+          message: 'duplicate key',
+          code: '23505',
+          details: 'Key (email)=(a@b.c)',
+        ),
+        PeopleFailure.unknown,
+      );
+      final record = records.single;
+      expect(record.level, Level.SEVERE);
+      expect(record.message, '23505: duplicate key');
+      expect((record.error! as PostgrestException).details, isNull);
+      expect(record.stackTrace, isNotNull);
+    });
+
+    test('a bug is severe, with its stack', () async {
+      await guard(TypeError(), PeopleFailure.unknown);
+      final record = records.single;
+      expect(record.level, Level.SEVERE);
+      expect(record.error, isA<TypeError>());
+      expect(record.stackTrace, isNotNull);
+    });
+
+    test('a PeopleFailure thrown on purpose logs nothing', () async {
+      await guard(PeopleFailure.network, PeopleFailure.network);
+      expect(records, isEmpty);
     });
   });
 }

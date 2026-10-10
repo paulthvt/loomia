@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -238,14 +239,34 @@ PeopleFailure peopleFailureFrom(Object error) => switch (error) {
 };
 
 /// Runs [call] and turns whatever it throws into a [PeopleFailure]. Every
-/// contacts repository goes through it.
+/// contacts repository goes through it. A bug is logged `SEVERE` (a Sentry
+/// event), the connection `INFO` (a breadcrumb).
 Future<T> guardPeople<T>(Future<T> Function() call) async {
   try {
     return await call();
-  } catch (error) {
-    throw peopleFailureFrom(error);
+  } catch (error, stack) {
+    final failure = peopleFailureFrom(error);
+    switch (error) {
+      // Thrown on purpose by a repository: nothing went wrong unexpectedly.
+      case PeopleFailure():
+        break;
+      case _ when failure == PeopleFailure.network:
+        _log.info('offline', error);
+      // `details` can hold row values ("Key (email)=(…)"): never sent.
+      case final PostgrestException e:
+        _log.severe(
+          '${e.code}: ${e.message}',
+          PostgrestException(message: e.message, code: e.code),
+          stack,
+        );
+      default:
+        _log.severe('unexpected', error, stack);
+    }
+    throw failure;
   }
 }
+
+final _log = Logger('people');
 
 const Map<ProspectStatus, String> _statusColumn = {
   ProspectStatus.interested: 'interested',

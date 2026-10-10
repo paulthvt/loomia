@@ -196,6 +196,27 @@ Migrations and functions reach the hosted project by hand, after merge, with
 `supabase db push` and `supabase functions deploy`. One maintainer, rare
 migrations: a deploy job would be more secrets than it saves. Automate it when either stops being true.
 
+### Logging and error reports
+
+`package:logging` is the only log API (#265): one `Logger('<area>')` per file
+that logs, no wrapper. The level says what happened, and Sentry acts on it
+through `sentry_logging`:
+
+- `SEVERE`: a bug. A Sentry event with its stack.
+- `WARNING`: an expected refusal (wrong password, rate limit). A breadcrumb and
+  a searchable Sentry log.
+- `INFO`: context, including the connection being down. A breadcrumb only.
+
+`guardPeople` and `guardAuth` pick the level for every repository failure; the
+`*FailureFrom` mappings stay pure. Each event also carries the routes visited
+(the `router` logger), the Supabase requests (`SentryHttpClient`, query strings
+dropped) and the user's id, never their email. Messages never hold names,
+emails, phones, notes or titles: ids, codes and counts only. A
+`PostgrestException` goes without `details`, where Postgres puts row values.
+
+Debug and profile builds print every record to the console and send nothing
+to Sentry. To check the Sentry side, `flutter run --release`.
+
 ### Not yet present, by design
 
 Firebase Cloud Messaging, a `profiles` table (the user's first name and photo

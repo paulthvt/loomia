@@ -84,13 +84,15 @@ class AuthRepository {
   }
 
   Future<void> signIn({required String email, required String password}) =>
-      _guard(() => _auth.signInWithPassword(email: email, password: password));
+      guardAuth(
+        () => _auth.signInWithPassword(email: email, password: password),
+      );
 
   Future<void> signUp({
     required String email,
     required String password,
     required String firstName,
-  }) => _guard(
+  }) => guardAuth(
     () => _auth.signUp(
       email: email,
       password: password,
@@ -101,14 +103,15 @@ class AuthRepository {
 
   /// Apple is the other provider the product wants; it needs a paid Apple
   /// Developer account, so it is not wired up yet (issue #22).
-  Future<void> signInWithGoogle() => _guard(
+  Future<void> signInWithGoogle() => guardAuth(
     () => _auth.signInWithOAuth(OAuthProvider.google, redirectTo: _redirect),
   );
 
-  Future<void> sendPasswordReset(String email) =>
-      _guard(() => _auth.resetPasswordForEmail(email, redirectTo: _redirect));
+  Future<void> sendPasswordReset(String email) => guardAuth(
+    () => _auth.resetPasswordForEmail(email, redirectTo: _redirect),
+  );
 
-  Future<void> resendConfirmation(String email) => _guard(
+  Future<void> resendConfirmation(String email) => guardAuth(
     () => _auth.resend(
       type: OtpType.signup,
       email: email,
@@ -117,12 +120,12 @@ class AuthRepository {
   );
 
   Future<void> updatePassword(String password) =>
-      _guard(() => _auth.updateUser(UserAttributes(password: password)));
+      guardAuth(() => _auth.updateUser(UserAttributes(password: password)));
 
-  Future<void> signOut() => _guard(_auth.signOut);
+  Future<void> signOut() => guardAuth(_auth.signOut);
 
   /// Where sign-up and the provider backfill put it, so the greeting follows.
-  Future<void> updateFirstName(String firstName) => _guard(
+  Future<void> updateFirstName(String firstName) => guardAuth(
     () => _auth.updateUser(
       UserAttributes(data: {'first_name': firstName.trim()}),
     ),
@@ -130,11 +133,12 @@ class AuthRepository {
 
   /// A language code, or null to follow the system. Kept on the user so it
   /// follows them to every device.
-  Future<void> updateLocale(String? locale) =>
-      _guard(() => _auth.updateUser(UserAttributes(data: {'locale': locale})));
+  Future<void> updateLocale(String? locale) => guardAuth(
+    () => _auth.updateUser(UserAttributes(data: {'locale': locale})),
+  );
 
   /// Stored as `theme`; removed for [Appearance.system], like a null locale.
-  Future<void> updateAppearance(Appearance appearance) => _guard(
+  Future<void> updateAppearance(Appearance appearance) => guardAuth(
     () => _auth.updateUser(
       UserAttributes(
         data: {
@@ -146,7 +150,7 @@ class AuthRepository {
 
   /// Stored as `business_model`; removed for [BusinessModel.other], like a
   /// system appearance.
-  Future<void> updateBusinessModel(BusinessModel model) => _guard(
+  Future<void> updateBusinessModel(BusinessModel model) => guardAuth(
     () => _auth.updateUser(
       UserAttributes(data: {'business_model': model.stored}),
     ),
@@ -154,29 +158,22 @@ class AuthRepository {
 
   /// Stored as `avatar_path`, removed for null. The file is the caller's
   /// (`swapPhoto`).
-  Future<void> updateAvatarPath(String? path) => _guard(
+  Future<void> updateAvatarPath(String? path) => guardAuth(
     () => _auth.updateUser(UserAttributes(data: {'avatar_path': path})),
   );
 
   /// The first-run screen is done with, on every device.
-  Future<void> markOnboarded() =>
-      _guard(() => _auth.updateUser(UserAttributes(data: {'onboarded': true})));
+  Future<void> markOnboarded() => guardAuth(
+    () => _auth.updateUser(UserAttributes(data: {'onboarded': true})),
+  );
 
   /// Deleting needs the secret key, so it happens in the `delete-account` Edge
   /// Function. The session is then dead server-side; sign out locally only —
   /// a server sign-out would fail on a user that no longer exists.
-  Future<void> deleteAccount() => _guard(() async {
+  Future<void> deleteAccount() => guardAuth(() async {
     await _client.functions.invoke('delete-account');
     await _auth.signOut(scope: SignOutScope.local);
   });
-
-  Future<void> _guard(Future<void> Function() call) async {
-    try {
-      await call();
-    } catch (error) {
-      throw authFailureFrom(error);
-    }
-  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>(

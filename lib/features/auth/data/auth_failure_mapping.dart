@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -37,3 +38,30 @@ AuthFailure authFailureFrom(Object error) {
   if (error is Exception) return AuthFailure.network;
   return AuthFailure.unknown;
 }
+
+/// Runs [call] and turns whatever it throws into an [AuthFailure]. Every
+/// `AuthRepository` call goes through it. A bug is logged `SEVERE` (a Sentry
+/// event), a refusal `WARNING`, the connection `INFO`.
+Future<void> guardAuth(Future<void> Function() call) async {
+  try {
+    await call();
+  } catch (error, stack) {
+    final failure = authFailureFrom(error);
+    switch (error) {
+      // Thrown on purpose: nothing went wrong unexpectedly.
+      case AuthFailure():
+        break;
+      case _ when failure == AuthFailure.network:
+        _log.info('offline', error);
+      // Wrong passwords, rate limits, "email exists": expected. The message
+      // is server copy and may quote the email, so only the code goes.
+      case final AuthException e:
+        _log.warning('${e.code} ${e.statusCode}');
+      default:
+        _log.severe('unexpected', error, stack);
+    }
+    throw failure;
+  }
+}
+
+final _log = Logger('auth');

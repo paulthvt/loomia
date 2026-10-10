@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 import 'package:loomia/features/auth/data/auth_failure_mapping.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -85,6 +87,52 @@ void main() {
 
   test('an AuthFailure passes through unchanged', () {
     expect(authFailureFrom(AuthFailure.network), AuthFailure.network);
+  });
+
+  group('guardAuth logs', () {
+    late List<LogRecord> records;
+    late StreamSubscription<LogRecord> subscription;
+
+    setUp(() {
+      Logger.root.level = Level.ALL;
+      records = [];
+      subscription = Logger('auth').onRecord.listen(records.add);
+    });
+    tearDown(() => subscription.cancel());
+
+    Future<void> guard(Object error, AuthFailure failure) =>
+        expectLater(guardAuth(() async => throw error), throwsA(failure));
+
+    test('a lost connection is info only', () async {
+      await guard(AuthRetryableFetchException(), AuthFailure.network);
+      expect(records.map((r) => r.level), [Level.INFO]);
+    });
+
+    test('a refusal is a warning with its code, never severe', () async {
+      await guard(
+        const AuthApiException(
+          'Invalid login credentials',
+          code: 'invalid_credentials',
+          statusCode: '400',
+        ),
+        AuthFailure.invalidCredentials,
+      );
+      final record = records.single;
+      expect(record.level, Level.WARNING);
+      expect(record.message, 'invalid_credentials 400');
+    });
+
+    test('a bug is severe, with its stack', () async {
+      await guard(const FormatException('bad'), AuthFailure.unknown);
+      final record = records.single;
+      expect(record.level, Level.SEVERE);
+      expect(record.stackTrace, isNotNull);
+    });
+
+    test('an AuthFailure thrown on purpose logs nothing', () async {
+      await guard(AuthFailure.rateLimited, AuthFailure.rateLimited);
+      expect(records, isEmpty);
+    });
   });
 }
 
