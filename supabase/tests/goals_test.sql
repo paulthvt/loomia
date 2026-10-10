@@ -84,10 +84,9 @@ insert into public.activity (person_id, kind, amount, happened_on) values
   ('00000000-0000-0000-0000-0000000000a1', 'order', 50, '2026-09-30');
 insert into public.activity (kind, amount, happened_on) values
   ('order', 80, '2026-10-03');
-insert into public.activity (person_id, kind, text, happened_on, loyalty_setup) values
-  ('00000000-0000-0000-0000-0000000000a3', 'step', 'Set up a refill routine', '2026-10-05', true),
-  ('00000000-0000-0000-0000-0000000000a3', 'step', 'Set up a refill routine', '2026-09-29', true),
-  ('00000000-0000-0000-0000-0000000000a3', 'step', 'Order arrived', '2026-10-05', false);
+-- Loyalty counts the people whose LRP started in the month (#255).
+select public.set_loyalty(
+  '00000000-0000-0000-0000-0000000000a3', '2026-10-05', '2026-10-05');
 
 select results_eq(
   $$ select * from public.month_progress('2026-10-01',

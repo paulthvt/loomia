@@ -53,7 +53,7 @@
 - Create: `supabase/migrations/<ts>_loyalty_on_person.sql` (`supabase migration new loyalty_on_person`)
 - Create: `supabase/tests/loyalty_test.sql`
 
-- [ ] **Step 1: Write the failing test** `supabase/tests/loyalty_test.sql`, set up like `loyalty_step_test.sql`: users `…0a` and `…0b`, claims switched with `set local request.jwt.claims`. The person and workflow rows are inserted directly; one customer workflow has two steps with `loyalty_setup`. It asserts:
+- [x] **Step 1: Write the failing test** `supabase/tests/loyalty_test.sql`, set up like `loyalty_step_test.sql`: users `…0a` and `…0b`, claims switched with `set local request.jwt.claims`. The person and workflow rows are inserted directly; one customer workflow has two steps with `loyalty_setup`. It asserts:
   - `has_column('public', 'person', 'loyalty_since')`.
   - `set_loyalty(p, '2026-10-02', '2026-10-10')`: `loyalty_since = '2026-10-02'`, and one `loyalty_start` entry on 10-02 with `text is null`.
   - The same call again changes nothing (still one entry).
@@ -71,7 +71,7 @@
 
   Run `supabase db reset && supabase test db`. It must fail with no column `loyalty_since`.
 
-- [ ] **Step 2: `loyalty_kinds`.**
+- [x] **Step 2: `loyalty_kinds`.**
 
 ```sql
 -- LRP on the contact (#255), part 1. The kinds are added alone: a new enum
@@ -80,7 +80,7 @@ alter type public.activity_kind add value 'loyalty_start';
 alter type public.activity_kind add value 'loyalty_stop';
 ```
 
-- [ ] **Step 3: `loyalty_on_person`.** It contains, in order:
+- [x] **Step 3: `loyalty_on_person`.** It contains, in order:
   - The column: `alter table public.person add column loyalty_since date;` with a comment: null means no LRP; written only by `set_loyalty`.
   - `entry_shape` dropped and recreated so the loyalty kinds may have no text: the rule from `20261003205256_order_amount.sql`, with `or kind in ('loyalty_start', 'loyalty_stop')` added to the text-required clause.
   - `activity_insert_own`, `activity_update_own` and `activity_delete_own` dropped and recreated with `kind not in ('stage', 'loyalty_start', 'loyalty_stop')` in place of `kind <> 'stage'`.
@@ -98,8 +98,8 @@ alter type public.activity_kind add value 'loyalty_stop';
   - `loyalty_forecast`: recreated with `and p.loyalty_since is null`.
   - The backfill: `update public.person p set loyalty_since = f.first from (select person_id, min(happened_on) as first from public.activity where kind = 'step' and loyalty_setup group by person_id) f where f.person_id = p.id;`
 
-- [ ] **Step 4: Run** `supabase db reset && supabase test db`. Every test passes, including `goals_test.sql` and `loyalty_step_test.sql`. If an old count assertion relied on double-counting step entries, update it and say why in the commit.
-- [ ] **Step 5: Commit** `feat(db): loyalty_since on the person, set_loyalty (#255)`.
+- [x] **Step 4: Run** `supabase db reset && supabase test db`. Every test passes, including `goals_test.sql` and `loyalty_step_test.sql`. If an old count assertion relied on double-counting step entries, update it and say why in the commit.
+- [x] **Step 5: Commit** `feat(db): loyalty_since on the person, set_loyalty (#255)`.
 
 ### Task 2: Dart model, repository and fakes
 
