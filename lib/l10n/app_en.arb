@@ -1839,11 +1839,18 @@
   },
   "importAlreadyIn": "Already in Loomia",
   "@importAlreadyIn": {
-    "description": "Shown instead of the phone number when a contact looks like someone already in Loomia (same number or name). They can still be ticked."
+    "description": "Shown instead of the phone number when a contact has the same phone number as someone already in Loomia. The row can't be ticked; tapping it opens that person."
   },
-  "importStage": "Add them as",
+  "importSameName": "Same name as someone in Loomia",
+  "@importSameName": {
+    "description": "Shown instead of the email when a contact without a usable phone number has the same name as someone already in Loomia: maybe them, maybe a namesake. The row can still be ticked."
+  },
+  "importStage": "{count, plural, =1{Add one person as} other{Add {count} people as}}",
   "@importStage": {
-    "description": "Heading above the stage chips (Prospect, Customer, Team) given to everyone imported. Shown in capitals."
+    "description": "Title of the sheet that opens on Import, above the stage chips (Prospect, Customer, Team) given to everyone imported; count is how many are ticked.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
   },
   "importSinceToday": "Since today",
   "@importSinceToday": {
@@ -1858,14 +1865,18 @@
   },
   "importStartWorkflow": "Start their workflow",
   "@importStartWorkflow": {
-    "description": "Switch on the import screen, under the 'Since' button; the name of the stage's default workflow (a series of follow-up steps, e.g. 'New customer') is shown under it. On, everyone imported starts that workflow today. Off by default when an earlier day is picked: those people are already in that stage."
+    "description": "Switch in the import sheet, under the 'Since' button; the name of the stage's default workflow (a series of follow-up steps, e.g. 'New customer') is shown under it. On, everyone imported starts that workflow today. Off by default when an earlier day is picked: those people are already in that stage."
   },
   "importAction": "{count, plural, =0{Import} =1{Import one person} other{Import {count} people}}",
   "@importAction": {
-    "description": "Button that imports the ticked contacts.",
+    "description": "Button under the list of the import screen, with the count of people ticked; opens the sheet to pick their stage.",
     "placeholders": {
       "count": { "type": "int" }
     }
+  },
+  "importConfirm": "Import",
+  "@importConfirm": {
+    "description": "Primary button of the import sheet, beside Cancel: imports everyone ticked with the stage, day and workflow picked. Short: it shares the width with Cancel, and the list's button already gave the count."
   },
   "importDone": "{count, plural, =1{One person imported} other{{count} people imported}}",
   "@importDone": {

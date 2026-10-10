@@ -12,17 +12,21 @@ typedef PhoneContact = ({
   Uint8List? photo,
 });
 
-/// Whether [contact] looks like someone already in [people]: the same phone
-/// number, or else the same name. Flagged for the user to decide, never
-/// merged.
-bool alreadyIn(PhoneContact contact, Iterable<Person> people) {
+/// Someone in [people] on [contact]'s phone line: the same person, so they
+/// are not imported twice. Null when the number is unknown or too short to
+/// tell.
+Person? samePhone(PhoneContact contact, Iterable<Person> people) {
   final phone = _number(contact.phone);
+  if (phone == null) return null;
+  return people.where((person) => _number(person.phone) == phone).firstOrNull;
+}
+
+/// Without a number to tell, whether someone in [people] has [contact]'s
+/// name: maybe them, maybe a namesake, so it is flagged and the user decides.
+bool sameName(PhoneContact contact, Iterable<Person> people) {
+  if (_number(contact.phone) != null) return false;
   final name = searchKey(contact.name);
-  return people.any(
-    (person) => phone != null
-        ? phone == _number(person.phone)
-        : name == searchKey(person.name),
-  );
+  return people.any((person) => searchKey(person.name) == name);
 }
 
 /// The last nine digits: "+33 6 12 34 56 78" and "06 12 34 56 78" are the same

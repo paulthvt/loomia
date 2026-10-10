@@ -16,55 +16,52 @@ void main() {
     _person('Hélène Martin'),
   ];
 
-  test('the same line, written another way, is already in', () {
+  test('the same line, written another way, is that person', () {
     expect(
-      alreadyIn((
+      samePhone((
         name: 'Maman',
         phone: '+33 6 12 34 56 78',
         email: null,
         photo: null,
-      ), people),
-      isTrue,
+      ), people)?.name,
+      'Marie Dupont',
     );
   });
 
   test('another number is someone else, even with the same name', () {
-    expect(
-      alreadyIn((
-        name: 'Marie Dupont',
-        phone: '06 99 88 77 66',
-        email: null,
-        photo: null,
-      ), people),
-      isFalse,
+    const contact = (
+      name: 'Marie Dupont',
+      phone: '06 99 88 77 66',
+      email: null,
+      photo: null,
     );
+    expect(samePhone(contact, people), isNull);
+    expect(sameName(contact, people), isFalse);
   });
 
-  test('without a number, the name decides, accents and case ignored', () {
-    expect(
-      alreadyIn((
-        name: 'helene MARTIN',
-        phone: null,
-        email: null,
-        photo: null,
-      ), people),
-      isTrue,
+  test('without a number, the name flags, accents and case ignored', () {
+    const helene = (
+      name: 'helene MARTIN',
+      phone: null,
+      email: null,
+      photo: null,
     );
+    expect(samePhone(helene, people), isNull);
+    expect(sameName(helene, people), isTrue);
     expect(
-      alreadyIn((name: 'Anne', phone: null, email: null, photo: null), people),
+      sameName((name: 'Anne', phone: null, email: null, photo: null), people),
       isFalse,
     );
   });
 
   test('a number too short to tell falls back to the name', () {
-    expect(
-      alreadyIn((
-        name: 'Hélène Martin',
-        phone: '3615',
-        email: null,
-        photo: null,
-      ), people),
-      isTrue,
+    const contact = (
+      name: 'Hélène Martin',
+      phone: '3615',
+      email: null,
+      photo: null,
     );
+    expect(samePhone(contact, people), isNull);
+    expect(sameName(contact, people), isTrue);
   });
 }
