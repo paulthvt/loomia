@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
@@ -10,14 +11,20 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
-Person _person(String id, String name, Stage stage, {String? profession}) =>
-    Person(
-      id: id,
-      name: name,
-      stage: stage,
-      profession: profession,
-      stageSince: DateTime.utc(2026, 3, 4),
-    );
+Person _person(
+  String id,
+  String name,
+  Stage stage, {
+  String? profession,
+  DateTime? loyaltySince,
+}) => Person(
+  id: id,
+  name: name,
+  stage: stage,
+  profession: profession,
+  stageSince: DateTime.utc(2026, 3, 4),
+  loyaltySince: loyaltySince,
+);
 
 const _phone = Size(390, 844);
 const _tablet = Size(800, 900);
@@ -40,6 +47,7 @@ Future<void> _pump(
   Future<bool> Function(List<Person> people)? onDelete,
   ValueChanged<bool>? onPickingChanged,
   Size size = _tablet,
+  BusinessModel model = BusinessModel.doterra,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -61,6 +69,7 @@ Future<void> _pump(
           onDelete: onDelete ?? (_) async => true,
           onImport: onImport,
           onPickingChanged: onPickingChanged,
+          model: model,
         ),
       ),
     ),
@@ -86,6 +95,44 @@ void main() {
 
     expect(find.byType(ContactRow), findsOneWidget);
     expect(find.text('Bruno Leroy'), findsOneWidget);
+  });
+
+  group('the LRP chip', () {
+    final book = [
+      ..._book,
+      _person(
+        '4',
+        'Claire Moreau',
+        Stage.customer,
+        loyaltySince: DateTime(2026, 10, 2),
+      ),
+      _person('5', 'Denis Roy', Stage.team, loyaltySince: DateTime(2026, 9, 1)),
+    ];
+
+    testWidgets('hidden while nobody has an LRP', (tester) async {
+      await _pump(tester);
+
+      expect(find.widgetWithText(FilterChip, 'LRP'), findsNothing);
+    });
+
+    testWidgets('filters within the stage chosen', (tester) async {
+      await _pump(tester, people: book);
+
+      await tester.tap(find.widgetWithText(FilterChip, 'LRP'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ContactRow), findsNWidgets(2));
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Customers'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ContactRow), findsOneWidget);
+      expect(find.text('Claire Moreau'), findsOneWidget);
+    });
+
+    testWidgets('reads Loyalty orders for Other', (tester) async {
+      await _pump(tester, people: book, model: BusinessModel.other);
+
+      expect(find.widgetWithText(FilterChip, 'Loyalty orders'), findsOneWidget);
+    });
   });
 
   testWidgets('search ignores accents and case', (tester) async {

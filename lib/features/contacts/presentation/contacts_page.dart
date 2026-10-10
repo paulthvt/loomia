@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -169,6 +170,7 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
         onMove: (people, stage) => showChangeStage(context, people, stage),
         onChangeWorkflow: (people) => showChangeWorkflow(context, people),
         onDelete: _delete,
+        model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
         selectedId: widget.selectedId,
         showRefresh: sideNavigation,
         onPickingChanged: _picking.set,

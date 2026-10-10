@@ -208,20 +208,20 @@ Future<void> setLoyalty(Person person, DateTime? since, DateTime today) async {
 - Modify: `lib/features/contacts/presentation/stage_filter.dart`, `contact_list.dart`
 - Test: `test/features/contacts/presentation/stage_filter_test.dart` (create if absent), `contact_list_test.dart`
 
-- [ ] **Step 1: Failing tests.**
+- [x] **Step 1: Failing tests.**
   - `StageFilter.shows(Stage.customer, loyalty: true, person)` is true only for a customer with `loyaltySince`, and `loyalty: false` keeps the stage rule.
   - List: with nobody on LRP there is no "LRP" chip. With one, tapping the chip shows only them, and Customers + LRP combine.
   - With Other, the chip reads "Loyalty orders".
-- [ ] **Step 2: `StageFilter`.**
+- [x] **Step 2: `StageFilter`.**
   - Add `this.loyaltyLabel` (null hides the chip), `this.loyalty = false` and `this.onLoyaltyChanged`.
   - After the `ChoiceChip`s, add `if (loyaltyLabel != null) FilterChip(label: Text(loyaltyLabel!), selected: loyalty, onSelected: onLoyaltyChanged)`.
   - `shows(Stage? stage, Person person, {bool loyalty = false}) => (stage == null || person.stage == stage) && (!loyalty || person.loyaltySince != null)`.
-- [ ] **Step 3: `ContactList`.**
+- [x] **Step 3: `ContactList`.**
   - Add `bool _loyalty = false` and `final anyLoyalty = widget.people.any((p) => p.loyaltySince != null)`.
   - Filter with `loyalty: _loyalty && anyLoyalty`.
   - Pass `loyaltyLabel: anyLoyalty ? l10n.loyaltyLabel(widget.model.name) : null`.
   - `ContactList` is a plain `StatefulWidget`, so it takes `required this.model` (a `BusinessModel`). `ContactsPage` passes `ref.watch(accountProvider)?.businessModel ?? BusinessModel.other`, as `ContactPage` does. Update the preview and test call sites.
-- [ ] **Step 4: Gate, then commit** `feat(contacts): LRP filter on the contacts list (#255)`.
+- [x] **Step 4: Gate, then commit** `feat(contacts): LRP filter on the contacts list (#255)`.
 
 ### Task 6: Previews, goldens, docs, PR
 
