@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 
 import 'fake_activity_repository.dart';
 import 'fake_people_repository.dart';
@@ -57,6 +58,90 @@ void main() {
     expect(saved.stage, Stage.customer);
     expect(saved.stageSince, DateTime.utc(2026, 9, 28));
     expect(people.store['p1']!.id, saved.id);
+  });
+
+  group('LRP, as set_loyalty and complete_step', () {
+    final claire = Person(
+      id: 'p2',
+      name: 'Claire Moreau',
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026, 9, 1),
+      place: (workflowId: 'w1', atPosition: 1, lastTick: DateTime(2026, 10)),
+    );
+    final twoSetups = Workflow(
+      id: 'w1',
+      stage: Stage.customer,
+      name: 'Two setups',
+      isDefault: true,
+      steps: const [
+        WorkflowStep(
+          id: 's1',
+          position: 1,
+          label: 'Set up their LRP',
+          days: 0,
+          loyaltySetup: true,
+        ),
+        WorkflowStep(
+          id: 's2',
+          position: 2,
+          label: 'Check the LRP',
+          days: 7,
+          loyaltySetup: true,
+        ),
+      ],
+    );
+
+    List<ActivityKind> loyaltyKinds(FakeActivityRepository activities) => [
+      for (final entry in activities.store)
+        if (entry.kind.isLoyalty) entry.kind,
+    ];
+
+    test('the first loyalty step starts it, a second leaves it', () async {
+      final activities = FakeActivityRepository();
+      final people = FakePeopleRepository([claire])
+        ..activities = activities
+        ..workflows = [twoSetups];
+
+      final first = await people.completeStep(
+        'p2',
+        's1',
+        DateTime(2026, 10, 2),
+      );
+      final second = await people.completeStep(
+        'p2',
+        's2',
+        DateTime(2026, 10, 9),
+      );
+
+      expect(first.loyaltySince, DateTime(2026, 10, 2));
+      expect(second.loyaltySince, DateTime(2026, 10, 2));
+      expect(loyaltyKinds(activities), [ActivityKind.loyaltyStart]);
+    });
+
+    test('setLoyalty starts, moves and stops it with its entries', () async {
+      final activities = FakeActivityRepository();
+      final people = FakePeopleRepository([claire])..activities = activities;
+      final today = DateTime(2026, 10, 10);
+
+      final started = await people.setLoyalty(
+        'p2',
+        DateTime(2026, 10, 2),
+        today,
+      );
+      final moved = await people.setLoyalty('p2', DateTime(2026, 9, 20), today);
+      expect(activities.store.single.happenedOn, DateTime(2026, 9, 20));
+      final stopped = await people.setLoyalty('p2', null, today);
+
+      expect(people.calls, everyElement('setLoyalty(p2)'));
+      expect(started.loyaltySince, DateTime(2026, 10, 2));
+      expect(moved.loyaltySince, DateTime(2026, 9, 20));
+      expect(stopped.loyaltySince, isNull);
+      expect(loyaltyKinds(activities), [
+        ActivityKind.loyaltyStart,
+        ActivityKind.loyaltyStop,
+      ]);
+      expect(activities.store.last.happenedOn, today);
+    });
   });
 
   test('completeReminder does what complete_reminder does', () async {

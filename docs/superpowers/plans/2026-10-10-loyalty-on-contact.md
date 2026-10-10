@@ -109,26 +109,26 @@ alter type public.activity_kind add value 'loyalty_stop';
 - Modify: `test/features/workflows/server_rule.dart`, `test/features/contacts/fake_people_repository.dart`
 - Test: `test/features/contacts/data/people_repository_test.dart` (or the existing row test file for `personFromRow`), `test/features/contacts/data/activity_repository_test.dart`, `test/features/contacts/fake_people_repository_test.dart`
 
-- [ ] **Step 1: Failing tests:**
+- [x] **Step 1: Failing tests:**
   - `personFromRow({..., 'loyalty_since': '2026-10-02'}).loyaltySince == DateTime(2026, 10, 2)`, and null when absent.
   - `personToRow(person)` has no `loyalty_since` key.
   - `activityFromRow({..., 'kind': 'loyalty_start', 'text': null})` gives `ActivityKind.loyaltyStart`.
   - In the fake: `completeStep` on a step with `loyaltySetup` sets `loyaltySince` to `on` once, and a second loyalty step leaves it. `setLoyalty` records `setLoyalty(id)`, sets or clears the field, and adds the start or stop entry to `activities.store`.
-- [ ] **Step 2: `Person`.** Add `final DateTime? loyaltySince;` with this doc: "The day their LRP started; null without one. Written only by `PeopleRepository.setLoyalty` and `complete_step`." Add it to the constructor and to `_copy`.
-- [ ] **Step 3: `ActivityKind`.**
+- [x] **Step 2: `Person`.** Add `final DateTime? loyaltySince;` with this doc: "The day their LRP started; null without one. Written only by `PeopleRepository.setLoyalty` and `complete_step`." Add it to the constructor and to `_copy`.
+- [x] **Step 3: `ActivityKind`.**
   - Add `loyaltyStart` and `loyaltyStop`.
   - Change `byUser` to `!{stage, step, event, reminder, loyaltyStart, loyaltyStop}.contains(this)`.
   - Add `bool get isLoyalty => this == loyaltyStart || this == loyaltyStop;`.
   - In the `Activity` assert, let `isLoyalty` entries have null text.
-- [ ] **Step 4: Repository.**
+- [x] **Step 4: Repository.**
   - In `personFromRow`: `loyaltySince: switch (row['loyalty_since']) { final String day => DateTime.parse(day), _ => null }`. Don't add it to `personToRow`, and extend that function's doc comment to say so.
   - Add `setLoyalty(String personId, DateTime? since, DateTime today)`, shaped like `completeStep`: rpc `set_loyalty` with `p_person`, `p_since` (`dayColumn` or null) and `p_today`, then `.select(_columns).single()`.
   - In `activityFromRow`: `const {'loyalty_start': ActivityKind.loyaltyStart, 'loyalty_stop': ActivityKind.loyaltyStop}[kind] ?? ActivityKind.values.asNameMap()[kind] ?? (throw …)`.
-- [ ] **Step 5: Fakes.**
+- [x] **Step 5: Fakes.**
   - `withServerFields` and `withLastContact` in `server_rule.dart` copy `loyaltySince`.
   - In the fake, `completeStep` applies the same rule as Task 1 Step 3, reading `WorkflowStep.loyaltySetup` (`lib/features/workflows/domain/workflow.dart`). Update that field's doc to "Ticking it starts their LRP, if they have none."
   - Add a fake `setLoyalty`.
-- [ ] **Step 6: Gate, then commit** `feat(contacts): loyaltySince on Person, setLoyalty (#255)`.
+- [x] **Step 6: Gate, then commit** `feat(contacts): loyaltySince on Person, setLoyalty (#255)`.
 
 ### Task 3: Copy and history rows
 

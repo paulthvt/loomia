@@ -46,6 +46,7 @@ Person withServerFields(Person person, List<Workflow> workflows) {
     lastContactOn: person.lastContactOn,
     reminders: person.reminders,
     photoPath: person.photoPath,
+    loyaltySince: person.loyaltySince,
   );
 }
 
@@ -81,6 +82,7 @@ Person withLastContact(Person person, DateTime? day) => Person(
   dueOn: person.dueOn,
   lastContactOn: day,
   photoPath: person.photoPath,
+  loyaltySince: person.loyaltySince,
   reminders: person.reminders,
 );
 

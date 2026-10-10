@@ -37,6 +37,21 @@ void main() {
       expect(ActivityKind.reminder.byUser, isFalse);
     });
 
+    test('reads loyalty entries, which have no text', () {
+      final start = activityFromRow(
+        _row({'kind': 'loyalty_start', 'text': null}),
+      );
+      final stop = activityFromRow(
+        _row({'kind': 'loyalty_stop', 'text': null}),
+      );
+
+      expect(start.kind, ActivityKind.loyaltyStart);
+      expect(stop.kind, ActivityKind.loyaltyStop);
+      expect(start.text, isNull);
+      expect(ActivityKind.loyaltyStart.byUser, isFalse);
+      expect(ActivityKind.loyaltyStop.byUser, isFalse);
+    });
+
     test('reads a stage entry', () {
       final activity = activityFromRow(
         _row({'kind': 'stage', 'text': null, 'stage': 'team'}),

@@ -73,7 +73,8 @@ String movedManyTitle(AppLocalizations l10n, int count, Stage stage) =>
       Stage.team => l10n.changeStageManyToTeam(count),
     };
 
-/// Null for stage entries, which the user never picks.
+/// Null for stage and loyalty entries, which the user never picks: their
+/// title already says what happened.
 String? kindLabel(AppLocalizations l10n, ActivityKind kind) => switch (kind) {
   ActivityKind.note => l10n.activityKindNote,
   ActivityKind.call => l10n.activityKindCall,
@@ -84,6 +85,7 @@ String? kindLabel(AppLocalizations l10n, ActivityKind kind) => switch (kind) {
   ActivityKind.step => l10n.activityKindStep,
   ActivityKind.event => l10n.activityKindEvent,
   ActivityKind.reminder => l10n.activityKindReminder,
+  ActivityKind.loyaltyStart || ActivityKind.loyaltyStop => null,
 };
 
 /// What the user wrote; for a stage entry, what changed; for an order with an

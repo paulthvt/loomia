@@ -109,12 +109,20 @@ final activityRepositoryProvider = Provider<ActivityRepository>(
   (ref) => ActivityRepository(ref.watch(supabaseClientProvider)),
 );
 
+/// The kinds whose column value is not their Dart name. Read only: the app
+/// never writes them.
+const _kindFromColumn = {
+  'loyalty_start': ActivityKind.loyaltyStart,
+  'loyalty_stop': ActivityKind.loyaltyStop,
+};
+
 Activity activityFromRow(Map<String, dynamic> row) {
   final stage = row['stage'] as String?;
   return Activity(
     id: row['id'] as String,
     personId: row['person_id'] as String?,
     kind:
+        _kindFromColumn[row['kind']] ??
         ActivityKind.values.asNameMap()[row['kind']] ??
         (throw PeopleFailure.unknown),
     // A bare date parses as local midnight, which is what a day is here.

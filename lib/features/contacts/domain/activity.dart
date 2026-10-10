@@ -4,7 +4,8 @@ import 'package:loomia/features/contacts/domain/person.dart';
 /// What an entry records. [stage] entries are written by the database when a
 /// person changes stage, [step] entries when a workflow step is ticked, [event]
 /// entries when the person was at an event, [reminder] entries when a reminder
-/// is ticked; the user writes the others.
+/// is ticked, [loyaltyStart] and [loyaltyStop] when their LRP starts or stops
+/// (#255); the user writes the others.
 enum ActivityKind {
   note,
   call,
@@ -14,11 +15,23 @@ enum ActivityKind {
   stage,
   step,
   event,
-  reminder;
+  reminder,
+  loyaltyStart,
+  loyaltyStop;
 
   /// Offered in Log something.
-  bool get byUser =>
-      this != stage && this != step && this != event && this != reminder;
+  bool get byUser => !const {
+    stage,
+    step,
+    event,
+    reminder,
+    loyaltyStart,
+    loyaltyStop,
+  }.contains(this);
+
+  /// Written by the server from the person's LRP; no text, never edited or
+  /// deleted.
+  bool get isLoyalty => this == loyaltyStart || this == loyaltyStop;
 }
 
 /// One thing in a person's history. Its text, day and amount can be edited;
@@ -38,14 +51,16 @@ class Activity {
              ? stage != null && text == null && amount == null
              : stage == null &&
                    (text == null
-                       ? kind == ActivityKind.order && amount != null
+                       ? kind.isLoyalty ||
+                             (kind == ActivityKind.order && amount != null)
                        : text.trim().isNotEmpty) &&
                    (amount == null ||
                        (kind == ActivityKind.order && amount > 0)) &&
                    (personId != null ||
                        (kind == ActivityKind.order && amount != null)),
          'A stage entry has a stage only; any other has no stage and non-blank '
-         'text, except an order, which needs text or an amount; only an order '
+         'text, except an order, which needs text or an amount, and a loyalty '
+         'entry, which has none; only an order '
          'has an amount; only an own order has no person',
        );
 
@@ -58,8 +73,8 @@ class Activity {
   /// The calendar day it happened, as local midnight.
   final DateTime happenedOn;
 
-  /// What happened; null on stage entries and on an order given by its
-  /// amount alone.
+  /// What happened; null on stage and loyalty entries and on an order given
+  /// by its amount alone.
   final String? text;
 
   /// What an order was worth, in the business model's unit (PV for dōTERRA).

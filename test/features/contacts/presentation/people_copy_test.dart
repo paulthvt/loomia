@@ -96,9 +96,12 @@ void main() {
     );
   });
 
-  test('every kind but stage has a label', () {
+  test('every kind but stage and loyalty entries has a label', () {
     for (final kind in ActivityKind.values) {
-      expect(kindLabel(l10n, kind) == null, kind == ActivityKind.stage);
+      expect(
+        kindLabel(l10n, kind) == null,
+        kind == ActivityKind.stage || kind.isLoyalty,
+      );
     }
   });
 
