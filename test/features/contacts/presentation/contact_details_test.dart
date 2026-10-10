@@ -21,6 +21,7 @@ Person _person({
   String? stuckOn,
   DateTime? pausedAt,
   String? photoPath,
+  DateTime? loyaltySince,
 }) => Person(
   id: 'p1',
   name: 'Marie Dupont',
@@ -35,6 +36,7 @@ Person _person({
   stuckOn: stuckOn,
   pausedAt: pausedAt,
   photoPath: photoPath,
+  loyaltySince: loyaltySince,
 );
 
 class _Calls {
@@ -49,6 +51,7 @@ class _Calls {
   var resumes = 0;
   var photoChoices = 0;
   var photoRemovals = 0;
+  var loyalty = 0;
 }
 
 Future<_Calls> _pump(
@@ -84,6 +87,7 @@ Future<_Calls> _pump(
           onResume: () => calls.resumes++,
           onChoosePhoto: () async => calls.photoChoices++,
           onRemovePhoto: () async => calls.photoRemovals++,
+          onLoyalty: () => calls.loyalty++,
           workflowName: workflowName,
         ),
       ),
@@ -99,6 +103,48 @@ void main() {
 
     expect(find.text('Marie Dupont'), findsOneWidget);
     expect(find.text('Prospect since March 2026'), findsOneWidget);
+  });
+
+  group('the LRP line', () {
+    final thisYear = DateTime.now().year;
+
+    testWidgets('a customer with one: since when, and it opens the sheet', (
+      tester,
+    ) async {
+      final calls = await _pump(
+        tester,
+        _person(stage: Stage.customer, loyaltySince: DateTime(thisYear, 10, 2)),
+        model: BusinessModel.doterra,
+      );
+
+      expect(find.text('LRP · Since Oct 2'), findsOneWidget);
+      await tester.tap(find.text('LRP · Since Oct 2'));
+      expect(calls.loyalty, 1);
+    });
+
+    testWidgets('an earlier year says the year', (tester) async {
+      await _pump(
+        tester,
+        _person(stage: Stage.team, loyaltySince: DateTime(2024, 10, 2)),
+        model: BusinessModel.doterra,
+      );
+
+      expect(find.text('LRP · Since Oct 2, 2024'), findsOneWidget);
+    });
+
+    testWidgets('a team member without one reads None, in the model words', (
+      tester,
+    ) async {
+      await _pump(tester, _person(stage: Stage.team));
+
+      expect(find.text('Loyalty orders · None'), findsOneWidget);
+    });
+
+    testWidgets('a prospect has no LRP line', (tester) async {
+      await _pump(tester, _person(), model: BusinessModel.doterra);
+
+      expect(find.textContaining('LRP'), findsNothing);
+    });
   });
 
   testWidgets('no photo: the avatar offers Choose photo only', (tester) async {

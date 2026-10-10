@@ -38,7 +38,7 @@ Built from a real user's practice (a dōTERRA consultant). Her month has:
 | Ranks | A private target the user sets for themselves. Never a badge, never shown outside Goals, never compared. `design-principles.md` records the exception. |
 | Own orders | Logged from Goals, an `order` activity with no person. |
 | Sales on a contact | The `order` activity gets an optional amount. History reads "Order · 100 PV". |
-| Which step is a loyalty setup | A toggle on a workflow step: "Counts as a loyalty setup". |
+| Which step is a loyalty setup | A toggle on a workflow step: "Counts as a loyalty setup". Since #255 the LRP is a fact on the person (`loyalty_since`) and Goals count people; the step is one way to set it (`2026-10-10-loyalty-on-contact-design.md`). |
 | Suggested targets | Average of the last 3 closed months; loyalty from the forecast. No AI. |
 | Navigation | Today · Contacts · Team · Goals until the Calendar epic. Sidebar gains Goals. |
 | Habits ("What you said you would do") | Not built. Parked issue. |

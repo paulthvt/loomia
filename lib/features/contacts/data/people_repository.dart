@@ -130,6 +130,25 @@ class PeopleRepository {
         return personFromRow(row);
       });
 
+  /// Starts their LRP on [since], moves it there, or stops it ([since] null,
+  /// dated [today]). The server writes the history entry in the same
+  /// transaction.
+  Future<Person> setLoyalty(String personId, DateTime? since, DateTime today) =>
+      guardPeople(() async {
+        final row = await _client
+            .rpc<Object?>(
+              'set_loyalty',
+              params: {
+                'p_person': personId,
+                'p_since': since == null ? null : dayColumn(since),
+                'p_today': dayColumn(today),
+              },
+            )
+            .select(_columns)
+            .single();
+        return personFromRow(row);
+      });
+
   /// A reminder for [personId], as saved.
   Future<Reminder> addReminder(String personId, String text, DateTime dueOn) =>
       guardPeople(() async {
@@ -295,6 +314,11 @@ Person personFromRow(Map<String, dynamic> row) {
       _ => null,
     },
     photoPath: _text(row['photo_path']),
+    loyaltySince: switch (row['loyalty_since']) {
+      // A bare date parses as local midnight.
+      final String day => DateTime.parse(day),
+      _ => null,
+    },
     reminders: sortedReminders([
       for (final reminder in (row['reminder'] as List?) ?? const [])
         reminderFromRow(reminder as Map<String, dynamic>),
@@ -314,7 +338,8 @@ Reminder reminderFromRow(Map<String, dynamic> row) => (
 /// the workflow fields. Only [PeopleRepository.setStage] writes it, so a stale
 /// copy never moves someone back (and into the history). Nor the photo: only
 /// [PeopleRepository.setPhoto] writes it, so a stale copy never brings a
-/// removed one back.
+/// removed one back. Nor the LRP: only [PeopleRepository.setLoyalty] writes
+/// it, with its history entry.
 Map<String, dynamic> personToRow(Person person) => {
   'name': person.name.trim(),
   'prospect_status': _statusColumn[person.prospectStatus],

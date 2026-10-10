@@ -50,6 +50,7 @@ class Person {
     this.lastContactOn,
     this.reminders = const [],
     this.photoPath,
+    this.loyaltySince,
   }) : assert(
          prospectStatus == null || stage == Stage.prospect,
          'Only prospects have a status',
@@ -131,6 +132,11 @@ class Person {
   /// only by `PeopleRepository.setPhoto`.
   final String? photoPath;
 
+  /// The day their LRP (loyalty setup) started, as local midnight; null
+  /// without one (#255). Written only by `PeopleRepository.setLoyalty` and
+  /// by ticking a loyalty step.
+  final DateTime? loyaltySince;
+
   Person withStatus(ProspectStatus? status) =>
       _copy(prospectStatus: status, reminders: reminders);
 
@@ -173,6 +179,7 @@ class Person {
     lastContactOn: lastContactOn,
     reminders: reminders,
     photoPath: photoPath,
+    loyaltySince: loyaltySince,
   );
 }
 

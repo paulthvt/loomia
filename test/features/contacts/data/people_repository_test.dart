@@ -41,6 +41,20 @@ void main() {
       expect(personToRow(person).containsKey('photo_path'), isFalse);
     });
 
+    test('reads the LRP day as local midnight, absent as none', () {
+      expect(
+        personFromRow(_row({'loyalty_since': '2026-10-02'})).loyaltySince,
+        DateTime(2026, 10, 2),
+      );
+      expect(personFromRow(_row()).loyaltySince, isNull);
+    });
+
+    test('an edit never writes the LRP: only setLoyalty does', () {
+      final person = personFromRow(_row({'loyalty_since': '2026-10-02'}));
+
+      expect(personToRow(person).containsKey('loyalty_since'), isFalse);
+    });
+
     test('maps columns to fields', () {
       final person = personFromRow(_row());
 

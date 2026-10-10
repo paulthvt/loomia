@@ -149,8 +149,9 @@ class FakePeopleRepository implements PeopleRepository {
       monthlyVolumeTarget: person.monthlyVolumeTarget,
       place: stored.place,
       pausedAt: stored.pausedAt,
-      // As personToRow: an update never writes the photo.
+      // As personToRow: an update never writes the photo, nor the LRP.
       photoPath: stored.photoPath,
+      loyaltySince: stored.loyaltySince,
     );
     store[person.id] = saved;
     // As the trigger: the latest stage entry follows a corrected since.
@@ -270,6 +271,12 @@ class FakePeopleRepository implements PeopleRepository {
     // The database refuses anything but the current step (a stale tick).
     if (before.currentStepId != stepId) throw PeopleFailure.unknown;
     final place = before.place!;
+    final step = findWorkflow(
+      workflows,
+      place.workflowId,
+    )!.steps.firstWhere((step) => step.id == stepId);
+    // As complete_step: the first loyalty step starts their LRP.
+    final starts = step.loyaltySetup && before.loyaltySince == null;
     final moved = _with(
       before,
       place: (
@@ -281,13 +288,10 @@ class FakePeopleRepository implements PeopleRepository {
         lastTick: on,
       ),
       pausedAt: before.pausedAt,
+      loyaltySince: starts ? () => on : null,
     );
     // As complete_step's step entry. The row comes back as PostgREST reads
     // it: last_contact_on from before that entry, in the call's snapshot.
-    final step = findWorkflow(
-      workflows,
-      place.workflowId,
-    )!.steps.firstWhere((step) => step.id == stepId);
     activities?.store.add(
       Activity(
         id: 'a-step-${_next++}',
@@ -298,8 +302,64 @@ class FakePeopleRepository implements PeopleRepository {
         createdAt: DateTime.utc(2026, 10, 8, 12),
       ),
     );
+    if (starts) _addLoyaltyEntry(personId, ActivityKind.loyaltyStart, on);
     return withLastContact(moved, before.lastContactOn);
   }
+
+  @override
+  Future<Person> setLoyalty(
+    String personId,
+    DateTime? since,
+    DateTime today,
+  ) async {
+    await _record('setLoyalty($personId)');
+    final before = store[personId]!;
+    if (before.loyaltySince == since) return _served(before);
+    // As set_loyalty: a stop entry, a start entry, or the latest start moved.
+    if (since == null) {
+      _addLoyaltyEntry(personId, ActivityKind.loyaltyStop, today);
+    } else {
+      final history = activities?.store;
+      final latest = before.loyaltySince == null || history == null
+          ? -1
+          : history.lastIndexWhere(
+              (entry) =>
+                  entry.personId == personId &&
+                  entry.kind == ActivityKind.loyaltyStart,
+            );
+      if (latest < 0) {
+        _addLoyaltyEntry(personId, ActivityKind.loyaltyStart, since);
+      } else {
+        final entry = history![latest];
+        history[latest] = Activity(
+          id: entry.id,
+          personId: personId,
+          kind: entry.kind,
+          happenedOn: since,
+          createdAt: entry.createdAt,
+        );
+      }
+    }
+    return _served(
+      _with(
+        before,
+        place: before.place,
+        pausedAt: before.pausedAt,
+        loyaltySince: () => since,
+      ),
+    );
+  }
+
+  void _addLoyaltyEntry(String personId, ActivityKind kind, DateTime on) =>
+      activities?.store.add(
+        Activity(
+          id: 'a-loyalty-${_next++}',
+          personId: personId,
+          kind: kind,
+          happenedOn: on,
+          createdAt: DateTime.utc(2026, 10, 8, 12),
+        ),
+      );
 
   @override
   Future<Reminder> addReminder(
@@ -386,6 +446,7 @@ class FakePeopleRepository implements PeopleRepository {
     required WorkflowPlace? place,
     required DateTime? pausedAt,
     String? Function()? photoPath,
+    DateTime? Function()? loyaltySince,
   }) {
     final newStage = stage ?? before.stage;
     final person = Person(
@@ -417,6 +478,7 @@ class FakePeopleRepository implements PeopleRepository {
       place: place,
       pausedAt: pausedAt,
       photoPath: photoPath == null ? before.photoPath : photoPath(),
+      loyaltySince: loyaltySince == null ? before.loyaltySince : loyaltySince(),
     );
     store[person.id] = person;
     return _served(person);

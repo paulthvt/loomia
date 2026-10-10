@@ -131,6 +131,17 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     if (ref.mounted) ref.invalidate(historyProvider(person.id));
   }
 
+  /// Starts their LRP on [since], moves it there, or stops it ([since] null,
+  /// on [today]). The server writes the history entry, so it reloads.
+  Future<void> setLoyalty(
+    Person person,
+    DateTime? since,
+    DateTime today,
+  ) async {
+    _replace(await _repository.setLoyalty(person.id, since, today));
+    if (ref.mounted) ref.invalidate(historyProvider(person.id));
+  }
+
   /// Change workflow, for all of [people] in one write; null is "Nothing for
   /// now".
   Future<void> setWorkflow(List<Person> people, FollowWith? follow) async {

@@ -1,6 +1,7 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
@@ -29,6 +30,7 @@ class ContactList extends StatefulWidget {
     required this.onMove,
     required this.onChangeWorkflow,
     required this.onDelete,
+    required this.model,
     this.onImport,
     this.selectedId,
     this.showRefresh = false,
@@ -49,6 +51,9 @@ class ContactList extends StatefulWidget {
   final Future<bool> Function(List<Person> people, Stage stage) onMove;
   final Future<bool> Function(List<Person> people) onChangeWorkflow;
   final Future<bool> Function(List<Person> people) onDelete;
+
+  /// Words the LRP chip.
+  final BusinessModel model;
 
   /// Import from the phone's contacts; null where there is no address book
   /// to read (the web).
@@ -76,6 +81,9 @@ class _ContactListState extends State<ContactList> {
 
   /// Null is everyone.
   Stage? _stage;
+
+  /// Only people with an LRP; applies while the chip shows.
+  bool _loyalty = false;
 
   /// The ids picked; null while not picking. Kept through search and filter
   /// changes, so a filter then Select all picks a whole stage.
@@ -172,9 +180,16 @@ class _ContactListState extends State<ContactList> {
     final l10n = AppLocalizations.of(context);
     final people = widget.people;
     final query = searchKey(_query);
+    // The chip shows once anyone has an LRP; stopping the last one never
+    // leaves the list filtered behind a hidden chip.
+    final anyLoyalty = people.any((person) => person.loyaltySince != null);
     final shown = [
       for (final person in people)
-        if (StageFilter.shows(_stage, person) &&
+        if (StageFilter.shows(
+              _stage,
+              person,
+              loyalty: _loyalty && anyLoyalty,
+            ) &&
             searchKey(person.name).contains(query))
           person,
     ];
@@ -304,6 +319,11 @@ class _ContactListState extends State<ContactList> {
             StageFilter(
               value: _stage,
               onChanged: (stage) => setState(() => _stage = stage),
+              loyaltyLabel: anyLoyalty
+                  ? l10n.loyaltyLabel(widget.model.name)
+                  : null,
+              loyalty: _loyalty,
+              onLoyaltyChanged: (on) => setState(() => _loyalty = on),
             ),
             const SizedBox(height: AppSpacing.ms),
             if (shown.isEmpty)

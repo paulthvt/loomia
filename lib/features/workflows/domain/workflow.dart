@@ -19,7 +19,7 @@ class WorkflowStep {
   final int days;
   final String? note;
 
-  /// Ticking it counts one loyalty setup (an LRP for dōTERRA) for the month.
+  /// Ticking it starts their LRP (loyalty setup), if they have none (#255).
   final bool loyaltySetup;
 }
 

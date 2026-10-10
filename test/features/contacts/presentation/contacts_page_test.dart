@@ -497,6 +497,29 @@ void main() {
     expect(find.text('Delete this entry?'), findsNothing);
   });
 
+  testWidgets('a loyalty entry can be neither edited nor deleted', (
+    tester,
+  ) async {
+    activities.store.add(
+      Activity(
+        id: 'a1',
+        personId: 'p1',
+        kind: ActivityKind.loyaltyStart,
+        happenedOn: DateTime(2026, 9, 20),
+        createdAt: DateTime.utc(2026, 9, 20, 12),
+      ),
+    );
+    await openMarie(tester);
+
+    await reveal(tester, find.text('Started loyalty orders'));
+    await tester.tap(find.text('Started loyalty orders'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(FilledButton, 'Save'), findsNothing);
+    await tester.longPress(find.text('Started loyalty orders'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete this entry?'), findsNothing);
+  });
+
   testWidgets('tapping an entry edits it', (tester) async {
     activities.store.add(_note('a1', 'Ordered the cream', 10));
     await openMarie(tester);

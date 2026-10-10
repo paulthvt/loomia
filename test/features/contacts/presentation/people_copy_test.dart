@@ -96,9 +96,12 @@ void main() {
     );
   });
 
-  test('every kind but stage has a label', () {
+  test('every kind but stage and loyalty entries has a label', () {
     for (final kind in ActivityKind.values) {
-      expect(kindLabel(l10n, kind) == null, kind == ActivityKind.stage);
+      expect(
+        kindLabel(l10n, kind) == null,
+        kind == ActivityKind.stage || kind.isLoyalty,
+      );
     }
   });
 
@@ -167,6 +170,26 @@ void main() {
     );
     expect(activityTitle(l10n, step, BusinessModel.other), 'Send the samples');
     expect(activityMeta(l10n, step, today), 'October 13 · Step');
+  });
+
+  test('a loyalty entry reads what changed, then the day alone', () {
+    Activity entry(ActivityKind kind) => Activity(
+      id: 'a1',
+      personId: 'p1',
+      kind: kind,
+      happenedOn: DateTime(2026, 10, 2),
+      createdAt: DateTime(2026, 10, 2, 12),
+    );
+    final start = entry(ActivityKind.loyaltyStart);
+    final stop = entry(ActivityKind.loyaltyStop);
+
+    expect(activityTitle(l10n, start, BusinessModel.doterra), 'Started LRP');
+    expect(activityTitle(l10n, stop, BusinessModel.doterra), 'Stopped LRP');
+    expect(
+      activityTitle(l10n, start, BusinessModel.other),
+      'Started loyalty orders',
+    );
+    expect(activityMeta(l10n, start, today), 'October 2');
   });
 
   group('an order with an amount', () {
