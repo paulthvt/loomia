@@ -63,13 +63,15 @@ in the migration that creates the table.
 | `last_seen_at` | timestamptz not null default now() | |
 | `created_at` | timestamptz | |
 
-Select and delete own rows. No insert or update grant:
-`register_device(p_token, p_platform, p_locale)` is `security definer`, checks
-`auth.uid()`, and upserts on `token`, moving it to the caller. A phone signed
-into a second account would otherwise keep pushing the first one's summary,
-and RLS would refuse the move. Called on every launch (refreshes
-`last_seen_at` and `locale`) and on token refresh. Sign-out deletes the row,
-then `FirebaseMessaging.deleteToken()`.
+No grant to `authenticated`, a select-own policy for the schema test:
+`register_device(p_token, p_platform, p_locale)` is the only way in. It is
+`security definer`, checks `auth.uid()`, and upserts on `token`, moving it to
+the caller. A phone signed into a second account would otherwise keep pushing
+the first one's summary, and RLS would refuse the move. Called on every launch
+(refreshes `last_seen_at` and `locale`) and on token refresh. Sign-out calls
+`FirebaseMessaging.deleteToken()` on the device: the session is already gone,
+so the row can't be deleted from there. FCM then answers UNREGISTERED and the
+sender drops the row (§4).
 
 ### #269 — `notification_settings`
 
