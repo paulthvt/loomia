@@ -6,6 +6,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Firebase is optional (#268): without app/google-services.json (CI's PR
+// builds, a fresh clone) the app builds and push stays off.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "app.loomia"
     compileSdk = flutter.compileSdkVersion

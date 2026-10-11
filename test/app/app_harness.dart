@@ -10,6 +10,7 @@ import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/data/phone_contacts_repository.dart';
 import 'package:loomia/features/goals/data/goals_repository.dart';
+import 'package:loomia/features/notifications/data/push.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:material_ui/material_ui.dart';
@@ -22,6 +23,7 @@ import '../features/contacts/fake_activity_repository.dart';
 import '../features/contacts/fake_people_repository.dart';
 import '../features/contacts/fake_phone_contacts_repository.dart';
 import '../features/goals/fake_goals_repository.dart';
+import '../features/notifications/fake_push.dart';
 import '../features/workflows/fake_event_workflow_repository.dart';
 import '../features/workflows/fake_workflow_repository.dart';
 
@@ -43,6 +45,7 @@ Future<ProviderContainer> pumpLoomia(
   FakeAuthRepository? auth,
   FakePhotoRepository? photos,
   FakePhotoPicker? picker,
+  FakePush? push,
   bool settle = true,
 }) async {
   tester.view.physicalSize = size * pixelRatio;
@@ -84,6 +87,7 @@ Future<ProviderContainer> pumpLoomia(
           photos ?? FakePhotoRepository(),
         ),
         photoPickerProvider.overrideWithValue(picker ?? FakePhotoPicker()),
+        pushProvider.overrideWithValue(push ?? FakePush()),
       ],
       child: const LoomiaApp(),
     ),

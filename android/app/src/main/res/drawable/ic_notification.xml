@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The push's small icon: ic_launcher_foreground's mark, refit to fill 20 of
+     24dp. Android draws it from the alpha alone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <group
+        android:scaleX="0.27"
+        android:scaleY="0.27"
+        android:translateX="12"
+        android:translateY="12">
+        <group
+            android:translateX="5.1847"
+            android:translateY="8.6905">
+            <path
+                android:fillColor="#FFFFFF"
+                android:fillType="evenOdd"
+                android:pathData="M-28.5,0a28.5,28.5 0,1 0,57 0a28.5,28.5 0,1 0,-57 0zM-15.5,0a15.5,15.5 0,1 0,31 0a15.5,15.5 0,1 0,-31 0z" />
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M-38.869,-16.376a3.75,3.75 0,1 0,7.5 0a3.75,3.75 0,1 0,-7.5 0zM-22.796,-35.418a4.75,4.75 0,1 0,9.5 0a4.75,4.75 0,1 0,-9.5 0zM1.326,-40.131a5.75,5.75 0,1 0,11.5 0a5.75,5.75 0,1 0,-11.5 0z" />
+        </group>
+    </group>
+</vector>

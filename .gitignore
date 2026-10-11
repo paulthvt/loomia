@@ -140,3 +140,8 @@ graphify-out/
 
 # wrangler local cache
 .wrangler/
+
+# Firebase config (#268): local files and CI secrets, never in the repo.
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart

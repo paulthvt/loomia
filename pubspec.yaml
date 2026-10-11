@@ -11,6 +11,11 @@ dependencies:
   # (docs/architecture.md → Design packages). Already brought by material_ui;
   # direct because lib/ imports it.
   cupertino_ui: ^1.1.0
+  # Push for the daily summary (#268): the FCM token and taps on a push.
+  # firebase_core is what it needs to start; no Firebase Auth or Firestore.
+  # The OS renders the push itself, so no local-notifications package.
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
   flutter:
     sdk: flutter
   # Reads the phone's address book for the import (#61). Nothing in the SDK

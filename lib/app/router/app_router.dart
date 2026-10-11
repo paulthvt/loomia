@@ -20,6 +20,7 @@ import 'package:loomia/features/contacts/presentation/workflow_timeline_page.dar
 import 'package:loomia/features/goals/presentation/close_page.dart';
 import 'package:loomia/features/goals/presentation/goals_page.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
+import 'package:loomia/features/notifications/presentation/push_scope.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
@@ -49,8 +50,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
     routes: [
       ShellRoute(
-        builder: (context, state, child) =>
-            AppShell(location: state.uri.path, child: child),
+        builder: (context, state, child) => PushScope(
+          child: AppShell(location: state.uri.path, child: child),
+        ),
         routes: [
           GoRoute(
             path: Routes.today,
