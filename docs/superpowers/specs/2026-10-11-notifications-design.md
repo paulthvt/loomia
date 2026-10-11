@@ -44,7 +44,7 @@ when there is nothing to do, and never unless they asked for it.
 | Platforms | Android and iOS. Web push needs a service worker and VAPID key, and on iOS only reaches installed PWAs: later. The settings are editable on the web all the same. |
 | Permission | The OS is authoritative. No token without permission. Denied: the switch stays on but Settings says notifications are off in the phone's settings. |
 | Firebase | `firebase_core` + `firebase_messaging` only. No Firebase Auth, no Firestore. Config files stay uncommitted (AGENTS.md); CI's build job writes them from secrets. |
-| Send auth | The Edge Function holds the FCM service account (Supabase secret) and gets an OAuth token for FCM HTTP v1. pg_cron calls it through pg_net with a shared secret from Vault, `verify_jwt = false` as for `delete-account`. |
+| Send auth | The Edge Function holds the FCM service account (Supabase secret) and gets an OAuth token for FCM HTTP v1. pg_cron calls it through pg_net with the project's named secret key `cron`, kept in Vault and checked by `@supabase/server` (`auth: 'secret:cron'`); `verify_jwt = false` as for `delete-account`. |
 
 ## 1. Data
 
@@ -157,13 +157,13 @@ detected zone. Denied or Not now → upsert with `summary_enabled = false`.
 
 `supabase/functions/send-daily-summary/index.ts`:
 
-1. Check the shared secret header; anything else is 401.
+1. `withSupabase({ auth: 'secret:cron' })`: anything but the `cron` secret key is 401.
 2. `claim_daily_summaries()` with the service role.
 3. For each claim, the owner's `device_token`s; per token, FCM HTTP v1
    `messages:send` with `android.notification.body_loc_key` /
    `body_loc_args` and `apns.payload.aps.alert.loc-key` / `loc-args`:
    `push_summary_body_<one|other>_<locale>`, `[count]`; `data.type`.
-4. UNREGISTERED / INVALID_ARGUMENT → `drop_device_tokens`. All tokens failed
+4. UNREGISTERED, SENDER_ID_MISMATCH, or INVALID_ARGUMENT on `message.token` → `drop_device_tokens`; any other 4xx is our bug, logged, the day kept. All tokens failed
    temporarily → `release_daily_summary`. No token at all: claim kept.
 5. Logs ids and counts only.
 
@@ -207,9 +207,10 @@ A migration enables `pg_cron` and `pg_net` and schedules the job
    and `GoogleService-Info.plist` locally and as CI secrets.
 2. An APNs auth key uploaded to Firebase; Push Notifications and Background
    Modes → Remote notifications capabilities in Xcode.
-3. `supabase secrets set FCM_SERVICE_ACCOUNT=… CRON_SECRET=…`, then
-   `supabase functions deploy send-daily-summary`.
-4. Vault secrets `send_daily_summary_url` and `cron_secret` on the hosted
-   project, after `supabase db push`.
+3. A named secret key `cron` (dashboard → API keys), then
+   `supabase secrets set FCM_SERVICE_ACCOUNT="$(cat service-account.json)"`
+   and `supabase functions deploy send-daily-summary`.
+4. Vault secrets `send_daily_summary_url` and `send_daily_summary_key` (the
+   `cron` key) on the hosted project, after `supabase db push`.
 5. Check: register a device, set the summary time a few minutes ahead, wait
    for the next quarter hour.

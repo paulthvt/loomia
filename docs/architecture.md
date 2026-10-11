@@ -238,6 +238,16 @@ Firebase Cloud Messaging, Android and iOS (#268); only `firebase_core` and
   it from strings that `tool/push_strings.dart` generates from the `push*` ARB
   keys, every language in one file, keys suffixed with the language
   (docs/superpowers/specs/2026-10-11-notifications-design.md).
+- **The daily summary (#269).** pg_cron runs `run_daily_summary()` every 15
+  minutes; it posts to the `send-daily-summary` Edge Function with the `cron`
+  secret key from Vault. `claim_daily_summaries` (service role only) compares
+  each user's wall clock in their IANA zone with their time and days, counts
+  what Today would (`due_people_count`), and claims the local day in
+  `notification_sent`. So no local time becomes a stored UTC instant, DST
+  needs no conversion, and nothing stale is sent. The function sends to every
+  token, drops dead ones, and hands the day back when every send failed for a
+  retryable reason (three attempts). Guarantee: at most one summary per user
+  per local day; a crash after the claim loses that day's.
 
 ### Not yet present, by design
 

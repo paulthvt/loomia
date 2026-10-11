@@ -129,6 +129,14 @@ jobs:
       # pgTAP files in supabase/tests/: RLS and table checks.
       - run: supabase test db
 
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      # Edge Functions: types, and the pure parts of the sender.
+      - run: deno check supabase/functions/*/index.ts
+      - run: deno test supabase/functions
+
   # Compiling catches what analyze cannot: Gradle config, plugin mismatches,
   # tree-shaking failures. Artifacts are not kept — release.yaml publishes those.
   build:
