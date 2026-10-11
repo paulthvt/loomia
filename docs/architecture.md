@@ -238,7 +238,12 @@ Firebase Cloud Messaging, Android and iOS (#268); only `firebase_core` and
   it from strings that `tool/push_strings.dart` generates from the `push*` ARB
   keys, every language in one file, keys suffixed with the language
   (docs/superpowers/specs/2026-10-11-notifications-design.md).
-- **The daily summary (#269).** pg_cron runs `run_daily_summary()` every 15
+- **Settings (#270).** `notification_settings` holds one row per user; no row
+  means the user hasn't answered, and Today shows its card (only where push
+  works). Settings → Notifications saves each change at once. On every launch
+  `PushScope` writes the device's IANA zone (`flutter_timezone`) when it moved,
+  so the summary follows the user; the zone is shown, never picked.
+- **The daily summary (#269). pg_cron runs `run_daily_summary()` every 15
   minutes; it posts to the `send-daily-summary` Edge Function with the `cron`
   secret key from Vault. `claim_daily_summaries` (service role only) compares
   each user's wall clock in their IANA zone with their time and days, counts

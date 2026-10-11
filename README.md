@@ -90,8 +90,8 @@ One-time setup:
    capability is already in `ios/Runner/Runner.entitlements`.
 4. Release builds: `gh secret set GOOGLE_SERVICES_JSON < android/app/google-services.json`.
 
-Checking a phone: sign in on a build with the files, allow notifications in the
-phone's settings (the app doesn't ask yet, #270), relaunch, then in Studio
+Checking a phone: sign in on a build with the files, tap Turn on on Today's
+card (or Settings → Notifications) and allow notifications, then in Studio
 `select platform, locale, last_seen_at from device_token`. A test push from
 Firebase → Messaging to that token, tapped, opens Today.
 
@@ -118,11 +118,9 @@ pg_cron calls every 15 minutes. Once, on the hosted project:
    select vault.create_secret('sb_secret_…', 'send_daily_summary_key');
    ```
 
-Checking a summary: with a registered phone, add your row a few minutes ahead
-(`insert into notification_settings (owner_id, summary_enabled, summary_time,
-summary_days, time_zone) values ('<your user id>', true, '<hh:mm>',
-'{1,2,3,4,5,6,7}', 'Europe/Paris')`), have someone due on Today, and wait for
-the next quarter hour. `select * from cron.job_run_details order by start_time
+Checking a summary: with a registered phone, set Settings → Notifications to
+a quarter hour a few minutes ahead, today selected, have someone due on Today,
+and wait for that run. `select * from cron.job_run_details order by start_time
 desc limit 5`, `net._http_response` and the function's logs show each run.
 `delete from notification_sent where owner_id = '<id>'` to try again the same
 day.

@@ -2366,5 +2366,71 @@
     "placeholders": {
       "count": { "type": "int" }
     }
+  },
+  "settingsSectionNotifications": "Notifications",
+  "@settingsSectionNotifications": {
+    "description": "Settings row and screen title for when Loomia sends push notifications."
+  },
+  "notificationsOff": "Off",
+  "@notificationsOff": {
+    "description": "Value under the Notifications row in Settings when the daily summary is turned off."
+  },
+  "notificationsSummary": "Daily summary",
+  "@notificationsSummary": {
+    "description": "Switch label: one push a day listing how many people are worth a message."
+  },
+  "notificationsSummaryBody": "A short note with the people worth a message today.",
+  "@notificationsSummaryBody": {
+    "description": "Line under the Daily summary switch, saying what the push contains."
+  },
+  "notificationsTime": "Time",
+  "@notificationsTime": {
+    "description": "Row label: the time of day the daily summary is sent, in the user's local time."
+  },
+  "notificationsDays": "Days",
+  "@notificationsDays": {
+    "description": "Label above the weekday chips: the days the daily summary is sent."
+  },
+  "notificationsTimeZone": "Time zone: {zone}",
+  "@notificationsTimeZone": {
+    "description": "Read-only line with the device's time zone, an IANA name such as Europe/Paris, which is not translated.",
+    "placeholders": {
+      "zone": { "type": "String" }
+    }
+  },
+  "notificationsLocalTime": "Times are your local time.",
+  "@notificationsLocalTime": {
+    "description": "Line under the time zone: the summary time follows the user's own clock, wherever they are."
+  },
+  "notificationsPermissionOff": "Notifications are off for Loomia in your phone's settings.",
+  "@notificationsPermissionOff": {
+    "description": "Warning when the daily summary is on but the phone does not allow Loomia to notify."
+  },
+  "notificationsPhoneOnly": "Notifications come to the Android and iOS app.",
+  "@notificationsPhoneOnly": {
+    "description": "Note on the web: these settings apply, but the push arrives on the phone app only."
+  },
+  "todayNudgeTitle": "Want a nudge at {time} on weekdays?",
+  "@todayNudgeTitle": {
+    "description": "Card on Today offering the daily summary, asked once. time is already formatted for the locale (7:00 PM, 19:00). An offer, never pushy.",
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "todayNudgeBody": "One note a day with the people worth a message. Nothing on days with nothing to do. You can change it in Settings.",
+  "@todayNudgeBody": {
+    "description": "Body of the Today card offering the daily summary."
+  },
+  "todayNudgeTurnOn": "Turn on",
+  "@todayNudgeTurnOn": {
+    "description": "Button on the Today card: turns on the daily summary and asks the phone for permission."
+  },
+  "todayNudgeNotNow": "Not now",
+  "@todayNudgeNotNow": {
+    "description": "Button on the Today card: dismisses it for good; Settings can still turn the summary on."
+  },
+  "notificationsLoadFailed": "Couldn't load your notification settings.",
+  "@notificationsLoadFailed": {
+    "description": "Title when Settings → Notifications could not load; a Try again button follows."
   }
 }

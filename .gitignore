@@ -145,3 +145,6 @@ graphify-out/
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
+
+# FCM service account key (#269): a Supabase secret, never in the repo.
+service-account.json
