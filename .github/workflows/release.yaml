@@ -99,6 +99,16 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
+      # Push needs it (#268); without the secret the build has no Firebase and
+      # push stays off.
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          fi
+
       # Play needs a strictly increasing versionCode. Derived from the tag so
       # promote.yaml can find the same build again.
       # ponytail: breaks once minor or patch passes 99, widen the multipliers then.

@@ -1,0 +1,58 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/router/app_router.dart';
+import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/auth/domain/auth_change.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../../app/app_harness.dart';
+import '../../auth/fake_auth_repository.dart';
+import '../fake_push.dart';
+
+void main() {
+  const phone = Size(390, 844);
+
+  testWidgets('registers once, in the app language, again when it changes', (
+    tester,
+  ) async {
+    final push = FakePush();
+    final auth = FakeAuthRepository()
+      ..session = true
+      ..account = const Account(
+        firstName: 'Pauline',
+        email: 'p@example.com',
+        locale: 'fr',
+      );
+    await pumpLoomia(tester, size: phone, auth: auth, push: push);
+    expect(push.registered, ['fr']);
+
+    auth
+      ..account = const Account(
+        firstName: 'Pauline',
+        email: 'p@example.com',
+        locale: 'en',
+      )
+      ..emit(AuthChange.userUpdated);
+    await tester.pumpAndSettle();
+    expect(push.registered, ['fr', 'en']);
+  });
+
+  testWidgets('a tapped push opens Today', (tester) async {
+    final push = FakePush();
+    final container = await pumpLoomia(tester, size: phone, push: push);
+    container.read(routerProvider).go(Routes.goals);
+    await tester.pumpAndSettle();
+
+    push.tap();
+    await tester.pumpAndSettle();
+    expect(
+      container
+          .read(routerProvider)
+          .routerDelegate
+          .currentConfiguration
+          .uri
+          .path,
+      Routes.today,
+    );
+  });
+}

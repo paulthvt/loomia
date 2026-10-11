@@ -51,7 +51,7 @@ feature forces otherwise.
 | State | `flutter_riverpod` (no codegen, no `riverpod_lint`) |
 | Routing | `go_router`, router built inside a `Provider` |
 | Backend (later) | Supabase — Postgres, Auth, Storage, Edge Functions |
-| Push (later) | Firebase Cloud Messaging |
+| Push | Firebase Cloud Messaging, Android and iOS (`features/notifications/data/push.dart`) |
 
 Only two runtime dependencies exist. **Adding a dependency requires a reason
 stated in the pubspec comment next to it.** Check stdlib, Flutter SDK, and the

@@ -217,9 +217,31 @@ emails, phones, notes or titles: ids, codes and counts only. A
 Debug and profile builds print every record to the console and send nothing
 to Sentry. To check the Sentry side, `flutter run --release`.
 
+### Push
+
+Firebase Cloud Messaging, Android and iOS (#268); only `firebase_core` and
+`firebase_messaging`, no Firebase Auth or Firestore. `Push`
+(`features/notifications/data/push.dart`) is the only Firebase code.
+
+- **Optional config.** No `firebase_options.dart`: `Firebase.initializeApp()`
+  reads `android/app/google-services.json` and `ios/Runner/GoogleService-Info.plist`,
+  both git-ignored. Gradle applies the Google services plugin only when the
+  first exists; an Xcode build phase copies the second only when it exists.
+  Without them, on the web and in tests, `Push` does nothing.
+- **Tokens.** `PushScope`, around the signed-in shell, registers the token in
+  the app's resolved language, only once notifications are allowed. The OS
+  permission is authoritative. `register_device` (security definer) is the only
+  way into `device_token` and takes a token over from another account.
+  Sign-out deletes the token on the device; the session is gone by then, so
+  the sender drops the row when FCM says UNREGISTERED. A tap opens Today.
+- **Copy.** The server sends a localisation key, never text. The phone renders
+  it from strings that `tool/push_strings.dart` generates from the `push*` ARB
+  keys, every language in one file, keys suffixed with the language
+  (docs/superpowers/specs/2026-10-11-notifications-design.md).
+
 ### Not yet present, by design
 
-Firebase Cloud Messaging, a `profiles` table (the user's first name and photo
+A `profiles` table (the user's first name and photo
 path live in auth `user_metadata` until linking users needs a profile others
 can read, #238),
 local persistence beyond the Supabase session, analytics.

@@ -45,8 +45,11 @@ jobs:
       # Fails on broken ICU syntax before a pull request exists.
       - run: flutter gen-l10n
 
+      # The push copy the phone renders (FCM / APNs loc keys).
+      - run: dart run tool/push_strings.dart
+
       # The arb_keys and french_register checks, on the new files.
-      - run: flutter test test/l10n
+      - run: flutter test test/l10n test/tool/push_strings_test.dart
 
       # A no-op when nothing changed, and it reuses the branch — a later run
       # updates the open pull request instead of opening a second one.
@@ -56,6 +59,8 @@ jobs:
           add-paths: |
             lib/l10n/*.arb
             lib/l10n/translation_sources.json
+            android/app/src/main/res/values/push_strings.xml
+            ios/Runner/Localizable.strings
           title: 'chore(l10n): sync translations'
           commit-message: 'chore(l10n): sync translations'
           body: |

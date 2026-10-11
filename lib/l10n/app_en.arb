@@ -2359,5 +2359,12 @@
   "eventThereReplaces": "A new workflow replaces the one they're on.",
   "@eventThereReplaces": {
     "description": "Last line of the Who was there? summary, shown when someone will start a workflow."
+  },
+  "pushSummaryBody": "{count, plural, =1{One person is worth a message today} other{{count} people are worth a message today}}",
+  "@pushSummaryBody": {
+    "description": "The daily summary push on the lock screen, the same sentence as the Today hero. count is the people with a follow-up due today or late, never 0. No names: it shows on a locked phone. The phone renders it, so tool/push_strings.dart copies it into the native strings files.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
   }
 }
