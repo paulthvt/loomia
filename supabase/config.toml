@@ -406,6 +406,11 @@ deno_version = 2
 [functions.delete-account]
 verify_jwt = false
 
+# Called by pg_cron with the `cron` secret key, which @supabase/server
+# (`auth: 'secret:cron'`) checks (#269).
+[functions.send-daily-summary]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
