@@ -6,6 +6,7 @@ import 'package:loomia/core/ui/ui_preview.dart';
 import 'package:loomia/features/calendar/presentation/calendar_preview.dart';
 import 'package:loomia/features/contacts/presentation/contacts_preview.dart';
 import 'package:loomia/features/goals/presentation/goals_preview.dart';
+import 'package:loomia/features/notifications/presentation/notifications_preview.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_preview.dart';
 import 'package:loomia/features/today/presentation/today_preview.dart';
 import 'package:loomia/features/workflows/presentation/workflows_preview.dart';
@@ -31,6 +32,16 @@ void main() {
     'today_desktop_dark': (const Size(1440, 900), todayDesktopDark),
     'today_empty_light': (const Size(390, 844), todayEmptyLight),
     'today_events_mobile_light': (const Size(390, 844), todayEventsMobileLight),
+    'today_nudge_mobile_light': (const Size(390, 844), todayNudgeMobileLight),
+    'notifications_mobile_light': (
+      const Size(390, 844),
+      notificationsMobileLight,
+    ),
+    'notifications_off_dark': (const Size(390, 844), notificationsOffDark),
+    'notifications_permission_off_light': (
+      const Size(390, 844),
+      notificationsPermissionOffLight,
+    ),
     'calendar_mobile_light': (const Size(390, 844), calendarMobileLight),
     'calendar_mobile_dark': (const Size(390, 844), calendarMobileDark),
     'calendar_desktop_light': (const Size(1440, 900), calendarDesktopLight),

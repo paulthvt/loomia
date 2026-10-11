@@ -13,6 +13,9 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/presentation/account_photo.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
+import 'package:loomia/features/notifications/presentation/notification_settings_form.dart';
+import 'package:loomia/features/notifications/presentation/notification_settings_section.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/settings/presentation/account_settings.dart';
 import 'package:loomia/features/settings/presentation/appearance_settings.dart';
 import 'package:loomia/features/settings/presentation/language_settings.dart';
@@ -26,7 +29,7 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-enum SettingsSection { account, language, appearance, workflows }
+enum SettingsSection { account, language, appearance, notifications, workflows }
 
 /// The installed app version, major.minor.patch ("0.1.3"): the build number
 /// only matters to the stores. Loaded once: it never changes while the app runs.
@@ -63,6 +66,7 @@ class SettingsPage extends StatelessWidget {
       SettingsSection.account => Routes.settingsAccount,
       SettingsSection.language => Routes.settingsLanguage,
       SettingsSection.appearance => Routes.settingsAppearance,
+      SettingsSection.notifications => Routes.settingsNotifications,
       SettingsSection.workflows => Routes.settingsWorkflows,
     };
     if (context.screenSize.isDesktop) {
@@ -172,6 +176,10 @@ class _Section extends StatelessWidget {
       SettingsSection.appearance => SettingsScroll(
         title: l10n.settingsSectionAppearance,
         child: const AppearanceSettings(),
+      ),
+      SettingsSection.notifications => SettingsScroll(
+        title: l10n.settingsSectionNotifications,
+        child: const NotificationSettingsSection(),
       ),
       SettingsSection.workflows => switch ((workflowId, eventWorkflowId)) {
         (_, final String id) => _WorkflowPane(
@@ -306,6 +314,20 @@ class _SettingsListState extends ConsumerState<_SettingsList>
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () =>
                   SettingsPage.open(context, SettingsSection.appearance),
+            ),
+            ListTile(
+              selected: selected == SettingsSection.notifications,
+              leading: const Icon(Icons.notifications_none_rounded),
+              title: Text(l10n.settingsSectionNotifications),
+              subtitle: Text(switch (ref
+                  .watch(notificationSettingsProvider(account?.email))
+                  .value) {
+                final s? when s.enabled => formatSummaryTime(context, s),
+                _ => l10n.notificationsOff,
+              }),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () =>
+                  SettingsPage.open(context, SettingsSection.notifications),
             ),
           ],
         ),

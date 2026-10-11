@@ -23,18 +23,52 @@ class Push {
   StreamSubscription<String>? _refresh;
   String? _locale;
 
+  /// Whether push works here: Android or iOS with Firebase configured.
+  Future<bool> get available => _start();
+
+  /// Whether the OS lets Loomia notify; null where push doesn't work.
+  Future<bool?> allowed() async {
+    if (!await _start()) return null;
+    try {
+      return _isAllowed(
+        (await FirebaseMessaging.instance.getNotificationSettings())
+            .authorizationStatus,
+      );
+    } on Object catch (error) {
+      _log.info('permission unknown', error);
+      return null;
+    }
+  }
+
+  /// The OS prompt, once; after a refusal the OS answers without asking.
+  /// Granted: registers this phone straight away.
+  Future<bool> ask() async {
+    if (!await _start()) return false;
+    try {
+      final granted = _isAllowed(
+        (await FirebaseMessaging.instance.requestPermission())
+            .authorizationStatus,
+      );
+      final locale = _locale;
+      if (granted && locale != null) await register(locale);
+      return granted;
+    } on Object catch (error) {
+      _log.info('permission not asked', error);
+      return false;
+    }
+  }
+
   /// Saves this phone's token for the signed-in user, in [locale], when
-  /// notifications are allowed; asking is not this class's job (#270). A
-  /// token refresh saves the new one.
+  /// notifications are allowed; asking is [ask]'s job. A token refresh saves
+  /// the new one.
   Future<void> register(String locale) async {
     _locale = locale;
     if (!await _start()) return;
     try {
       final messaging = FirebaseMessaging.instance;
-      final status =
-          (await messaging.getNotificationSettings()).authorizationStatus;
-      if (status != AuthorizationStatus.authorized &&
-          status != AuthorizationStatus.provisional) {
+      if (!_isAllowed(
+        (await messaging.getNotificationSettings()).authorizationStatus,
+      )) {
         return;
       }
       _refresh ??= messaging.onTokenRefresh.listen(_save);
@@ -76,6 +110,10 @@ class Push {
   }
 
   Future<void> dispose() async => _refresh?.cancel();
+
+  static bool _isAllowed(AuthorizationStatus status) =>
+      status == AuthorizationStatus.authorized ||
+      status == AuthorizationStatus.provisional;
 
   Future<bool> _start() => _ready ??= () async {
     if (kIsWeb ||

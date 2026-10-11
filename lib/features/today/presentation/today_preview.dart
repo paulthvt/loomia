@@ -6,6 +6,7 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
+import 'package:loomia/features/notifications/presentation/nudge_card.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/domain/today_events.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
@@ -46,6 +47,13 @@ Widget todayEventsMobileLight() => _app(
   events: _events,
   now: DateTime(2026, 9, 29, 18, 50),
 );
+
+/// Today's one-time offer of the daily summary, below Priority (#270).
+@Preview(group: 'Today', name: 'Nudge — light', size: Size(390, 844))
+Widget todayNudgeMobileLight() => _app(AppTheme.light, [
+  _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
+  _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
+], nudge: NudgeCard(time: '7:00 PM', onTurnOn: () {}, onNotNow: () {}));
 
 final _now = DateTime(2026, 9, 29, 9);
 
@@ -181,6 +189,7 @@ Widget _app(
   GoalsMonth? goals,
   TodayEvents events = noTodayEvents,
   DateTime? now,
+  Widget? nudge,
 }) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -204,6 +213,7 @@ Widget _app(
       onMarkDone: (_) {},
       onTickStep: (_) {},
       onJoin: (_) {},
+      nudge: nudge,
     ),
   );
 }

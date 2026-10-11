@@ -160,6 +160,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                     _settingsPage(context, state, SettingsSection.appearance),
               ),
               GoRoute(
+                path: Routes.settingsNotificationsSegment,
+                name: Routes.settingsNotificationsName,
+                pageBuilder: (context, state) => _settingsPage(
+                  context,
+                  state,
+                  SettingsSection.notifications,
+                ),
+              ),
+              GoRoute(
                 path: Routes.settingsWorkflowsSegment,
                 name: Routes.settingsWorkflowsName,
                 pageBuilder: (context, state) =>

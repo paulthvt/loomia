@@ -63,6 +63,11 @@ abstract final class Routes {
       '$settings/$settingsAppearanceSegment';
   static const String settingsAppearanceName = 'settingsAppearance';
 
+  static const String settingsNotificationsSegment = 'notifications';
+  static const String settingsNotifications =
+      '$settings/$settingsNotificationsSegment';
+  static const String settingsNotificationsName = 'settingsNotifications';
+
   static const String settingsWorkflowsSegment = 'workflows';
   static const String settingsWorkflows = '$settings/$settingsWorkflowsSegment';
   static const String settingsWorkflowsName = 'settingsWorkflows';

@@ -3,10 +3,12 @@ import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
+import 'package:loomia/features/notifications/domain/notification_settings.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../../auth/fake_auth_repository.dart';
+import '../fake_notifications_repository.dart';
 import '../fake_push.dart';
 
 void main() {
@@ -54,5 +56,21 @@ void main() {
           .path,
       Routes.today,
     );
+  });
+
+  testWidgets('the summary follows the phone to another time zone', (
+    tester,
+  ) async {
+    final notifications = FakeNotificationsRepository(
+      const NotificationSettings(enabled: true, timeZone: 'America/New_York'),
+    );
+    await pumpLoomia(tester, size: phone, notifications: notifications);
+    expect(notifications.saved.single.timeZone, 'Europe/Paris');
+  });
+
+  testWidgets('no settings yet: nothing written', (tester) async {
+    final notifications = FakeNotificationsRepository();
+    await pumpLoomia(tester, size: phone, notifications: notifications);
+    expect(notifications.saved, isEmpty);
   });
 }

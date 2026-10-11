@@ -34,6 +34,11 @@ import 'package:loomia/features/goals/presentation/goal_line.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/goals/presentation/ritual_card.dart';
 import 'package:loomia/features/goals/presentation/volume_card.dart';
+import 'package:loomia/features/notifications/data/push.dart';
+import 'package:loomia/features/notifications/domain/notification_settings.dart';
+import 'package:loomia/features/notifications/presentation/notification_settings_form.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
+import 'package:loomia/features/notifications/presentation/nudge_card.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/features/today/domain/due.dart';
@@ -206,7 +211,47 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       },
       onTickStep: (due) => unawaited(_tickStep(due)),
       onJoin: (link) => unawaited(openExternal(context, link)),
+      nudge: _nudge(owner),
     );
+  }
+
+  /// Asked once, on a phone with push: no settings row yet. Either answer
+  /// creates one, and the card goes.
+  Widget? _nudge(String? owner) {
+    if (owner == null || ref.watch(pushAvailableProvider).value != true) {
+      return null;
+    }
+    final settings = ref.watch(notificationSettingsProvider(owner));
+    if (settings case AsyncData(value: null)) {
+      // ponytail: UTC when the zone can't be read; see the settings screen.
+      final zone = ref.watch(deviceTimeZoneProvider).value ?? 'UTC';
+      final offer = NotificationSettings(timeZone: zone);
+      return NudgeCard(
+        time: formatSummaryTime(context, offer),
+        onTurnOn: () => unawaited(_answerNudge(owner, offer, turnOn: true)),
+        onNotNow: () => unawaited(_answerNudge(owner, offer, turnOn: false)),
+      );
+    }
+    return null;
+  }
+
+  /// Turn on asks the OS; a refusal saves it off, as Not now does.
+  Future<void> _answerNudge(
+    String owner,
+    NotificationSettings offer, {
+    required bool turnOn,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = ref.read(notificationSettingsProvider(owner).notifier);
+    final granted = turnOn && await ref.read(pushProvider).ask();
+    try {
+      await controller.save(offer.copyWith(enabled: granted));
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+    }
   }
 }
 
@@ -248,6 +293,7 @@ class TodayView extends StatefulWidget {
     this.onMarkDone,
     this.onTickStep,
     this.onJoin,
+    this.nudge,
     super.key,
   });
 
@@ -304,6 +350,9 @@ class TodayView extends StatefulWidget {
 
   /// Join: opens the link.
   final void Function(Uri link)? onJoin;
+
+  /// The daily summary's offer, below Priority, until it is answered.
+  final Widget? nudge;
 
   @override
   State<TodayView> createState() => _TodayViewState();
@@ -383,7 +432,7 @@ class _TodayViewState extends State<TodayView> {
       ],
     ];
 
-    final content = switch (widget.due) {
+    final listed = switch (widget.due) {
       AsyncData(:final value) when value.isEmpty => [
         ...goalWidgets,
         ...eventsBlock,
@@ -411,6 +460,12 @@ class _TodayViewState extends State<TodayView> {
         const Center(child: CircularProgressIndicator()),
       ],
     };
+
+    final nudge = widget.nudge;
+    final content = [
+      ...listed,
+      if (nudge != null) ...[const SizedBox(height: AppSpacing.lg), nudge],
+    ];
 
     return Scaffold(
       body: SafeArea(
