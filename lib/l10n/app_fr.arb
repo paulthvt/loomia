@@ -509,5 +509,21 @@
   "eventWhatHappensNext": "Ce qui se passe ensuite",
   "eventThereStarts": "{count, plural, =1{1 {stage, select, prospect{prospect} customer{client} other{membre de l’équipe}} commence {workflow}} other{{count} {stage, select, prospect{prospects} customer{clients} other{membres de l’équipe}} commencent {workflow}}}",
   "eventThereKeeps": "{count, plural, =1{1 {stage, select, prospect{prospect} customer{client} other{membre de l’équipe}} garde son parcours} other{{count} {stage, select, prospect{prospects} customer{clients} other{membres de l’équipe}} gardent leur parcours}}",
-  "eventThereReplaces": "Un nouveau parcours remplace celui en cours."
+  "eventThereReplaces": "Un nouveau parcours remplace celui en cours.",
+  "pushSummaryBody": "{count, plural, =1{Une personne mérite un message aujourd’hui} other{{count} personnes méritent un message aujourd’hui}}",
+  "settingsSectionNotifications": "Notifications",
+  "notificationsOff": "Désactivé",
+  "notificationsSummary": "Résumé quotidien",
+  "notificationsSummaryBody": "Un court rappel avec les personnes qui méritent un message aujourd’hui.",
+  "notificationsTime": "Heure",
+  "notificationsDays": "Jours",
+  "notificationsTimeZone": "Fuseau horaire : {zone}",
+  "notificationsLocalTime": "Les horaires correspondent à ton heure locale.",
+  "notificationsPermissionOff": "Les notifications sont désactivées pour Loomia dans les réglages de ton téléphone.",
+  "notificationsPhoneOnly": "Les notifications arrivent sur l’application Android et iOS.",
+  "todayNudgeTitle": "Tu veux un rappel à {time} en semaine ?",
+  "todayNudgeBody": "Un mot par jour avec les personnes à qui écrire. Rien les jours sans relances à faire. Tu peux changer cela dans les réglages.",
+  "todayNudgeTurnOn": "Activer",
+  "todayNudgeNotNow": "Pas maintenant",
+  "notificationsLoadFailed": "Impossible de charger tes réglages de notification."
 }

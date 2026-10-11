@@ -509,6 +509,22 @@
     "eventWhatHappensNext": "What happens next",
     "eventThereStarts": "{count, plural, =1{1 {stage, select, prospect{prospect} customer{customer} other{team member}} starts {workflow}} other{{count} {stage, select, prospect{prospects} customer{customers} other{team members}} start {workflow}}}",
     "eventThereKeeps": "{count, plural, =1{1 {stage, select, prospect{prospect} customer{customer} other{team member}} keeps their workflow} other{{count} {stage, select, prospect{prospects} customer{customers} other{team members}} keep their workflow}}",
-    "eventThereReplaces": "A new workflow replaces the one they're on."
+    "eventThereReplaces": "A new workflow replaces the one they're on.",
+    "pushSummaryBody": "{count, plural, =1{One person is worth a message today} other{{count} people are worth a message today}}",
+    "settingsSectionNotifications": "Notifications",
+    "notificationsOff": "Off",
+    "notificationsSummary": "Daily summary",
+    "notificationsSummaryBody": "A short note with the people worth a message today.",
+    "notificationsTime": "Time",
+    "notificationsDays": "Days",
+    "notificationsTimeZone": "Time zone: {zone}",
+    "notificationsLocalTime": "Times are your local time.",
+    "notificationsPermissionOff": "Notifications are off for Loomia in your phone's settings.",
+    "notificationsPhoneOnly": "Notifications come to the Android and iOS app.",
+    "todayNudgeTitle": "Want a nudge at {time} on weekdays?",
+    "todayNudgeBody": "One note a day with the people worth a message. Nothing on days with nothing to do. You can change it in Settings.",
+    "todayNudgeTurnOn": "Turn on",
+    "todayNudgeNotNow": "Not now",
+    "notificationsLoadFailed": "Couldn't load your notification settings."
   }
 }
