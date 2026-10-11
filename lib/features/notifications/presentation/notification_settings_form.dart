@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/form_error.dart';
@@ -84,14 +85,12 @@ class NotificationSettingsForm extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.ms),
             decoration: BoxDecoration(
-              color: scheme.secondaryContainer,
+              color: LoomiaColors.of(context).warningContainer,
               borderRadius: BorderRadius.circular(AppRadii.md),
             ),
             child: Text(
               l10n.notificationsPermissionOff,
-              style: AppTypography.bodySmall.copyWith(
-                color: scheme.onSecondaryContainer,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: scheme.onSurface),
             ),
           ),
         ],
@@ -123,7 +122,9 @@ class NotificationSettingsForm extends StatelessWidget {
                 );
               },
             ),
-            Padding(
+            // The group's column centres what doesn't fill it.
+            Container(
+              width: double.infinity,
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 AppSpacing.ms,
@@ -147,6 +148,9 @@ class NotificationSettingsForm extends StatelessWidget {
                       for (final day in days)
                         FilterChip(
                           key: ValueKey('day-$day'),
+                          // The theme hides it for filters elsewhere; here it
+                          // is what tells a chosen day apart (Figma).
+                          showCheckmark: true,
                           // 2024-01-01 is a Monday: day d is the d-th.
                           label: Text(
                             DateFormat.E(locale).format(DateTime(2024, 1, day)),
