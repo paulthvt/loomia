@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0](https://github.com/paulthvt/loomia/compare/0.7.0...0.8.0) (2026-10-10)
+
+
+### ✨ Features
+
+* show an offline state when the backend is unreachable ([#263](https://github.com/paulthvt/loomia/issues/263)) ([b465189](https://github.com/paulthvt/loomia/commit/b465189ba2033ca85d03173d57f7ae607eb0cbda))
+
+
+### 🐛 Bug Fixes
+
+* **auth:** drop offline token refresh failures from the auth stream ([#262](https://github.com/paulthvt/loomia/issues/262)) ([8e59c8f](https://github.com/paulthvt/loomia/commit/8e59c8fbfef7e692c4dcfaa5e537f3577e1dc502))
+* **contacts:** open a known contact from import without a blank page ([#259](https://github.com/paulthvt/loomia/issues/259)) ([84d87a2](https://github.com/paulthvt/loomia/commit/84d87a2c23e9d85140eb161ab3af31cce6d8dfa2))
+
+
+### 🔧 Miscellaneous
+
+* **l10n:** sync translations ([#264](https://github.com/paulthvt/loomia/issues/264)) ([482aa11](https://github.com/paulthvt/loomia/commit/482aa11887baf108a6b5efa52e1dcb75b30bc13a))
+* log unexpected failures and send them to Sentry ([#266](https://github.com/paulthvt/loomia/issues/266)) ([709db11](https://github.com/paulthvt/loomia/commit/709db1106336adda57b94afbf29f2c7671a31a44))
+
 ## [0.7.0](https://github.com/paulthvt/loomia/compare/0.6.0...0.7.0) (2026-10-10)
 
 
