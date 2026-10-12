@@ -67,6 +67,14 @@ void main() {
     );
   });
 
+  // Release builds shrink resources; these are only looked up by name (#282).
+  test('Android keeps them through release shrinking', () {
+    expect(
+      File('android/app/src/main/res/raw/push_keep.xml').readAsStringSync(),
+      contains('tools:keep="@string/push_*"'),
+    );
+  });
+
   test('iOS escapes and positions', () {
     final strings = toIosStrings({
       'k': ['a "b" \\ 5 % ', 1],

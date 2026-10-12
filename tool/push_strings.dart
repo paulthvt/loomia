@@ -8,6 +8,7 @@
 // (`push_summary_body_other_fr`): the sender picks the key, so the push follows
 // the language chosen in the app, not only the phone's. Run by the l10n sync;
 // test/tool/push_strings_test.dart fails when the committed files are stale.
+// res/raw/push_keep.xml keeps them through release resource shrinking.
 //
 // A whole-message plural becomes `_one` (`=1`, `one`) and `_other`; anything
 // else (`=0`, `few`…) stops the run. Literal `%` is `%%`: the sender always
