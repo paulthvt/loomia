@@ -249,7 +249,7 @@ class DoneToday extends AsyncNotifier<int> {
   - Props: `eyebrow`, `headline`, `progress` (`done`, `total`; none hides the bar).
   - Rules: replace the effort sentence with "The footer counts today's own list (done + still waiting), never a target and never a percentage. Everything done keeps the hero: 'That's everyone for today', full bar."
 - [x] **Step 3:** Run the gate (on macOS the goldens are skipped). Commit `docs(design): TodayHero counts today's list`.
-- [ ] **Step 4: Goldens through CI**, per the testing steering:
+- [x] **Step 4: Goldens through CI**, per the testing steering:
 
 ```bash
 git push -u origin feature/292-today-progress
