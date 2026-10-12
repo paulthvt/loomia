@@ -237,7 +237,9 @@ Firebase Cloud Messaging, Android and iOS (#268); only `firebase_core` and
 - **Copy.** The server sends a localisation key, never text. The phone renders
   it from strings that `tool/push_strings.dart` generates from the `push*` ARB
   keys, every language in one file, keys suffixed with the language
-  (docs/superpowers/specs/2026-10-11-notifications-design.md).
+  (docs/superpowers/specs/2026-10-11-notifications-design.md). Android
+  release builds shrink resources, and nothing in code names these strings:
+  `res/raw/push_keep.xml` keeps them (#282).
 - **Settings (#270).** `notification_settings` holds one row per user; no row
   means the user hasn't answered, and Today shows its card (only where push
   works). Settings → Notifications saves each change at once. On every launch

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The push strings (push_strings.xml) are looked up by name at runtime: FCM's
+     body_loc_key. Release builds shrink resources and would remove them, and
+     the daily summary would arrive empty (#282). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/push_*" />
