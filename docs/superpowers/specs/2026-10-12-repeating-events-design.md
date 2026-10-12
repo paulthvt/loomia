@@ -1,9 +1,10 @@
 # Repeating events — design
 
-Epic: #297 (sub-issues #298, #299). Figma: section "Repeating events —
-#297" on page "04 — Screens (Light)", **to be mocked before planning**: the
-Repeat and Ends fields in New event, the repeat line on the event, the
-"This event / This and following events" dialog. Builds on
+Epic: #297 (sub-issues #298, #299). Figma: [Repeating events — #297](https://www.figma.com/design/spz2vsSK8gbt1Ok2rW1sdQ/Loomia?node-id=323-8181),
+on page "04 — Screens (Light)": New event with Repeat (323:8183), with Ends
+on a day (323:8410), the event (323:8637), Change a repeating event
+(323:8690), Delete a repeating event (323:8743), Change with the rule
+changed (323:8796), Calendar (323:8849), Change on desktop (323:9051). Builds on
 `2026-10-07-calendar-design.md`, whose "No recurrence" this replaces.
 
 ## Intent
