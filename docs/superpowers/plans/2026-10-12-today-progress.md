@@ -236,18 +236,19 @@ class DoneToday extends AsyncNotifier<int> {
 **Files:**
 - Modify: `lib/features/today/presentation/today_preview.dart`
 - Modify: `docs/design/components.md`
+- Modify: `test/previews_test.dart` (registers the new golden)
 - Regenerate: `test/goldens/today_*.png` (CI)
 
-- [ ] **Step 1: Previews.**
+- [x] **Step 1: Previews.**
   - `_app` gains `int? done`, passed to `TodayView`.
   - Mobile and Desktop (both modes) pass `done: 2`. With seven rows, that reads "2 of 9 done".
   - Events and Nudge pass `done: 1`. Empty passes `done: 0`.
   - New: `@Preview(group: 'Today', name: 'All done — light', size: Size(390, 844)) Widget todayAllDoneMobileLight() => _app(AppTheme.light, const [], goals: _goals, done: 3);`
-- [ ] **Step 2: `components.md` #11.**
+- [x] **Step 2: `components.md` #11.**
   - Anatomy: replace "footer: progress left, effort in minutes right" with "footer: today's count, left ("1 of 3 done")".
   - Props: `eyebrow`, `headline`, `progress` (`done`, `total`; none hides the bar).
   - Rules: replace the effort sentence with "The footer counts today's own list (done + still waiting), never a target and never a percentage. Everything done keeps the hero: 'That's everyone for today', full bar."
-- [ ] **Step 3:** Run the gate (on macOS the goldens are skipped). Commit `docs(design): TodayHero counts today's list`.
+- [x] **Step 3:** Run the gate (on macOS the goldens are skipped). Commit `docs(design): TodayHero counts today's list`.
 - [ ] **Step 4: Goldens through CI**, per the testing steering:
 
 ```bash

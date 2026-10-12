@@ -31,6 +31,10 @@ void main() {
     'today_desktop_light': (const Size(1440, 900), todayDesktopLight),
     'today_desktop_dark': (const Size(1440, 900), todayDesktopDark),
     'today_empty_light': (const Size(390, 844), todayEmptyLight),
+    'today_all_done_mobile_light': (
+      const Size(390, 844),
+      todayAllDoneMobileLight,
+    ),
     'today_events_mobile_light': (const Size(390, 844), todayEventsMobileLight),
     'today_nudge_mobile_light': (const Size(390, 844), todayNudgeMobileLight),
     'notifications_mobile_light': (
