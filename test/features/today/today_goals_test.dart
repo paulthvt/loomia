@@ -68,6 +68,7 @@ void main() {
     GoalsMonth? goals,
     Size size = const Size(390, 1400),
     List<CheckIn> checkIns = const [],
+    int? done,
   }) {
     goalsTaps = 0;
     ritualTaps = 0;
@@ -85,6 +86,7 @@ void main() {
           ),
           now: now,
           firstName: 'Pauline',
+          done: done,
           onTick: (_) {},
           onOpen: (_) {},
           onRetry: () {},
@@ -136,6 +138,32 @@ void main() {
     expect(find.text('You are up to date'), findsOneWidget);
     expect(find.text('1,800 PV to go · 1 day left'), findsOneWidget);
     expect(find.text('Close September, plan October'), findsOneWidget);
+  });
+
+  testWidgets('everything done: the line under the goal, above the card', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      now: DateTime(2026, 9, 29, 9),
+      due: const [],
+      goals: _goals(),
+      done: 2,
+    );
+
+    final body = tester.getTopLeft(find.textContaining('Nothing is waiting'));
+    expect(
+      body.dy,
+      greaterThan(
+        tester.getTopLeft(find.text('1,800 PV to go · 1 day left')).dy,
+      ),
+    );
+    expect(
+      body.dy,
+      lessThan(
+        tester.getTopLeft(find.text('Close September, plan October')).dy,
+      ),
+    );
   });
 
   testWidgets('Goals not loaded: Today as before', (tester) async {

@@ -415,21 +415,21 @@ class _TodayViewState extends State<TodayView> {
     final day = DateTime(widget.now.year, widget.now.month, widget.now.day);
     final goals = widget.goals;
     final ritual = goals == null ? null : pendingRitual(day, goals.plans);
-    final goalWidgets = desktop
-        ? const <Widget>[]
-        : [
-            if (goals != null && hasGoalLine(goals))
-              GoalLine(
-                month: goals,
-                today: day,
-                model: widget.model,
-                onTap: widget.onGoals ?? () {},
-              ),
-            if (ritual != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
-            ],
-          ];
+    final goalLine = desktop || goals == null || !hasGoalLine(goals)
+        ? null
+        : GoalLine(
+            month: goals,
+            today: day,
+            model: widget.model,
+            onTap: widget.onGoals ?? () {},
+          );
+    final ritualCard = [
+      if (!desktop && ritual != null) ...[
+        const SizedBox(height: AppSpacing.md),
+        RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
+      ],
+    ];
+    final goalWidgets = [?goalLine, ...ritualCard];
     // Desktop: the month and the team beside the priority list.
     final side = [
       if (goals != null && hasGoalLine(goals))
@@ -473,7 +473,14 @@ class _TodayViewState extends State<TodayView> {
 
     final listed = switch (widget.due) {
       AsyncData(:final value) when value.isEmpty && (widget.done ?? 0) > 0 =>
-        _allDone(l10n, widget.done!, desktop, goalWidgets, eventsBlock),
+        _allDone(
+          l10n,
+          widget.done!,
+          desktop,
+          goalLine,
+          ritualCard,
+          eventsBlock,
+        ),
       AsyncData(:final value) when value.isEmpty => [
         ...goalWidgets,
         ...eventsBlock,
@@ -571,12 +578,14 @@ class _TodayViewState extends State<TodayView> {
   }
 
   /// Everything on today's list was ticked: the hero stays, full, and the
-  /// up-to-date line sits under it (under the goal line on a phone).
+  /// up-to-date line sits under it (under the goal line on a phone, above the
+  /// close-the-month card).
   List<Widget> _allDone(
     AppLocalizations l10n,
     int done,
     bool desktop,
-    List<Widget> goalWidgets,
+    Widget? goalLine,
+    List<Widget> ritualCard,
     List<Widget> eventsBlock,
   ) => [
     TodayHero(
@@ -584,7 +593,7 @@ class _TodayViewState extends State<TodayView> {
       headline: l10n.todayAllDone,
       progress: (done: done, total: done),
     ),
-    ...goalWidgets,
+    ?goalLine,
     Padding(
       padding: desktop
           ? const EdgeInsets.only(top: AppSpacing.sm)
@@ -599,6 +608,7 @@ class _TodayViewState extends State<TodayView> {
         style: Theme.of(context).textTheme.bodySmall,
       ),
     ),
+    ...ritualCard,
     SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
     ...eventsBlock,
   ];
