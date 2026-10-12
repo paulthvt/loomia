@@ -52,6 +52,7 @@ Widget _app(
           settings: settings,
           allowed: allowed,
           onChanged: (_) {},
+          onAllow: () {},
         ),
       ),
     ),

@@ -2432,5 +2432,9 @@
   "notificationsLoadFailed": "Couldn't load your notification settings.",
   "@notificationsLoadFailed": {
     "description": "Title when Settings → Notifications could not load; a Try again button follows."
+  },
+  "notificationsAllow": "Allow notifications",
+  "@notificationsAllow": {
+    "description": "Button under the warning that the phone blocks Loomia's notifications: asks the phone for permission again."
   }
 }
