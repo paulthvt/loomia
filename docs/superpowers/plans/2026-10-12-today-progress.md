@@ -257,4 +257,4 @@ gh workflow run CI --ref feature/292-today-progress -f update-goldens=true
 ```
 
   Download them into `test/goldens/` and open each `today_*` PNG. Check that the bar is white on the darker track, the caption sits on the left, and all-done has a full bar with the body under the goal line. Then commit `test(today): goldens with the hero's progress`.
-- [ ] **Step 5:** Run `graphify update .`. Open the PR with `Closes #292`, listing what was tested.
+- [x] **Step 5:** Run `graphify update .`. Open the PR with `Closes #292`, listing what was tested.
