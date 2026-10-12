@@ -525,6 +525,7 @@
     "todayNudgeBody": "One note a day with the people worth a message. Nothing on days with nothing to do. You can change it in Settings.",
     "todayNudgeTurnOn": "Turn on",
     "todayNudgeNotNow": "Not now",
-    "notificationsLoadFailed": "Couldn't load your notification settings."
+    "notificationsLoadFailed": "Couldn't load your notification settings.",
+    "notificationsAllow": "Allow notifications"
   }
 }
