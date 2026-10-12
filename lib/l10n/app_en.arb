@@ -2410,14 +2410,18 @@
   "@notificationsPhoneOnly": {
     "description": "Note on the web: these settings apply, but the push arrives on the phone app only."
   },
-  "todayNudgeTitle": "Want a nudge at {time} on weekdays?",
-  "@todayNudgeTitle": {
-    "description": "Card on Today offering the daily summary, asked once. time is already formatted for the locale (7:00 PM, 19:00). An offer, never pushy.",
+  "todayNudgeQuestion": "Want a daily nudge?",
+  "@todayNudgeQuestion": {
+    "description": "Title of the card on Today offering the daily summary, asked once. An offer, never pushy. The time is chosen on the card, below."
+  },
+  "todayNudgeTimeLabel": "Summary time, {time}",
+  "@todayNudgeTimeLabel": {
+    "description": "Screen-reader label of the button on Today's card that shows the summary time and opens a time picker. time is already formatted (7:00 PM, 19:00).",
     "placeholders": {
       "time": { "type": "String" }
     }
   },
-  "todayNudgeBody": "One note a day with the people worth a message. Nothing on days with nothing to do. You can change it in Settings.",
+  "todayNudgeBody": "One note a day with the people worth a message, only on days with something to do.",
   "@todayNudgeBody": {
     "description": "Body of the Today card offering the daily summary."
   },

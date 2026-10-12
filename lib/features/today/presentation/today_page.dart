@@ -63,6 +63,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   /// takes no tap, so a second tap can't tick the next step too.
   final Set<String> _busy = {};
 
+  /// The time picked on the summary card; null shows the default, 19:00.
+  TimeOfDay? _nudgeTime;
+
   late final AppLifecycleListener _lifecycle;
 
   @override
@@ -225,14 +228,31 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     if (settings case AsyncData(value: null)) {
       // ponytail: UTC when the zone can't be read; see the settings screen.
       final zone = ref.watch(deviceTimeZoneProvider).value ?? 'UTC';
-      final offer = NotificationSettings(timeZone: zone);
+      final time = _nudgeTime;
+      final offer = time == null
+          ? NotificationSettings(timeZone: zone)
+          : NotificationSettings(
+              timeZone: zone,
+              hour: time.hour,
+              minute: time.minute,
+            );
       return NudgeCard(
         time: formatSummaryTime(context, offer),
+        onPickTime: () => unawaited(_pickNudgeTime(offer)),
         onTurnOn: () => unawaited(_answerNudge(owner, offer, turnOn: true)),
         onNotNow: () => unawaited(_answerNudge(owner, offer, turnOn: false)),
       );
     }
     return null;
+  }
+
+  /// The card's time, from its picker; dismissed keeps the one shown.
+  Future<void> _pickNudgeTime(NotificationSettings offer) async {
+    final picked = await pickTime(
+      context,
+      initial: TimeOfDay(hour: offer.hour, minute: offer.minute),
+    );
+    if (picked != null && mounted) setState(() => _nudgeTime = picked);
   }
 
   /// Turn on asks the OS; a refusal saves it off, as Not now does.
