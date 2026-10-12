@@ -521,7 +521,6 @@
   "notificationsLocalTime": "Les horaires correspondent à ton heure locale.",
   "notificationsPermissionOff": "Les notifications sont désactivées pour Loomia dans les réglages de ton téléphone.",
   "notificationsPhoneOnly": "Les notifications arrivent sur l’application Android et iOS.",
-  "todayNudgeTitle": "Tu veux un rappel à {time} en semaine ?",
   "todayNudgeBody": "Un mot par jour avec les personnes à qui écrire. Rien les jours sans relances à faire. Tu peux changer cela dans les réglages.",
   "todayNudgeTurnOn": "Activer",
   "todayNudgeNotNow": "Pas maintenant",

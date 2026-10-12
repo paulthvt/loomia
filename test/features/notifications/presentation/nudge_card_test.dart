@@ -8,7 +8,7 @@ import '../fake_push.dart';
 
 void main() {
   const phone = Size(390, 844);
-  const title = 'Want a nudge at 7:00 PM on weekdays?';
+  const title = 'Want a daily nudge?';
 
   testWidgets('asked on Today until answered: Turn on', (tester) async {
     final push = FakePush();
@@ -30,6 +30,52 @@ void main() {
       const NotificationSettings(enabled: true, timeZone: 'Europe/Paris'),
     );
     expect(find.text(title), findsNothing);
+  });
+
+  testWidgets('the time is chosen on the card, and Turn on saves it', (
+    tester,
+  ) async {
+    final notifications = FakeNotificationsRepository();
+    await pumpLoomia(
+      tester,
+      size: phone,
+      push: FakePush(),
+      notifications: notifications,
+    );
+    await tester.ensureVisible(find.text('7:00 PM'));
+    await tester.tap(find.text('7:00 PM'));
+    await tester.pumpAndSettle();
+    // The Material picker, typed rather than dialled.
+    await tester.tap(find.byIcon(Icons.keyboard_outlined));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), '8');
+    await tester.enterText(find.byType(TextField).at(1), '30');
+    await tester.tap(find.text('AM'));
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(find.text('8:30 AM'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Turn on'));
+    await tester.tap(find.text('Turn on'));
+    await tester.pumpAndSettle();
+    final saved = notifications.saved.single;
+    expect((saved.enabled, saved.hour, saved.minute), (true, 8, 30));
+  });
+
+  testWidgets('the picker dismissed keeps 7:00 PM', (tester) async {
+    final notifications = FakeNotificationsRepository();
+    await pumpLoomia(
+      tester,
+      size: phone,
+      push: FakePush(),
+      notifications: notifications,
+    );
+    await tester.ensureVisible(find.text('7:00 PM'));
+    await tester.tap(find.text('7:00 PM'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('7:00 PM'), findsOneWidget);
   });
 
   testWidgets('Turn on refused by the phone: saved off', (tester) async {

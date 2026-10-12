@@ -48,12 +48,22 @@ Widget todayEventsMobileLight() => _app(
   now: DateTime(2026, 9, 29, 18, 50),
 );
 
-/// Today's one-time offer of the daily summary, below Priority (#270).
+/// Today's one-time offer of the daily summary, below Priority (#270), its
+/// time a button (#288).
 @Preview(group: 'Today', name: 'Nudge — light', size: Size(390, 844))
-Widget todayNudgeMobileLight() => _app(AppTheme.light, [
-  _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
-  _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
-], nudge: NudgeCard(time: '7:00 PM', onTurnOn: () {}, onNotNow: () {}));
+Widget todayNudgeMobileLight() => _app(
+  AppTheme.light,
+  [
+    _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
+    _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
+  ],
+  nudge: NudgeCard(
+    time: '7:00 PM',
+    onPickTime: () {},
+    onTurnOn: () {},
+    onNotNow: () {},
+  ),
+);
 
 final _now = DateTime(2026, 9, 29, 9);
 
