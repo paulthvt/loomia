@@ -73,6 +73,10 @@ void main() {
     'first_run_people_light': (const Size(390, 844), firstRunPeopleLight),
     'workflows_list_light': (const Size(390, 844), workflowsListLight),
     'workflow_editor_light': (const Size(390, 844), workflowEditorLight),
+    'workflow_editor_repeating_light': (
+      const Size(390, 844),
+      workflowEditorRepeatingLight,
+    ),
     'workflow_step_light': (const Size(390, 844), workflowStepLight),
     'event_workflow_editor_light': (
       const Size(390, 844),
