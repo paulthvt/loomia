@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.9.0](https://github.com/paulthvt/loomia/compare/0.8.0...0.9.0) (2026-10-12)
+
+
+### ✨ Features
+
+* **push:** Firebase, device tokens and tap handling ([#272](https://github.com/paulthvt/loomia/issues/272)) ([f150431](https://github.com/paulthvt/loomia/commit/f1504314f28f0c1d06f84e50665b5fb738db173c))
+* **push:** notification settings and the Today opt-in ([#277](https://github.com/paulthvt/loomia/issues/277)) ([4e41d9a](https://github.com/paulthvt/loomia/commit/4e41d9a7569fc21d3ac7bf62851fb5515ecb62a7))
+* **push:** the daily summary sender ([#276](https://github.com/paulthvt/loomia/issues/276)) ([47ffca1](https://github.com/paulthvt/loomia/commit/47ffca13e29af6900592798824c0a29a0f09c481))
+
+
+### 🐛 Bug Fixes
+
+* **android:** keep the splash ochre under expanded dark theme ([#279](https://github.com/paulthvt/loomia/issues/279)) ([9b2910b](https://github.com/paulthvt/loomia/commit/9b2910b6eba2cef89766b160871752c1c394334f))
+* **today:** wrap the summary offer buttons so French fits ([#281](https://github.com/paulthvt/loomia/issues/281)) ([23552a6](https://github.com/paulthvt/loomia/commit/23552a6c501d31d326aeb64132de2fd8264edae6))
+
+
+### 📚 Documentation
+
+* design push notifications ([#271](https://github.com/paulthvt/loomia/issues/271)) ([1533170](https://github.com/paulthvt/loomia/commit/1533170c4e41a8266de4ac37355d940753c290d3))
+
+
+### 🔧 Miscellaneous
+
+* **l10n:** sync translations ([#274](https://github.com/paulthvt/loomia/issues/274)) ([de12a2e](https://github.com/paulthvt/loomia/commit/de12a2ef629c769e57b0f33227785be46ee1f150))
+
 ## [0.8.0](https://github.com/paulthvt/loomia/compare/0.7.0...0.8.0) (2026-10-10)
 
 
