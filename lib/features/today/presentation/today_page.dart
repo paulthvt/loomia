@@ -300,6 +300,7 @@ class TodayView extends StatefulWidget {
     required this.onOpen,
     required this.onRetry,
     required this.onRefresh,
+    this.done,
     this.busy = const {},
     this.accountAction,
     this.goals,
@@ -318,6 +319,10 @@ class TodayView extends StatefulWidget {
   });
 
   final AsyncValue<List<Due>> due;
+
+  /// Steps and reminders ticked today; null while unknown or failed, and
+  /// then the hero has no bar.
+  final int? done;
 
   /// The device clock: the date, the greeting, and which steps are late.
   final DateTime now;
@@ -453,6 +458,8 @@ class _TodayViewState extends State<TodayView> {
     ];
 
     final listed = switch (widget.due) {
+      AsyncData(:final value) when value.isEmpty && (widget.done ?? 0) > 0 =>
+        _allDone(l10n, widget.done!, desktop, goalWidgets, eventsBlock),
       AsyncData(:final value) when value.isEmpty => [
         ...goalWidgets,
         ...eventsBlock,
@@ -549,6 +556,39 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
+  /// Everything on today's list was ticked: the hero stays, full, and the
+  /// up-to-date line sits under it (under the goal line on a phone).
+  List<Widget> _allDone(
+    AppLocalizations l10n,
+    int done,
+    bool desktop,
+    List<Widget> goalWidgets,
+    List<Widget> eventsBlock,
+  ) => [
+    TodayHero(
+      eyebrow: l10n.todayTitle,
+      headline: l10n.todayAllDone,
+      progress: (done: done, total: done),
+    ),
+    ...goalWidgets,
+    Padding(
+      padding: desktop
+          ? const EdgeInsets.only(top: AppSpacing.sm)
+          : const EdgeInsetsDirectional.fromSTEB(
+              AppSpacing.xs,
+              AppSpacing.xs,
+              AppSpacing.xs,
+              0,
+            ),
+      child: Text(
+        l10n.todayEmptyBody,
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ),
+    SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+    ...eventsBlock,
+  ];
+
   List<Widget> _due(
     AppLocalizations l10n,
     List<Due> due,
@@ -559,6 +599,7 @@ class _TodayViewState extends State<TodayView> {
     final shown = _expanded ? due : due.take(desktop ? 6 : 5).toList();
     final now = widget.now;
     final day = DateTime(now.year, now.month, now.day);
+    final done = widget.done;
     return [
       TodayHero(
         eyebrow: l10n.todayTitle,
@@ -566,6 +607,8 @@ class _TodayViewState extends State<TodayView> {
         headline: l10n.todayHeadline(
           {for (final row in due) row.person.id}.length,
         ),
+        // Rows, not people: each tick moves the bar.
+        progress: done == null ? null : (done: done, total: done + due.length),
       ),
       ...goalWidgets,
       SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),

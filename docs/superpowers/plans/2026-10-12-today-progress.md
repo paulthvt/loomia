@@ -26,6 +26,7 @@
 - **The +1 is in `TodayPage._tick`, not in `PeopleController`.** Only Today shows the count, and a contact-page tick is picked up when Today is built again (autoDispose). This keeps `contacts/` from importing `today/`.
 - **`TodayHero` reads `AppLocalizations` itself** for the caption. It takes the numbers, not a preformatted string, so the screen-reader label and the caption can't drift.
 - **Hero spacing follows Figma:** 12 (`AppSpacing.ms`) between the headline and the bar. The bar-to-caption gap stays `LoomiaProgressBar`'s own 8. Figma shows 12; `LoomiaProgressBar` is shared with the goal cards and isn't changed for this.
+- **The bar's `Semantics` is a `container`** (found while implementing). Without it the label merged into the hero's node, so "1 of 3 done" was never its own announcement.
 - **The existing previews pass `done`**, so the Mobile, Desktop, Events and Nudge goldens show the bar. Empty stays `done: 0`. One new preview covers the all-done state.
 - **Figma leftovers ignored:** the desktop frames' sidebar still shows "Team" and a September date, and the Priority header's "See all" is a template leftover. None of them are in scope.
 
@@ -129,9 +130,9 @@ class DoneToday extends AsyncNotifier<int> {
 - Modify: `lib/l10n/app_en.arb`
 - Modify: `lib/features/today/presentation/today_hero.dart`
 - Modify: `lib/features/today/presentation/today_page.dart` (`TodayView` only)
-- Modify: `test/features/today/today_page_test.dart` (a `TodayView` group)
+- Create: `test/features/today/today_progress_test.dart` (beside `today_goals_test.dart`, which also pumps `TodayView`)
 
-- [ ] **Step 1: Copy.** Next to `todayHeadline`:
+- [x] **Step 1: Copy.** Next to `todayHeadline`:
 
 ```json
   "todayDone": "{done} of {total} done",
@@ -146,13 +147,13 @@ class DoneToday extends AsyncNotifier<int> {
 ```
 
   Then run `flutter gen-l10n`.
-- [ ] **Step 2: Failing tests**, a `group('TodayView progress', …)` pumping `TodayView` directly in a `MaterialApp` with `localizationsDelegates`, as `today_preview.dart`'s `_app` does, on `Size(390, 844)`:
+- [x] **Step 2: Failing tests**, a `group('TodayView progress', …)` pumping `TodayView` directly in a `MaterialApp` with `localizationsDelegates`, as `today_preview.dart`'s `_app` does, on `Size(390, 844)`:
   - two rows due (two people), `done: 1`: `find.text('1 of 3 done')` and `find.text('2 people are worth a message today')`. `tester.getSemantics(find.byType(LoomiaProgressBar))` has label `'1 of 3 done'`. `find.bySemanticsLabel(RegExp('%'))` finds nothing.
   - two rows due, `done: null`: `find.byType(LoomiaProgressBar)` finds nothing.
   - nothing due, `done: 3`: "That's everyone for today", "3 of 3 done" and the `todayEmptyBody` text. No "You are up to date".
   - nothing due, `done: 0`, and again with `null`: "You are up to date", and no `LoomiaProgressBar`.
   - desktop (`Size(1440, 900)`), nothing due, `done: 2`: the body is below the hero (`getTopLeft(body).dy > getBottomLeft(find.byType(TodayHero)).dy`).
-- [ ] **Step 3: `TodayHero`:**
+- [x] **Step 3: `TodayHero`:**
 
 ```dart
   const TodayHero({
@@ -186,7 +187,7 @@ class DoneToday extends AsyncNotifier<int> {
 ```
 
   Update the class doc: the footer counts today's own list.
-- [ ] **Step 4: `TodayView`.** Add `this.done` to the constructor:
+- [x] **Step 4: `TodayView`.** Add `this.done` to the constructor:
 
 ```dart
   /// Steps and reminders ticked today; null while unknown or failed, and
@@ -204,7 +205,7 @@ class DoneToday extends AsyncNotifier<int> {
     - then `...eventsBlock`.
 
     The theme's `bodySmall` is already body-sm in `text/secondary` (`app_typography.dart`, `inkVariant`).
-- [ ] **Step 5:** Run the gate. Commit `feat(today): progress bar and all-done state on the hero`.
+- [x] **Step 5:** Run the gate. Commit `feat(today): progress bar and all-done state on the hero`.
 
 ### Task 3: Wire the count into `TodayPage`
 
@@ -218,6 +219,7 @@ class DoneToday extends AsyncNotifier<int> {
   - **"a failed tick keeps the count"**: as the existing failed-tick test. "0 of 1 done" before and after.
   - **"the last tick shows the all-done hero"**: update the existing "a tick sends completeStep and the row leaves". It now expects "That's everyone for today" and "1 of 1 done", and no "You are up to date".
   - **"pull to refresh reloads the count"**: the fake's `calls` has `doneOn(...)` twice after a drag-to-refresh.
+  - **"back in the app with a stale book, the count reloads too"**: tick-elsewhere scenario. Add a `step` entry to the activity fake and advance past `PeopleController.staleAfter`. Then call `tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed)` (check how existing resume tests drive it, if any). The hero then reads "1 of 2 done", not "0 of 1 done".
 - [ ] **Step 2: Wire it.**
   - In `build`: `final done = doneTodayProvider((owner: owner, day: today()));` and pass `done: ref.watch(done).value` to `TodayView`.
   - In `_tick`:
@@ -226,6 +228,7 @@ class DoneToday extends AsyncNotifier<int> {
 
     The notifier is autoDispose, but Today is watching it, so it's alive.
   - In `_refresh`: `ref.invalidate(doneTodayProvider);` (the whole family).
+  - In `_onResume`, next to the stale-book refresh: `ref.invalidate(doneTodayProvider);`. A tick from another device must not take the row off without counting it.
 - [ ] **Step 3:** Run the gate. Commit `feat(today): the hero counts what was done today`.
 
 ### Task 4: Previews, docs, goldens

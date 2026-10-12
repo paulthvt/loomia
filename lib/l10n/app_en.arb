@@ -274,6 +274,18 @@
       "count": { "type": "int" }
     }
   },
+  "todayDone": "{done} of {total} done",
+  "@todayDone": {
+    "description": "The Today hero's caption under its progress bar: steps and reminders ticked today out of today's whole list (done plus still waiting). Never a target, a score or a percentage.",
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "todayAllDone": "That's everyone for today",
+  "@todayAllDone": {
+    "description": "The Today hero's sentence once everything on today's list was ticked. Calm and plain, not a celebration."
+  },
   "todayReminderDetail": "Reminder",
   "@todayReminderDetail": {
     "description": "Quiet line under a reminder on Today, below what the user wrote for themselves: says the row is a reminder they set, not a workflow step."

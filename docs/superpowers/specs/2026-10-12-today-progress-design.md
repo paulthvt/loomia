@@ -33,6 +33,7 @@ effort label stays out.
 | Moving on a tick | `TodayPage._tick` adds one to the count when `writePeople` succeeds. The book already dropped the row in that same microtask, so no frame shows "0 of 2" between "0 of 3" and "1 of 3". On failure nothing changes, as with the row. |
 | Ticks made elsewhere | The count is `autoDispose`, like `goalsProvider`. A step ticked on the contact page shows when Today is opened again, because no route keeps Today built behind another screen. Pull to refresh also reloads it. |
 | Day rollover | The count is keyed by `(owner, day)`. `_onResume` already rebuilds Today with the new `today()`, which reads a new key and fetches again. |
+| Back in the app | When `_onResume` reloads a stale book, it reloads the count too. Otherwise a tick from another device would take the row off without counting it ("0 of 2" instead of "1 of 3"). |
 | Nothing left, something done | The hero stays: full bar, "3 of 3 done", headline "That's everyone for today". The empty state's body (`todayEmptyBody`) sits under the hero as a body-sm line in `text/secondary`. On mobile it goes after the goal line, 4px in. On desktop, where the goal is in the side column, it goes 8px under the hero. The up-to-date `EmptyState` is not shown. |
 | Nothing due, nothing done | Unchanged: no hero, the up-to-date empty state. |
 | Count loading or failed | No bar and no caption (`showProgress` off): the hero is the sentence alone, as it is now. No error is shown, because the list itself still works. Nothing due and no count yet: the up-to-date empty state. |
