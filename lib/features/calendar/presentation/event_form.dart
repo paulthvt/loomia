@@ -65,18 +65,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
     if (event == null) {
       _day = widget.day ?? today();
       _start = _defaultStart;
-      // For a new event: pick the first event workflow by name once loaded
-      final owner = ref.read(accountProvider)?.email;
-      ref.listenManual(eventWorkflowsProvider(owner), (_, next) {
-        final workflows = next.value;
-        if (workflows == null ||
-            workflows.isEmpty ||
-            _eventWorkflowId != null) {
-          return;
-        }
-        final first = workflows.first;
-        setState(() => _choose(first));
-      }, fireImmediately: true);
       return;
     }
     final starts = event.startsAt.toLocal();
@@ -264,6 +252,15 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 child: Wrap(
                   spacing: AppSpacing.sm,
                   children: [
+                    // Plain events (#300): no checklist, nothing after.
+                    ChoiceChip(
+                      label: Text(l10n.eventTypeNone),
+                      selected: _eventWorkflowId == null,
+                      onSelected: (_) => setState(() {
+                        _eventWorkflowId = null;
+                        _followUps = const {};
+                      }),
+                    ),
                     for (final w in eventWorkflows)
                       ChoiceChip(
                         label: Text(w.name),

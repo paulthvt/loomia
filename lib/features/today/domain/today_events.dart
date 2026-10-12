@@ -31,10 +31,11 @@ extension TodayEventsEmpty on TodayEvents {
 
 /// What Today's Events section shows at [now]: today's events not yet to
 /// mark; events started within [todayEventsDays] days that can be marked
-/// done; and checklist steps due from [todayEventsDays] days ago through
-/// today, not ticked. A step set before the event is preparation: from the
-/// event's day it is no longer worth doing, and only the event's screen
-/// lists it. Each list earliest first.
+/// done and start a workflow for someone (#300: marking a plain event is
+/// left to its page); and checklist steps due from [todayEventsDays] days
+/// ago through today, not ticked. A step set before the event is
+/// preparation: from the event's day it is no longer worth doing, and only
+/// the event's screen lists it. Each list earliest first.
 TodayEvents todayEvents(
   List<CalendarEvent> events,
   List<EventWorkflow> workflows,
@@ -46,6 +47,7 @@ TodayEvents todayEvents(
     events.where(
       (event) =>
           event.canMarkDone(now) &&
+          event.followUps.isNotEmpty &&
           !canJoin(event, now) &&
           !event.day.isBefore(from),
     ),

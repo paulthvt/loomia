@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/today/domain/today_events.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
@@ -23,6 +24,7 @@ CalendarEvent _event(
   Map<String, DateTime> stepsDone = const {},
   List<Attendee> attendees = _invited,
   String? eventWorkflowId = 'workshop',
+  Map<Stage, String> followUps = const {Stage.prospect: 'samples'},
 }) => CalendarEvent(
   id: id,
   title: id,
@@ -33,6 +35,7 @@ CalendarEvent _event(
   stepsDone: stepsDone,
   attendees: attendees,
   eventWorkflowId: eventWorkflowId,
+  followUps: followUps,
 );
 
 final _morning = DateTime(2026, 10, 8, 9);
@@ -71,6 +74,25 @@ void main() {
 
     expect(shown.toMark, [yesterday, started]);
     expect(shown.today, isEmpty);
+  });
+
+  test('an event that starts no workflow is not asked about', () {
+    final plain = _event(
+      'plain',
+      DateTime(2026, 10, 7, 19),
+      followUps: const {},
+    );
+    final mapped = _event('mapped', DateTime(2026, 10, 7, 20));
+    final morning = _event(
+      'morning',
+      DateTime(2026, 10, 8, 8),
+      followUps: const {},
+    );
+
+    final shown = todayEvents([plain, mapped, morning], const [], _morning);
+
+    expect(shown.toMark, [mapped]);
+    expect(shown.today, [morning]);
   });
 
   test('steps due today or late, not ticked, within two weeks', () {

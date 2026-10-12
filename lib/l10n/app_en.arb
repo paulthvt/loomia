@@ -1403,7 +1403,11 @@
   },
   "eventType": "Type",
   "@eventType": {
-    "description": "Label of the event form's choice of event workflow: what kind of event it is (e.g. Workshop, Training). Choosing one fills the title and the after-the-event workflows."
+    "description": "Label of the event form's choice of event workflow: what kind of event it is (e.g. Workshop, Training). Choosing one fills the title and the after-the-event workflows. Optional: None by default."
+  },
+  "eventTypeNone": "None",
+  "@eventTypeNone": {
+    "description": "First choice in the event form's Type row: the event has no event workflow, so no checklist and nothing starts after it. Selected by default on a new event."
   },
   "eventWorkflowDeleteBody": "Events of this kind keep their title, without the steps.",
   "@eventWorkflowDeleteBody": {
