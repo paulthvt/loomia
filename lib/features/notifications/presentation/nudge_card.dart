@@ -46,8 +46,10 @@ class NudgeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Row(
+          // A Wrap, not a Row: the French labels don't fit side by side.
+          Wrap(
             spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
             children: [
               FilledButton(
                 onPressed: onTurnOn,
