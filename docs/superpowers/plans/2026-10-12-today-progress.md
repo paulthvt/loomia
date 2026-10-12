@@ -213,14 +213,14 @@ class DoneToday extends AsyncNotifier<int> {
 - Modify: `lib/features/today/presentation/today_page.dart` (`_TodayPageState`)
 - Modify: `test/features/today/today_page_test.dart`
 
-- [ ] **Step 1: Failing tests** (through `pumpLoomia`):
+- [x] **Step 1: Failing tests** (through `pumpLoomia`):
   - **"the hero counts today's ticks"**: `activities: FakeActivityRepository([<a step entry on today()>])` with Anna due. The page shows "1 of 2 done".
   - **"a tick moves the bar"**: Anna and Bruno due, no entries. "0 of 2 done"; tap Anna's ring, `pumpAndSettle`; "1 of 2 done".
   - **"a failed tick keeps the count"**: as the existing failed-tick test. "0 of 1 done" before and after.
   - **"the last tick shows the all-done hero"**: update the existing "a tick sends completeStep and the row leaves". It now expects "That's everyone for today" and "1 of 1 done", and no "You are up to date".
   - **"pull to refresh reloads the count"**: the fake's `calls` has `doneOn(...)` twice after a drag-to-refresh.
-  - **"back in the app with a stale book, the count reloads too"**: tick-elsewhere scenario. Add a `step` entry to the activity fake and advance past `PeopleController.staleAfter`. Then call `tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed)` (check how existing resume tests drive it, if any). The hero then reads "1 of 2 done", not "0 of 1 done".
-- [ ] **Step 2: Wire it.**
+  - **"back in the app with a stale book, the count reloads too"**: not a widget test. Staleness reads the real `DateTime.now()` against a one-minute window that a test can't advance, the same reason the existing resume reload has no Today test. It's one `invalidate` beside the existing stale-book refresh, so check it by hand: tick on the phone, come back to the web tab after a minute, and the bar reads one more.
+- [x] **Step 2: Wire it.**
   - In `build`: `final done = doneTodayProvider((owner: owner, day: today()));` and pass `done: ref.watch(done).value` to `TodayView`.
   - In `_tick`:
     - read the notifier before the `await`: `final counter = ref.read(doneTodayProvider((owner: ref.read(accountProvider)?.email, day: today())).notifier);`;
@@ -229,7 +229,7 @@ class DoneToday extends AsyncNotifier<int> {
     The notifier is autoDispose, but Today is watching it, so it's alive.
   - In `_refresh`: `ref.invalidate(doneTodayProvider);` (the whole family).
   - In `_onResume`, next to the stale-book refresh: `ref.invalidate(doneTodayProvider);`. A tick from another device must not take the row off without counting it.
-- [ ] **Step 3:** Run the gate. Commit `feat(today): the hero counts what was done today`.
+- [x] **Step 3:** Run the gate. Commit `feat(today): the hero counts what was done today`.
 
 ### Task 4: Previews, docs, goldens
 

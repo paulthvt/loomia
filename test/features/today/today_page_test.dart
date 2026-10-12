@@ -5,6 +5,7 @@ import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
@@ -63,6 +64,20 @@ Reminder _reminder(String text, int inDays) => (
 
 const _markPriceList = 'Mark "Send her the price list" done';
 
+/// A history entry on [on] (today by default), as a tick writes it.
+Activity _done(
+  String id, {
+  ActivityKind kind = ActivityKind.step,
+  DateTime? on,
+}) => Activity(
+  id: id,
+  personId: 'p9',
+  kind: kind,
+  happenedOn: on ?? today(),
+  text: 'Entry $id',
+  createdAt: DateTime.utc(2026),
+);
+
 void main() {
   testWidgets('due today and late show, oldest first; not yet due and '
       'paused do not', (tester) async {
@@ -100,9 +115,65 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(people.calls, contains('completeStep(p1, samples-1)'));
-    // The next step is due tomorrow.
+    // The next step is due tomorrow: nothing left, the hero stays, full.
     expect(find.text('Anna'), findsNothing);
-    expect(find.text('You are up to date'), findsOneWidget);
+    expect(find.text("That's everyone for today"), findsOneWidget);
+    expect(find.text('1 of 1 done'), findsOneWidget);
+    expect(find.text('You are up to date'), findsNothing);
+  });
+
+  testWidgets('the hero counts what was already done today, anywhere', (
+    tester,
+  ) async {
+    final people = FakePeopleRepository([_on('p1', 'Anna')]);
+    final activities = FakeActivityRepository([
+      _done('step'),
+      _done('reminder', kind: ActivityKind.reminder),
+      // Logged, or yesterday's: not today's list.
+      _done('call', kind: ActivityKind.call),
+      _done('old', on: addDays(today(), -1)),
+    ]);
+    await pumpLoomia(
+      tester,
+      size: _phone,
+      people: people,
+      activities: activities,
+    );
+
+    expect(find.text('2 of 3 done'), findsOneWidget);
+  });
+
+  testWidgets('a tick moves the bar', (tester) async {
+    final people = FakePeopleRepository([
+      _on('p1', 'Anna'),
+      _on('p2', 'Bruno', ago: 2),
+    ]);
+    await pumpLoomia(tester, size: _phone, people: people);
+    expect(find.text('0 of 2 done'), findsOneWidget);
+
+    await tester.tap(find.byTooltip(_markFirst).last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 of 2 done'), findsOneWidget);
+  });
+
+  testWidgets('pull to refresh counts again', (tester) async {
+    final people = FakePeopleRepository([_on('p1', 'Anna')]);
+    final activities = FakeActivityRepository();
+    await pumpLoomia(
+      tester,
+      size: _phone,
+      people: people,
+      activities: activities,
+    );
+    expect(find.text('0 of 1 done'), findsOneWidget);
+    // Ticked on another device meanwhile.
+    activities.store.add(_done('elsewhere'));
+
+    await tester.fling(find.text('Anna'), const Offset(0, 400), 1000);
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 of 2 done'), findsOneWidget);
   });
 
   testWidgets('a ticked row slides out while the others stay', (tester) async {
@@ -159,6 +230,7 @@ void main() {
     );
     expect(find.text('Anna'), findsOneWidget);
     expect(find.byTooltip(_markFirst), findsOneWidget);
+    expect(find.text('0 of 1 done'), findsOneWidget);
   });
 
   testWidgets('a reminder joins Priority beside the step; the person counts '
