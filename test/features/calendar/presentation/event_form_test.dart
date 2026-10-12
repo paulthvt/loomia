@@ -158,7 +158,32 @@ void main() {
     expect(find.text('New event'), findsOneWidget);
   });
 
-  testWidgets('a new event is a Workshop: its title, its stages', (
+  testWidgets('a new event has no type', (tester) async {
+    final events = FakeEventRepository();
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      eventWorkflows: _seeded(),
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    final none = tester.widget<ChoiceChip>(
+      find.widgetWithText(ChoiceChip, 'None'),
+    );
+    expect(none.selected, isTrue);
+    expect(find.text('After the event'), findsNothing);
+    await tester.enterText(_field('Title'), 'Team call');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    final saved = events.store.single;
+    expect(saved.title, 'Team call');
+    expect(saved.eventWorkflowId, isNull);
+    expect(saved.followUps, isEmpty);
+  });
+
+  testWidgets('Workshop, then None: no type, no After the event', (
     tester,
   ) async {
     final events = FakeEventRepository();
@@ -170,7 +195,33 @@ void main() {
       result: (_) {},
     );
 
-    expect(find.text('Workshop'), findsWidgets);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Workshop'));
+    await tester.pumpAndSettle();
+    expect(find.text('After the event'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'None'));
+    await tester.pumpAndSettle();
+    expect(find.text('After the event'), findsNothing);
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    final saved = events.store.single;
+    expect(saved.title, 'Workshop');
+    expect(saved.eventWorkflowId, isNull);
+    expect(saved.followUps, isEmpty);
+  });
+
+  testWidgets('a Workshop: its title, its stages', (tester) async {
+    final events = FakeEventRepository();
+    await pumpCalendarHarness(
+      tester,
+      events: events,
+      eventWorkflows: _seeded(),
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Workshop'));
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -232,6 +283,8 @@ void main() {
       result: (_) {},
     );
 
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Workshop'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('After the event'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Samples'));

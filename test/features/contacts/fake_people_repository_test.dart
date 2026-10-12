@@ -165,4 +165,24 @@ void main() {
       throwsA(isA<Object>()),
     );
   });
+
+  test('being at an event is no contact, as last_contact_on', () async {
+    Activity entry(String id, ActivityKind kind, DateTime on) => Activity(
+      id: id,
+      personId: 'p1',
+      kind: kind,
+      text: id,
+      happenedOn: on,
+      createdAt: on,
+    );
+    final people = FakePeopleRepository([marie])
+      ..activities = FakeActivityRepository([
+        entry('call', ActivityKind.call, DateTime(2026, 9, 10)),
+        entry('event', ActivityKind.event, DateTime(2026, 9, 25)),
+      ]);
+
+    final [person] = await people.list();
+
+    expect(person.lastContactOn, DateTime(2026, 9, 10));
+  });
 }

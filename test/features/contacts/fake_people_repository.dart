@@ -49,10 +49,13 @@ class FakePeopleRepository implements PeopleRepository {
     ).withReminders(reminders[person.id] ?? const []);
     final history = activities;
     if (history == null) return served;
-    // As last_contact_on: the latest entry that is not a stage change.
+    // As last_contact_on: the latest entry that is neither a stage change
+    // nor an event.
     final days = [
       for (final entry in history.store)
-        if (entry.personId == person.id && entry.kind != ActivityKind.stage)
+        if (entry.personId == person.id &&
+            entry.kind != ActivityKind.stage &&
+            entry.kind != ActivityKind.event)
           entry.happenedOn,
     ]..sort();
     return withLastContact(served, days.lastOrNull);
