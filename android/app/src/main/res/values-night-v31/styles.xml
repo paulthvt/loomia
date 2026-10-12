@@ -6,9 +6,8 @@
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:windowSplashScreenBackground">@color/ic_launcher_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_ring</item>
-        <!-- Android 16+ "expanded dark theme" otherwise darkens the system
-             splash to a muddy brown before Flutter's first (undarkened) frame. -->
-        <item name="android:forceDarkAllowed">false</item>
+        <!-- Android 16+ "expanded dark theme" darkens this splash (any non-dark
+             colour) with no app opt-out; accepted, see #294. -->
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
