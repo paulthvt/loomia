@@ -112,13 +112,16 @@ grouping (principle #6).
 *Purpose:* answer "what should I do today?" from arm's length.
 *Anatomy:* radius-20 `primary/base` block · `TODAY` eyebrow · one **sentence**
 (not a number) in `title-lg` · white progress bar on a `primary/hover` track ·
-footer: progress left, effort in minutes right.
-*Props:* `eyebrow`, `headline`, `progressLabel`, `effortLabel`.
+footer: today's count, left ("1 of 3 done").
+*Props:* `eyebrow`, `headline`, `progress` (`done`, `total`; none hides the bar
+and the footer).
 *Responsive:* mobile full width; desktop the width of the left column, headline
 steps to `headline` (24px).
 *Rules:* the **only** filled colour block in the product (guardrail #1). The count
-lives inside the sentence so it cannot read as a quota. Footer states effort in
-minutes, never a percentage of a target.
+of people lives inside the sentence so it cannot read as a quota. The footer
+counts today's own list (done plus still waiting), never a target and never a
+percentage. Everything done keeps the hero: "That's everyone for today", full
+bar.
 
 ### 12. ActionItem
 *Purpose:* the unit of Today — a suggestion, not a task.

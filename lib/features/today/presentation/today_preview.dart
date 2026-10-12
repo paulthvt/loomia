@@ -22,19 +22,26 @@ import 'package:material_ui/material_ui.dart';
 /// due: a phone shows five and "And one more waiting", a desktop all six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
-Widget todayMobileLight() => _app(AppTheme.light, _book, goals: _goals);
+Widget todayMobileLight() =>
+    _app(AppTheme.light, _book, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Mobile — dark', size: Size(390, 844))
-Widget todayMobileDark() => _app(AppTheme.dark, _book, goals: _goals);
+Widget todayMobileDark() => _app(AppTheme.dark, _book, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Desktop — light', size: Size(1440, 900))
-Widget todayDesktopLight() => _app(AppTheme.light, _book, goals: _goals);
+Widget todayDesktopLight() =>
+    _app(AppTheme.light, _book, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Desktop — dark', size: Size(1440, 900))
-Widget todayDesktopDark() => _app(AppTheme.dark, _book, goals: _goals);
+Widget todayDesktopDark() => _app(AppTheme.dark, _book, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Empty — light', size: Size(390, 844))
-Widget todayEmptyLight() => _app(AppTheme.light, const []);
+Widget todayEmptyLight() => _app(AppTheme.light, const [], done: 0);
+
+/// Everything on the list ticked: the hero stays, full (#292).
+@Preview(group: 'Today', name: 'All done — light', size: Size(390, 844))
+Widget todayAllDoneMobileLight() =>
+    _app(AppTheme.light, const [], goals: _goals, done: 3);
 
 @Preview(group: 'Today', name: 'Events — light', size: Size(390, 844))
 Widget todayEventsMobileLight() => _app(
@@ -46,6 +53,7 @@ Widget todayEventsMobileLight() => _app(
   ],
   events: _events,
   now: DateTime(2026, 9, 29, 18, 50),
+  done: 1,
 );
 
 /// Today's one-time offer of the daily summary, below Priority (#270), its
@@ -63,6 +71,7 @@ Widget todayNudgeMobileLight() => _app(
     onTurnOn: () {},
     onNotNow: () {},
   ),
+  done: 1,
 );
 
 final _now = DateTime(2026, 9, 29, 9);
@@ -200,6 +209,7 @@ Widget _app(
   TodayEvents events = noTodayEvents,
   DateTime? now,
   Widget? nudge,
+  int? done,
 }) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -210,6 +220,7 @@ Widget _app(
     theme: theme,
     home: TodayView(
       due: AsyncData(due),
+      done: done,
       now: now ?? _now,
       firstName: 'Pauline',
       onTick: (_) {},

@@ -166,6 +166,19 @@ class FakeActivityRepository implements ActivityRepository {
     store.removeWhere((entry) => entry.id == id);
   }
 
+  @override
+  Future<int> doneOn(DateTime day) async {
+    await _record('doneOn(${day.year}-${day.month}-${day.day})');
+    return store
+        .where(
+          (entry) =>
+              (entry.kind == ActivityKind.step ||
+                  entry.kind == ActivityKind.reminder) &&
+              entry.happenedOn == day,
+        )
+        .length;
+  }
+
   /// What the database trigger writes when a person changes stage. Not a
   /// call: the app never asks for it.
   void recordStage(String personId, Stage stage) => store.add(

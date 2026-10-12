@@ -43,6 +43,7 @@ import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/domain/today_events.dart';
+import 'package:loomia/features/today/presentation/done_today.dart';
 import 'package:loomia/features/today/presentation/today_event_items.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
@@ -85,17 +86,25 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   /// Contacts.
   void _onResume() {
     setState(() {});
-    final people = peopleProvider(ref.read(accountProvider)?.email);
+    final owner = ref.read(accountProvider)?.email;
+    final people = peopleProvider(owner);
     if (!ref.read(people.notifier).isStaleAt(DateTime.now())) return;
     ref.refresh(people.future).ignore();
+    // With the book: a tick from another device takes its row off and
+    // counts it, never one without the other.
+    ref.invalidate(doneTodayProvider);
   }
 
   Future<void> _tick(Due due) async {
     final key = due.key;
     if (!_busy.add(key)) return;
     setState(() {});
+    final done = ref.read(
+      doneTodayProvider((owner: ref.read(accountProvider)?.email, day: today()))
+          .notifier,
+    );
     try {
-      await writePeople(
+      final ticked = await writePeople(
         context,
         ref,
         (people) => switch (due) {
@@ -108,6 +117,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
             people.completeReminder(person, reminder, today()),
         },
       );
+      // The book dropped the row in this same microtask: the bar moves in
+      // the frame the row starts to leave.
+      if (ticked && mounted) done.add();
     } finally {
       if (mounted) setState(() => _busy.remove(key));
     }
@@ -133,6 +145,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   Future<void> _refresh() {
     ref.invalidate(goalsProvider(ref.read(accountProvider)?.email));
     ref.invalidate(eventsProvider(ref.read(accountProvider)?.email));
+    ref.invalidate(doneTodayProvider);
     return refreshPeople(context, ref);
   }
 
@@ -171,6 +184,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         _ => const AsyncLoading(),
       },
       now: now,
+      done: ref.watch(doneTodayProvider((owner: owner, day: today()))).value,
       firstName: account?.firstName ?? '',
       // With a sidebar, Settings is its account block instead.
       accountAction: context.screenSize.usesSideNavigation
@@ -300,6 +314,7 @@ class TodayView extends StatefulWidget {
     required this.onOpen,
     required this.onRetry,
     required this.onRefresh,
+    this.done,
     this.busy = const {},
     this.accountAction,
     this.goals,
@@ -318,6 +333,10 @@ class TodayView extends StatefulWidget {
   });
 
   final AsyncValue<List<Due>> due;
+
+  /// Steps and reminders ticked today; null while unknown or failed, and
+  /// then the hero has no bar.
+  final int? done;
 
   /// The device clock: the date, the greeting, and which steps are late.
   final DateTime now;
@@ -396,21 +415,21 @@ class _TodayViewState extends State<TodayView> {
     final day = DateTime(widget.now.year, widget.now.month, widget.now.day);
     final goals = widget.goals;
     final ritual = goals == null ? null : pendingRitual(day, goals.plans);
-    final goalWidgets = desktop
-        ? const <Widget>[]
-        : [
-            if (goals != null && hasGoalLine(goals))
-              GoalLine(
-                month: goals,
-                today: day,
-                model: widget.model,
-                onTap: widget.onGoals ?? () {},
-              ),
-            if (ritual != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
-            ],
-          ];
+    final goalLine = desktop || goals == null || !hasGoalLine(goals)
+        ? null
+        : GoalLine(
+            month: goals,
+            today: day,
+            model: widget.model,
+            onTap: widget.onGoals ?? () {},
+          );
+    final ritualCard = [
+      if (!desktop && ritual != null) ...[
+        const SizedBox(height: AppSpacing.md),
+        RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
+      ],
+    ];
+    final goalWidgets = [?goalLine, ...ritualCard];
     // Desktop: the month and the team beside the priority list.
     final side = [
       if (goals != null && hasGoalLine(goals))
@@ -453,6 +472,15 @@ class _TodayViewState extends State<TodayView> {
     ];
 
     final listed = switch (widget.due) {
+      AsyncData(:final value) when value.isEmpty && (widget.done ?? 0) > 0 =>
+        _allDone(
+          l10n,
+          widget.done!,
+          desktop,
+          goalLine,
+          ritualCard,
+          eventsBlock,
+        ),
       AsyncData(:final value) when value.isEmpty => [
         ...goalWidgets,
         ...eventsBlock,
@@ -549,6 +577,42 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
+  /// Everything on today's list was ticked: the hero stays, full, and the
+  /// up-to-date line sits under it (under the goal line on a phone, above the
+  /// close-the-month card).
+  List<Widget> _allDone(
+    AppLocalizations l10n,
+    int done,
+    bool desktop,
+    Widget? goalLine,
+    List<Widget> ritualCard,
+    List<Widget> eventsBlock,
+  ) => [
+    TodayHero(
+      eyebrow: l10n.todayTitle,
+      headline: l10n.todayAllDone,
+      progress: (done: done, total: done),
+    ),
+    ?goalLine,
+    Padding(
+      padding: desktop
+          ? const EdgeInsets.only(top: AppSpacing.sm)
+          : const EdgeInsetsDirectional.fromSTEB(
+              AppSpacing.xs,
+              AppSpacing.xs,
+              AppSpacing.xs,
+              0,
+            ),
+      child: Text(
+        l10n.todayEmptyBody,
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ),
+    ...ritualCard,
+    SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+    ...eventsBlock,
+  ];
+
   List<Widget> _due(
     AppLocalizations l10n,
     List<Due> due,
@@ -559,6 +623,7 @@ class _TodayViewState extends State<TodayView> {
     final shown = _expanded ? due : due.take(desktop ? 6 : 5).toList();
     final now = widget.now;
     final day = DateTime(now.year, now.month, now.day);
+    final done = widget.done;
     return [
       TodayHero(
         eyebrow: l10n.todayTitle,
@@ -566,6 +631,8 @@ class _TodayViewState extends State<TodayView> {
         headline: l10n.todayHeadline(
           {for (final row in due) row.person.id}.length,
         ),
+        // Rows, not people: each tick moves the bar.
+        progress: done == null ? null : (done: done, total: done + due.length),
       ),
       ...goalWidgets,
       SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),

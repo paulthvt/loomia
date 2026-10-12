@@ -103,6 +103,19 @@ class ActivityRepository {
 
   Future<void> delete(String id) =>
       guardPeople(() => _client.from(_table).delete().eq('id', id));
+
+  /// Steps and reminders ticked on [day]: the entries `complete_step` and
+  /// `complete_reminder` write. Today's "X of N done".
+  // ponytail: no (owner_id, happened_on) index; add one if this shows up slow.
+  Future<int> doneOn(DateTime day) => guardPeople(() async {
+    final response = await _client
+        .from(_table)
+        .select('id')
+        .inFilter('kind', [ActivityKind.step.name, ActivityKind.reminder.name])
+        .eq('happened_on', dayColumn(day))
+        .count(CountOption.exact);
+    return response.count;
+  });
 }
 
 final activityRepositoryProvider = Provider<ActivityRepository>(
