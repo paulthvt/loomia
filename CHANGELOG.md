@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.10.0](https://github.com/paulthvt/loomia/compare/0.9.0...0.10.0) (2026-10-12)
+
+
+### ✨ Features
+
+* **push:** ask for permission on a phone that hasn't allowed it ([#286](https://github.com/paulthvt/loomia/issues/286)) ([49982eb](https://github.com/paulthvt/loomia/commit/49982eb317eb9625fa68a15cd6b7e1834622b478))
+
+
+### 🐛 Bug Fixes
+
+* **push:** keep the push strings in release builds ([#284](https://github.com/paulthvt/loomia/issues/284)) ([2f1072e](https://github.com/paulthvt/loomia/commit/2f1072e9b853099ea8de895f123d226eeab76d11))
+
+
+### 🔧 Miscellaneous
+
+* **l10n:** sync translations ([#287](https://github.com/paulthvt/loomia/issues/287)) ([db3d869](https://github.com/paulthvt/loomia/commit/db3d8695a52e653fe5ae2cb30a32fbe1a0bdb086))
+
 ## [0.9.0](https://github.com/paulthvt/loomia/compare/0.8.0...0.9.0) (2026-10-12)
 
 
