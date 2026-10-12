@@ -86,10 +86,12 @@ Person withLastContact(Person person, DateTime? day) => Person(
   reminders: person.reminders,
 );
 
-/// Where ticking [stepId] leads: the next step's position, or 1e9 once done
-/// (far past any step, so a step moved or added at the end stays unmet).
+/// Where ticking [stepId] leads: the next step's position; past the last,
+/// the first step's when the workflow repeats, else 1e9 once done (far past
+/// any step, so a step moved or added at the end stays unmet).
 num positionAfter(Workflow workflow, String stepId) {
   final steps = workflow.steps;
   final index = steps.indexWhere((step) => step.id == stepId);
-  return index + 1 < steps.length ? steps[index + 1].position : 1e9;
+  if (index + 1 < steps.length) return steps[index + 1].position;
+  return workflow.repeats ? steps.first.position : 1e9;
 }

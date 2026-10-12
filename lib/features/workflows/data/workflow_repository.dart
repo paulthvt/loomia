@@ -56,6 +56,11 @@ class WorkflowRepository {
     );
   });
 
+  /// On: after the last step, the first comes back (#296).
+  Future<void> setRepeats(String id, bool on) => guardPeople(() async {
+    await _client.from('workflow').update({'repeats': on}).eq('id', id);
+  });
+
   /// [position] from `positionAt`.
   Future<void> addStep(
     String workflowId, {
@@ -116,6 +121,7 @@ Workflow workflowFromRow(Map<String, dynamic> row) => Workflow(
       Stage.values.asNameMap()[row['stage']] ?? (throw PeopleFailure.unknown),
   name: row['name'] as String,
   isDefault: row['is_default'] as bool,
+  repeats: row['repeats'] as bool? ?? false,
   steps: [
     for (final step
         in (row['workflow_step'] as List).cast<Map<String, dynamic>>())

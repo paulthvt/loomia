@@ -9,6 +9,7 @@ void main() {
     'stage': stage,
     'name': 'Samples',
     'is_default': true,
+    'repeats': true,
     'workflow_step': [
       {
         'id': 's2',
@@ -34,6 +35,7 @@ void main() {
 
     expect(workflow.stage, Stage.prospect);
     expect(workflow.isDefault, isTrue);
+    expect(workflow.repeats, isTrue);
     expect([for (final s in workflow.steps) s.id], ['s1', 's2']);
     expect(workflow.steps.last.position, 2.5);
     expect(workflow.steps.first.note, 'Keep it short');

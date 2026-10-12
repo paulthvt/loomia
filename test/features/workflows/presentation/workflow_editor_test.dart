@@ -67,7 +67,27 @@ FinderBase<SemanticsNode> _stepNode(String label) => find.semantics
 
 const _moveDown = CustomSemanticsAction(label: 'Move down');
 
+/// Health professionals is a prospect workflow.
+final _defaultSwitch = find.widgetWithText(
+  SwitchListTile,
+  'Default for new prospects',
+);
+final _repeatSwitch = find.widgetWithText(
+  SwitchListTile,
+  'Start over after the last step',
+);
+
+Workflow _weekly({bool repeats = true, int days = 7}) => Workflow(
+  id: 'weekly',
+  stage: Stage.team,
+  name: 'Weekly check-in',
+  isDefault: false,
+  repeats: repeats,
+  steps: [WorkflowStep(id: 'w1', position: 1, label: 'Check in', days: days)],
+);
+
 void main() {
+  _repeatTests();
   testWidgets('shows the stage and the name', (tester) async {
     await openWorkflows(tester, Routes.settingsWorkflowLocation('samples'));
 
@@ -487,13 +507,10 @@ void main() {
       workflows: workflows,
     );
 
-    await _tapVisible(tester, find.byType(SwitchListTile));
+    await _tapVisible(tester, _defaultSwitch);
 
     expect(workflows.calls, contains('setDefault(health, true)'));
-    expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-      isTrue,
-    );
+    expect(tester.widget<SwitchListTile>(_defaultSwitch).value, isTrue);
   });
 
   testWidgets('a failed switch says so and shows the saved value', (
@@ -507,13 +524,10 @@ void main() {
     );
     workflows.failWith = PeopleFailure.network;
 
-    await _tapVisible(tester, find.byType(SwitchListTile));
+    await _tapVisible(tester, _defaultSwitch);
 
     expect(find.text(_failed), findsOneWidget);
-    expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-      isFalse,
-    );
+    expect(tester.widget<SwitchListTile>(_defaultSwitch).value, isFalse);
   });
 
   testWidgets('delete says who follows it, then returns to the list', (
@@ -610,5 +624,43 @@ void main() {
       find.text("They'll have nothing planned; their history stays."),
       findsOneWidget,
     );
+  });
+}
+
+void _repeatTests() {
+  testWidgets('Start over is saved, and step 1 says it comes back', (
+    tester,
+  ) async {
+    final workflows = FakeWorkflowRepository([_weekly(repeats: false)]);
+    await openWorkflows(
+      tester,
+      Routes.settingsWorkflowLocation('weekly'),
+      workflows: workflows,
+    );
+    expect(find.text('7 days after'), findsOneWidget);
+
+    await _tapVisible(tester, _repeatSwitch);
+
+    expect(workflows.calls, contains('setRepeats(weekly, true)'));
+    expect(tester.widget<SwitchListTile>(_repeatSwitch).value, isTrue);
+    expect(
+      find.text('Step 1 comes back 7 days after the last step'),
+      findsOneWidget,
+    );
+    expect(find.text('7 days after the start or the last step'), findsOne);
+  });
+
+  testWidgets('Start over needs a day across the steps', (tester) async {
+    final workflows = FakeWorkflowRepository([
+      _weekly(repeats: false, days: 0),
+    ]);
+    await openWorkflows(
+      tester,
+      Routes.settingsWorkflowLocation('weekly'),
+      workflows: workflows,
+    );
+
+    expect(tester.widget<SwitchListTile>(_repeatSwitch).onChanged, isNull);
+    expect(find.text('Needs at least 1 day across the steps'), findsOneWidget);
   });
 }

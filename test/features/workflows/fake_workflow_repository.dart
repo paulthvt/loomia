@@ -88,6 +88,12 @@ class FakeWorkflowRepository implements WorkflowRepository {
     store.removeWhere((workflow) => workflow.id == id);
   }
 
+  @override
+  Future<void> setRepeats(String id, bool on) async {
+    await _record('setRepeats($id, $on)');
+    _change(id, (workflow) => _copy(workflow, repeats: on));
+  }
+
   /// Like the RPC: on clears the stage's other default; unknown fails.
   @override
   Future<void> setDefault(String id, bool on) async {
@@ -204,12 +210,14 @@ class FakeWorkflowRepository implements WorkflowRepository {
     Workflow workflow, {
     String? name,
     bool? isDefault,
+    bool? repeats,
     List<WorkflowStep>? steps,
   }) => Workflow(
     id: workflow.id,
     stage: workflow.stage,
     name: name ?? workflow.name,
     isDefault: isDefault ?? workflow.isDefault,
+    repeats: repeats ?? workflow.repeats,
     steps: steps ?? workflow.steps,
   );
 

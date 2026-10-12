@@ -31,6 +31,7 @@ class Workflow {
     required this.name,
     required this.isDefault,
     required List<WorkflowStep> steps,
+    this.repeats = false,
   }) : steps = _sortedSteps(steps);
 
   final String id;
@@ -39,6 +40,9 @@ class Workflow {
 
   /// The one someone new at [stage] starts.
   final bool isDefault;
+
+  /// After the last step, the first comes back (#296): never Done.
+  final bool repeats;
 
   /// Sorted by position.
   final List<WorkflowStep> steps;
@@ -82,3 +86,8 @@ num positionAt(List<WorkflowStep> steps, int index) {
   if (index >= steps.length) return steps.last.position + 1;
   return (steps[index - 1].position + steps[index].position) / 2;
 }
+
+/// Whether [steps] can start over: their days add up to at least 1, or a
+/// loop would be due again the moment it is ticked. Order does not matter.
+bool canRepeat(List<WorkflowStep> steps) =>
+    steps.fold(0, (sum, step) => sum + step.days) >= 1;

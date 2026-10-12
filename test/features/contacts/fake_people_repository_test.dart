@@ -118,6 +118,30 @@ void main() {
       expect(loyaltyKinds(activities), [ActivityKind.loyaltyStart]);
     });
 
+    test('a repeating workflow starts over, as complete_step', () async {
+      final people = FakePeopleRepository([claire])
+        ..workflows = [
+          Workflow(
+            id: 'w1',
+            stage: Stage.customer,
+            name: 'Two setups',
+            isDefault: true,
+            repeats: true,
+            steps: twoSetups.steps,
+          ),
+        ];
+
+      await people.completeStep('p2', 's1', DateTime(2026, 10, 2));
+      final again = await people.completeStep(
+        'p2',
+        's2',
+        DateTime(2026, 10, 9),
+      );
+
+      expect(again.currentStepId, 's1');
+      expect(again.dueOn, DateTime(2026, 10, 9));
+    });
+
     test('setLoyalty starts, moves and stops it with its entries', () async {
       final activities = FakeActivityRepository();
       final people = FakePeopleRepository([claire])..activities = activities;

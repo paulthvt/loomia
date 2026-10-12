@@ -6,6 +6,7 @@ import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/step_sheet.dart';
 import 'package:material_ui/material_ui.dart';
@@ -268,5 +269,72 @@ void main() {
     expect(find.widgetWithText(FormError, _failed), findsOneWidget);
     expect(find.text('Step 2'), findsOneWidget);
     expect(find.text('Send the kit'), findsOneWidget);
+  });
+
+  group('a repeating workflow needs a day across its steps', () {
+    const loop = 'A repeating workflow needs at least 1 day across its steps';
+    Workflow weekly(List<int> days) => Workflow(
+      id: 'weekly',
+      stage: Stage.team,
+      name: 'Weekly check-in',
+      isDefault: false,
+      repeats: true,
+      steps: [
+        for (final (index, d) in days.indexed)
+          WorkflowStep(
+            id: 'w${index + 1}',
+            position: index + 1,
+            label: 'Step ${index + 1}',
+            days: d,
+          ),
+      ],
+    );
+
+    testWidgets('no days on the only step is refused', (tester) async {
+      workflows = FakeWorkflowRepository([
+        weekly([7]),
+      ]);
+      await open(tester, index: 0, workflow: 'weekly');
+
+      await tester.enterText(field('Days after starting'), '0');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(loop), findsOneWidget);
+      expect(writes('updateStep'), isEmpty);
+    });
+
+    testWidgets('removing the step with the days is refused', (tester) async {
+      workflows = FakeWorkflowRepository([
+        weekly([0, 7]),
+      ]);
+      await open(tester, index: 1, workflow: 'weekly');
+
+      await tester.tap(find.text('Remove this step'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(FormError, loop), findsOneWidget);
+      expect(writes('removeStep'), isEmpty);
+    });
+
+    testWidgets('the same days on a workflow that ends are fine', (
+      tester,
+    ) async {
+      workflows = FakeWorkflowRepository([
+        Workflow(
+          id: 'weekly',
+          stage: Stage.team,
+          name: 'Weekly check-in',
+          isDefault: false,
+          steps: weekly([0, 7]).steps,
+        ),
+      ]);
+      await open(tester, index: 1, workflow: 'weekly');
+
+      await tester.tap(find.text('Remove this step'));
+      await tester.pumpAndSettle();
+
+      expect(writes('removeStep'), ['removeStep(w2)']);
+    });
   });
 }
