@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
@@ -80,6 +81,39 @@ void main() {
     expect(
       find.text("Notifications are off for Loomia in your phone's settings."),
       findsOneWidget,
+    );
+  });
+
+  testWidgets('on but not allowed here: Allow asks the phone', (tester) async {
+    final push = FakePush();
+    await open(
+      tester,
+      push: push,
+      notifications: FakeNotificationsRepository(on),
+    );
+    // Launch asked once already (PushScope); the phone said no.
+    push
+      ..isAllowed = false
+      ..asked = 0;
+    await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(Switch)),
+    );
+    container.read(routerProvider).go(Routes.settings);
+    await tester.pumpAndSettle();
+    container.read(routerProvider).go(Routes.settingsNotifications);
+    await tester.pumpAndSettle();
+    expect(
+      find.text("Notifications are off for Loomia in your phone's settings."),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Allow notifications'));
+    await tester.pumpAndSettle();
+    expect(push.asked, 1);
+    expect(
+      find.text("Notifications are off for Loomia in your phone's settings."),
+      findsNothing,
     );
   });
 

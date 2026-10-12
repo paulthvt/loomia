@@ -25,6 +25,7 @@ class NotificationSettingsForm extends StatelessWidget {
     required this.settings,
     required this.onChanged,
     this.onEnable,
+    this.onAllow,
     this.phone = true,
     this.allowed,
     this.failure,
@@ -36,6 +37,10 @@ class NotificationSettingsForm extends StatelessWidget {
 
   /// Turning the switch on, when it needs more than a save (the OS prompt).
   final VoidCallback? onEnable;
+
+  /// The warning's button: asks the OS again. Once the OS stops prompting,
+  /// the warning stays as the hint to the phone's settings.
+  final VoidCallback? onAllow;
 
   /// Push reaches this device. False on the web: the settings still apply
   /// to the phones.
@@ -88,9 +93,22 @@ class NotificationSettingsForm extends StatelessWidget {
               color: LoomiaColors.of(context).warningContainer,
               borderRadius: BorderRadius.circular(AppRadii.md),
             ),
-            child: Text(
-              l10n.notificationsPermissionOff,
-              style: AppTypography.bodySmall.copyWith(color: scheme.onSurface),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: AppSpacing.xs,
+              children: [
+                Text(
+                  l10n.notificationsPermissionOff,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: scheme.onSurface,
+                  ),
+                ),
+                if (onAllow != null)
+                  TextButton(
+                    onPressed: onAllow,
+                    child: Text(l10n.notificationsAllow),
+                  ),
+              ],
             ),
           ),
         ],

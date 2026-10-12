@@ -73,4 +73,36 @@ void main() {
     await pumpLoomia(tester, size: phone, notifications: notifications);
     expect(notifications.saved, isEmpty);
   });
+
+  group('summary on, this phone not allowed', () {
+    const on = NotificationSettings(enabled: true, timeZone: 'Europe/Paris');
+
+    testWidgets('asks on launch', (tester) async {
+      final push = FakePush();
+      await pumpLoomia(
+        tester,
+        size: phone,
+        push: push,
+        notifications: FakeNotificationsRepository(on),
+      );
+      expect(push.asked, 1);
+    });
+
+    testWidgets('not when allowed, off, or never answered', (tester) async {
+      for (final (allowed, settings) in [
+        (true, on),
+        (false, on.copyWith(enabled: false)),
+        (false, null),
+      ]) {
+        final push = FakePush(isAllowed: allowed);
+        await pumpLoomia(
+          tester,
+          size: phone,
+          push: push,
+          notifications: FakeNotificationsRepository(settings),
+        );
+        expect(push.asked, 0, reason: '$allowed $settings');
+      }
+    });
+  });
 }

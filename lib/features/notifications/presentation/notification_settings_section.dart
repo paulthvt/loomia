@@ -65,6 +65,11 @@ class _NotificationSettingsSectionState
     await save;
   }
 
+  Future<void> _allow() async {
+    final allowed = await ref.read(pushProvider).ask();
+    if (mounted) setState(() => _allowed = allowed);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -82,6 +87,7 @@ class _NotificationSettingsSectionState
         allowed: _allowed,
         failure: _failure,
         onChanged: _save,
+        onAllow: phone ? _allow : null,
         onEnable: phone
             ? () => _enable(value ?? NotificationSettings(timeZone: zone))
             : null,
