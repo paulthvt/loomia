@@ -15,17 +15,51 @@ class EventRepository {
 
   static const String _table = 'event';
 
-  /// Every column, and who is invited.
+  /// Every column, who is invited, and the series an occurrence is in.
   static const String _columns =
-      '*, event_attendee(person_id, came), event_step_done(step_id, done_on)';
+      '*, event_attendee(person_id, came), event_step_done(step_id, done_on), '
+      'event_series(id, every_weeks, first_on, until_on)';
 
-  /// Every event, earliest first.
+  /// Every event, earliest first, once every series is generated up to a
+  /// year after [today] (the device's).
   // ponytail: loads every event; read a month at a time (the starts_at
   // index is there) once someone has years of them.
-  Future<List<CalendarEvent>> list() => guardPeople(() async {
+  Future<List<CalendarEvent>> list(DateTime today) => guardPeople(() async {
+    await _client.rpc<void>(
+      'extend_event_series',
+      params: {'p_today': dayColumn(today)},
+    );
     final rows = await _client.from(_table).select(_columns).order('starts_at');
     return rows.map(eventFromRow).toList();
   });
+
+  /// A new series; its occurrences appear on the next [list]. Returns its id.
+  Future<String> addSeries(EventDraft draft, RepeatRule rule, String zone) =>
+      guardPeople(() async {
+        final row = await _client
+            .from('event_series')
+            .insert(seriesToRow(draft, rule, zone))
+            .select('id')
+            .single();
+        return row['id'] as String;
+      });
+
+  /// [add] and [remove] on [eventId]'s series and on every not done
+  /// occurrence from it on.
+  Future<void> setSeriesPeople(
+    String eventId, {
+    Iterable<String> add = const [],
+    Iterable<String> remove = const [],
+  }) => guardPeople(
+    () => _client.rpc<Object?>(
+      'set_series_attendees',
+      params: {
+        'p_event': eventId,
+        'p_add': add.toList(),
+        'p_remove': remove.toList(),
+      },
+    ),
+  );
 
   Future<CalendarEvent> add(EventDraft draft) => guardPeople(() async {
     final row = await _client
@@ -143,7 +177,46 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
         done['done_on'] as String,
       ),
   },
+  series: switch (row['event_series']) {
+    final Map<String, dynamic> series => (
+      id: series['id'] as String,
+      everyWeeks: series['every_weeks'] as int,
+      firstOn: DateTime.parse(series['first_on'] as String),
+      untilOn: switch (series['until_on']) {
+        final String day => DateTime.parse(day),
+        _ => null,
+      },
+    ),
+    _ => null,
+  },
 );
+
+/// The series row for New event with Repeat: the first day and the start
+/// as a local day and wall-clock time in [zone], so Postgres can place
+/// every later start in that zone.
+Map<String, Object?> seriesToRow(
+  EventDraft draft,
+  RepeatRule rule,
+  String zone,
+) {
+  final start = draft.startsAt;
+  String two(int value) => value.toString().padLeft(2, '0');
+  final until = rule.untilOn;
+  return {
+    'title': draft.title,
+    'first_on': dayColumn(start),
+    'starts_time': '${two(start.hour)}:${two(start.minute)}',
+    'minutes': draft.endsAt?.difference(start).inMinutes,
+    'time_zone': zone,
+    'every_weeks': rule.everyWeeks,
+    'until_on': until == null ? null : dayColumn(until),
+    'place': draft.place,
+    'link': draft.link,
+    'notes': draft.notes,
+    'event_workflow_id': draft.eventWorkflowId,
+    ...followUpsToRow(draft.followUps),
+  };
+}
 
 Map<String, Object?> draftToEventRow(EventDraft draft) => {
   'title': draft.title,

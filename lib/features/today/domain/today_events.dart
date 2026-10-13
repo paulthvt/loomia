@@ -43,7 +43,7 @@ TodayEvents todayEvents(
 ) {
   final day = DateTime(now.year, now.month, now.day);
   final from = DateTime(day.year, day.month, day.day - todayEventsDays);
-  final toMark = byStart(
+  final markable = byStart(
     events.where(
       (event) =>
           event.canMarkDone(now) &&
@@ -52,6 +52,15 @@ TodayEvents todayEvents(
           !event.day.isBefore(from),
     ),
   );
+  // A series asks once, about its latest (#298): not one row per week.
+  final latest = {
+    for (final event in markable)
+      if (event.series case final series?) series.id: event,
+  };
+  final toMark = [
+    for (final event in markable)
+      if (event.series == null || latest[event.series!.id] == event) event,
+  ];
   final today = [
     for (final event in eventsOn(events, day))
       if (!toMark.contains(event)) event,

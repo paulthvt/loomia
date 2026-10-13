@@ -26,7 +26,7 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
   Future<List<CalendarEvent>> build() async {
     final repository = ref.watch(eventRepositoryProvider);
     if (owner == null) return const [];
-    return repository.list();
+    return repository.list(today());
   }
 
   /// Saves a new event; the calendar shows it without a reload. Throws
@@ -35,6 +35,25 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
     final event = await ref.read(eventRepositoryProvider).add(draft);
     _put(event);
     return event;
+  }
+
+  /// Saves a series repeating by [rule] in [zone], then reloads: Postgres
+  /// generates the occurrences. Resolves to the first one. Throws
+  /// `PeopleFailure`.
+  Future<CalendarEvent> addRepeating(
+    EventDraft draft,
+    RepeatRule rule,
+    String zone,
+  ) async {
+    final id = await ref
+        .read(eventRepositoryProvider)
+        .addSeries(draft, rule, zone);
+    await _reload();
+    final first = (state.value ?? const <CalendarEvent>[])
+        .where((event) => event.series?.id == id)
+        .firstOrNull;
+    // The series saved, the reload failed: the list says so.
+    return first ?? (throw PeopleFailure.network);
   }
 
   /// Saves [id] as [draft]. Throws `PeopleFailure`.
@@ -54,16 +73,27 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
     ]);
   }
 
-  /// Throws `PeopleFailure`, and then nobody is added.
+  /// Throws `PeopleFailure`, and then nobody is added. On an occurrence,
+  /// they join it, the not done ones after it, and the series.
   Future<void> invite(String eventId, Iterable<String> personIds) async {
-    await ref.read(eventRepositoryProvider).invite(eventId, personIds);
+    final repository = ref.read(eventRepositoryProvider);
+    await (_inSeries(eventId)
+        ? repository.setSeriesPeople(eventId, add: personIds)
+        : repository.invite(eventId, personIds));
     await _reload();
   }
 
   Future<void> uninvite(String eventId, String personId) async {
-    await ref.read(eventRepositoryProvider).uninvite(eventId, personId);
+    final repository = ref.read(eventRepositoryProvider);
+    await (_inSeries(eventId)
+        ? repository.setSeriesPeople(eventId, remove: [personId])
+        : repository.uninvite(eventId, personId));
     await _reload();
   }
+
+  // ponytail: #299 asks "This event / This and following" here.
+  bool _inSeries(String eventId) =>
+      state.value?.any((e) => e.id == eventId && e.series != null) ?? false;
 
   /// Marks who was there. Their histories and last contact move with it, so
   /// the book and any open history reload too. Throws `PeopleFailure`.

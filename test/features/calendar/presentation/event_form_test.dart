@@ -346,4 +346,86 @@ void main() {
     expect(events.store.single.eventWorkflowId, isNull);
     expect(events.store.single.followUps, {Stage.customer: 'new-customer'});
   });
+
+  group('Repeat', () {
+    Future<void> open(
+      WidgetTester tester,
+      FakeEventRepository events, {
+      String? timeZone = 'Europe/Paris',
+    }) => pumpCalendarHarness(
+      tester,
+      events: events,
+      timeZone: timeZone,
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    Future<void> save(WidgetTester tester) async {
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('every week: a series, in the device zone', (tester) async {
+      final events = FakeEventRepository();
+      await open(tester, events);
+
+      expect(find.text('Repeat ends'), findsNothing);
+      await tester.enterText(_field('Title'), 'Team call');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Every week'));
+      await tester.pumpAndSettle();
+      // October 8, 2026 is a Thursday.
+      expect(find.text('Every week on Thursday'), findsOneWidget);
+      expect(find.text('Repeat ends'), findsOneWidget);
+      final never = find.widgetWithText(ChoiceChip, 'Never');
+      expect(tester.widget<ChoiceChip>(never).selected, isTrue);
+      await save(tester);
+
+      expect(events.calls, contains('addSeries(Team call, 1, Europe/Paris)'));
+      expect(events.store.first.startsAt, DateTime(2026, 10, 8, 19));
+      expect(events.store.length, greaterThan(50));
+    });
+
+    testWidgets("doesn't repeat: a single event", (tester) async {
+      final events = FakeEventRepository();
+      await open(tester, events);
+
+      await tester.enterText(_field('Title'), 'Coffee');
+      await save(tester);
+
+      expect(events.calls, contains('add(Coffee)'));
+      expect(events.store.single.series, isNull);
+    });
+
+    testWidgets('a device that cannot say its zone does not save', (
+      tester,
+    ) async {
+      final events = FakeEventRepository();
+      await open(tester, events, timeZone: null);
+
+      await tester.enterText(_field('Title'), 'Team call');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Every 2 weeks'));
+      await tester.pumpAndSettle();
+      await save(tester);
+
+      expect(find.byType(FormError), findsOneWidget);
+      expect(events.store, isEmpty);
+    });
+
+    testWidgets('editing an event offers no Repeat', (tester) async {
+      final event = CalendarEvent(
+        id: 'e1',
+        title: 'Coffee',
+        startsAt: DateTime(2026, 10, 8, 10),
+      );
+      await pumpCalendarHarness(
+        tester,
+        events: FakeEventRepository([event]),
+        open: (context) => showEventForm(context, event: event),
+        result: (_) {},
+      );
+
+      expect(find.text('Repeat'), findsNothing);
+    });
+  });
 }

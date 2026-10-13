@@ -157,6 +157,55 @@ void main() {
     expect(fake.calls.where((call) => call == 'list()'), hasLength(3));
   });
 
+  test('a repeating event: its occurrences, the first one back', () async {
+    final fake = FakeEventRepository();
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+
+    final first = await events.addRepeating(
+      _draft('Team call', DateTime(2026, 10, 13, 19)),
+      (everyWeeks: 2, untilOn: DateTime(2026, 11, 10)),
+      'Europe/Paris',
+    );
+
+    expect(first.startsAt, DateTime(2026, 10, 13, 19));
+    expect(
+      [
+        for (final event in container.read(eventsProvider(_owner)).value!)
+          event.day.day,
+      ],
+      [13, 27, 10],
+    );
+    expect(fake.calls, contains('addSeries(Team call, 2, Europe/Paris)'));
+  });
+
+  test('people on an occurrence reach the following ones', () async {
+    final fake = FakeEventRepository();
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    final first = await events.addRepeating(
+      _draft('Team call', DateTime(2026, 10, 13, 19)),
+      (everyWeeks: 1, untilOn: DateTime(2026, 10, 27)),
+      'Europe/Paris',
+    );
+    final second = container.read(eventsProvider(_owner)).value![1];
+
+    await events.invite(second.id, ['p1']);
+    await events.uninvite(second.id, 'p1');
+    await events.invite(first.id, ['p2']);
+
+    expect(fake.calls.where((call) => call.startsWith('invite')), isEmpty);
+    expect(
+      [
+        for (final event in container.read(eventsProvider(_owner)).value!)
+          event.attendees.map((a) => a.personId).join(),
+      ],
+      ['p2', 'p2', 'p2'],
+    );
+  });
+
   test('marking done reloads the events and the people', () async {
     final fake = FakeEventRepository([_workshop]);
     final people = FakePeopleRepository();
@@ -246,12 +295,12 @@ class _FailAfterMark extends FakeEventRepository {
   }
 
   @override
-  Future<List<CalendarEvent>> list() async {
+  Future<List<CalendarEvent>> list(DateTime today) async {
     if (_failNext) {
       _failNext = false;
       calls.add('list()');
       throw PeopleFailure.network;
     }
-    return super.list();
+    return super.list(today);
   }
 }

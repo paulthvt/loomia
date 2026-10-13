@@ -125,4 +125,68 @@ void main() {
     expect(row['customer_workflow_id'], isNull);
     expect(row['team_workflow_id'], isNull);
   });
+
+  test('reads the series an occurrence is in', () {
+    final event = eventFromRow({
+      'id': 'e1',
+      'title': 'Team call',
+      'starts_at': '2026-10-13T17:00:00+00:00',
+      'event_series': {
+        'id': 's1',
+        'every_weeks': 2,
+        'first_on': '2026-10-13',
+        'until_on': '2026-12-15',
+      },
+    });
+
+    expect(event.series, (
+      id: 's1',
+      everyWeeks: 2,
+      firstOn: DateTime(2026, 10, 13),
+      untilOn: DateTime(2026, 12, 15),
+    ));
+    expect(
+      eventFromRow({
+        'id': 'e2',
+        'title': 'Coffee',
+        'starts_at': '2026-10-13T08:00:00+00:00',
+        'event_series': null,
+      }).series,
+      isNull,
+    );
+  });
+
+  test('writes a series: local day and time, minutes, zone and rule', () {
+    final row = seriesToRow(
+      (
+        title: 'Team call',
+        startsAt: DateTime(2026, 10, 13, 19, 5),
+        endsAt: DateTime(2026, 10, 13, 20, 35),
+        place: null,
+        link: 'https://meet.google.com/abc',
+        notes: null,
+        eventWorkflowId: null,
+        followUps: const {},
+      ),
+      (everyWeeks: 1, untilOn: DateTime(2026, 12, 15)),
+      'Europe/Paris',
+    );
+
+    expect(row, {
+      'title': 'Team call',
+      'first_on': '2026-10-13',
+      'starts_time': '19:05',
+      'minutes': 90,
+      'time_zone': 'Europe/Paris',
+      'every_weeks': 1,
+      'until_on': '2026-12-15',
+      'place': null,
+      'link': 'https://meet.google.com/abc',
+      'notes': null,
+      'event_workflow_id': null,
+      'prospect_workflow_id': null,
+      'customer_workflow_id': null,
+      'team_workflow_id': null,
+    });
+  });
 }

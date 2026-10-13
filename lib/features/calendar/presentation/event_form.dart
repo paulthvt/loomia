@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -7,9 +11,11 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
+import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
@@ -57,6 +63,13 @@ class _EventFormState extends ConsumerState<_EventForm> {
   String? _eventWorkflowId;
   Map<Stage, String> _followUps = const {};
   String? _typeName;
+
+  /// New events only: every 1, 2 or 4 weeks; null doesn't repeat.
+  int? _repeatWeeks;
+
+  /// The last day it can take place; null is forever.
+  DateTime? _until;
+  bool _untilBeforeStart = false;
 
   @override
   void initState() {
@@ -131,6 +144,21 @@ class _EventFormState extends ConsumerState<_EventForm> {
     _endBeforeStart = false;
   });
 
+  Future<void> _pickUntil() async {
+    final day = await pickDay(
+      context,
+      initial: _until ?? DateTime(_day.year, _day.month + 1, _day.day),
+      first: _day,
+      last: DateTime(_day.year + 5),
+    );
+    if (day != null && mounted) {
+      setState(() {
+        _until = day;
+        _untilBeforeStart = false;
+      });
+    }
+  }
+
   List<EventWorkflow>? get _eventWorkflows =>
       ref.read(eventWorkflowsProvider(ref.read(accountProvider)?.email)).value;
 
@@ -154,6 +182,12 @@ class _EventFormState extends ConsumerState<_EventForm> {
     final endsAt = end == null ? null : _at(end);
     if (endsAt != null && !endsAt.isAfter(startsAt)) {
       setState(() => _endBeforeStart = true);
+      return;
+    }
+    final repeatWeeks = _repeatWeeks;
+    final until = _until;
+    if (repeatWeeks != null && until != null && until.isBefore(_day)) {
+      setState(() => _untilBeforeStart = true);
       return;
     }
     String? text(TextEditingController controller) {
@@ -193,9 +227,22 @@ class _EventFormState extends ConsumerState<_EventForm> {
     try {
       final events = ref.read(eventsProvider(owner).notifier);
       final event = widget.event;
-      final saved = event == null
-          ? await events.add(draft)
-          : await events.save(event.id, draft);
+      final CalendarEvent saved;
+      if (event != null) {
+        saved = await events.save(event.id, draft);
+      } else if (repeatWeeks != null) {
+        // Null when the device can't say: guessing UTC would move every
+        // start.
+        final zone =
+            await ref.read(deviceTimeZoneProvider.future) ??
+            (throw PeopleFailure.unknown);
+        saved = await events.addRepeating(draft, (
+          everyWeeks: repeatWeeks,
+          untilOn: until,
+        ), zone);
+      } else {
+        saved = await events.add(draft);
+      }
       if (mounted) Navigator.pop(context, saved);
     } on PeopleFailure catch (failure) {
       if (mounted) {
@@ -205,6 +252,91 @@ class _EventFormState extends ConsumerState<_EventForm> {
         });
       }
     }
+  }
+
+  /// Repeat and, once it repeats, Ends: chips with the line they make under
+  /// them, like Remind me's When.
+  List<Widget> _repeat(AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodyMedium?.copyWith(
+      color: LoomiaColors.of(context).textMuted,
+    );
+    final weeks = _repeatWeeks;
+    final until = _until;
+    return [
+      LabeledField(
+        label: l10n.eventRepeat,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppSpacing.sm,
+          children: [
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                ChoiceChip(
+                  label: Text(l10n.eventRepeatNever),
+                  selected: weeks == null,
+                  onSelected: (_) => setState(() => _repeatWeeks = null),
+                ),
+                for (final every in repeatWeeks)
+                  ChoiceChip(
+                    label: Text(l10n.eventRepeatEvery(every)),
+                    selected: weeks == every,
+                    onSelected: (_) => setState(() => _repeatWeeks = every),
+                  ),
+              ],
+            ),
+            if (weeks != null)
+              Text(
+                repeatLine(l10n, everyWeeks: weeks, firstOn: _day),
+                style: muted,
+              ),
+          ],
+        ),
+      ),
+      if (weeks != null)
+        LabeledField(
+          label: l10n.eventRepeatEnds,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: AppSpacing.sm,
+            children: [
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  ChoiceChip(
+                    label: Text(l10n.eventRepeatEndsNever),
+                    selected: until == null,
+                    onSelected: (_) => setState(() {
+                      _until = null;
+                      _untilBeforeStart = false;
+                    }),
+                  ),
+                  ChoiceChip(
+                    label: Text(l10n.eventRepeatEndsOn),
+                    selected: until != null,
+                    onSelected: (_) => unawaited(_pickUntil()),
+                  ),
+                ],
+              ),
+              if (until != null)
+                Text(
+                  DateFormat.yMMMMEEEEd(l10n.localeName).format(until),
+                  style: muted,
+                ),
+              if (_untilBeforeStart)
+                Text(
+                  l10n.eventRepeatEndsBeforeStart,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+            ],
+          ),
+        ),
+    ];
   }
 
   @override
@@ -318,6 +450,7 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 ),
               ],
             ),
+            if (widget.event == null) ..._repeat(l10n),
             LabeledField(
               label: l10n.eventPlace,
               child: TextFormField(

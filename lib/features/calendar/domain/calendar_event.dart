@@ -5,6 +5,22 @@ import 'package:loomia/features/workflows/domain/event_workflow.dart';
 /// marked done.
 typedef Attendee = ({String personId, bool came});
 
+/// The series an occurrence was generated from (#298): every [everyWeeks]
+/// weeks on [firstOn]'s weekday, until [untilOn] or forever. Days are local
+/// midnights.
+typedef EventSeries = ({
+  String id,
+  int everyWeeks,
+  DateTime firstOn,
+  DateTime? untilOn,
+});
+
+/// How a new event repeats; null [untilOn] is forever.
+typedef RepeatRule = ({int everyWeeks, DateTime? untilOn});
+
+/// The choices New event offers.
+const List<int> repeatWeeks = [1, 2, 4];
+
 /// Something on the calendar: a workshop, a training. [startsAt] and
 /// [endsAt] are instants; the calendar reads them in the device's time zone.
 class CalendarEvent {
@@ -21,6 +37,7 @@ class CalendarEvent {
     this.eventWorkflowId,
     this.followUps = const {},
     this.stepsDone = const {},
+    this.series,
   });
 
   final String id;
@@ -51,6 +68,9 @@ class CalendarEvent {
 
   /// Step id → the day it was ticked.
   final Map<String, DateTime> stepsDone;
+
+  /// The series it is an occurrence of; null for a single event.
+  final EventSeries? series;
 
   bool get done => doneAt != null;
 

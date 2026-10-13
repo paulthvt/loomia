@@ -137,6 +137,29 @@ void main() {
     expect(find.text('Thursday, October 8 · 9:00 AM'), findsOneWidget);
     expect(find.text('Join'), findsNothing);
     expect(find.byIcon(Icons.place_outlined), findsNothing);
+    expect(find.byIcon(Icons.repeat_rounded), findsNothing);
+  });
+
+  testWidgets('an occurrence says how it repeats', (tester) async {
+    await _pumpView(
+      tester,
+      CalendarEvent(
+        id: 'e3',
+        title: 'Team call',
+        startsAt: DateTime(2026, 10, 13, 19),
+        series: (
+          id: 's1',
+          everyWeeks: 1,
+          firstOn: DateTime(2026, 10, 13),
+          untilOn: DateTime(2026, 12, 15),
+        ),
+      ),
+    );
+
+    expect(
+      find.text('Every week on Tuesday · until December 15'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('before it starts: who is invited, add and remove', (
