@@ -5,7 +5,8 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The month-end ritual's invitation: "Close September, plan October", or
-/// "Plan October" when only that is left. Goals shows it; Today will (#144).
+/// "Plan October" when only that is left. Goals and Today show it; the
+/// month-end push says the same, from the same keys (#148).
 class RitualCard extends StatelessWidget {
   const RitualCard({required this.ritual, required this.onStart, super.key});
 
@@ -29,14 +30,16 @@ class RitualCard extends StatelessWidget {
         children: [
           Text(
             ritual.closes
-                ? l10n.ritualCloseAndPlan(ritual.close, ritual.plan)
-                : l10n.goalsPlanMonth(ritual.plan),
+                ? l10n.pushRitualTitle(ritual.close, ritual.plan)
+                : l10n.pushRitualPlanTitle(ritual.plan),
             style: theme.textTheme.titleMedium?.copyWith(
               color: scheme.onSecondaryContainer,
             ),
           ),
           Text(
-            ritual.closes ? l10n.ritualBody(ritual.plan) : l10n.ritualPlanBody,
+            ritual.closes
+                ? l10n.pushRitualBody(ritual.plan)
+                : l10n.pushRitualPlanBody,
             style: AppTypography.caption.copyWith(
               color: scheme.onSecondaryContainer,
             ),

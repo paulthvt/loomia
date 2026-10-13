@@ -18,8 +18,8 @@ String formatSummaryTime(BuildContext context, NotificationSettings settings) =>
       alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
     );
 
-/// Settings → Notifications, as it reads: the switch, time, days and time
-/// zone. Every change goes to [onChanged] at once; there is no Save.
+/// Settings → Notifications, as it reads: the two switches, then the time,
+/// days and time zone they share. Every change goes to [onChanged] at once; there is no Save.
 class NotificationSettingsForm extends StatelessWidget {
   const NotificationSettingsForm({
     required this.settings,
@@ -35,8 +35,9 @@ class NotificationSettingsForm extends StatelessWidget {
   final NotificationSettings settings;
   final ValueChanged<NotificationSettings> onChanged;
 
-  /// Turning the switch on, when it needs more than a save (the OS prompt).
-  final VoidCallback? onEnable;
+  /// Turning a switch on, when it needs more than a save (the OS prompt):
+  /// the settings to save.
+  final ValueChanged<NotificationSettings>? onEnable;
 
   /// The warning's button: asks the OS again. Once the OS stops prompting,
   /// the warning stays as the hint to the phone's settings.
@@ -46,7 +47,7 @@ class NotificationSettingsForm extends StatelessWidget {
   /// to the phones.
   final bool phone;
 
-  /// What the OS allows; false shows the warning while the summary is on.
+  /// What the OS allows; false shows the warning while a push is on.
   final bool? allowed;
 
   final PeopleFailure? failure;
@@ -56,7 +57,9 @@ class NotificationSettingsForm extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final on = settings.enabled;
+    final on = settings.any;
+    void turn(NotificationSettings next, {required bool value}) =>
+        value && onEnable != null ? onEnable!(next) : onChanged(next);
     final error = failure;
     final muted = AppTypography.bodySmall.copyWith(
       color: scheme.onSurfaceVariant,
@@ -78,10 +81,16 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsSummary),
               subtitle: Text(l10n.notificationsSummaryBody),
-              value: on,
-              onChanged: (value) => value && onEnable != null
-                  ? onEnable!()
-                  : onChanged(settings.copyWith(enabled: value)),
+              value: settings.enabled,
+              onChanged: (value) =>
+                  turn(settings.copyWith(enabled: value), value: value),
+            ),
+            SwitchListTile(
+              title: Text(l10n.notificationsRitual),
+              subtitle: Text(l10n.notificationsRitualBody),
+              value: settings.ritual,
+              onChanged: (value) =>
+                  turn(settings.copyWith(ritual: value), value: value),
             ),
           ],
         ),

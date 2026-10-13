@@ -3,7 +3,7 @@
 -- `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -62,6 +62,28 @@ select results_eq(
 select is(
   (select count(*)::int from public.device_token), 1,
   'still one row'
+);
+
+-- The kinds the installed app can show (#148).
+select is(
+  (select push_kinds::text from public.device_token), '{daily_summary}',
+  'an app that names no kinds only gets the daily summary'
+);
+set local role authenticated;
+select public.register_device(
+  't1', 'ios', 'en', '{daily_summary,month_ritual}');
+reset role;
+select is(
+  (select push_kinds::text from public.device_token),
+  '{daily_summary,month_ritual}',
+  'a newer app names both'
+);
+set local role authenticated;
+select public.register_device('t1', 'ios', 'en');
+reset role;
+select is(
+  (select push_kinds::text from public.device_token), '{daily_summary}',
+  'the same phone back on an older build: the default again'
 );
 
 set local role authenticated;

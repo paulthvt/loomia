@@ -5,19 +5,23 @@ void main() {
   test('defaults: off, 19:00, Monday to Friday', () {
     const settings = NotificationSettings(timeZone: 'Europe/Paris');
     expect(settings.enabled, isFalse);
+    expect(settings.ritual, isFalse);
+    expect(settings.any, isFalse);
     expect((settings.hour, settings.minute), (19, 0));
     expect(settings.days, {1, 2, 3, 4, 5});
   });
 
   test('a row reads back as it was saved', () {
     const settings = NotificationSettings(
-      enabled: true,
+      ritual: true,
       hour: 7,
       minute: 5,
       days: {6, 1, 7},
       timeZone: 'America/New_York',
     );
     final row = settings.toRow();
+    expect(row['summary_enabled'], isFalse);
+    expect(row['ritual_enabled'], isTrue);
     expect(row['summary_time'], '07:05');
     expect(row['summary_days'], [1, 6, 7]);
     expect(

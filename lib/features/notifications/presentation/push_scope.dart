@@ -45,12 +45,12 @@ class _PushScopeState extends ConsumerState<PushScope> {
     final zone = await ref.read(deviceTimeZoneProvider.future);
     if (zone != null && mounted) await controller.followDevice(zone);
 
-    // The summary is the account's, permission the phone's: a phone that
+    // The pushes are the account's, permission the phone's: a phone that
     // hasn't allowed it yet is asked (#283). No memory needed here: iOS asks
     // once ever, Android 13+ twice at most, then answers without a prompt.
     try {
       final settings = await ref.read(provider.future);
-      if (settings?.enabled == true && await push.allowed() == false) {
+      if (settings?.any == true && await push.allowed() == false) {
         await push.ask();
       }
     } on PeopleFailure {

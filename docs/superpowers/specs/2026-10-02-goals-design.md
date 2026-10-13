@@ -43,7 +43,7 @@ Built from a real user's practice (a dōTERRA consultant). Her month has:
 | Navigation | Today · Contacts · Team · Goals until the Calendar epic. Sidebar gains Goals. |
 | Habits ("What you said you would do") | Not built. Parked issue. |
 | Upline sees my plan | Not built. Needs connections (#67); Personal plan, opt-in per member (#147). |
-| Push reminder for the ritual | Not built. Waits for FCM. |
+| Push reminder for the ritual | Built in #148: `2026-10-13-month-end-push-design.md`. |
 | Currency | None. An amount is a plain number in the business model's unit. |
 
 ## 1. Business model
@@ -266,7 +266,7 @@ Updated frames:
 
 ## Later in this epic (parked issues)
 
-Habits. Upline visibility (#147, Personal plan). Push reminders for the ritual (FCM). AI
+Habits. Upline visibility (#147, Personal plan). Push reminders for the ritual (#148, built). AI
 help to set targets.
 
 ## Calendar epic (sketch, designed when started)

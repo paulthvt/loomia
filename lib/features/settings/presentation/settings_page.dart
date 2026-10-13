@@ -322,7 +322,7 @@ class _SettingsListState extends ConsumerState<_SettingsList>
               subtitle: Text(switch (ref
                   .watch(notificationSettingsProvider(account?.email))
                   .value) {
-                final s? when s.enabled => formatSummaryTime(context, s),
+                final s? when s.any => formatSummaryTime(context, s),
                 _ => l10n.notificationsOff,
               }),
               trailing: const Icon(Icons.chevron_right_rounded),

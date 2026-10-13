@@ -15,7 +15,9 @@ class NotificationsRepository {
   Future<NotificationSettings?> load() => guardPeople(() async {
     final row = await _client
         .from('notification_settings')
-        .select('summary_enabled, summary_time, summary_days, time_zone')
+        .select(
+          'summary_enabled, ritual_enabled, summary_time, summary_days, time_zone',
+        )
         .maybeSingle();
     return row == null ? null : NotificationSettings.fromRow(row);
   });

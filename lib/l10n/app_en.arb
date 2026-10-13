@@ -1687,21 +1687,26 @@
   },
   "planNumberInvalid": "Use a number, or leave it empty.",
   "@planNumberInvalid": { "description": "Error under a planning field that holds something other than a number of 0 or more." },
-  "ritualCloseAndPlan": "Close {close}, plan {plan}",
-  "@ritualCloseAndPlan": {
-    "description": "Card title on Goals (and Today, later) in the last 3 days of a month and the first 5 of the next: look back on a month, then plan the next.",
+  "pushRitualTitle": "Close {close}, plan {plan}",
+  "@pushRitualTitle": {
+    "description": "Card title on Goals and Today in the last 3 days of a month and the first 5 of the next: look back on a month, then plan the next. Also the title of the month-end push on the lock screen, so no names. The phone renders the push, so tool/push_strings.dart copies it into the native strings files.",
     "placeholders": {
       "close": { "type": "DateTime", "format": "MMMM" },
       "plan": { "type": "DateTime", "format": "MMMM" }
     }
   },
-  "ritualBody": "See how the month went, then pick what you aim for in {plan}. About two minutes.",
-  "@ritualBody": {
-    "description": "Under the close-and-plan card's title, on Goals and Today.",
+  "pushRitualBody": "See how the month went, then pick what you aim for in {plan}. About two minutes.",
+  "@pushRitualBody": {
+    "description": "Under the close-and-plan card's title, on Goals and Today, and the body of the month-end push.",
     "placeholders": { "plan": { "type": "DateTime", "format": "MMMM" } }
   },
-  "ritualPlanBody": "Pick a few numbers before the month starts.",
-  "@ritualPlanBody": { "description": "Under the card's title when only next month's plan is left." },
+  "pushRitualPlanTitle": "Plan {month}",
+  "@pushRitualPlanTitle": {
+    "description": "Card title, and month-end push title, when last month is closed (or was never planned) and only next month's plan is left.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "pushRitualPlanBody": "Pick a few numbers before the month starts.",
+  "@pushRitualPlanBody": { "description": "Under the card's title, and the month-end push body, when only next month's plan is left." },
   "ritualStart": "Start",
   "@ritualStart": { "description": "Button of the close-and-plan card; opens the flow." },
   "closeStep": "Step {step} of {total}",
@@ -2473,7 +2478,7 @@
   },
   "notificationsOff": "Off",
   "@notificationsOff": {
-    "description": "Value under the Notifications row in Settings when the daily summary is turned off."
+    "description": "Value under the Notifications row in Settings when both the daily summary and the month-end review are turned off."
   },
   "notificationsSummary": "Daily summary",
   "@notificationsSummary": {
@@ -2483,13 +2488,31 @@
   "@notificationsSummaryBody": {
     "description": "Line under the Daily summary switch, saying what the push contains."
   },
+  "notificationsRitual": "Month-end review",
+  "@notificationsRitual": {
+    "description": "Switch label: one push when it's time to look back on the month and plan the next (the last days of a month). Off by default."
+  },
+  "notificationsRitualBody": "When it's time to close the month and plan the next.",
+  "@notificationsRitualBody": {
+    "description": "Line under the Month-end review switch, saying when that push comes."
+  },
+  "planReminder": "Remind me when {month} ends",
+  "@planReminder": {
+    "description": "Switch on the planning screen: turns on the month-end push, which comes in the last days of month.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "planReminderBody": "One note at {time} when it's time to close it.",
+  "@planReminderBody": {
+    "description": "Under the Remind me switch. time is the user's summary time, already formatted (7:00 PM, 19:00); it refers to the month.",
+    "placeholders": { "time": { "type": "String" } }
+  },
   "notificationsTime": "Time",
   "@notificationsTime": {
     "description": "Row label: the time of day the daily summary is sent, in the user's local time."
   },
   "notificationsDays": "Days",
   "@notificationsDays": {
-    "description": "Label above the weekday chips: the days the daily summary is sent."
+    "description": "Label above the weekday chips: the days the daily summary is sent, and the month-end review can be."
   },
   "notificationsTimeZone": "Time zone: {zone}",
   "@notificationsTimeZone": {

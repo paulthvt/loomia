@@ -255,6 +255,17 @@ Firebase Cloud Messaging, Android and iOS (#268); only `firebase_core` and
   token, drops dead ones, and hands the day back when every send failed for a
   retryable reason (three attempts). Guarantee: at most one summary per user
   per local day; a crash after the claim loses that day's.
+- **The month-end push (#148).** A second kind with its own switch
+  (`ritual_enabled`), sent at the summary time on the first selected day of
+  the close-and-plan window. `pending_ritual` is the Today card's rule in SQL.
+  The app keeps `pendingRitual` over the plans it has already loaded, and
+  `month_ritual_test.sql` mirrors its cases. `claim_month_rituals` claims one
+  row per window, dated the month to plan. The same function runs one job per
+  kind. A device lists the kinds its build has strings for
+  (`device_token.push_kinds`, `pushKinds` in `device_repository.dart`) and
+  gets no other: a new kind ships its strings first, then joins that list.
+  `tool/push_strings.dart` writes the English text for a key a language
+  lacks, so every key the sender names exists on the phone.
 
 ### Not yet present, by design
 

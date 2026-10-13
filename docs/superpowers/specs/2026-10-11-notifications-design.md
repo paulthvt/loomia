@@ -19,7 +19,7 @@ when there is nothing to do, and never unless they asked for it.
 | --- | --- |
 | Default | **Off.** Design principle 4: no push before the user opts into that nudge. 19:00 and Monday–Friday are prefilled, so turning it on is one tap. |
 | Asking | A card on Today, once: "Want a daily nudge?" with the time as a button (19:00 prefilled, the platform picker), then Turn on (then the OS permission) or Not now. The time is chosen on the card because a time that doesn't suit is the likeliest no (#288); days stay Monday–Friday, changed in Settings. Either answer creates the settings row, and the card shows only while there is none. |
-| Kinds | One: the daily summary. A separate reminder or step push would land the same day as the summary with the same item. `kind` is a column so the next kind needs no new table. |
+| Kinds | One: the daily summary. A separate reminder or step push would land the same day as the summary with the same item. `kind` is a column so the next kind needs no new table. Since #148, a second kind, the month-end push (`2026-10-13-month-end-push-design.md`). |
 | What it counts | People with a workflow step (`due_on`) or a reminder due today or late, in the user's local date: Today's headline count. Event checklist steps and "How did Workshop go?" later; their rule is Dart-only today and would move to SQL first. |
 | Nothing due | Nothing sent. |
 | Time per reminder | No. Everything due is a day, not an instant; a time per item means a picker on every reminder and a push per item. The summary time is "when I work on my business". Revisit if users ask. |

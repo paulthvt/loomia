@@ -1,15 +1,35 @@
-import { type Outcome, summaryMessage } from './message.ts'
+import {
+  type Message,
+  type Outcome,
+  type RitualClaim,
+  ritualMessage,
+  summaryMessage,
+} from './message.ts'
+
+/** notification_kind; a device only gets the kinds its app lists. */
+export type Kind = 'daily_summary' | 'month_ritual'
 
 export type Claim = { owner_id: string; local_date: string; people: number }
-export type Device = { owner_id: string; token: string; locale: string }
+export type Device = {
+  owner_id: string
+  token: string
+  locale: string
+  push_kinds: Kind[]
+}
+
+/** One kind of push: who is due now (already claimed), and what they get. */
+export type Job<C extends { owner_id: string }> = {
+  kind: Kind
+  claim(): Promise<C[]>
+  /** Hands the claim back for the next run. */
+  release(claim: C): Promise<void>
+  message(claim: C, device: Device): Message
+}
 
 export type Deps = {
-  /** claim_daily_summaries(): who is due now, already claimed. */
-  claim(): Promise<Claim[]>
   devicesOf(owners: string[]): Promise<Device[]>
   drop(tokens: string[]): Promise<void>
-  release(owner: string, date: string): Promise<void>
-  send(message: ReturnType<typeof summaryMessage>): Promise<Outcome>
+  send(message: Message): Promise<Outcome>
 }
 
 export type Result = {
@@ -20,13 +40,39 @@ export type Result = {
   failed: number
 }
 
+/** The daily summary (#269): claim_daily_summaries, per local day. */
+export const summaryJob = (
+  claim: () => Promise<Claim[]>,
+  release: (owner: string, date: string) => Promise<void>,
+): Job<Claim> => ({
+  kind: 'daily_summary',
+  claim,
+  release: (c) => release(c.owner_id, c.local_date),
+  message: (c, d) => summaryMessage(d.token, d.locale, c.people),
+})
+
+/** The month-end push (#148): claim_month_rituals, per window. */
+export const ritualJob = (
+  claim: () => Promise<RitualClaim[]>,
+  release: (owner: string, plan: string) => Promise<void>,
+): Job<RitualClaim> => ({
+  kind: 'month_ritual',
+  claim,
+  release: (c) => release(c.owner_id, c.to_plan),
+  message: (c, d) => ritualMessage(d.token, d.locale, c),
+})
+
 /**
- * One run: claim, send to every phone of each claimed user, drop dead tokens,
- * and hand a day back when nothing went out but a retry might work. A claim
- * with no phone is kept: there is nothing to retry.
+ * One run of one kind: claim, send to every phone of each claimed user whose
+ * app shows that kind, drop dead tokens, and hand a claim back when nothing
+ * went out but a retry might work. A claim with no phone is kept: there is
+ * nothing to retry.
  */
-export async function handle(deps: Deps): Promise<Result> {
-  const claims = await deps.claim()
+export async function handle<C extends { owner_id: string }>(
+  deps: Deps,
+  job: Job<C>,
+): Promise<Result> {
+  const claims = await job.claim()
   const result: Result = {
     claimed: claims.length,
     sent: 0,
@@ -38,10 +84,11 @@ export async function handle(deps: Deps): Promise<Result> {
 
   let devices: Device[]
   try {
-    devices = await deps.devicesOf(claims.map((c) => c.owner_id))
+    devices = (await deps.devicesOf(claims.map((c) => c.owner_id)))
+      .filter((d) => d.push_kinds.includes(job.kind))
   } catch (error) {
-    // Nothing was sent: every day goes back for the next run.
-    for (const c of claims) await deps.release(c.owner_id, c.local_date)
+    // Nothing was sent: every claim goes back for the next run.
+    for (const c of claims) await job.release(c)
     throw error
   }
 
@@ -52,7 +99,7 @@ export async function handle(deps: Deps): Promise<Result> {
         .filter((d) => d.owner_id === claim.owner_id)
         .map(async (d) => {
           const o = await deps
-            .send(summaryMessage(d.token, d.locale, claim.people))
+            .send(job.message(claim, d))
             .catch((): Outcome => 'retry')
           if (o === 'drop') dead.push(d.token)
           return o
@@ -61,7 +108,7 @@ export async function handle(deps: Deps): Promise<Result> {
     result.sent += outcomes.filter((o) => o === 'sent').length
     result.failed += outcomes.filter((o) => o === 'failed').length
     if (!outcomes.includes('sent') && outcomes.includes('retry')) {
-      await deps.release(claim.owner_id, claim.local_date)
+      await job.release(claim)
       result.released++
     }
   }

@@ -1,8 +1,23 @@
 // deno test supabase/functions
 import { deepStrictEqual as eq, ok } from 'node:assert/strict'
 import { fcmSender } from './fcm.ts'
-import { type Claim, type Deps, type Device, handle } from './handler.ts'
-import { type Outcome, outcome, summaryMessage } from './message.ts'
+import {
+  type Claim,
+  type Deps,
+  type Device,
+  handle,
+  type Kind,
+  type Job,
+  ritualJob,
+  summaryJob,
+} from './handler.ts'
+import {
+  monthName,
+  type Outcome,
+  outcome,
+  ritualMessage,
+  summaryMessage,
+} from './message.ts'
 
 Deno.test('the message is a loc key per language and count, no text', () => {
   const one = summaryMessage('t', 'fr', 1).message
@@ -20,6 +35,46 @@ Deno.test('the message is a loc key per language and count, no text', () => {
     'push_summary_body_other_en',
   )
   ok(!JSON.stringify(one).match(/"(title|body)"/))
+})
+
+Deno.test('the month-end push is the card, title and body, in the phone language', () => {
+  const claim = {
+    owner_id: 'A',
+    to_close: '2026-09-01',
+    to_plan: '2026-10-01',
+    closes: true,
+  }
+  const en = ritualMessage('t', 'en', claim).message
+  eq(en.android.notification, {
+    title_loc_key: 'push_ritual_title_en',
+    title_loc_args: ['September', 'October'],
+    body_loc_key: 'push_ritual_body_en',
+    body_loc_args: ['October'],
+  })
+  eq(en.apns.payload.aps.alert, {
+    'title-loc-key': 'push_ritual_title_en',
+    'title-loc-args': ['September', 'October'],
+    'loc-key': 'push_ritual_body_en',
+    'loc-args': ['October'],
+  })
+  eq(en.data, { type: 'month_ritual' })
+  ok(!JSON.stringify(en).match(/"(title|body)"/))
+
+  eq(
+    ritualMessage('t', 'fr', claim).message.android.notification.title_loc_args,
+    ['septembre', 'octobre'],
+  )
+  eq(
+    ritualMessage('t', 'fr', { ...claim, closes: false }).message.android
+      .notification,
+    {
+      title_loc_key: 'push_ritual_plan_title_fr',
+      title_loc_args: ['octobre'],
+      body_loc_key: 'push_ritual_plan_body_fr',
+      body_loc_args: [],
+    },
+  )
+  eq(monthName('2027-01-01', 'en'), 'January', 'the 1st stays in its month')
 })
 
 Deno.test('FCM answers', () => {
@@ -53,14 +108,9 @@ function fakes(
 ) {
   const calls = { drop: [] as string[][], release: [] as string[] }
   const deps: Deps = {
-    claim: () => Promise.resolve(claims),
     devicesOf: () => Promise.resolve(devices),
     drop: (tokens) => {
       calls.drop.push(tokens)
-      return Promise.resolve()
-    },
-    release: (owner, date) => {
-      calls.release.push(`${owner} ${date}`)
       return Promise.resolve()
     },
     send: (m) => {
@@ -70,11 +120,26 @@ function fakes(
         : Promise.resolve(a)
     },
   }
-  return { deps, calls }
+  const job: Job<Claim> = summaryJob(
+    () => Promise.resolve(claims),
+    (owner, date) => {
+      calls.release.push(`${owner} ${date}`)
+      return Promise.resolve()
+    },
+  )
+  return { deps, job, calls }
 }
 
+const both: Kind[] = ['daily_summary', 'month_ritual']
+const phone = (owner_id: string, token: string, locale = 'en'): Device => ({
+  owner_id,
+  token,
+  locale,
+  push_kinds: both,
+})
+
 Deno.test('a run drops dead tokens and hands back what can be retried', async () => {
-  const { deps, calls } = fakes(
+  const { deps, job, calls } = fakes(
     [
       { owner_id: 'A', local_date: '2026-10-12', people: 3 },
       { owner_id: 'B', local_date: '2026-10-12', people: 1 },
@@ -82,15 +147,15 @@ Deno.test('a run drops dead tokens and hands back what can be retried', async ()
       { owner_id: 'D', local_date: '2026-10-12', people: 2 },
     ],
     [
-      { owner_id: 'A', token: 'a1', locale: 'en' },
-      { owner_id: 'A', token: 'a2', locale: 'fr' },
-      { owner_id: 'B', token: 'b1', locale: 'en' },
-      { owner_id: 'D', token: 'd1', locale: 'en' },
-      { owner_id: 'D', token: 'd2', locale: 'en' },
+      phone('A', 'a1'),
+      phone('A', 'a2', 'fr'),
+      phone('B', 'b1'),
+      phone('D', 'd1'),
+      phone('D', 'd2'),
     ],
     { a1: 'sent', a2: 'drop', b1: 'retry', d1: 'throw', d2: 'drop' },
   )
-  const result = await handle(deps)
+  const result = await handle(deps, job)
   eq(calls.drop, [['a2', 'd2']])
   eq(
     calls.release,
@@ -100,20 +165,54 @@ Deno.test('a run drops dead tokens and hands back what can be retried', async ()
   eq(result, { claimed: 4, sent: 1, dropped: 2, released: 2, failed: 0 })
 })
 
+Deno.test('an app without the kind is not sent it, and the claim is kept', async () => {
+  const { deps } = fakes(
+    [],
+    [{ ...phone('A', 'old'), push_kinds: ['daily_summary'] }, phone('B', 'new')],
+    { old: 'retry', new: 'sent' },
+  )
+  const sent: string[] = []
+  const send = deps.send
+  deps.send = (m) => {
+    sent.push(m.message.token)
+    return send(m)
+  }
+  const released: string[] = []
+  const claim = (owner_id: string) => ({
+    owner_id,
+    to_close: '2026-09-01',
+    to_plan: '2026-10-01',
+    closes: true,
+  })
+  const result = await handle(
+    deps,
+    ritualJob(
+      () => Promise.resolve([claim('A'), claim('B')]),
+      (owner, plan) => {
+        released.push(`${owner} ${plan}`)
+        return Promise.resolve()
+      },
+    ),
+  )
+  eq(sent, ['new'])
+  eq(released, [], 'A has no phone for it: nothing to retry')
+  eq(result.sent, 1)
+})
+
 Deno.test('nothing claimed, nothing asked', async () => {
-  const { deps } = fakes([], [], {})
+  const { deps, job } = fakes([], [], {})
   deps.devicesOf = () => Promise.reject(new Error('not called'))
-  eq((await handle(deps)).claimed, 0)
+  eq((await handle(deps, job)).claimed, 0)
 })
 
 Deno.test('devices unreadable: every day goes back', async () => {
-  const { deps, calls } = fakes(
+  const { deps, job, calls } = fakes(
     [{ owner_id: 'A', local_date: '2026-10-12', people: 1 }],
     [],
     {},
   )
   deps.devicesOf = () => Promise.reject(new Error('db'))
-  await handle(deps).then(() => ok(false), () => {})
+  await handle(deps, job).then(() => ok(false), () => {})
   eq(calls.release, ['A 2026-10-12'])
 })
 
