@@ -50,10 +50,51 @@ Widget workflowEditorLight() => _app(
         onOpenStep: (_) {},
         onMove: (_, _) async {},
         onDefault: (_) async {},
+        onRepeats: (_) async {},
         onDelete: () async {},
       ),
     ),
   ),
+);
+
+@Preview(
+  group: 'Workflows',
+  name: 'Editor, repeating — light',
+  size: Size(390, 844),
+)
+Widget workflowEditorRepeatingLight() => _app(
+  Builder(
+    builder: (context) => SettingsScroll(
+      eyebrow: stageLabel(AppLocalizations.of(context), Stage.team),
+      title: _weekly.name,
+      child: WorkflowEditorView(
+        workflow: _weekly,
+        onRename: (_) async {},
+        onAddStep: () {},
+        onOpenStep: (_) {},
+        onMove: (_, _) async {},
+        onDefault: (_) async {},
+        onRepeats: (_) async {},
+        onDelete: () async {},
+      ),
+    ),
+  ),
+);
+
+final _weekly = Workflow(
+  id: 'weekly',
+  stage: Stage.team,
+  name: 'Weekly check-in',
+  isDefault: false,
+  repeats: true,
+  steps: const [
+    WorkflowStep(
+      id: 'weekly-1',
+      position: 1,
+      label: 'Check in on their week',
+      days: 7,
+    ),
+  ],
 );
 
 @Preview(group: 'Workflows', name: 'Step — light', size: Size(390, 844))

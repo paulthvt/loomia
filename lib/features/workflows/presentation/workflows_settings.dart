@@ -188,9 +188,16 @@ class WorkflowsView extends StatelessWidget {
       };
 
   static String _steps(AppLocalizations l10n, Workflow workflow) {
-    final steps = l10n.followWithSteps(workflow.steps.length);
+    final steps = workflowSteps(l10n, workflow);
     return workflow.isDefault ? l10n.workflowsDefaultSteps(steps) : steps;
   }
+}
+
+/// "5 steps", or "1 step · Repeats" for a workflow that starts over: the
+/// workflow lists in Settings and Follow with.
+String workflowSteps(AppLocalizations l10n, Workflow workflow) {
+  final steps = l10n.followWithSteps(workflow.steps.length);
+  return workflow.repeats ? l10n.workflowRepeatsSteps(steps) : steps;
 }
 
 /// In the pane in place of the list on desktop; elsewhere pushed, so back

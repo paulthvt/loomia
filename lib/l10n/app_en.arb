@@ -1810,6 +1810,43 @@
   "@workflowNoSteps": {
     "description": "In place of the steps when a workflow has none."
   },
+  "workflowStepRepeatFirst": "{days, plural, =1{1 day after the start or the last step} other{{days} days after the start or the last step}}",
+  "@workflowStepRepeatFirst": {
+    "description": "Under step 1 of a workflow that starts over: on the first round it comes due this long after the start, on later rounds this long after the last step is ticked.",
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "workflowStepRepeatFirstSameDay": "When you start, then right after the last step",
+  "@workflowStepRepeatFirstSameDay": {
+    "description": "Under step 1 of a workflow that starts over, when step 1 has 0 days: due the day the person starts, and on later rounds the day the last step is ticked."
+  },
+  "workflowRepeats": "Start over after the last step",
+  "@workflowRepeats": {
+    "description": "Switch in the workflow editor: once the last step is ticked, the first step comes back, so the workflow never ends (e.g. a weekly check-in)."
+  },
+  "workflowRepeatsOn": "{days, plural, =0{Step 1 comes back right after the last step} =1{Step 1 comes back 1 day after the last step} other{Step 1 comes back {days} days after the last step}}",
+  "@workflowRepeatsOn": {
+    "description": "Under the workflowRepeats switch when it is on. days is step 1's number of days.",
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "workflowRepeatsNeedsDays": "Needs at least 1 day across the steps",
+  "@workflowRepeatsNeedsDays": {
+    "description": "Under the workflowRepeats switch, disabled because every step is due the same day: starting over would bring the steps back at once."
+  },
+  "workflowRepeatsSteps": "{steps} · Repeats",
+  "@workflowRepeatsSteps": {
+    "description": "Under or beside a workflow's name in lists, for a workflow that starts over after its last step. steps is the step count, e.g. '1 step'.",
+    "placeholders": {
+      "steps": { "type": "String" }
+    }
+  },
+  "workflowRepeatsStepError": "A repeating workflow needs at least 1 day across its steps",
+  "@workflowRepeatsStepError": {
+    "description": "In the step sheet of a workflow that starts over: saving these days or removing this step would leave every step due the same day."
+  },
   "workflowDefaultFor": "{stage, select, prospect{Default for new prospects} customer{Default for new customers} other{Default for new team members}}",
   "@workflowDefaultFor": {
     "description": "Switch in the editor: someone new at this stage starts this workflow. {stage} is prospect, customer or team.",

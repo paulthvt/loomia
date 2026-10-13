@@ -37,6 +37,12 @@ Future<void> showStepSheet(
         offersLoyalty: workflow.stage != Stage.prospect,
         number: (index ?? workflow.steps.length) + 1,
         step: step,
+        loopOthers: workflow.repeats
+            ? [
+                for (final other in workflow.steps)
+                  if (other.id != step?.id) other,
+              ]
+            : null,
         onSave: (draft) => editWorkflows(
           ref,
           (repository) => step == null
@@ -77,6 +83,7 @@ class StepForm extends StatefulWidget {
     required this.number,
     required this.onSave,
     this.step,
+    this.loopOthers,
     this.onRemove,
     super.key,
   });
@@ -92,6 +99,10 @@ class StepForm extends StatefulWidget {
 
   /// The step edited; null adds one.
   final WorkflowStep? step;
+
+  /// The workflow's other steps when it starts over (#296); null when it
+  /// ends. Saving or removing must leave them `canRepeat`.
+  final List<WorkflowStep>? loopOthers;
   final Future<void> Function(StepDraft draft) onSave;
 
   /// Editing only.
@@ -113,6 +124,9 @@ class _StepFormState extends State<StepForm> {
   bool _saving = false;
   PeopleFailure? _failure;
 
+  /// Removing would leave a loop of zero days.
+  bool _refused = false;
+
   @override
   void dispose() {
     _label.dispose();
@@ -124,6 +138,21 @@ class _StepFormState extends State<StepForm> {
   static int? _parseDays(String text) {
     final days = int.tryParse(text);
     return days != null && days >= 0 && days <= 365 ? days : null;
+  }
+
+  /// Whether [days] on this step keeps a repeating workflow above zero days.
+  bool _loops(int days) {
+    final others = widget.loopOthers;
+    return others == null || days >= 1 || canRepeat(others);
+  }
+
+  void _remove(Future<void> Function() remove) {
+    final others = widget.loopOthers;
+    if (others != null && others.isNotEmpty && !canRepeat(others)) {
+      setState(() => _refused = true);
+      return;
+    }
+    unawaited(_run(remove));
   }
 
   Future<void> _run(Future<void> Function() write) async {
@@ -190,7 +219,7 @@ class _StepFormState extends State<StepForm> {
         footer: remove == null
             ? null
             : TextButton(
-                onPressed: _saving ? null : () => unawaited(_run(remove)),
+                onPressed: _saving ? null : () => _remove(remove),
                 child: Text(l10n.stepRemove),
               ),
         child: Column(
@@ -199,6 +228,7 @@ class _StepFormState extends State<StepForm> {
           spacing: AppSpacing.ms,
           children: [
             if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
+            if (_refused) FormError(l10n.workflowRepeatsStepError),
             LabeledField(
               label: l10n.stepLabel,
               child: TextFormField(
@@ -220,9 +250,12 @@ class _StepFormState extends State<StepForm> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 // The hint follows what is typed.
                 onChanged: (_) => setState(() {}),
-                validator: (value) => _parseDays(value ?? '') == null
-                    ? l10n.stepDaysInvalid
-                    : null,
+                validator: (value) => switch (_parseDays(value ?? '')) {
+                  null => l10n.stepDaysInvalid,
+                  final days when !_loops(days) =>
+                    l10n.workflowRepeatsStepError,
+                  _ => null,
+                },
                 decoration: InputDecoration(
                   helperText: days == null
                       ? null

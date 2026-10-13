@@ -89,6 +89,10 @@ class WorkflowEditor extends ConsumerWidget {
           ref,
           (repository) => repository.setDefault(workflow.id, on),
         ),
+        onRepeats: (on) => editWorkflows(
+          ref,
+          (repository) => repository.setRepeats(workflow.id, on),
+        ),
         onDelete: () => _delete(context, ref, owner, workflow),
       ),
     );
@@ -132,7 +136,7 @@ class WorkflowEditor extends ConsumerWidget {
 }
 
 /// What a write in flight disables: the control that started it.
-enum _Control { name, steps, isDefault, delete }
+enum _Control { name, steps, isDefault, repeats, delete }
 
 /// The editor, fed the saved workflow and one callback per write; each
 /// write callback throws `PeopleFailure`. Nothing is optimistic: a dropped
@@ -146,6 +150,7 @@ class WorkflowEditorView extends StatefulWidget {
     required this.onOpenStep,
     required this.onMove,
     required this.onDefault,
+    required this.onRepeats,
     required this.onDelete,
     super.key,
   });
@@ -160,6 +165,9 @@ class WorkflowEditorView extends StatefulWidget {
   /// [step] goes to [position], among the others' saved positions.
   final Future<void> Function(WorkflowStep step, num position) onMove;
   final Future<void> Function(bool on) onDefault;
+
+  /// Start over after the last step (#296).
+  final Future<void> Function(bool on) onRepeats;
 
   /// Asks first; does nothing when the user cancels.
   final Future<void> Function() onDelete;
@@ -346,11 +354,18 @@ class _WorkflowEditorViewState extends State<WorkflowEditorView> {
                           step.label,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        subtitle: Text(
-                          index == 0 && step.days == 0
-                              ? l10n.workflowStepWhenYouStart
-                              : l10n.workflowStepDaysAfter(step.days),
-                        ),
+                        subtitle: Text(switch ((
+                          index,
+                          step.days,
+                          workflow.repeats,
+                        )) {
+                          (0, 0, true) => l10n.workflowStepRepeatFirstSameDay,
+                          (0, final days, true) => l10n.workflowStepRepeatFirst(
+                            days,
+                          ),
+                          (0, 0, false) => l10n.workflowStepWhenYouStart,
+                          _ => l10n.workflowStepDaysAfter(step.days),
+                        }),
                         trailing: ReorderableDragStartListener(
                           index: index,
                           enabled: !moving,
@@ -367,6 +382,23 @@ class _WorkflowEditorViewState extends State<WorkflowEditorView> {
         const SizedBox(height: AppSpacing.lg),
         SettingsGroup(
           children: [
+            SwitchListTile(
+              value: workflow.repeats,
+              title: Text(l10n.workflowRepeats),
+              subtitle: !canRepeat(steps)
+                  ? Text(l10n.workflowRepeatsNeedsDays)
+                  : workflow.repeats
+                  ? Text(l10n.workflowRepeatsOn(steps.first.days))
+                  : null,
+              // Switching off is always allowed: the round goes on to its end.
+              onChanged:
+                  _busy.contains(_Control.repeats) ||
+                      (!workflow.repeats && !canRepeat(steps))
+                  ? null
+                  : (on) => unawaited(
+                      _run(_Control.repeats, () => widget.onRepeats(on)),
+                    ),
+            ),
             SwitchListTile(
               value: workflow.isDefault,
               title: Text(l10n.workflowDefaultFor(workflow.stage.name)),

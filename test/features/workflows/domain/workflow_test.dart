@@ -26,4 +26,17 @@ void main() {
   test('between adjacent integers: the half', () {
     expect(positionAt(_at([1, 2]), 1), 1.5);
   });
+
+  group('canRepeat: at least 1 day across the steps', () {
+    WorkflowStep step(int days) =>
+        WorkflowStep(id: '$days', position: 1, label: 'x', days: days);
+
+    test('no steps', () => expect(canRepeat(const []), isFalse));
+    test('every step on the day', () {
+      expect(canRepeat([step(0), step(0)]), isFalse);
+    });
+    test('one step with days', () {
+      expect(canRepeat([step(0), step(7)]), isTrue);
+    });
+  });
 }

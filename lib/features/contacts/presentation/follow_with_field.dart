@@ -5,6 +5,7 @@ import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -69,9 +70,9 @@ class FollowWithField extends StatelessWidget {
                   subtitle: Text(
                     workflow.isDefault
                         ? l10n.followWithSuggestedSteps(
-                            l10n.followWithSteps(workflow.steps.length),
+                            workflowSteps(l10n, workflow),
                           )
-                        : l10n.followWithSteps(workflow.steps.length),
+                        : workflowSteps(l10n, workflow),
                   ),
                 ),
               RadioListTile<String>(

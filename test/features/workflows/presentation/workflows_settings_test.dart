@@ -6,6 +6,7 @@ import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflow_editor.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -28,6 +29,26 @@ Iterable<String> _creates(FakeWorkflowRepository workflows) =>
     workflows.calls.where((call) => call.startsWith('create'));
 
 void main() {
+  testWidgets('a repeating workflow says so beside its steps', (tester) async {
+    await openWorkflows(
+      tester,
+      Routes.settingsWorkflows,
+      workflows: FakeWorkflowRepository([
+        Workflow(
+          id: 'weekly',
+          stage: Stage.team,
+          name: 'Weekly check-in',
+          isDefault: false,
+          repeats: true,
+          steps: const [
+            WorkflowStep(id: 'w1', position: 1, label: 'Check in', days: 7),
+          ],
+        ),
+      ]),
+    );
+
+    expect(find.text('1 step · Repeats'), findsOneWidget);
+  });
   testWidgets('lists the workflows by stage, the default first', (
     tester,
   ) async {
