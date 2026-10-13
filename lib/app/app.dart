@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/launch_splash.dart';
 import 'package:loomia/app/router/app_router.dart';
@@ -30,7 +31,14 @@ class LoomiaApp extends ConsumerWidget {
       locale: locale == null ? null : Locale(locale),
       routerConfig: ref.watch(routerProvider),
       // Built once for the app's lifetime, so it plays on cold start only.
-      builder: (context, child) => LaunchSplash(child: child!),
+      // The region is the status bar default for screens without an AppBar
+      // (Today); without it the splash's light icons outlive the splash.
+      builder: (context, child) => AnnotatedRegion(
+        value: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
+        child: LaunchSplash(child: child!),
+      ),
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: switch (appearance) {
