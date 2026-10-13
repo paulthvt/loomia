@@ -230,24 +230,37 @@ Generated Dart (`lib/l10n/app_localizations*.dart`) is not committed. Run
 
 ## Releases
 
-release-please keeps a Release PR open on `main`. Merging it tags the version,
-builds a signed AAB and APK, publishes a GitHub **pre-release** with the APK and
-web build, and uploads the AAB to Play **internal testing**
-(`.github/workflows/release.yaml`).
+yeet keeps a Release PR open on `main` (`.yeet.yaml`). Versions are calendar
+versions, `YYYY.MM.MICRO`: `2026.10.1` is the first release of October 2026,
+tagged `v2026.10.1`. Merging the PR tags the version, builds a signed AAB and
+APK, publishes a GitHub **pre-release** with the APK and web build, and uploads
+the AAB to Play **internal testing** (`.github/workflows/release.yaml`).
 
 Every release starts there. To ship one further, promote the same build — no
 rebuild:
 
 ```bash
-gh workflow run Promote -f tag=v0.2.0 -f track=alpha        # closed testing
-gh workflow run Promote -f tag=v0.2.0 -f track=production   # also marks the GitHub release final
+gh workflow run Promote -f tag=v2026.10.1 -f track=alpha        # closed testing
+gh workflow run Promote -f tag=v2026.10.1 -f track=production   # also marks the GitHub release final
 ```
 
 Promote from the workflow only, never from the Play Console, so the GitHub
 pre-release flags keep matching what users get. Production needs a closed test
 first on a personal developer account (12 testers opted in for 14 days).
 
-versionCode comes from the tag: `major*10000 + minor*100 + patch`.
+versionCode (and, with iOS, CFBundleVersion) comes from the tag:
+`year*10000 + month*100 + micro`, so `v2026.10.1` is `20261001`. Tags before
+2026.10 are semver (`0.11.0` is `1100`); `v2026.10.0` is only yeet's starting
+point, never a release.
+
+yeet runs as a GitHub App, so the Release PR gets CI (required on `main`): an
+App on this account, installed on this repository only, with Contents and Pull
+requests read and write and no webhook. Store its client ID and a private key:
+
+```bash
+gh variable set YEET_APP_ID --body "<client id>"
+gh secret set YEET_APP_PRIVATE_KEY < <app>.private-key.pem
+```
 
 ### Web
 
@@ -271,8 +284,8 @@ that file is the only source: the internal testing upload and every Promote
 send the same text. To change the wording, replace the asset before promoting:
 
 ```bash
-gh release download v0.2.0 -p release-notes.json   # edit it, then
-gh release upload v0.2.0 release-notes.json --clobber
+gh release download v2026.10.1 -p release-notes.json   # edit it, then
+gh release upload v2026.10.1 release-notes.json --clobber
 ```
 
 A Gemini failure, or a release with nothing user-facing, ships without notes.

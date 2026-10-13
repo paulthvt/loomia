@@ -30,6 +30,32 @@ void main() {
     ]);
   });
 
+  test('changes reads a yeet body', () {
+    const body = '''
+## [2026.10.1](https://github.com/x/y/compare/2026.10.0...2026.10.1) (2026-10-14)
+
+### ⚠ BREAKING CHANGES
+
+- **db:** drop the team table ([abc1234](https://github.com/x/y/commit/abc1234))
+
+### ✨ Features
+
+- **calendar:** repeat weekly (#305) ([30a9c53](https://github.com/x/y/commit/30a9c53))
+
+### ⚡ Performance
+
+- faster Today ([1a2b3c4](https://github.com/x/y/commit/1a2b3c4))
+
+### 🔧 Miscellaneous
+
+- **deps:** pin ([5d6e7f8](https://github.com/x/y/commit/5d6e7f8))
+''';
+    expect(changes(body), [
+      '**calendar:** repeat weekly (#305)',
+      'faster Today',
+    ]);
+  });
+
   test('changes is empty when nothing is user-facing', () {
     expect(changes('### 🔧 Miscellaneous\n\n* **deps:** pin\n'), isEmpty);
   });

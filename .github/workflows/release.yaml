@@ -1,11 +1,10 @@
-# Release — release-please on main.
+# Release — yeet on main, CalVer YYYY.MM.MICRO, tags vYYYY.MM.MICRO (#306).
 #
 # Flow:
 #   1. Conventional commits land on main (squash merge, PR title = commit subject).
-#   2. This workflow opens/updates a Release PR (version bump in pubspec.yaml +
-#      CHANGELOG.md).
-#   3. Merging that PR runs this workflow again; release-please sees its own PR
-#      merged and cuts the tag + GitHub Release.
+#   2. yeet opens/updates a Release PR (pubspec.yaml + CHANGELOG.md, .yeet.yaml).
+#   3. Merging that PR runs this workflow again; yeet tags the merge commit and
+#      publishes the GitHub Release. The tag this run created is the release.
 #   4. A signed AAB + APK are built, attached to that release, and the AAB goes
 #      to the Play internal testing track; the web build becomes a Cloudflare
 #      version on the internal preview URL. The release stays a GitHub
@@ -15,7 +14,7 @@
 #
 # Trunk-based, no branches per channel: every release starts internal, only
 # promotion decides what reaches users. Setup: README.md → Releases.
-# Not here yet: TestFlight upload, iOS build.
+# Not here yet: TestFlight upload, iOS build (CFBundleVersion = the versionCode below).
 name: Release
 
 on:
@@ -28,36 +27,59 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
-  release-please:
+  yeet:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
-        id: release
+      # yeet needs the full history and tags.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # GITHUB_TOKEN cannot trigger other workflows, so the Release PR it
-          # opens gets no CI run. Fine while nothing is a required check; set a
-          # RELEASE_PLEASE_TOKEN (PAT or GitHub App token) once checks are
-          # required on main.
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          fetch-depth: 0
+
+      - name: CalVer tags before
+        run: git tag -l | grep -E '^v[0-9]{4}\.[0-9]{1,2}\.[0-9]+$' | sort > "$RUNNER_TEMP/before" || true
+
+      # yeet force-pushes its release branch, and an App token gets CI to run on
+      # the Release PR (main requires checks). Setup: README.md → Releases.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        id: app
+        with:
+          client-id: ${{ vars.YEET_APP_ID }}
+          private-key: ${{ secrets.YEET_APP_PRIVATE_KEY }}
+
+      - uses: docker://ghcr.io/monkescience/yeet:v0.17.1@sha256:f017d78597e31fb28eb17b46f46e5a18590b7d8f8e68ed194776800b41cf1be8
+        with:
+          args: release
+        env:
+          GITHUB_TOKEN: ${{ steps.app.outputs.token }}
+          DO_NOT_TRACK: '1'
+
+      # yeet has no outputs. Not --points-at HEAD: when a push follows the
+      # merge, yeet tags the merge commit from the newer run.
+      - name: Tag created by this run
+        id: tag
+        run: |
+          git fetch --tags --force --quiet
+          git tag -l | grep -E '^v[0-9]{4}\.[0-9]{1,2}\.[0-9]+$' | sort > "$RUNNER_TEMP/after" || true
+          echo "tag=$(comm -13 "$RUNNER_TEMP/before" "$RUNNER_TEMP/after" | tail -1)" >> "$GITHUB_OUTPUT"
 
   artifacts:
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    needs: yeet
+    if: needs.yeet.outputs.tag != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.yeet.outputs.tag }}
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
@@ -78,7 +100,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.yeet.outputs.tag }}
         run: |
           flutter test test/store_screenshots_test.dart --dart-define=STORE_SCREENSHOTS=true
           (cd build/store && zip -qr ../../store-screenshots.zip .)
@@ -109,16 +131,16 @@ jobs:
             printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
           fi
 
-      # Play needs a strictly increasing versionCode. Derived from the tag so
-      # promote.yaml can find the same build again.
-      # ponytail: breaks once minor or patch passes 99, widen the multipliers then.
+      # Play needs a strictly increasing versionCode, iOS a CFBundleVersion: the
+      # same number, derived from the tag so promote.yaml can find the build.
+      # ponytail: 100 releases a month at most (micro < 100).
       - name: Compute versionCode
         id: version
         env:
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.yeet.outputs.tag }}
         run: |
-          IFS=. read -r major minor patch <<< "${TAG#v}"
-          echo "code=$((major * 10000 + minor * 100 + patch))" >> "$GITHUB_OUTPUT"
+          IFS=. read -r year month micro <<< "${TAG#v}"
+          echo "code=$((year * 10000 + month * 100 + micro))" >> "$GITHUB_OUTPUT"
 
       - name: Build AAB and APK
         env:
@@ -140,7 +162,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.yeet.outputs.tag }}
         run: |
           gh release view "$TAG" --json body -q .body > release-body.md
           dart run tool/release_notes.dart release-body.md release-notes.json
@@ -154,7 +176,7 @@ jobs:
       - name: Attach artifacts to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.yeet.outputs.tag }}
         run: |
           files=(build/app/outputs/flutter-apk/app-release.apk loomia-web.zip)
           [ -f release-notes.json ] && files+=(release-notes.json)
@@ -167,7 +189,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: app.loomia
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
-          releaseName: ${{ needs.release-please.outputs.tag_name }}
+          releaseName: ${{ needs.yeet.outputs.tag }}
           track: internal
           status: completed
           whatsNewDirectory: ${{ steps.notes.outputs.dir }}
@@ -178,5 +200,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          TAG: ${{ needs.release-please.outputs.tag_name }}
+          TAG: ${{ needs.yeet.outputs.tag }}
         run: npx --yes wrangler@4.147.0 versions upload --tag "$TAG" --message "$TAG" --preview-alias internal

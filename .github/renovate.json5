@@ -3,7 +3,7 @@
   extends: [
     'config:recommended',
     // Dependency PRs land as `chore(deps): …` so they show up under
-    // "🔧 Miscellaneous" in the release-please changelog instead of inflating
+    // "🔧 Miscellaneous" in the yeet changelog instead of inflating
     // Features or Bug Fixes.
     ':semanticCommitTypeAll(chore)',
     // Workflows reference actions by tag (@v6), which is a mutable ref. Pinning
