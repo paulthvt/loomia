@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -19,6 +20,25 @@ String whenLabel(BuildContext context, CalendarEvent event) {
     event.day,
     ends == null ? start : '$start – ${timeLabel(context, ends)}',
   );
+}
+
+/// "Every week on Tuesday", "Every 2 weeks on Tuesday · until December 15":
+/// the event page's line and the line under New event's Repeat.
+String repeatLine(
+  AppLocalizations l10n, {
+  required int everyWeeks,
+  required DateTime firstOn,
+  DateTime? untilOn,
+}) {
+  final line = l10n.eventRepeatLine(
+    everyWeeks,
+    DateFormat.EEEE(l10n.localeName).format(firstOn),
+  );
+  if (untilOn == null) return line;
+  final day = untilOn.year == firstOn.year
+      ? DateFormat.MMMMd(l10n.localeName)
+      : DateFormat.yMMMMd(l10n.localeName);
+  return l10n.eventRepeatUntil(line, day.format(untilOn));
 }
 
 /// One event on the Calendar: its times, a bar, its title and where.

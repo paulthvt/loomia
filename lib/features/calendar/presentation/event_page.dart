@@ -341,6 +341,16 @@ class EventView extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.ms),
         _Line(icon: Icons.schedule_rounded, text: whenLabel(context, event)),
+        if (event.series case final series?)
+          _Line(
+            icon: Icons.repeat_rounded,
+            text: repeatLine(
+              l10n,
+              everyWeeks: series.everyWeeks,
+              firstOn: series.firstOn,
+              untilOn: series.untilOn,
+            ),
+          ),
         if (place != null)
           _Line(
             icon: Icons.place_outlined,

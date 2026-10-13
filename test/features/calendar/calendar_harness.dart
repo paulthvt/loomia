@@ -6,6 +6,7 @@ import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -20,11 +21,13 @@ import '../workflows/fake_workflow_repository.dart';
 import 'fake_event_repository.dart';
 
 /// A screen with one "Open" button that runs [open], signed in as Pauline
-/// with [events]. What [open] resolves to goes to [result].
+/// with [events], on a device in [timeZone]. What [open] resolves to goes
+/// to [result].
 Future<void> pumpCalendarHarness(
   WidgetTester tester, {
   required FakeEventRepository events,
   FakeEventWorkflowRepository? eventWorkflows,
+  String? timeZone = 'Europe/Paris',
   required Future<Object?> Function(BuildContext context) open,
   required void Function(Object? value) result,
 }) async {
@@ -51,6 +54,7 @@ Future<void> pumpCalendarHarness(
         workflowRepositoryProvider.overrideWithValue(workflows),
         peopleRepositoryProvider.overrideWithValue(people),
         activityRepositoryProvider.overrideWithValue(activities),
+        deviceTimeZoneProvider.overrideWith((ref) => timeZone),
       ],
       child: MaterialApp(
         locale: const Locale('en'),

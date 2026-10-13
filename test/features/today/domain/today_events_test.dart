@@ -95,6 +95,32 @@ void main() {
     expect(shown.today, [morning]);
   });
 
+  test('a series asks about its latest occurrence only', () {
+    CalendarEvent call(String id, DateTime startsAt) => CalendarEvent(
+      id: id,
+      title: id,
+      startsAt: startsAt,
+      attendees: _invited,
+      followUps: const {Stage.team: 'getting-started'},
+      series: (
+        id: 's1',
+        everyWeeks: 1,
+        firstOn: DateTime(2026, 9, 24),
+        untilOn: null,
+      ),
+    );
+    final weeks = [
+      call('sep24', DateTime(2026, 9, 24, 19)),
+      call('oct1', DateTime(2026, 10, 1, 19)),
+      call('oct7', DateTime(2026, 10, 7, 19)),
+    ];
+    final single = _event('single', DateTime(2026, 10, 6, 19));
+
+    final shown = todayEvents([...weeks, single], const [], _morning);
+
+    expect(shown.toMark, [single, weeks.last]);
+  });
+
   test('steps due today or late, not ticked, within two weeks', () {
     // Due Oct 8 (remind for the 9th) and Oct 7 (thank for the 6th, whose
     // reminder was ticked).

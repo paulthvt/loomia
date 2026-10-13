@@ -2131,6 +2131,53 @@
   "@eventEndsBeforeStart": {
     "description": "Error under the event form's Ends field when the end time is not after the start time."
   },
+  "eventRepeat": "Repeat",
+  "@eventRepeat": {
+    "description": "Label of the New event form's choice of how the event repeats (e.g. a team call every week)."
+  },
+  "eventRepeatNever": "Doesn't repeat",
+  "@eventRepeatNever": {
+    "description": "First choice under eventRepeat: a single event. Selected by default."
+  },
+  "eventRepeatEvery": "{weeks, plural, =1{Every week} other{Every {weeks} weeks}}",
+  "@eventRepeatEvery": {
+    "description": "A choice under eventRepeat: the event comes back every 1, 2 or 4 weeks on the same weekday.",
+    "placeholders": {
+      "weeks": { "type": "int" }
+    }
+  },
+  "eventRepeatLine": "{weeks, plural, =1{Every week on {weekday}} other{Every {weeks} weeks on {weekday}}}",
+  "@eventRepeatLine": {
+    "description": "How an event repeats, under the Repeat choices and on the event's page. weekday is the day's name, e.g. 'Tuesday'.",
+    "placeholders": {
+      "weeks": { "type": "int" },
+      "weekday": { "type": "String" }
+    }
+  },
+  "eventRepeatUntil": "{line} · until {day}",
+  "@eventRepeatUntil": {
+    "description": "eventRepeatLine for a repeating event that ends, e.g. 'Every week on Tuesday · until December 15'. day is the last day it can take place.",
+    "placeholders": {
+      "line": { "type": "String" },
+      "day": { "type": "String" }
+    }
+  },
+  "eventRepeatEnds": "Repeat ends",
+  "@eventRepeatEnds": {
+    "description": "Label in the New event form, shown once Repeat is set: whether the repeating event stops on a day. Not the end time (eventEnds, 'Ends'), which is just above."
+  },
+  "eventRepeatEndsNever": "Never",
+  "@eventRepeatEndsNever": {
+    "description": "Choice under eventRepeatEnds: the event repeats with no end day."
+  },
+  "eventRepeatEndsOn": "On a day",
+  "@eventRepeatEndsOn": {
+    "description": "Choice under eventRepeatEnds: opens a date picker for the last day the event can take place."
+  },
+  "eventRepeatEndsBeforeStart": "Pick a day after the first one.",
+  "@eventRepeatEndsBeforeStart": {
+    "description": "Error under eventRepeatEnds when the end day is before the event's date."
+  },
   "eventPlace": "Place",
   "@eventPlace": {
     "description": "Label of the event form's field for where the event happens: an address or a place's name. Tapping it later opens the maps app."

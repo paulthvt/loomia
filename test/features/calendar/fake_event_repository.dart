@@ -29,6 +29,7 @@ class FakeEventRepository implements EventRepository {
     List<Attendee> attendees = const [],
     DateTime? doneAt,
     Map<String, DateTime> stepsDone = const {},
+    EventSeries? series,
   }) => CalendarEvent(
     id: id,
     title: draft.title,
@@ -42,10 +43,11 @@ class FakeEventRepository implements EventRepository {
     eventWorkflowId: draft.eventWorkflowId,
     followUps: draft.followUps,
     stepsDone: stepsDone,
+    series: series,
   );
 
   @override
-  Future<List<CalendarEvent>> list() async {
+  Future<List<CalendarEvent>> list(DateTime today) async {
     _record('list()');
     return byStart(store);
   }
@@ -69,6 +71,7 @@ class FakeEventRepository implements EventRepository {
       attendees: saved.attendees,
       doneAt: saved.doneAt,
       stepsDone: saved.stepsDone,
+      series: saved.series,
     );
     store[index] = event;
     return event;
@@ -78,6 +81,78 @@ class FakeEventRepository implements EventRepository {
   Future<void> remove(String id) async {
     _record('remove($id)');
     store.removeWhere((event) => event.id == id);
+  }
+
+  /// As extend_event_series, at once: every [RepeatRule.everyWeeks] weeks
+  /// from the first day, up to a year on or the end day, in local time.
+  @override
+  Future<String> addSeries(
+    EventDraft draft,
+    RepeatRule rule,
+    String zone,
+  ) async {
+    _record('addSeries(${draft.title}, ${rule.everyWeeks}, $zone)');
+    final id = 'series${++_next}';
+    final start = draft.startsAt;
+    final first = DateTime(start.year, start.month, start.day);
+    final series = (
+      id: id,
+      everyWeeks: rule.everyWeeks,
+      firstOn: first,
+      untilOn: rule.untilOn,
+    );
+    final last =
+        rule.untilOn ?? DateTime(first.year + 1, first.month, first.day);
+    for (var week = 0; ; week += rule.everyWeeks) {
+      final day = DateTime(first.year, first.month, first.day + 7 * week);
+      if (day.isAfter(last)) break;
+      DateTime at(DateTime time) =>
+          DateTime(day.year, day.month, day.day, time.hour, time.minute);
+      final end = draft.endsAt;
+      store.add(
+        _fromDraft('$id-$week', (
+          title: draft.title,
+          startsAt: at(start),
+          endsAt: end == null ? null : at(end),
+          place: draft.place,
+          link: draft.link,
+          notes: draft.notes,
+          eventWorkflowId: draft.eventWorkflowId,
+          followUps: draft.followUps,
+        ), series: series),
+      );
+    }
+    return id;
+  }
+
+  /// As set_series_attendees: [eventId] and the not done occurrences after.
+  @override
+  Future<void> setSeriesPeople(
+    String eventId, {
+    Iterable<String> add = const [],
+    Iterable<String> remove = const [],
+  }) async {
+    _record('setSeriesPeople($eventId:+${add.join(',')}-${remove.join(',')})');
+    final from = store.firstWhere((event) => event.id == eventId);
+    final seriesId = from.series!.id;
+    final gone = remove.toSet();
+    for (final event in [...store]) {
+      if (event.series?.id != seriesId ||
+          event.done ||
+          event.startsAt.isBefore(from.startsAt)) {
+        continue;
+      }
+      _with(
+        event.id,
+        (attendees) => [
+          for (final attendee in attendees)
+            if (!gone.contains(attendee.personId)) attendee,
+          for (final id in add)
+            if (!attendees.any((a) => a.personId == id))
+              (personId: id, came: false),
+        ],
+      );
+    }
   }
 
   CalendarEvent _with(
@@ -101,6 +176,7 @@ class FakeEventRepository implements EventRepository {
       eventWorkflowId: event.eventWorkflowId,
       followUps: event.followUps,
       stepsDone: stepsDone ?? event.stepsDone,
+      series: event.series,
     );
     store[index] = changed;
     return changed;
