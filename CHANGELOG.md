@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.11.0](https://github.com/paulthvt/loomia/compare/0.10.0...0.11.0) (2026-10-13)
+
+
+### ✨ Features
+
+* **calendar:** create repeating events ([#305](https://github.com/paulthvt/loomia/issues/305)) ([30a9c53](https://github.com/paulthvt/loomia/commit/30a9c53050ed29aefe9da6232a291acc9b637a3a))
+* **calendar:** plain events ([#302](https://github.com/paulthvt/loomia/issues/302)) ([bb924ac](https://github.com/paulthvt/loomia/commit/bb924acc3976f7ba103eaf3b876cd60bfea812ae))
+* **push:** choose the summary time on Today's card ([#289](https://github.com/paulthvt/loomia/issues/289)) ([3b88c40](https://github.com/paulthvt/loomia/commit/3b88c40784f0e959494d8708a28c1e98b9f13087))
+* **today:** progress bar on the hero ([#293](https://github.com/paulthvt/loomia/issues/293)) ([c65dec5](https://github.com/paulthvt/loomia/commit/c65dec5b60bceabff76c7f9c86ec09fe4b814710))
+* **workflows:** workflows that start over ([#304](https://github.com/paulthvt/loomia/issues/304)) ([df2d23c](https://github.com/paulthvt/loomia/commit/df2d23c9b9f20f9d8d2ab249de9d44c270c289ee))
+
+
+### 📚 Documentation
+
+* design repeating workflows and events, plain events ([#301](https://github.com/paulthvt/loomia/issues/301)) ([e008ea6](https://github.com/paulthvt/loomia/commit/e008ea6ef65d91fb997fdcaf87eb2c352661bfe7))
+
+
+### 🔧 Miscellaneous
+
+* **android:** drop ineffective forceDarkAllowed from the splash theme ([#295](https://github.com/paulthvt/loomia/issues/295)) ([8358ae8](https://github.com/paulthvt/loomia/commit/8358ae8fa732948538bf7425cb8cfbd68f6d64ff))
+* **l10n:** sync translations ([#291](https://github.com/paulthvt/loomia/issues/291)) ([aa089be](https://github.com/paulthvt/loomia/commit/aa089bebd1668e67f096e6ca44cdc60371212d7c))
+* **l10n:** sync translations ([#303](https://github.com/paulthvt/loomia/issues/303)) ([0bdfadd](https://github.com/paulthvt/loomia/commit/0bdfadd4a4971adeda0c83ec19013bb46eea1c63))
+
 ## [0.10.0](https://github.com/paulthvt/loomia/compare/0.9.0...0.10.0) (2026-10-12)
 
 
