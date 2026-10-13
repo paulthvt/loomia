@@ -9,8 +9,8 @@ import 'package:loomia/features/notifications/presentation/notifications_control
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Settings → Notifications: loads and saves the daily summary, asks the OS
-/// when it is turned on, and says when the OS refuses. Back from the phone's
+/// Settings → Notifications: loads and saves the daily summary and the
+/// month-end push, asks the OS when one is turned on, and says when the OS refuses. Back from the phone's
 /// settings, it looks again.
 class NotificationSettingsSection extends ConsumerStatefulWidget {
   const NotificationSettingsSection({super.key});
@@ -57,9 +57,9 @@ class _NotificationSettingsSectionState
   }
 
   /// On even when the OS says no: the warning says where to fix it.
-  Future<void> _enable(NotificationSettings settings) async {
+  Future<void> _enable(NotificationSettings next) async {
     final push = ref.read(pushProvider);
-    final save = _save(settings.copyWith(enabled: true));
+    final save = _save(next);
     final allowed = await push.ask();
     if (mounted) setState(() => _allowed = allowed);
     await save;
@@ -88,9 +88,7 @@ class _NotificationSettingsSectionState
         failure: _failure,
         onChanged: _save,
         onAllow: phone ? _allow : null,
-        onEnable: phone
-            ? () => _enable(value ?? NotificationSettings(timeZone: zone))
-            : null,
+        onEnable: phone ? _enable : null,
       ),
       AsyncError(:final error) => LoadFailed(
         offline: error == PeopleFailure.network,

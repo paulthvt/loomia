@@ -30,7 +30,7 @@ void main() {
   }
 
   bool switchedOn(WidgetTester tester) =>
-      tester.widget<Switch>(find.byType(Switch)).value;
+      tester.widget<Switch>(find.byType(Switch).first).value;
 
   FilterChip chip(WidgetTester tester, int day) =>
       tester.widget<FilterChip>(find.byKey(ValueKey('day-$day')));
@@ -56,7 +56,7 @@ void main() {
     final notifications = FakeNotificationsRepository();
     await open(tester, push: push, notifications: notifications);
 
-    await tester.tap(find.byType(Switch));
+    await tester.tap(find.byType(Switch).first);
     await tester.pumpAndSettle();
     expect(push.asked, 1);
     expect(notifications.saved.single, on);
@@ -75,7 +75,7 @@ void main() {
       notifications: notifications,
     );
 
-    await tester.tap(find.byType(Switch));
+    await tester.tap(find.byType(Switch).first);
     await tester.pumpAndSettle();
     expect(notifications.saved.single.enabled, isTrue);
     expect(
@@ -97,7 +97,7 @@ void main() {
       ..asked = 0;
     await tester.pumpAndSettle();
     final container = ProviderScope.containerOf(
-      tester.element(find.byType(Switch)),
+      tester.element(find.byType(Switch).first),
     );
     container.read(routerProvider).go(Routes.settings);
     await tester.pumpAndSettle();
@@ -157,10 +157,28 @@ void main() {
       find.text('Notifications come to the Android and iOS app.'),
       findsOneWidget,
     );
-    await tester.tap(find.byType(Switch));
+    await tester.tap(find.byType(Switch).first);
     await tester.pumpAndSettle();
     expect(push.asked, 0);
     expect(notifications.saved.single.enabled, isTrue);
+  });
+
+  testWidgets('the month-end review alone: asks, saves, time and days apply', (
+    tester,
+  ) async {
+    final push = FakePush();
+    final notifications = FakeNotificationsRepository();
+    await open(tester, push: push, notifications: notifications);
+
+    await tester.tap(find.text('Month-end review'));
+    await tester.pumpAndSettle();
+    expect(push.asked, 1);
+    expect(
+      notifications.saved.single,
+      const NotificationSettings(ritual: true, timeZone: 'Europe/Paris'),
+    );
+    expect(switchedOn(tester), isFalse, reason: 'the summary stays off');
+    expect(chip(tester, 1).onSelected, isNotNull);
   });
 
   testWidgets('the Settings row shows the time, or Off', (tester) async {
@@ -172,5 +190,21 @@ void main() {
     container.read(routerProvider).go(Routes.settings);
     await tester.pumpAndSettle();
     expect(find.text('7:00 PM'), findsOneWidget);
+  });
+
+  testWidgets('the Settings row shows the time with only the review on', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(
+      tester,
+      size: phone,
+      notifications: FakeNotificationsRepository(
+        const NotificationSettings(ritual: true, timeZone: 'Europe/Paris'),
+      ),
+    );
+    container.read(routerProvider).go(Routes.settings);
+    await tester.pumpAndSettle();
+    expect(find.text('7:00 PM'), findsOneWidget);
+    expect(find.text('Off'), findsNothing);
   });
 }

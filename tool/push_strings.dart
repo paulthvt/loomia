@@ -30,7 +30,9 @@ Map<String, Parts> pushStrings(Map<String, Map<String, dynamic>> arbs) {
   final english = arbs['en'] ?? const <String, dynamic>{};
   final result = <String, Parts>{};
   for (final MapEntry(key: locale, value: arb) in arbs.entries) {
-    for (final MapEntry(:key, :value) in arb.entries) {
+    // A key the language lacks yet (until the l10n sync) goes in English, so
+    // the sender's key always exists on the phone.
+    for (final MapEntry(:key, :value) in {...english, ...arb}.entries) {
       if (!key.startsWith('push') || value is! String) continue;
       final meta = (english['@$key'] ?? arb['@$key']) as Map<String, dynamic>?;
       final names = [

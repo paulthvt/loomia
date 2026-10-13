@@ -46,6 +46,14 @@ void main() {
       const Size(390, 844),
       notificationsPermissionOffLight,
     ),
+    'notifications_ritual_light': (
+      const Size(390, 844),
+      notificationsRitualLight,
+    ),
+    'notifications_plan_reminder_light': (
+      const Size(390, 200),
+      notificationsPlanReminderLight,
+    ),
     'calendar_mobile_light': (const Size(390, 844), calendarMobileLight),
     'calendar_mobile_dark': (const Size(390, 844), calendarMobileDark),
     'calendar_desktop_light': (const Size(1440, 900), calendarDesktopLight),

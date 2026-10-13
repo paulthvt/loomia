@@ -43,6 +43,21 @@ void main() {
     );
   });
 
+  test('a key a language lacks yet goes in English', () {
+    expect(
+      pushStrings({
+        'en': {'pushHello': 'Hello', 'pushBye': 'Bye'},
+        'fr': {'pushHello': 'Bonjour'},
+      }),
+      {
+        'push_bye_en': ['Bye'],
+        'push_bye_fr': ['Bye'],
+        'push_hello_en': ['Hello'],
+        'push_hello_fr': ['Bonjour'],
+      },
+    );
+  });
+
   test('an unsupported plural case stops the run', () {
     expect(
       () => pushStrings({

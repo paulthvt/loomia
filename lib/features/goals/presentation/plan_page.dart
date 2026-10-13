@@ -19,6 +19,7 @@ import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
+import 'package:loomia/features/notifications/presentation/ritual_reminder.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -51,6 +52,7 @@ class PlanPage extends ConsumerWidget {
               plan,
             ),
             onSaved: onSaved ?? () => backOr(context, Routes.goals),
+            reminder: RitualReminder(month: value.month),
           ),
           AsyncError(:final error) => LoadFailed(
             offline: error == PeopleFailure.network,
@@ -73,6 +75,7 @@ class PlanForm extends StatefulWidget {
     required this.onSave,
     required this.onSaved,
     this.step,
+    this.reminder,
     super.key,
   });
 
@@ -80,6 +83,9 @@ class PlanForm extends StatefulWidget {
 
   /// In the close-and-plan flow: which step this is.
   final int? step;
+
+  /// Above Save: the month-end push offer (`RitualReminder`).
+  final Widget? reminder;
   final BusinessModel model;
 
   /// Throws `PeopleFailure`; the form stays, with what was typed.
@@ -354,6 +360,10 @@ class _PlanFormState extends State<PlanForm> {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
+              if (widget.reminder case final reminder?) ...[
+                reminder,
+                const SizedBox(height: AppSpacing.lg),
+              ],
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: _saving

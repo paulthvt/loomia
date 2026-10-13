@@ -12,6 +12,7 @@ import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/close_form.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
+import 'package:loomia/features/notifications/presentation/ritual_reminder.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -107,6 +108,7 @@ class _ClosePageState extends ConsumerState<ClosePage> {
             // reloading it now would show "Nothing to close" on the way out.
             onSave: (plan) => savePlan(container, plan),
             onSaved: _done,
+            reminder: RitualReminder(month: value.ritual.plan),
           ),
           AsyncError(:final error) => LoadFailed(
             offline: error == PeopleFailure.network,

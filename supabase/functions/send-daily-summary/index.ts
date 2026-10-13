@@ -1,11 +1,19 @@
 import { withSupabase } from 'npm:@supabase/server@1.8.0'
 import { fcmSender, type ServiceAccount } from './fcm.ts'
-import { type Claim, type Device, handle } from './handler.ts'
+import {
+  type Claim,
+  type Device,
+  handle,
+  ritualJob,
+  summaryJob,
+} from './handler.ts'
+import type { RitualClaim } from './message.ts'
 
-// The daily summary (#269), called by pg_cron every 15 minutes with the
-// `cron` named secret key (supabase/migrations/*_daily_summary_cron.sql).
-// Postgres decides who is due and claims them; this sends. Logs carry counts
-// only, never a token or a name.
+// The daily summary (#269) and the month-end push (#148), called by pg_cron
+// every 15 minutes with the `cron` named secret key
+// (supabase/migrations/*_daily_summary_cron.sql). Postgres decides who is due
+// and claims them; this sends. Logs carry counts only, never a token or a
+// name.
 const account = Deno.env.get('FCM_SERVICE_ACCOUNT')
 const send = account
   ? fcmSender(JSON.parse(account) as ServiceAccount)
@@ -24,31 +32,59 @@ export default {
       return data
     }
     try {
-      const result = await handle({
-        claim: async () =>
-          check(await db.rpc('claim_daily_summaries')) as Claim[],
-        devicesOf: async (owners) =>
+      const deps = {
+        devicesOf: async (owners: string[]) =>
           check(
             await db
               .from('device_token')
-              .select('owner_id, token, locale')
+              .select('owner_id, token, locale, push_kinds')
               .in('owner_id', owners),
           ) as Device[],
-        drop: async (tokens) => {
+        drop: async (tokens: string[]) => {
           check(await db.rpc('drop_device_tokens', { p_tokens: tokens }))
         },
-        release: async (owner, date) => {
-          check(
-            await db.rpc('release_daily_summary', {
-              p_owner: owner,
-              p_date: date,
-            }),
-          )
-        },
         send,
-      })
+      }
+      // One kind after the other; a failure in one doesn't skip the next.
+      const run = (name: string, job: Parameters<typeof handle>[1]) =>
+        handle(deps, job).catch((error) => {
+          console.error(`send-daily-summary: ${name} failed`, error)
+          return null
+        })
+      const summary = await run(
+        'summary',
+        summaryJob(
+          async () => check(await db.rpc('claim_daily_summaries')) as Claim[],
+          async (owner, date) => {
+            check(
+              await db.rpc('release_daily_summary', {
+                p_owner: owner,
+                p_date: date,
+              }),
+            )
+          },
+        ),
+      )
+      const ritual = await run(
+        'ritual',
+        ritualJob(
+          async () =>
+            check(await db.rpc('claim_month_rituals')) as RitualClaim[],
+          async (owner, plan) => {
+            check(
+              await db.rpc('release_month_ritual', {
+                p_owner: owner,
+                p_plan: plan,
+              }),
+            )
+          },
+        ),
+      )
+      const result = { summary, ritual }
       console.log('send-daily-summary', result)
-      return Response.json(result)
+      return Response.json(result, {
+        status: summary && ritual ? 200 : 500,
+      })
     } catch (error) {
       console.error('send-daily-summary failed', error)
       return Response.json({ error: 'send_failed' }, { status: 500 })
