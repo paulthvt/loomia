@@ -60,18 +60,17 @@ Widget notificationsPlanReminderLight() => MaterialApp(
   supportedLocales: AppLocalizations.supportedLocales,
   theme: AppTheme.light,
   home: Scaffold(
-    body: Padding(
+    // In a list, as on the plan step: the group takes its own height.
+    body: ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
-      // Its own height, as in the plan step's list.
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: RitualReminderSwitch(
+      children: [
+        RitualReminderSwitch(
           month: DateTime(2026, 10),
           time: '7:00 PM',
           value: false,
           onChanged: (_) {},
         ),
-      ),
+      ],
     ),
   ),
 );
