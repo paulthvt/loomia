@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/monkescience/yeet/v0.17.1/yeet.schema.json
+# Releases: README.md → Releases. Versions are YYYY.MM.MICRO (#306).
+
+branch: main
+versioning: calver
+calver:
+  format: YYYY.MM.MICRO
+# Same version from a local --dry-run and from CI.
+timezone: UTC
+
+version_files:
+  - pubspec.yaml
+
+changelog:
+  file: CHANGELOG.md
+  include: [feat, fix, perf, revert, refactor, docs, test, ci, chore]
+  sections:
+    feat: ✨ Features
+    fix: 🐛 Bug Fixes
+    perf: ⚡ Performance
+    revert: ⏪ Reverts
+    refactor: ♻ Refactoring
+    docs: 📚 Documentation
+    test: ✅ Tests
+    ci: 🔄 CI/CD
+    chore: 🔧 Miscellaneous
+
+release:
+  # CI runs on the Release PR (App token): the title must pass pr-title.
+  pr_title: 'chore: release {{ .Version }}'
+  commit_subject: 'chore: release {{ .Version }}'
+
+telemetry:
+  enabled: false
+
+targets:
+  loomia:
+    type: path
+    path: .
+    tag_prefix: v

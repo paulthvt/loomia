@@ -7,14 +7,14 @@
 # Promote only from here, never from the Play Console, or GitHub pre-release
 # flags stop matching what users actually get.
 #
-#   gh workflow run Promote -f tag=0.2.0 -f track=alpha
+#   gh workflow run Promote -f tag=v2026.10.1 -f track=alpha
 name: Promote
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag already on internal testing, e.g. 0.2.0
+        description: Release tag already on internal testing, e.g. v2026.10.1
         required: true
       track:
         description: Target Play track
@@ -64,8 +64,8 @@ jobs:
           TRACK: ${{ inputs.track }}
           API: https://androidpublisher.googleapis.com/androidpublisher/v3/applications/app.loomia
         run: |
-          IFS=. read -r major minor patch <<< "${TAG#v}"
-          code=$((major * 10000 + minor * 100 + patch))
+          IFS=. read -r year month micro <<< "${TAG#v}"
+          code=$((year * 10000 + month * 100 + micro))
           api() { curl -sSf -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$@"; }
 
           edit=$(api -X POST "$API/edits" | jq -r .id)

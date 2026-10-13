@@ -29,7 +29,7 @@ permissions:
   contents: read
 
 jobs:
-  # release-please builds the changelog from commit subjects on main. With squash
+  # yeet builds the changelog from commit subjects on main. With squash
   # merges the subject is the PR title, so the PR title is the thing to validate —
   # individual commits inside the branch are free-form.
   pr-title:

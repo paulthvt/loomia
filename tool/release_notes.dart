@@ -1,7 +1,7 @@
 // The store "What's new" text of one release, in every app language, with
 // Gemini.
 //
-//   gh release view v0.2.0 --json body -q .body > body.md
+//   gh release view 2026.10.1 --json body -q .body > body.md
 //   GEMINI_API_KEY=... dart run tool/release_notes.dart body.md release-notes.json
 //
 // Writes {"en-US": "...", "fr-FR": "..."}, each at most 500 characters: Play's
@@ -20,7 +20,7 @@ const _max = 500;
 // app language stops the run until it has a line here.
 const _store = {'en': 'en-US', 'fr': 'fr-FR'};
 
-// release-please-config.json sections a user can notice.
+// .yeet.yaml changelog sections a user can notice.
 const _shown = {'Features', 'Bug Fixes', 'Performance'};
 
 const _system =
@@ -92,8 +92,8 @@ Future<void> main(List<String> args) async {
   stdout.writeln(notes.values.join('\n\n'));
 }
 
-/// The user-facing entries of a release-please release body, without their
-/// issue and commit links.
+/// The user-facing entries of a release body (yeet, or release-please before
+/// 2026.10), without their issue and commit links.
 List<String> changes(String body) {
   final links = RegExp(r',? ?(closes )?\(?\[[^\]]*\]\([^)]*\)\)?');
   final lines = <String>[];
@@ -101,7 +101,7 @@ List<String> changes(String body) {
   for (final line in LineSplitter.split(body)) {
     if (line.startsWith('### ')) {
       shown = _shown.any(line.endsWith);
-    } else if (shown && line.startsWith('* ')) {
+    } else if (shown && (line.startsWith('* ') || line.startsWith('- '))) {
       lines.add(line.substring(2).replaceAll(links, '').trim());
     }
   }
