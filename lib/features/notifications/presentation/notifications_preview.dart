@@ -62,11 +62,15 @@ Widget notificationsPlanReminderLight() => MaterialApp(
   home: Scaffold(
     body: Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: RitualReminderSwitch(
-        month: DateTime(2026, 10),
-        time: '7:00 PM',
-        value: false,
-        onChanged: (_) {},
+      // Its own height, as in the plan step's list.
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: RitualReminderSwitch(
+          month: DateTime(2026, 10),
+          time: '7:00 PM',
+          value: false,
+          onChanged: (_) {},
+        ),
       ),
     ),
   ),
