@@ -19,6 +19,14 @@ fileMatchPattern: ["supabase/**", "lib/core/supabase/**", "lib/features/*/data/*
 - Client access sits behind repositories in `features/<x>/data/`; widgets
   never call Supabase. The service-role key is never in this repo.
 - Migrations reach the hosted project by hand after merge (`supabase db push`).
+- The released app keeps running against the pushed schema until users
+  update, so a migration stays compatible with it: additive changes ship at
+  once; a drop, rename, changed function signature or data deletion the
+  released app depends on is split into "add the new" now and "remove the
+  old" in a later PR. Each PR says, in the template's **Database** section,
+  whether `supabase db push` is needed, its order relative to the app
+  release, and whether the released app keeps working. Say the same to the
+  user when the PR is opened.
 
 The conventions in full, with the reasons:
 

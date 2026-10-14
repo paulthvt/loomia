@@ -22,6 +22,16 @@ Closes #
 
 <!-- Any visual change: before/after. Mobile + desktop layout if both are affected. -->
 
+## Database
+
+<!--
+Delete if there is no migration. Otherwise:
+- `supabase db push` after merge: yes
+- Order: push before the app release (the new app needs the schema), or after
+- Released app: keeps working / breaks because … (then split the PR: add the
+  new beside the old now, remove the old once users have updated)
+-->
+
 ## Checklist
 
 - [ ] `dart format .`, `flutter analyze`, `flutter test` all pass locally
