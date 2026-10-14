@@ -1,9 +1,49 @@
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
-/// Someone invited to an event, and whether they were there once it is
-/// marked done.
-typedef Attendee = ({String personId, bool came});
+/// Someone invited to an event: going or not yet (#314), and whether they
+/// were there once it is marked done. Days are local midnights.
+class Attendee {
+  const Attendee({
+    required this.personId,
+    this.came = false,
+    this.going = true,
+    this.invitedOn,
+    this.followedUpOn,
+    this.followUpOn,
+  });
+
+  final String personId;
+  final bool came;
+
+  /// They said yes. On a group event, people start not going: invited.
+  final bool going;
+  final DateTime? invitedOn;
+  final DateTime? followedUpOn;
+
+  /// The server's `follow_up_on`: when to follow up someone not yet going;
+  /// null once going or once the event is done.
+  final DateTime? followUpOn;
+
+  @override
+  bool operator ==(Object other) =>
+      other is Attendee &&
+      other.personId == personId &&
+      other.came == came &&
+      other.going == going &&
+      other.invitedOn == invitedOn &&
+      other.followedUpOn == followedUpOn &&
+      other.followUpOn == followUpOn;
+
+  @override
+  int get hashCode =>
+      Object.hash(personId, came, going, invitedOn, followedUpOn, followUpOn);
+
+  @override
+  String toString() =>
+      'Attendee($personId, came: $came, going: $going, invited: $invitedOn, '
+      'followed up: $followedUpOn, follow up: $followUpOn)';
+}
 
 /// The series an occurrence was generated from (#298): every [everyWeeks]
 /// weeks on [firstOn]'s weekday, until [untilOn] or forever. Days are local
@@ -76,6 +116,8 @@ class CalendarEvent {
 
   /// How many were there. Meaningful once [done].
   int get cameCount => attendees.where((attendee) => attendee.came).length;
+
+  int get goingCount => attendees.where((attendee) => attendee.going).length;
 
   /// "Mark who was there" is offered from the start, until it is done, and
   /// only with someone to mark.

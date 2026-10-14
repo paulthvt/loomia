@@ -17,7 +17,8 @@ class EventRepository {
 
   /// Every column, who is invited, and the series an occurrence is in.
   static const String _columns =
-      '*, event_attendee(person_id, came), event_step_done(step_id, done_on), '
+      '*, event_attendee(person_id, came, going, invited_on, followed_up_on, '
+      'follow_up_on), event_step_done(step_id, done_on), '
       'event_series(id, every_weeks, first_on, until_on)';
 
   /// Every event, earliest first, once every series is generated up to a
@@ -84,12 +85,39 @@ class EventRepository {
   Future<void> remove(String id) =>
       guardPeople(() => _client.from(_table).delete().eq('id', id));
 
-  Future<void> invite(String eventId, Iterable<String> personIds) =>
+  /// Invited on [on], the device's day. Going or not is the server's: not
+  /// yet on a group event, going anywhere else.
+  Future<void> invite(
+    String eventId,
+    Iterable<String> personIds,
+    DateTime on,
+  ) => guardPeople(
+    () => _client.from('event_attendee').insert([
+      for (final personId in personIds)
+        {
+          'event_id': eventId,
+          'person_id': personId,
+          'invited_on': dayColumn(on),
+        },
+    ]),
+  );
+
+  Future<void> setGoing(String eventId, String personId) => guardPeople(
+    () => _client
+        .from('event_attendee')
+        .update({'going': true})
+        .eq('event_id', eventId)
+        .eq('person_id', personId),
+  );
+
+  /// Their next follow-up counts from [on].
+  Future<void> followedUp(String eventId, String personId, DateTime on) =>
       guardPeople(
-        () => _client.from('event_attendee').insert([
-          for (final personId in personIds)
-            {'event_id': eventId, 'person_id': personId},
-        ]),
+        () => _client
+            .from('event_attendee')
+            .update({'followed_up_on': dayColumn(on)})
+            .eq('event_id', eventId)
+            .eq('person_id', personId),
       );
 
   Future<void> uninvite(String eventId, String personId) => guardPeople(
@@ -147,6 +175,12 @@ String? _text(Object? value) {
   return text == null || text.isEmpty ? null : text;
 }
 
+/// A `date` column as local midnight.
+DateTime? _day(Object? value) => switch (value) {
+  final String day => DateTime.parse(day),
+  _ => null,
+};
+
 CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
   id: row['id'] as String,
   title: row['title'] as String,
@@ -163,10 +197,16 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
     _ => null,
   },
   attendees: [
-    for (final attendee in (row['event_attendee'] as List?) ?? const [])
-      (
-        personId: (attendee as Map<String, dynamic>)['person_id'] as String,
+    for (final attendee
+        in ((row['event_attendee'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>())
+      Attendee(
+        personId: attendee['person_id'] as String,
         came: attendee['came'] as bool,
+        going: attendee['going'] as bool? ?? true,
+        invitedOn: _day(attendee['invited_on']),
+        followedUpOn: _day(attendee['followed_up_on']),
+        followUpOn: _day(attendee['follow_up_on']),
       ),
   ],
   eventWorkflowId: row['event_workflow_id'] as String?,

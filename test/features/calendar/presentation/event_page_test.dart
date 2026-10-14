@@ -61,6 +61,8 @@ Future<void> _pumpView(
   DateTime? now,
   VoidCallback? onAddPeople,
   void Function(Person)? onRemove,
+  void Function(Person)? onGoing,
+  void Function(Person)? onFollowedUp,
   void Function(Person)? onOpenPerson,
   VoidCallback? onMarkDone,
   void Function(String place)? onOpenPlace,
@@ -82,6 +84,8 @@ Future<void> _pumpView(
           now: now ?? DateTime(2026, 10, 8, 18),
           onAddPeople: onAddPeople ?? () {},
           onRemove: onRemove ?? (_) {},
+          onGoing: onGoing ?? (_) {},
+          onFollowedUp: onFollowedUp ?? (_) {},
           onOpenPerson: onOpenPerson ?? (_) {},
           onMarkDone: onMarkDone ?? () {},
           onEdit: () {},
@@ -170,20 +174,95 @@ void main() {
     await _pumpView(
       tester,
       _workshop,
-      people: [(person: _claire, came: false), (person: _sarah, came: false)],
+      people: [
+        (person: _claire, attendee: const Attendee(personId: 'p1')),
+        (person: _sarah, attendee: const Attendee(personId: 'p2')),
+      ],
       onAddPeople: () => adding = true,
       onRemove: (person) => removed = person,
     );
 
     await tester.scrollUntilVisible(find.text('Sarah Lemaire'), 200);
-    expect(find.text('Prospect · invited'), findsOneWidget);
-    expect(find.text('Customer · invited'), findsOneWidget);
+    expect(find.text('Prospect · going'), findsOneWidget);
+    expect(find.text('Customer · going'), findsOneWidget);
+    expect(find.text('PEOPLE'), findsOneWidget);
     expect(find.text('Mark who was there'), findsNothing);
 
-    await tester.tap(find.byTooltip('Remove Claire Moreau from the event'));
+    await tester.tap(find.byTooltip('More for Claire Moreau'));
+    await tester.pumpAndSettle();
+    expect(find.text('Going'), findsNothing);
+    expect(find.text('Followed up'), findsNothing);
+    await tester.tap(find.text('Remove from the event'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Add people'));
     expect(removed, _claire);
     expect(adding, isTrue);
+  });
+
+  testWidgets('a group event: who is invited, going, followed up, and the '
+      'menu for each', (tester) async {
+    final invited = Attendee(
+      personId: 'p1',
+      going: false,
+      invitedOn: DateTime(2026, 10, 1),
+    );
+    final followed = Attendee(
+      personId: 'p2',
+      going: false,
+      invitedOn: DateTime(2026, 10, 1),
+      followedUpOn: DateTime(2026, 10, 5),
+    );
+    final event = CalendarEvent(
+      id: 'e1',
+      title: 'Huiles et sommeil',
+      startsAt: DateTime(2026, 10, 8, 19),
+      attendees: [
+        invited,
+        followed,
+        const Attendee(personId: 'p3'),
+      ],
+    );
+    final marie = Person(
+      id: 'p3',
+      name: 'Marie Dupont',
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026, 9),
+    );
+    Person? going;
+    Person? followedUp;
+    await _pumpView(
+      tester,
+      event,
+      people: [
+        (person: _claire, attendee: invited),
+        (person: marie, attendee: const Attendee(personId: 'p3')),
+        (person: _sarah, attendee: followed),
+      ],
+      onGoing: (person) => going = person,
+      onFollowedUp: (person) => followedUp = person,
+    );
+
+    await tester.scrollUntilVisible(find.text('Sarah Lemaire'), 200);
+    expect(find.text('PEOPLE · 3 · 1 GOING'), findsOneWidget);
+    expect(find.text('Prospect · invited Oct 1'), findsOneWidget);
+    expect(find.text('Customer · going'), findsOneWidget);
+    expect(
+      find.text('Customer · invited Oct 1 · followed up Oct 5'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('More for Claire Moreau'));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove from the event'), findsOneWidget);
+    await tester.tap(find.text('Going'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('More for Sarah Lemaire'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Followed up'));
+    await tester.pumpAndSettle();
+
+    expect(going, _claire);
+    expect(followedUp, _sarah);
   });
 
   testWidgets('once started: Mark who was there', (tester) async {
@@ -192,12 +271,12 @@ void main() {
       id: 'e1',
       title: 'Essential oils for sleep',
       startsAt: DateTime(2026, 10, 8, 19),
-      attendees: const [(personId: 'p1', came: false)],
+      attendees: const [Attendee(personId: 'p1', came: false)],
     );
     await _pumpView(
       tester,
       started,
-      people: [(person: _claire, came: false)],
+      people: [(person: _claire, attendee: const Attendee(personId: 'p1'))],
       now: DateTime(2026, 10, 8, 19, 5),
       onMarkDone: () => marking = true,
     );
@@ -215,14 +294,17 @@ void main() {
       startsAt: DateTime(2026, 10, 8, 19),
       doneAt: DateTime(2026, 10, 9),
       attendees: const [
-        (personId: 'p1', came: true),
-        (personId: 'p2', came: false),
+        Attendee(personId: 'p1', came: true),
+        Attendee(personId: 'p2', came: false),
       ],
     );
     await _pumpView(
       tester,
       done,
-      people: [(person: _claire, came: true), (person: _sarah, came: false)],
+      people: [
+        (person: _claire, attendee: const Attendee(personId: 'p1', came: true)),
+        (person: _sarah, attendee: const Attendee(personId: 'p2')),
+      ],
       now: DateTime(2026, 10, 9, 9),
     );
 
@@ -344,9 +426,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(events.calls, contains('invite(e1:p1)'));
-    expect(find.text('Prospect · invited'), findsOneWidget);
+    expect(find.text('Prospect · going'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Remove Claire Moreau from the event'));
+    await tester.tap(find.byTooltip('More for Claire Moreau'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove from the event'));
     await tester.pumpAndSettle();
 
     expect(events.calls, contains('uninvite(e1:p1)'));
@@ -361,8 +445,8 @@ void main() {
         title: 'Workshop',
         startsAt: started,
         attendees: const [
-          (personId: 'p1', came: false),
-          (personId: 'p2', came: false),
+          Attendee(personId: 'p1', came: false),
+          Attendee(personId: 'p2', came: false),
         ],
       ),
     ]);
@@ -399,8 +483,8 @@ void main() {
           title: 'Workshop',
           startsAt: DateTime(day.year, day.month, day.day, 19),
           attendees: const [
-            (personId: 'p1', came: false),
-            (personId: 'gone', came: false),
+            Attendee(personId: 'p1', came: false),
+            Attendee(personId: 'gone', came: false),
           ],
         ),
       ]),
@@ -433,7 +517,7 @@ void main() {
         id: 'e1',
         title: 'Workshop',
         startsAt: started,
-        attendees: const [(personId: 'p1', came: false)],
+        attendees: const [Attendee(personId: 'p1', came: false)],
       ),
     ]);
     final people = FakePeopleRepository([_claire]);
@@ -521,8 +605,8 @@ void main() {
         eventWorkflowId: 'workshop',
         followUps: FakeEventWorkflowRepository.samples().first.followUps,
         attendees: const [
-          (personId: 'p1', came: false),
-          (personId: 'p2', came: false),
+          Attendee(personId: 'p1', came: false),
+          Attendee(personId: 'p2', came: false),
         ],
       ),
     ]);

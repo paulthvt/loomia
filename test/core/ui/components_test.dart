@@ -98,6 +98,33 @@ void main() {
     expect(button.height, greaterThanOrEqualTo(44));
   });
 
+  testWidgets('with actions, an item shows them instead of the ring', (
+    tester,
+  ) async {
+    var going = false;
+    await pump(
+      tester,
+      SizedBox(
+        width: 390,
+        child: ActionItem(
+          name: 'Marc Petit',
+          reason: 'Follow up Marc about Workshop · Tue',
+          onResolve: () {},
+          actions: [
+            TextButton(
+              onPressed: () => going = true,
+              child: const Text('Going'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.byType(IconButton), findsNothing);
+    await tester.tap(find.text('Going'));
+    expect(going, isTrue);
+  });
+
   testWidgets('a field is named by the label above it', (tester) async {
     final semantics = tester.ensureSemantics();
     await pump(tester, const LabeledField(label: 'Name', child: TextField()));

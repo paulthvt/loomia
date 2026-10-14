@@ -38,7 +38,7 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// An invited contact found in the book.
-typedef EventPerson = ({Person person, bool came});
+typedef EventPerson = ({Person person, Attendee attendee});
 
 /// [event]'s attendees found in [book], by name. Someone deleted from the
 /// contacts on another device is left out rather than shown nameless.
@@ -47,7 +47,7 @@ List<EventPerson> eventPeople(CalendarEvent event, List<Person> book) {
   return [
     for (final attendee in event.attendees)
       if (byId[attendee.personId] case final person?)
-        (person: person, came: attendee.came),
+        (person: person, attendee: attendee),
   ]..sort(
     (a, b) => searchKey(a.person.name).compareTo(searchKey(b.person.name)),
   );
@@ -133,6 +133,16 @@ class EventPane extends ConsumerWidget {
       now: DateTime.now(),
       onAddPeople: () => unawaited(_invite(context, ref, event)),
       onRemove: (person) => unawaited(_uninvite(context, ref, event, person)),
+      onGoing: (person) => unawaited(
+        _write(context, ref, (events) => events.setGoing(event.id, person.id)),
+      ),
+      onFollowedUp: (person) => unawaited(
+        _write(
+          context,
+          ref,
+          (events) => events.followedUp(event.id, person.id, today()),
+        ),
+      ),
       onOpenPerson: (person) => openContact(context, person.id),
       onMarkDone: () =>
           unawaited(showWhoWasThere(context, event: event, people: people)),
@@ -172,7 +182,7 @@ class EventPane extends ConsumerWidget {
     if (!context.mounted) return;
     if (picked == null || picked.isEmpty) return;
     try {
-      await events.invite(event.id, picked);
+      await events.invite(event.id, picked, today());
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
@@ -193,6 +203,25 @@ class EventPane extends ConsumerWidget {
     );
     try {
       await events.uninvite(event.id, person.id);
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+    }
+  }
+
+  Future<void> _write(
+    BuildContext context,
+    WidgetRef ref,
+    Future<void> Function(EventsController events) write,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final events = ref.read(
+      eventsProvider(ref.read(accountProvider)?.email).notifier,
+    );
+    try {
+      await write(events);
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
@@ -279,6 +308,8 @@ class EventView extends StatelessWidget {
     required this.now,
     required this.onAddPeople,
     required this.onRemove,
+    required this.onGoing,
+    required this.onFollowedUp,
     required this.onOpenPerson,
     required this.onMarkDone,
     required this.onEdit,
@@ -296,6 +327,13 @@ class EventView extends StatelessWidget {
   final DateTime now;
   final VoidCallback onAddPeople;
   final void Function(Person) onRemove;
+
+  /// Someone invited said they are coming.
+  final void Function(Person) onGoing;
+
+  /// Someone invited was just followed up: the next follow-up counts from
+  /// today.
+  final void Function(Person) onFollowedUp;
   final void Function(Person) onOpenPerson;
   final VoidCallback onMarkDone;
   final VoidCallback onEdit;
@@ -417,7 +455,9 @@ class EventView extends StatelessWidget {
         ],
         const SizedBox(height: AppSpacing.lg),
         SectionHeader(
-          title: l10n.eventPeople,
+          title: !event.done && event.goingCount < event.attendees.length
+              ? l10n.eventPeopleGoing(event.attendees.length, event.goingCount)
+              : l10n.eventPeople,
           actionLabel: event.done ? null : l10n.peoplePickerTitle,
           onAction: event.done ? null : onAddPeople,
         ),
@@ -432,18 +472,33 @@ class EventView extends StatelessWidget {
             ),
           )
         else
-          for (final (:person, :came) in people)
+          for (final (:person, :attendee) in people)
             ContactRow(
               name: person.name,
               photoPath: person.photoPath,
-              subtitle: _status(l10n, person, came),
+              subtitle: _status(l10n, person, attendee),
               onTap: () => onOpenPerson(person),
               trailing: event.done
                   ? null
-                  : IconButton(
-                      onPressed: () => onRemove(person),
-                      tooltip: l10n.eventRemovePerson(person.name),
-                      icon: const Icon(Icons.close_rounded),
+                  : PopupMenuButton<VoidCallback>(
+                      tooltip: l10n.eventPersonMore(person.name),
+                      onSelected: (action) => action(),
+                      itemBuilder: (context) => [
+                        if (!attendee.going) ...[
+                          PopupMenuItem(
+                            value: () => onGoing(person),
+                            child: Text(l10n.eventGoing),
+                          ),
+                          PopupMenuItem(
+                            value: () => onFollowedUp(person),
+                            child: Text(l10n.eventFollowedUp),
+                          ),
+                        ],
+                        PopupMenuItem(
+                          value: () => onRemove(person),
+                          child: Text(l10n.eventRemoveFromEvent),
+                        ),
+                      ],
                     ),
             ),
         if (!event.done && event.eventWorkflowId != null) ...[
@@ -463,12 +518,23 @@ class EventView extends StatelessWidget {
     );
   }
 
-  String _status(AppLocalizations l10n, Person person, bool came) {
+  String _status(AppLocalizations l10n, Person person, Attendee attendee) {
     final stage = stageLabel(l10n, person.stage);
-    if (!event.done) return l10n.eventPersonInvited(stage);
-    return came
-        ? l10n.eventPersonWasThere(stage)
-        : l10n.eventPersonMissed(stage);
+    if (event.done) {
+      return attendee.came
+          ? l10n.eventPersonWasThere(stage)
+          : l10n.eventPersonMissed(stage);
+    }
+    return switch (attendee) {
+      Attendee(going: true) => l10n.eventPersonGoing(stage),
+      Attendee(:final invitedOn?, :final followedUpOn?) =>
+        l10n.eventPersonFollowedUp(stage, invitedOn, followedUpOn),
+      Attendee(:final invitedOn?) => l10n.eventPersonInvitedOn(
+        stage,
+        invitedOn,
+      ),
+      _ => l10n.eventPersonInvited(stage),
+    };
   }
 }
 

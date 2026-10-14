@@ -23,14 +23,14 @@ final _online = CalendarEvent(
   startsAt: DateTime(2026, 10, 8, 19),
   endsAt: DateTime(2026, 10, 8, 21),
   link: 'https://meet.google.com/abc',
-  attendees: const [(personId: 'p1', came: false)],
+  attendees: const [Attendee(personId: 'p1', came: false)],
 );
 
 final _training = CalendarEvent(
   id: 'e2',
   title: 'New member training',
   startsAt: DateTime(2026, 10, 6, 14),
-  attendees: const [(personId: 'p1', came: false)],
+  attendees: const [Attendee(personId: 'p1', came: false)],
 );
 
 const _remind = EventWorkflowStep(

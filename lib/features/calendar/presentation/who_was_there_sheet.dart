@@ -38,13 +38,13 @@ class _WhoWasThere extends ConsumerStatefulWidget {
 
 class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
   late final Set<String> _there = {
-    for (final (:person, came: _) in widget.people) person.id,
+    for (final (:person, attendee: _) in widget.people) person.id,
   };
   bool _saving = false;
   PeopleFailure? _failure;
 
   List<ThereLine> get _lines => thereSummary([
-    for (final (:person, came: _) in widget.people)
+    for (final (:person, attendee: _) in widget.people)
       if (_there.contains(person.id)) person.stage,
   ], widget.event.followUps);
 
@@ -104,7 +104,7 @@ class _WhoWasThereState extends ConsumerState<_WhoWasThere> {
         spacing: AppSpacing.xs,
         children: [
           if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
-          for (final (:person, came: _) in widget.people)
+          for (final (:person, attendee: _) in widget.people)
             CheckboxListTile(
               value: _there.contains(person.id),
               onChanged: (ticked) => setState(() {

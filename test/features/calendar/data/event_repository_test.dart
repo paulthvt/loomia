@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 
 void main() {
@@ -68,10 +69,48 @@ void main() {
     expect(event.doneAt, DateTime.utc(2026, 10, 9, 8));
     expect(event.done, isTrue);
     expect(event.attendees, [
-      (personId: 'p1', came: true),
-      (personId: 'p2', came: false),
+      const Attendee(personId: 'p1', came: true),
+      const Attendee(personId: 'p2', came: false),
     ]);
     expect(event.cameCount, 1);
+  });
+
+  test('reads who is going, the invite and follow-up days', () {
+    final event = eventFromRow({
+      'id': 'e1',
+      'title': 'Workshop',
+      'starts_at': '2026-10-20T17:00:00+00:00',
+      'event_attendee': [
+        {
+          'person_id': 'p1',
+          'came': false,
+          'going': false,
+          'invited_on': '2026-10-10',
+          'followed_up_on': '2026-10-14',
+          'follow_up_on': '2026-10-17',
+        },
+        {
+          'person_id': 'p2',
+          'came': false,
+          'going': true,
+          'invited_on': '2026-10-10',
+          'followed_up_on': null,
+          'follow_up_on': null,
+        },
+      ],
+    });
+
+    expect(event.attendees, [
+      Attendee(
+        personId: 'p1',
+        going: false,
+        invitedOn: DateTime(2026, 10, 10),
+        followedUpOn: DateTime(2026, 10, 14),
+        followUpOn: DateTime(2026, 10, 17),
+      ),
+      Attendee(personId: 'p2', invitedOn: DateTime(2026, 10, 10)),
+    ]);
+    expect(event.goingCount, 1);
   });
 
   test('a row without the embed has nobody invited', () {

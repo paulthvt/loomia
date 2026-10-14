@@ -217,6 +217,19 @@
       "day": { "type": "DateTime", "format": "E" }
     }
   },
+  "todayFollowUp": "Follow up {name} about {event} · {day}",
+  "@todayFollowUp": {
+    "description": "Row on Today for someone invited to an event who has not said they are coming. name is their first name, event the event's title, day its short weekday, e.g. 'Follow up Marc about Huiles et sommeil · Tue'.",
+    "placeholders": {
+      "name": { "type": "String" },
+      "event": { "type": "String" },
+      "day": { "type": "DateTime", "format": "E" }
+    }
+  },
+  "todayRemoveInvite": "Remove",
+  "@todayRemoveInvite": {
+    "description": "Button on Today's follow-up row: takes the person off the event they were invited to."
+  },
   "todayStepFor": "{event} · {day}",
   "@todayStepFor": {
     "description": "Second line of an event's checklist step on Today: the event's title, then its short weekday, e.g. 'Workshop · Tue'.",
@@ -1378,6 +1391,14 @@
   "@eventWorkflowNew": {
     "description": "Button under the Events section, and title of the dialog that names a new event workflow (a kind of event, e.g. 'Training')."
   },
+  "eventWorkflowGroup": "Several people",
+  "@eventWorkflowGroup": {
+    "description": "Switch on an event type in Settings: its events gather several people (a workshop), not one (a one-to-one appointment)."
+  },
+  "eventWorkflowGroupNote": "On: people you add start as invited, and Today reminds you to follow up.",
+  "@eventWorkflowGroupNote": {
+    "description": "Under the Several people switch on an event type: what it changes. Today is the app's home screen."
+  },
   "eventWorkflowAfter": "After the event",
   "@eventWorkflowAfter": {
     "description": "Heading of the part of an event workflow (and of an event) that says which workflow people who were there start, per stage."
@@ -2326,6 +2347,57 @@
       "stage": { "type": "String" }
     }
   },
+  "eventPersonGoing": "{stage} · going",
+  "@eventPersonGoing": {
+    "description": "Second line of a contact's row on an event, before it is marked done, once they said they are coming. stage is their stage, e.g. 'Prospect'.",
+    "placeholders": {
+      "stage": { "type": "String" }
+    }
+  },
+  "eventPersonInvitedOn": "{stage} · invited {invited}",
+  "@eventPersonInvitedOn": {
+    "description": "Second line of a contact's row on a group event when they have not said they are coming yet. stage is their stage; invited is the day they were invited, e.g. 'Oct 1'.",
+    "placeholders": {
+      "stage": { "type": "String" },
+      "invited": { "type": "DateTime", "format": "MMMd" }
+    }
+  },
+  "eventPersonFollowedUp": "{stage} · invited {invited} · followed up {followed}",
+  "@eventPersonFollowedUp": {
+    "description": "Second line of a contact's row on a group event when they have not said they are coming yet and the user followed them up. stage is their stage; invited and followed are days, e.g. 'Oct 1', 'Oct 5'.",
+    "placeholders": {
+      "stage": { "type": "String" },
+      "invited": { "type": "DateTime", "format": "MMMd" },
+      "followed": { "type": "DateTime", "format": "MMMd" }
+    }
+  },
+  "eventPersonMore": "More for {name}",
+  "@eventPersonMore": {
+    "description": "Tooltip of the menu button on a contact's row on an event: Going, Followed up, Remove from the event. name is the contact's name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "eventGoing": "Going",
+  "@eventGoing": {
+    "description": "Action on someone invited to an event: they said they are coming. In the row menu on the event and as a button on Today."
+  },
+  "eventFollowedUp": "Followed up",
+  "@eventFollowedUp": {
+    "description": "Action on someone invited to an event who has not answered: the user just followed them up, so Today asks again in 3 days. In the row menu on the event and as a button on Today."
+  },
+  "eventRemoveFromEvent": "Remove from the event",
+  "@eventRemoveFromEvent": {
+    "description": "Item of the row menu on a contact invited to an event: takes them off it."
+  },
+  "eventPeopleGoing": "People · {count} · {going} going",
+  "@eventPeopleGoing": {
+    "description": "Heading of the list of contacts on a group event while some have not said they are coming: how many are invited, and how many are coming.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "going": { "type": "int" }
+    }
+  },
   "eventPersonWasThere": "{stage} · was there",
   "@eventPersonWasThere": {
     "description": "Second line of a contact's row on a done event when they were at it (in person or online). stage is their stage, e.g. 'Prospect'.",
@@ -2338,13 +2410,6 @@
     "description": "Second line of a contact's row on a done event when they were invited but not there. Neutral, never a reproach. stage is their stage.",
     "placeholders": {
       "stage": { "type": "String" }
-    }
-  },
-  "eventRemovePerson": "Remove {name} from the event",
-  "@eventRemovePerson": {
-    "description": "Tooltip of the button that takes an invited contact off an event. name is the contact's name.",
-    "placeholders": {
-      "name": { "type": "String" }
     }
   },
   "eventMarkWhoWasThere": "Mark who was there",

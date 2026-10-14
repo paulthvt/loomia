@@ -46,10 +46,12 @@ Widget eventMobileLight() => _app(
     appBar: AppBar(leading: const BackButton()),
     body: EventView(
       event: _events[1],
-      people: _people.map((p) => (person: p, came: false)).toList(),
+      people: eventPeople(_events[1], _people),
       now: DateTime(2026, 10, 7, 9),
       onAddPeople: () {},
       onRemove: (_) {},
+      onGoing: (_) {},
+      onFollowedUp: (_) {},
       onOpenPerson: (_) {},
       onMarkDone: () {},
       onEdit: () {},
@@ -72,34 +74,13 @@ Widget eventDoneMobileLight() => _app(
   Scaffold(
     appBar: AppBar(leading: const BackButton()),
     body: EventView(
-      event: CalendarEvent(
-        id: _events[1].id,
-        title: _events[1].title,
-        startsAt: _events[1].startsAt,
-        endsAt: _events[1].endsAt,
-        place: _events[1].place,
-        link: _events[1].link,
-        notes: _events[1].notes,
-        attendees: [
-          (personId: 'p1', came: true), // Claire
-          (personId: 'p2', came: false), // Amélie
-          (personId: 'p3', came: true), // Sarah
-          (personId: 'p4', came: true), // Marie
-          (personId: 'p5', came: true), // Bruno
-        ],
-        doneAt: DateTime(2026, 10, 9, 9),
-        stepsDone: {..._events[1].stepsDone, 'thank': DateTime(2026, 10, 9)},
-      ),
-      people: [
-        (person: _people[0], came: false), // Amélie
-        (person: _people[1], came: true), // Bruno
-        (person: _people[2], came: true), // Claire
-        (person: _people[3], came: true), // Marie
-        (person: _people[4], came: true), // Sarah
-      ],
+      event: _done,
+      people: eventPeople(_done, _people),
       now: DateTime(2026, 10, 9, 9),
       onAddPeople: () {},
       onRemove: (_) {},
+      onGoing: (_) {},
+      onFollowedUp: (_) {},
       onOpenPerson: (_) {},
       onMarkDone: () {},
       onEdit: () {},
@@ -114,6 +95,25 @@ Widget eventDoneMobileLight() => _app(
       },
     ),
   ),
+);
+
+final _done = CalendarEvent(
+  id: _events[1].id,
+  title: _events[1].title,
+  startsAt: _events[1].startsAt,
+  endsAt: _events[1].endsAt,
+  place: _events[1].place,
+  link: _events[1].link,
+  notes: _events[1].notes,
+  attendees: [
+    const Attendee(personId: 'p1', came: true), // Claire
+    const Attendee(personId: 'p2', came: false), // Amélie
+    const Attendee(personId: 'p3', came: true), // Sarah
+    const Attendee(personId: 'p4', came: true), // Marie
+    const Attendee(personId: 'p5', came: true), // Bruno
+  ],
+  doneAt: DateTime(2026, 10, 9, 9),
+  stepsDone: {..._events[1].stepsDone, 'thank': DateTime(2026, 10, 9)},
 );
 
 final _today = DateTime(2026, 10, 7);
@@ -169,12 +169,29 @@ final _events = [
     place: 'Studio Lumière, 4 rue Mercière, Lyon',
     link: 'https://meet.google.com/abc-defg-hij',
     notes: 'Bring the diffuser and ten sample vials. Doors open at 18:45.',
+    // As in Figma "Event — invited / going": two going, three invited.
     attendees: [
-      (personId: 'p1', came: false),
-      (personId: 'p2', came: false),
-      (personId: 'p3', came: false),
-      (personId: 'p4', came: false),
-      (personId: 'p5', came: false),
+      const Attendee(personId: 'p1'), // Claire
+      Attendee(
+        personId: 'p2', // Amélie
+        going: false,
+        invitedOn: DateTime(2026, 10, 6),
+        followUpOn: DateTime(2026, 10, 9),
+      ),
+      Attendee(
+        personId: 'p3', // Sarah
+        going: false,
+        invitedOn: DateTime(2026, 10, 1),
+        followedUpOn: DateTime(2026, 10, 5),
+        followUpOn: DateTime(2026, 10, 8),
+      ),
+      const Attendee(personId: 'p4'), // Marie
+      Attendee(
+        personId: 'p5', // Bruno
+        going: false,
+        invitedOn: DateTime(2026, 10, 1),
+        followUpOn: DateTime(2026, 10, 4),
+      ),
     ],
     eventWorkflowId: 'workshop',
     followUps: const {
@@ -190,9 +207,9 @@ final _events = [
     endsAt: DateTime(2026, 10, 8, 15),
     link: 'https://meet.google.com/abc-defg-hij',
     attendees: [
-      (personId: 'p1', came: false),
-      (personId: 'p3', came: false),
-      (personId: 'p5', came: false),
+      const Attendee(personId: 'p1', came: false),
+      const Attendee(personId: 'p3', came: false),
+      const Attendee(personId: 'p5', came: false),
     ],
   ),
   CalendarEvent(

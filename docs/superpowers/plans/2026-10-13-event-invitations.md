@@ -60,7 +60,7 @@ Going and Followed up are plain updates: the table already grants `update` under
 - Create: `supabase/migrations/<timestamp>_event_invitations.sql`
 - Create: `supabase/tests/event_invitation_test.sql`
 
-- [ ] **Step 1: Failing pgTAP.**
+- [x] **Step 1: Failing pgTAP.**
 
   Fixtures:
   - one owner with `notification_settings` (`time_zone` 'Europe/Paris');
@@ -83,7 +83,7 @@ Going and Followed up are plain updates: the table already grants `update` under
     - on 10-13, the invited person counts once even with a reminder also due;
     - on 10-12, they don't count;
     - on 10-21, the day after the workshop, they don't count.
-- [ ] **Step 2: Migration.**
+- [x] **Step 2: Migration.**
 
 ```sql
 alter table public.event_workflow
@@ -139,14 +139,14 @@ $$;
 - Modify: `test/features/workflows/server_rule.dart`, `test/features/calendar/fake_event_repository.dart`, `test/features/workflows/fake_event_workflow_repository.dart`, and every `(personId: …, came: …)` literal (`calendar_preview.dart`, `calendar_controller_test.dart`, `calendar_page_test.dart`, `event_page_test.dart`, `today_preview.dart` and others `flutter analyze` finds)
 - Test: `test/features/calendar/data/event_repository_test.dart`, `test/features/calendar/presentation/calendar_controller_test.dart`, `test/features/workflows/data/event_workflow_repository_test.dart`
 
-- [ ] **Step 1: Failing tests.**
+- [x] **Step 1: Failing tests.**
   - Row mapping reads `going`, `invited_on`, `followed_up_on`, `follow_up_on` (dates as local midnights, nulls kept), and `is_group` (missing → true).
   - Controller:
     - `invite('e1', ['p1'], day)` records the day;
     - `setGoing('e1', 'p1')` leaves `p1` going, with no follow-up day;
     - `followedUp('e1', 'p1', day)` moves the follow-up day to day + 3;
     - on a series occurrence, `invite` still goes through `setSeriesPeople`.
-- [ ] **Step 2: Model.** `Attendee` becomes a class:
+- [x] **Step 2: Model.** `Attendee` becomes a class:
   - fields:
     - `personId`;
     - `came` (false);
@@ -157,15 +157,15 @@ $$;
   - `==` and `hashCode` over all six fields, and a `toString` for test failures;
   - `CalendarEvent` gains `int get goingCount`;
   - `EventWorkflow` gains `final bool isGroup` (default true, doc: "Several people per event: people added start invited.").
-- [ ] **Step 3: Repositories.**
+- [x] **Step 3: Repositories.**
   - `_columns` embeds `event_attendee(person_id, came, going, invited_on, followed_up_on, follow_up_on)`. `eventFromRow` maps them with `DateTime.parse`, as `stepsDone` does.
   - `invite(eventId, personIds, DateTime on)` sends `invited_on: dayColumn(on)` and no `going`.
   - `setGoing(eventId, personId)` updates `{'going': true}`.
   - `followedUp(eventId, personId, DateTime on)` updates `{'followed_up_on': dayColumn(on)}`.
   - Each filters on both keys and is wrapped in `guardPeople`.
   - `EventWorkflowRepository.setGroup(String id, bool on)` mirrors `rename`. `eventWorkflowFromRow` reads `row['is_group'] as bool? ?? true`.
-- [ ] **Step 4: Controller.** `EventsController.invite(eventId, personIds, on)` passes `on` to `invite`; the series branch is unchanged. `setGoing(eventId, personId)` and `followedUp(eventId, personId, on)` call the repository, then `_reload()`, like `tick`. Update `_invite` in `event_page.dart` to pass `today()`.
-- [ ] **Step 5: Fakes.**
+- [x] **Step 4: Controller.** `EventsController.invite(eventId, personIds, on)` passes `on` to `invite`; the series branch is unchanged. `setGoing(eventId, personId)` and `followedUp(eventId, personId, on)` call the repository, then `_reload()`, like `tick`. Update `_invite` in `event_page.dart` to pass `today()`.
+- [x] **Step 5: Fakes.**
   - `server_rule.dart` gains `DateTime? followUpOn(Attendee attendee, {required bool done})`: `null` when going or done, else `addDays(followedUpOn ?? invitedOn!, 3)`. Doc it as the Dart copy of `follow_up_on`.
   - The fake event repository:
     - stores `going` on invite as the trigger would (`isGroup` of the event's type from an injected list, true when absent), plus `invitedOn`;
@@ -180,7 +180,7 @@ $$;
 - Modify: `lib/l10n/app_en.arb`
 - Test: `test/features/calendar/presentation/event_page_test.dart`
 
-- [ ] **Step 1: Failing widget tests.**
+- [x] **Step 1: Failing widget tests.**
   - Before done:
     - a going attendee reads "Prospect · going";
     - an invited one reads "Prospect · invited Oct 1";
@@ -190,7 +190,7 @@ $$;
     - each item calls `onGoing`, `onFollowedUp` or `onRemove` with the person.
   - With someone invited, the People header reads "People · 5 · 2 going".
   - Done: unchanged ("was there" / "missed", no menu).
-- [ ] **Step 2: Copy.**
+- [x] **Step 2: Copy.**
   - `eventPersonGoing` ({stage});
   - `eventPersonInvitedOn` ({stage}, {invited} as DateTime `MMMd`);
   - `eventPersonFollowedUp` ({stage}, {invited}, {followed} as `MMMd`);
@@ -201,7 +201,7 @@ $$;
   - `eventPeopleGoing` ({count}, {going}) "People · {count} · {going} going".
 
   Each key is described. `eventPersonInvited` stays for a row with no invite day, i.e. the old rows' fallback; delete it if nothing uses it after this task. `flutter gen-l10n`.
-- [ ] **Step 3: View.**
+- [x] **Step 3: View.**
   - `EventPerson` is `({Person person, Attendee attendee})`; `eventPeople` fills it.
   - `EventView`:
     - gains `onGoing` and `onFollowedUp` (`void Function(Person)`);
@@ -219,9 +219,9 @@ $$;
 - Modify: `lib/l10n/app_en.arb`
 - Test: `test/features/workflows/presentation/event_workflow_editor_test.dart`
 
-- [ ] **Step 1: Failing widget test.** "Several people" is on for a group type. Turning it off calls `onGroup(false)`, and it is disabled while saving.
-- [ ] **Step 2: Copy.** `eventWorkflowGroup` "Several people" and `eventWorkflowGroupNote` "On: people you add start as invited, and Today reminds you to follow up." (#315 extends it with planning). Both described.
-- [ ] **Step 3:** `_Control.group`, plus `EventWorkflowEditorView.onGroup` (`Future<void> Function(bool)`). After the steps group: `SettingsGroup([SwitchListTile(value: workflow.isGroup, title: …, onChanged: busy ? null : (on) => _run(_Control.group, () => widget.onGroup(on)))])`, then the note in `bodySmall` / `onSurfaceVariant`. `EventWorkflowEditor` wires `repository.setGroup`.
+- [x] **Step 1: Failing widget test.** "Several people" is on for a group type. Turning it off calls `onGroup(false)`, and it is disabled while saving.
+- [x] **Step 2: Copy.** `eventWorkflowGroup` "Several people" and `eventWorkflowGroupNote` "On: people you add start as invited, and Today reminds you to follow up." (#315 extends it with planning). Both described.
+- [x] **Step 3:** `_Control.group`, plus `EventWorkflowEditorView.onGroup` (`Future<void> Function(bool)`). After the steps group: `SettingsGroup([SwitchListTile(value: workflow.isGroup, title: …, onChanged: busy ? null : (on) => _run(_Control.group, () => widget.onGroup(on)))])`, then the note in `bodySmall` / `onSurfaceVariant`. `EventWorkflowEditor` wires `repository.setGroup`.
 
 ### Task 5: Today
 
@@ -231,7 +231,7 @@ $$;
 - Modify: `lib/l10n/app_en.arb`
 - Test: `test/features/today/domain/due_test.dart`, `test/features/today/today_page_test.dart`, `test/core/ui/action_item_test.dart` (create if absent)
 
-- [ ] **Step 1: Failing tests.**
+- [x] **Step 1: Failing tests.**
   - `dueToday(people, workflows, events, today)`:
     - an invited attendee whose `followUpOn` is today or earlier yields one `DueFollowUp`, keyed `'<event>:<person>'`;
     - one whose day is tomorrow does not;
@@ -244,14 +244,14 @@ $$;
     - Going calls `setGoing`, Followed up calls `followedUp` with today, Remove calls `uninvite`; each makes the row leave;
     - a `PeopleFailure` shows the SnackBar and keeps the row;
     - the headline counts Marc once alongside his reminder.
-- [ ] **Step 2: Copy.** `todayFollowUp` "Follow up {name} about {event} · {day}" (`day` as DateTime `E`, like `todayStepFor`) and `todayRemoveInvite` "Remove", both described. Going and Followed up reuse `eventGoing` / `eventFollowedUp`.
-- [ ] **Step 3: `ActionItem.actions`.** A `List<Widget>?` field, doc: "Buttons under the text, for an item resolved more than one way; replaces the ring." Rendered as `Wrap(spacing: AppSpacing.xs, runSpacing: AppSpacing.xs, children: actions)` after the chip, with `AppSpacing.sm` above. The ring is drawn only when `actions == null`.
-- [ ] **Step 4: Domain.**
+- [x] **Step 2: Copy.** `todayFollowUp` "Follow up {name} about {event} · {day}" (`day` as DateTime `E`, like `todayStepFor`) and `todayRemoveInvite` "Remove", both described. Going and Followed up reuse `eventGoing` / `eventFollowedUp`.
+- [x] **Step 3: `ActionItem.actions`.** A `List<Widget>?` field, doc: "Buttons under the text, for an item resolved more than one way; replaces the ring." Rendered as `Wrap(spacing: AppSpacing.xs, runSpacing: AppSpacing.xs, children: actions)` after the chip, with `AppSpacing.sm` above. The ring is drawn only when `actions == null`.
+- [x] **Step 4: Domain.**
   - `final class DueFollowUp extends Due` holds the `CalendarEvent` and the `Attendee`. `day` is `attendee.followUpOn!` and `key` is `'${event.id}:${person.id}'`.
   - `dueToday` gains `List<CalendarEvent> events`. For each not-done event whose `day` is not before `today`, it adds every attendee with `followUpOn` on or before `today` whose person is in `people`.
   - The sort's tie-break switch ranks reminder < follow-up < step.
   - Update the doc comment.
-- [ ] **Step 5: Page.**
+- [x] **Step 5: Page.**
   - `build` passes `calendarEvents.value ?? const []` to `dueToday`. Events are optional for the rows: a failed events load hides follow-ups, not the list.
   - `_row` maps `DueFollowUp` to `ActionItem` with:
     - `reason: l10n.todayFollowUp(firstName(person), event.title, event.startsAt)`, no detail;
@@ -264,9 +264,21 @@ $$;
 
 ### Task 6: Gate
 
-- [ ] `dart format .`, `flutter analyze`, `flutter test`, `supabase test db`; `graphify update .`.
-- [ ] Push, regenerate goldens through CI (changed: `today_*`, `event_mobile_light`, `event_workflow_editor_light`), open the PNGs, commit them.
-- [ ] PR `feat(calendar): invitations on group events`, body `Closes #314`, Figma frames linked.
+- [x] `dart format .`, `flutter analyze`, `flutter test`, `supabase test db`; `graphify update .`.
+- [x] Push, regenerate goldens through CI (changed: `today_*`, `event_mobile_light`, `event_workflow_editor_light`), open the PNGs, commit them.
+- [x] PR `feat(calendar): invitations on group events`, body `Closes #314`, Figma frames linked.
 
 ## Found while implementing
 
+- **The pgTAP workshop starts at 00:30 in Paris**, which is still the day before in UTC. That pins `due_people_count` reading the owner's zone rather than UTC.
+- **`dueToday` takes the events as a named `events:` parameter**, defaulting to none, so existing callers and tests are unchanged.
+- **Plain and individual events now read "· going"** where they used to read "· invited". `eventPersonInvited` stays as the fallback for an attendee with no invite day (fakes, previews).
+- **`eventRemovePerson` is gone** with the close button it labelled. `arb_keys_test.dart` requires the French key to go too, so it was removed from `app_fr.arb`.
+- **`SectionHeader` uppercases its title**, so the tests look for "PEOPLE · 3 · 1 GOING".
+- **The follow-up row is built by `_followUp`** in `_TodayViewState`. The `switch` in `_row` and `_tick` throws for `DueFollowUp`, which never reaches either one.
+- **Goldens:**
+  - `today_mobile_*` and `today_desktop_*` gain Marc's follow-up;
+  - `event_mobile_light` shows invited, followed-up and going rows with the menu button;
+  - `event_workflow_editor_light` gains Several people.
+
+  All regenerated through CI.

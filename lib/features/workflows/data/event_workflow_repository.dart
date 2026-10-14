@@ -38,6 +38,10 @@ class EventWorkflowRepository {
     await _client.from('event_workflow').update({'name': name}).eq('id', id);
   });
 
+  Future<void> setGroup(String id, bool on) => guardPeople(() async {
+    await _client.from('event_workflow').update({'is_group': on}).eq('id', id);
+  });
+
   /// Every stage: one missing from [followUps] keeps their workflow.
   Future<void> setFollowUps(String id, Map<Stage, String> followUps) =>
       guardPeople(() async {
@@ -102,6 +106,7 @@ EventWorkflow eventWorkflowFromRow(Map<String, dynamic> row) => EventWorkflow(
   id: row['id'] as String,
   name: row['name'] as String,
   followUps: followUpsFromRow(row),
+  isGroup: row['is_group'] as bool? ?? true,
   steps: [
     for (final step
         in ((row['event_workflow_step'] as List?) ?? const [])

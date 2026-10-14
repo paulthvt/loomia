@@ -1,6 +1,8 @@
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 
+import '../workflows/server_rule.dart';
+
 /// In-memory events that record calls and fail on demand.
 class FakeEventRepository implements EventRepository {
   FakeEventRepository([Iterable<CalendarEvent> events = const []]) {
@@ -8,6 +10,10 @@ class FakeEventRepository implements EventRepository {
   }
 
   final List<CalendarEvent> store = [];
+
+  /// Whether an event type gathers several people, as `is_group`: people
+  /// invited to an event of that type start not going.
+  bool Function(String eventWorkflowId) isGroup = (_) => true;
 
   /// One entry per call, e.g. `add(Workshop)`.
   final List<String> calls = [];
@@ -148,8 +154,7 @@ class FakeEventRepository implements EventRepository {
           for (final attendee in attendees)
             if (!gone.contains(attendee.personId)) attendee,
           for (final id in add)
-            if (!attendees.any((a) => a.personId == id))
-              (personId: id, came: false),
+            if (!attendees.any((a) => a.personId == id)) Attendee(personId: id),
         ],
       );
     }
@@ -171,7 +176,20 @@ class FakeEventRepository implements EventRepository {
       place: event.place,
       link: event.link,
       notes: event.notes,
-      attendees: change(event.attendees),
+      attendees: [
+        for (final attendee in change(event.attendees))
+          Attendee(
+            personId: attendee.personId,
+            came: attendee.came,
+            going: attendee.going,
+            invitedOn: attendee.invitedOn,
+            followedUpOn: attendee.followedUpOn,
+            followUpOn: followUpOn(
+              attendee,
+              done: (doneAt ?? event.doneAt) != null,
+            ),
+          ),
+      ],
       doneAt: doneAt ?? event.doneAt,
       eventWorkflowId: event.eventWorkflowId,
       followUps: event.followUps,
@@ -182,17 +200,64 @@ class FakeEventRepository implements EventRepository {
     return changed;
   }
 
+  /// As the `event_attendee_going` trigger: not going on a group type.
   @override
-  Future<void> invite(String eventId, Iterable<String> personIds) async {
+  Future<void> invite(
+    String eventId,
+    Iterable<String> personIds,
+    DateTime on,
+  ) async {
     _record('invite($eventId:${personIds.join(',')})');
+    final type = store
+        .firstWhere((event) => event.id == eventId)
+        .eventWorkflowId;
+    final going = type == null || !isGroup(type);
     _with(
       eventId,
       (attendees) => [
         ...attendees,
-        for (final id in personIds) (personId: id, came: false),
+        for (final id in personIds)
+          Attendee(personId: id, going: going, invitedOn: on),
       ],
     );
   }
+
+  @override
+  Future<void> setGoing(String eventId, String personId) async {
+    _record('setGoing($eventId:$personId)');
+    _change(eventId, personId, (a) => _copy(a, going: true));
+  }
+
+  @override
+  Future<void> followedUp(String eventId, String personId, DateTime on) async {
+    _record('followedUp($eventId:$personId)');
+    _change(eventId, personId, (a) => _copy(a, followedUpOn: on));
+  }
+
+  void _change(
+    String eventId,
+    String personId,
+    Attendee Function(Attendee) change,
+  ) => _with(
+    eventId,
+    (attendees) => [
+      for (final attendee in attendees)
+        attendee.personId == personId ? change(attendee) : attendee,
+    ],
+  );
+
+  static Attendee _copy(
+    Attendee attendee, {
+    bool? came,
+    bool? going,
+    DateTime? followedUpOn,
+  }) => Attendee(
+    personId: attendee.personId,
+    came: came ?? attendee.came,
+    going: going ?? attendee.going,
+    invitedOn: attendee.invitedOn,
+    followedUpOn: followedUpOn ?? attendee.followedUpOn,
+  );
 
   @override
   Future<void> uninvite(String eventId, String personId) async {
@@ -218,10 +283,7 @@ class FakeEventRepository implements EventRepository {
       eventId,
       (attendees) => [
         for (final attendee in attendees)
-          (
-            personId: attendee.personId,
-            came: there.contains(attendee.personId),
-          ),
+          _copy(attendee, came: there.contains(attendee.personId)),
       ],
       doneAt: DateTime.now(),
     );

@@ -84,6 +84,10 @@ class EventWorkflowEditor extends ConsumerWidget {
           ref,
           (repository) => repository.rename(workflow.id, name),
         ),
+        onGroup: (on) => editEventWorkflows(
+          ref,
+          (repository) => repository.setGroup(workflow.id, on),
+        ),
         onFollowUps: (followUps) => editEventWorkflows(
           ref,
           (repository) => repository.setFollowUps(workflow.id, followUps),
@@ -118,7 +122,7 @@ class EventWorkflowEditor extends ConsumerWidget {
   }
 }
 
-enum _Control { name, followUps, delete }
+enum _Control { name, group, followUps, delete }
 
 /// The editor, fed the saved workflow and callbacks per write; each write
 /// callback throws `PeopleFailure`.
@@ -127,6 +131,7 @@ class EventWorkflowEditorView extends StatefulWidget {
     required this.workflow,
     required this.workflows,
     required this.onRename,
+    required this.onGroup,
     required this.onFollowUps,
     required this.onAddStep,
     required this.onOpenStep,
@@ -139,6 +144,9 @@ class EventWorkflowEditorView extends StatefulWidget {
 
   /// A trimmed name, different from the saved one.
   final Future<void> Function(String name) onRename;
+
+  /// Several people per event, or one.
+  final Future<void> Function(bool on) onGroup;
 
   /// Every stage; one missing keeps their workflow.
   final Future<void> Function(Map<Stage, String> followUps) onFollowUps;
@@ -292,6 +300,27 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
                   onTap: () => widget.onOpenStep(step),
                 ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        SettingsGroup(
+          children: [
+            SwitchListTile(
+              value: workflow.isGroup,
+              title: Text(l10n.eventWorkflowGroup),
+              onChanged: _busy.contains(_Control.group)
+                  ? null
+                  : (on) => unawaited(
+                      _run(_Control.group, () => widget.onGroup(on)),
+                    ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          l10n.eventWorkflowGroupNote,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: AppSpacing.lg),
         SectionHeader(title: l10n.eventWorkflowAfter),

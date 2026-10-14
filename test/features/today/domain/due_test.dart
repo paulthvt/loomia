@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/today/domain/due.dart';
 
@@ -114,5 +115,68 @@ void main() {
 
     expect(_keys(due), ['r-anna', 'a', 'b']);
     expect([for (final row in due) row.person.id], ['a', 'a', 'b']);
+  });
+
+  group('invitation follow-ups', () {
+    CalendarEvent event(String id, DateTime startsAt, List<Attendee> people) =>
+        CalendarEvent(
+          id: id,
+          title: 'Workshop $id',
+          startsAt: startsAt,
+          attendees: people,
+        );
+    Attendee invited(String id, DateTime followUpOn) => Attendee(
+      personId: id,
+      going: false,
+      invitedOn: DateTime(2026, 9, 20),
+      followUpOn: followUpOn,
+    );
+
+    test('due today or late stay, tomorrow falls out, and the event\'s day '
+        'passed takes them away', () {
+      final due = dueToday(
+        [
+          _person('a', 'Anna', follows: false),
+          _person('b', 'Bruno', follows: false),
+          _person('c', 'Chloé', follows: false),
+        ],
+        _workflows,
+        _today,
+        events: [
+          event('e1', DateTime(2026, 10, 2, 19), [
+            invited('a', _today),
+            invited('b', DateTime(2026, 9, 30)),
+            invited('gone', _today),
+          ]),
+          // Today, at 9:00, already started: still its day.
+          event('e2', DateTime(2026, 9, 29, 9), [invited('c', _today)]),
+          event('e3', DateTime(2026, 9, 28, 19), [invited('b', _today)]),
+        ],
+      );
+
+      expect(_keys(due), ['e1:a', 'e2:c']);
+      expect(due.first, isA<DueFollowUp>());
+      expect(due.first.day, _today);
+    });
+
+    test('the same day: reminders, then follow-ups, then the step', () {
+      final due = dueToday(
+        [
+          _person(
+            'a',
+            'Anna',
+            due: _today,
+            reminders: [_reminder('r-anna', _today)],
+          ),
+        ],
+        _workflows,
+        _today,
+        events: [
+          event('e1', DateTime(2026, 10, 2, 19), [invited('a', _today)]),
+        ],
+      );
+
+      expect(_keys(due), ['r-anna', 'e1:a', 'a']);
+    });
   });
 }

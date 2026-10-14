@@ -75,11 +75,25 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
 
   /// Throws `PeopleFailure`, and then nobody is added. On an occurrence,
   /// they join it, the not done ones after it, and the series.
-  Future<void> invite(String eventId, Iterable<String> personIds) async {
+  Future<void> invite(
+    String eventId,
+    Iterable<String> personIds,
+    DateTime on,
+  ) async {
     final repository = ref.read(eventRepositoryProvider);
     await (_inSeries(eventId)
         ? repository.setSeriesPeople(eventId, add: personIds)
-        : repository.invite(eventId, personIds));
+        : repository.invite(eventId, personIds, on));
+    await _reload();
+  }
+
+  Future<void> setGoing(String eventId, String personId) async {
+    await ref.read(eventRepositoryProvider).setGoing(eventId, personId);
+    await _reload();
+  }
+
+  Future<void> followedUp(String eventId, String personId, DateTime on) async {
+    await ref.read(eventRepositoryProvider).followedUp(eventId, personId, on);
     await _reload();
   }
 
