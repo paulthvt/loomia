@@ -60,10 +60,6 @@ Widget eventMobileLight() => _app(
       onJoin: (_) {},
       steps: _workshopSteps,
       onTick: (_, _) {},
-      followUpNames: const {
-        Stage.prospect: 'Samples',
-        Stage.customer: 'New customer',
-      },
     ),
   ),
 );
@@ -89,10 +85,6 @@ Widget eventDoneMobileLight() => _app(
       onJoin: (_) {},
       steps: _workshopSteps,
       onTick: (_, _) {},
-      followUpNames: const {
-        Stage.prospect: 'Samples',
-        Stage.customer: 'New customer',
-      },
     ),
   ),
 );
@@ -194,10 +186,6 @@ final _events = [
       ),
     ],
     eventWorkflowId: 'workshop',
-    followUps: const {
-      Stage.prospect: 'samples',
-      Stage.customer: 'new-customer',
-    },
     stepsDone: {'remind': DateTime(2026, 10, 7)},
   ),
   CalendarEvent(

@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../fake_activity_repository.dart';
 import '../fake_people_repository.dart';
 import 'form_harness.dart';
 
@@ -17,12 +19,15 @@ Person _sarah({Stage stage = Stage.prospect, ProspectStatus? status}) => Person(
 
 void main() {
   late FakePeopleRepository people;
+  late FakeActivityRepository activities;
 
   Future<void> open(WidgetTester tester, Person person, Stage stage) {
     people = FakePeopleRepository([person]);
+    activities = FakeActivityRepository();
     return pumpFormHarness(
       tester,
       people: people,
+      activities: activities,
       open: (context) => showChangeStage(context, [person], stage),
       result: (_) {},
     );
@@ -39,6 +44,30 @@ void main() {
     expect(people.calls, contains('setStage(p1, customer)'));
     expect(people.store['p1']!.stage, Stage.customer);
     expect(find.text('Sarah is now a customer'), findsNothing);
+  });
+
+  testWidgets('a prospect becoming a customer: the registration order, '
+      'logged after the move', (tester) async {
+    await open(tester, _sarah(), Stage.customer);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Registration order'),
+      '120',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Move to customers'));
+    await tester.pumpAndSettle();
+
+    expect(people.store['p1']!.stage, Stage.customer);
+    final order = activities.store.single;
+    expect(order.kind, ActivityKind.order);
+    expect(order.amount, 120);
+    expect(order.text, 'Registration order');
+  });
+
+  testWidgets('no registration order elsewhere: to the team', (tester) async {
+    await open(tester, _sarah(), Stage.team);
+
+    expect(find.text('Registration order'), findsNothing);
   });
 
   testWidgets('a prospect with a status is told it goes', (tester) async {

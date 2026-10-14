@@ -109,15 +109,19 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
   bool _inSeries(String eventId) =>
       state.value?.any((e) => e.id == eventId && e.series != null) ?? false;
 
-  /// Marks who was there. Their histories and last contact move with it, so
-  /// the book and any open history reload too. Throws `PeopleFailure`.
-  Future<void> markDone(
+  /// Marks it done with who was there and what changed for them. Their
+  /// stages, workflows and histories move with it, so the book and any open
+  /// history reload too. Throws `PeopleFailure`.
+  Future<void> close(
     String eventId,
-    Iterable<String> came,
+    List<There> there,
+    Iterable<String> inviteNext,
     DateTime today,
   ) async {
     try {
-      await ref.read(eventRepositoryProvider).markDone(eventId, came, today);
+      await ref
+          .read(eventRepositoryProvider)
+          .close(eventId, there, inviteNext, today);
     } on PeopleFailure {
       ref.invalidateSelf();
       rethrow;

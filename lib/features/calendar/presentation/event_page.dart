@@ -30,10 +30,8 @@ import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
-import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/event_step_copy.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
-import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -121,12 +119,9 @@ class EventPane extends ConsumerWidget {
     final eventWorkflows =
         ref.watch(eventWorkflowsProvider(owner)).value ??
         const <EventWorkflow>[];
-    final workflows =
-        ref.watch(workflowsProvider(owner)).value ?? const <Workflow>[];
     final steps =
         findEventWorkflow(eventWorkflows, event.eventWorkflowId)?.steps ??
         const <EventWorkflowStep>[];
-    final followUpNames = followUpNamesOf(event.followUps, workflows);
     return EventView(
       event: event,
       people: people,
@@ -160,7 +155,6 @@ class EventPane extends ConsumerWidget {
       onJoin: (link) => unawaited(openExternal(context, link)),
       steps: steps,
       onTick: (step, done) => unawaited(_tick(context, ref, event, step, done)),
-      followUpNames: followUpNames,
     );
   }
 
@@ -318,7 +312,6 @@ class EventView extends StatelessWidget {
     required this.onJoin,
     required this.steps,
     required this.onTick,
-    required this.followUpNames,
     super.key,
   });
 
@@ -344,7 +337,6 @@ class EventView extends StatelessWidget {
   final void Function(Uri link) onJoin;
   final List<EventWorkflowStep> steps;
   final void Function(EventWorkflowStep step, bool done) onTick;
-  final Map<Stage, String> followUpNames;
 
   @override
   Widget build(BuildContext context) {
@@ -501,19 +493,6 @@ class EventView extends StatelessWidget {
                       ],
                     ),
             ),
-        if (!event.done && event.eventWorkflowId != null) ...[
-          const SizedBox(height: AppSpacing.lg),
-          SectionHeader(title: l10n.eventWorkflowAfter),
-          for (final stage in Stage.values)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.eventWorkflowStage(stage.name)),
-              trailing: Text(switch (followUpNames[stage]) {
-                final String name => l10n.eventFollowUpStarts(name),
-                null => l10n.eventFollowUpKeeps,
-              }),
-            ),
-        ],
       ],
     );
   }
@@ -624,13 +603,3 @@ class _DoneBanner extends StatelessWidget {
     );
   }
 }
-
-/// The name of each stage's workflow in [followUps]; a stage whose workflow
-/// isn't in [workflows] (deleted) is left out, so it reads "keeps".
-Map<Stage, String> followUpNamesOf(
-  Map<Stage, String> followUps,
-  List<Workflow> workflows,
-) => {
-  for (final MapEntry(key: stage, value: id) in followUps.entries)
-    if (findWorkflow(workflows, id) case final workflow?) stage: workflow.name,
-};

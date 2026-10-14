@@ -47,7 +47,7 @@ TodayEvents todayEvents(
     events.where(
       (event) =>
           event.canMarkDone(now) &&
-          event.followUps.isNotEmpty &&
+          event.eventWorkflowId != null &&
           !canJoin(event, now) &&
           !event.day.isBefore(from),
     ),

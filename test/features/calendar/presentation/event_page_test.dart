@@ -12,13 +12,14 @@ import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../../contacts/fake_people_repository.dart';
-import '../../workflows/fake_event_workflow_repository.dart';
+import '../../workflows/fake_workflow_repository.dart';
 import '../fake_event_repository.dart';
 
 final _workshop = CalendarEvent(
@@ -69,7 +70,6 @@ Future<void> _pumpView(
   void Function(Uri link)? onJoin,
   List<EventWorkflowStep> steps = const [],
   void Function(EventWorkflowStep, bool)? onTick,
-  Map<Stage, String> followUpNames = const {},
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -94,7 +94,6 @@ Future<void> _pumpView(
           onJoin: onJoin ?? (_) {},
           steps: steps,
           onTick: onTick ?? (_, _) {},
-          followUpNames: followUpNames,
         ),
       ),
     ),
@@ -468,7 +467,7 @@ void main() {
     await tester.tap(find.text('Done · 1 was there'));
     await tester.pumpAndSettle();
 
-    expect(events.calls, contains('markDone(e1:p1)'));
+    expect(events.calls, contains('close(e1:p1|next:)'));
     expect(find.text('Done · 1 of 2 was there'), findsOneWidget);
   });
 
@@ -578,55 +577,164 @@ void main() {
     expect(ticks, [('remind', true), ('thank', false)]);
   });
 
-  testWidgets('after the event: what each stage starts', (tester) async {
-    await _pumpView(
-      tester,
-      CalendarEvent(
-        id: 'e1',
-        title: 'Workshop',
-        startsAt: DateTime(2026, 10, 8, 19),
-        eventWorkflowId: 'workshop',
-      ),
-      followUpNames: const {Stage.prospect: 'Samples'},
-    );
+  group('who was there', () {
+    CalendarEvent workshop({String id = 'e1', DateTime? startsAt}) =>
+        CalendarEvent(
+          id: id,
+          title: id == 'e1' ? 'Huiles et sommeil' : 'Essential oils for kids',
+          startsAt:
+              startsAt ?? DateTime.now().subtract(const Duration(hours: 1)),
+          eventWorkflowId: 'workshop',
+          attendees: id == 'e1'
+              ? const [
+                  Attendee(personId: 'p1', came: false),
+                  Attendee(personId: 'p2', came: false),
+                ]
+              : const [],
+        );
 
-    await tester.scrollUntilVisible(find.text('Start Samples'), 200);
-    expect(find.text('Prospects'), findsOneWidget);
-    expect(find.text('Keep their workflow'), findsNWidgets(2));
-  });
+    Future<FakeEventRepository> open(
+      WidgetTester tester, {
+      List<CalendarEvent> more = const [],
+      List<Person>? people,
+      FakeWorkflowRepository? workflows,
+    }) async {
+      final events = FakeEventRepository([workshop(), ...more]);
+      final book = FakePeopleRepository(people ?? [_claire, _sarah]);
+      if (workflows != null) book.workflows = workflows.store;
+      final container = await pumpLoomia(
+        tester,
+        size: const Size(390, 1400),
+        events: events,
+        people: book,
+        workflows: workflows,
+      );
+      container.read(routerProvider).go(Routes.eventLocation('e1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mark who was there'));
+      await tester.pumpAndSettle();
+      return events;
+    }
 
-  testWidgets('who was there says what happens next', (tester) async {
-    final started = DateTime.now().subtract(const Duration(hours: 1));
-    final events = FakeEventRepository([
-      CalendarEvent(
-        id: 'e1',
-        title: 'Workshop',
-        startsAt: started,
-        eventWorkflowId: 'workshop',
-        followUps: FakeEventWorkflowRepository.samples().first.followUps,
-        attendees: const [
-          Attendee(personId: 'p1', came: false),
-          Attendee(personId: 'p2', came: false),
+    testWidgets('a prospect who became a customer, with the registration '
+        'order; a customer with nothing', (tester) async {
+      final events = await open(tester);
+
+      expect(find.text('Became a customer?'), findsOneWidget);
+      expect(find.text('Order (optional)'), findsOneWidget);
+      await tester.tap(find.text('Became a customer?'));
+      await tester.pumpAndSettle();
+      expect(find.text('Starts New customer'), findsOneWidget);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Registration order'),
+        '120',
+      );
+      await tester.tap(find.text('Done · 2 were there'));
+      await tester.pumpAndSettle();
+
+      expect(events.closedThere, [
+        (
+          personId: 'p1',
+          customer: true,
+          amount: 120.0,
+          text: 'Registration order',
+        ),
+        (personId: 'p2', customer: false, amount: null, text: null),
+      ]);
+      expect(find.text('Who was there?'), findsNothing);
+    });
+
+    testWidgets('an amount that is not one is refused', (tester) async {
+      final events = await open(tester);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Order (optional)'),
+        'abc',
+      );
+      await tester.tap(find.text('Done · 2 were there'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Use a number above 0, like 100 or 99.5.'),
+        findsOneWidget,
+      );
+      expect(events.calls.where((c) => c.startsWith('close(')), isEmpty);
+    });
+
+    testWidgets('someone who missed it: invited to the next one, on by '
+        'default', (tester) async {
+      final events = await open(
+        tester,
+        more: [
+          workshop(
+            id: 'e2',
+            startsAt: DateTime.now().add(const Duration(days: 20)),
+          ),
         ],
-      ),
-    ]);
-    final container = await pumpLoomia(
+      );
+
+      await tester.tap(find.widgetWithText(CheckboxListTile, 'Sarah Lemaire'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Invite to Essential oils for kids'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Done · 1 was there'));
+      await tester.pumpAndSettle();
+
+      expect(events.calls, contains('close(e1:p1|next:p2)'));
+      expect(
+        events.store.firstWhere((e) => e.id == 'e2').attendees.single.personId,
+        'p2',
+      );
+    });
+
+    testWidgets('someone on the step this event was for: where they go next', (
       tester,
-      size: const Size(390, 1000),
-      events: events,
-      people: FakePeopleRepository([_claire, _sarah]),
-    );
-    container.read(routerProvider).go(Routes.eventLocation('e1'));
-    await tester.pumpAndSettle();
+    ) async {
+      final workflows = FakeWorkflowRepository([
+        ...FakeWorkflowRepository.samples(),
+        Workflow(
+          id: 'invite',
+          stage: Stage.customer,
+          name: 'New customer',
+          isDefault: false,
+          steps: const [
+            WorkflowStep(
+              id: 'book',
+              position: 1,
+              label: 'Book the workshop',
+              days: 0,
+              eventWorkflowId: 'workshop',
+            ),
+            WorkflowStep(
+              id: 'access',
+              position: 2,
+              label: 'Give VIP access',
+              days: 0,
+            ),
+          ],
+        ),
+      ]);
+      await open(
+        tester,
+        workflows: workflows,
+        people: [
+          _claire,
+          Person(
+            id: 'p2',
+            name: 'Sarah Lemaire',
+            stage: Stage.customer,
+            stageSince: DateTime.utc(2026, 9),
+            place: (workflowId: 'invite', atPosition: 1, lastTick: today()),
+          ),
+        ],
+      );
 
-    await tester.tap(find.text('Mark who was there'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('WHAT HAPPENS NEXT'), findsOneWidget);
-    expect(find.text('1 prospect starts Samples'), findsOneWidget);
-    expect(find.text('1 customer starts New customer'), findsOneWidget);
-    await tester.tap(find.widgetWithText(CheckboxListTile, 'Sarah Lemaire'));
-    await tester.pumpAndSettle();
-    expect(find.text('1 customer starts New customer'), findsNothing);
+      expect(
+        find.text('Continues New customer → Give VIP access'),
+        findsOneWidget,
+      );
+    });
   });
 }

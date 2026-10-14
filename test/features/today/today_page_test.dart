@@ -493,7 +493,7 @@ void main() {
         title: 'Workshop',
         startsAt: addDays(today(), -1).add(const Duration(hours: 19)),
         attendees: const [Attendee(personId: 'p1', came: false)],
-        followUps: const {Stage.prospect: 'samples'},
+        eventWorkflowId: 'workshop',
       ),
     ]);
     await pumpLoomia(tester, size: _tallPhone, people: people, events: events);

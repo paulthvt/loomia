@@ -1,5 +1,3 @@
-import 'package:loomia/features/contacts/domain/person.dart';
-
 /// A step around an event: [days] from its day, signed. −1 is the day
 /// before, 0 the day of, 1 the day after.
 class EventWorkflowStep {
@@ -16,15 +14,12 @@ class EventWorkflowStep {
   final String? note;
 }
 
-/// An event's type: its checklist, and per stage the person workflow that
-/// people who were there start. A stage missing from [followUps] keeps
-/// their workflow.
+/// An event's type: its checklist, and whether it gathers several people.
 class EventWorkflow {
   EventWorkflow({
     required this.id,
     required this.name,
     required List<EventWorkflowStep> steps,
-    this.followUps = const {},
     this.isGroup = true,
   }) : steps = byDays(steps);
 
@@ -33,9 +28,6 @@ class EventWorkflow {
 
   /// Earliest first.
   final List<EventWorkflowStep> steps;
-
-  /// Stage → person workflow id.
-  final Map<Stage, String> followUps;
 
   /// Several people per event: people added start invited (#314).
   final bool isGroup;
@@ -49,9 +41,6 @@ List<EventWorkflowStep> byDays(Iterable<EventWorkflowStep> steps) =>
         return a.label.compareTo(b.label);
       }),
     );
-
-/// The column of `event_workflow` and `event` holding [stage]'s workflow.
-String followUpColumn(Stage stage) => '${stage.name}_workflow_id';
 
 EventWorkflow? findEventWorkflow(List<EventWorkflow> all, String? id) =>
     all.where((workflow) => workflow.id == id).firstOrNull;

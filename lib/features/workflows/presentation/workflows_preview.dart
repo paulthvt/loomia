@@ -128,7 +128,6 @@ Widget eventWorkflowEditorLight() => _app(
         workflows: _workflows,
         onRename: (_) async {},
         onGroup: (_) async {},
-        onFollowUps: (_) async {},
         onAddStep: () {},
         onOpenStep: (_) {},
         onDelete: () async {},
@@ -193,7 +192,6 @@ final _workflows = [
 final _workshop = EventWorkflow(
   id: 'workshop',
   name: 'Workshop',
-  followUps: const {Stage.prospect: 'samples', Stage.customer: 'new-customer'},
   steps: const [
     EventWorkflowStep(
       id: 'remind',

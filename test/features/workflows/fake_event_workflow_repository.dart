@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
@@ -57,7 +56,6 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
       (workflow) => EventWorkflow(
         id: workflow.id,
         name: name,
-        followUps: workflow.followUps,
         isGroup: workflow.isGroup,
         steps: workflow.steps,
       ),
@@ -72,23 +70,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
       (workflow) => EventWorkflow(
         id: workflow.id,
         name: workflow.name,
-        followUps: workflow.followUps,
         isGroup: on,
-        steps: workflow.steps,
-      ),
-    );
-  }
-
-  @override
-  Future<void> setFollowUps(String id, Map<Stage, String> followUps) async {
-    await _record('setFollowUps($id)');
-    _change(
-      id,
-      (workflow) => EventWorkflow(
-        id: workflow.id,
-        name: workflow.name,
-        followUps: followUps,
-        isGroup: workflow.isGroup,
         steps: workflow.steps,
       ),
     );
@@ -113,7 +95,6 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
       (workflow) => EventWorkflow(
         id: workflow.id,
         name: workflow.name,
-        followUps: workflow.followUps,
         isGroup: workflow.isGroup,
         steps: [
           ...workflow.steps,
@@ -172,7 +153,6 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
       (_) => EventWorkflow(
         id: workflow.id,
         name: workflow.name,
-        followUps: workflow.followUps,
         isGroup: workflow.isGroup,
         steps: [
           for (final step in workflow.steps)
@@ -187,10 +167,6 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
     EventWorkflow(
       id: 'workshop',
       name: 'Workshop',
-      followUps: const {
-        Stage.prospect: 'samples',
-        Stage.customer: 'new-customer',
-      },
       steps: const [
         EventWorkflowStep(
           id: 'remind',

@@ -4,9 +4,11 @@ import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/follow_with_field.dart';
+import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -46,6 +48,24 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
   bool _saving = false;
   PeopleFailure? _failure;
 
+  /// One prospect becoming a customer: their registration order (#318).
+  final _amount = TextEditingController();
+  final _form = GlobalKey<FormState>();
+
+  bool get _registers =>
+      widget.stage == Stage.customer &&
+      widget.people.length == 1 &&
+      widget.people.single.stage == Stage.prospect;
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    super.dispose();
+  }
+
+  double? get _registration =>
+      parseAmount(_amount.text, AppLocalizations.of(context).localeName);
+
   FollowWith? _follow(List<Workflow> workflows, DateTime today) {
     if (_picked case (:final follow)) return follow;
     final suggested = defaultFor(workflows, widget.stage);
@@ -55,6 +75,9 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
   }
 
   Future<void> _move(FollowWith? follow) async {
+    if (!(_form.currentState?.validate() ?? true)) return;
+    final amount = _registers ? _registration : null;
+    final text = AppLocalizations.of(context).thereRegistrationOrder;
     setState(() {
       _saving = true;
       _failure = null;
@@ -63,6 +86,16 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
       await ref
           .read(peopleProvider(ref.read(accountProvider)?.email).notifier)
           .moveTo(widget.people, widget.stage, follow: follow);
+      // ponytail: the move then the order, two writes; a failed order says
+      // so, and the stage stays moved. One RPC if that ever loses one.
+      if (amount != null) {
+        await ref.read(historyProvider(widget.people.single.id).notifier).add((
+          kind: ActivityKind.order,
+          happenedOn: today(),
+          text: text,
+          amount: amount,
+        ));
+      }
       if (mounted) Navigator.pop(context, true);
     } on PeopleFailure catch (failure) {
       if (mounted) {
@@ -140,6 +173,25 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
             today: now,
             onChanged: (next) => setState(() => _picked = (follow: next)),
           ),
+          if (_registers)
+            Form(
+              key: _form,
+              child: TextFormField(
+                controller: _amount,
+                enabled: !_saving,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l10n.thereRegistrationOrder,
+                  helperText: l10n.changeStageRegistrationHint,
+                ),
+                validator: (value) =>
+                    (value ?? '').trim().isEmpty || _registration != null
+                    ? null
+                    : l10n.logAmountInvalid,
+              ),
+            ),
         ],
       ),
     );
