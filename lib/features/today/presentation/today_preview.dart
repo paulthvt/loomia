@@ -18,10 +18,10 @@ import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Today in both modes and both layouts, for `flutter widget-preview start`,
-/// on a fixed morning so the goldens never follow the clock. Eight people
-/// are due, one with an unboxing call to plan (#315) and one to follow up
-/// about a workshop (#314): a phone shows five rows and the rest behind
-/// "more", a desktop six.
+/// on a fixed morning so the goldens never follow the clock. Nine people
+/// are due: among them an unboxing call to plan (#315), a workshop follow-up
+/// (#314) and a finished Samples asking what's next (#316). A phone shows
+/// five rows and the rest behind "more", a desktop six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
 Widget todayMobileLight() =>
@@ -117,10 +117,10 @@ final _samples = Workflow(
   ],
 );
 
-Person _sample(String name) => Person(
+Person _sample(String name, {Stage stage = Stage.prospect}) => Person(
   id: name,
   name: name,
-  stage: Stage.prospect,
+  stage: stage,
   stageSince: DateTime.utc(2026, 9),
 );
 
@@ -181,7 +181,7 @@ final _newCustomer = Workflow(
 
 /// An event step to plan (#315): Plan and Later instead of the ring.
 Due _toPlan(String name, DateTime due) => DueStep(
-  _sample(name),
+  _sample(name, stage: Stage.customer),
   OnStep(
     workflow: _newCustomer,
     step: _newCustomer.steps.first,
@@ -191,12 +191,30 @@ Due _toPlan(String name, DateTime due) => DueStep(
   ),
 );
 
+/// Done with Samples, asked what comes next (#316).
+Due _whatsNext(String name) => DueNext(
+  Person(
+    id: name,
+    name: name,
+    stage: Stage.prospect,
+    stageSince: DateTime.utc(2026, 9),
+    place: (
+      workflowId: 'samples',
+      atPosition: 1e9,
+      lastTick: DateTime(2026, 9, 28),
+    ),
+    needsNext: true,
+  ),
+  _samples,
+);
+
 /// Oldest first, then by name, as `dueToday` sorts.
 final _book = [
   _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
   _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
   _toPlan('Julie Martin', DateTime(2026, 9, 28)),
   _followUp('Marc Petit', DateTime(2026, 9, 28)),
+  _whatsNext('Sophie Bernard'),
   _reminder(
     'Julie Bernard',
     'Call back about the diffuser',
@@ -287,6 +305,7 @@ Widget _app(
       onRemoveInvite: (_) {},
       onPlan: (_) {},
       onLater: (_) {},
+      onNext: (_) {},
       onOpen: (_) {},
       onRetry: () {},
       onRefresh: () async {},

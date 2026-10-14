@@ -21,7 +21,8 @@ class PeopleRepository {
   /// Every column, the server's computed step, due day and last contact, and
   /// the open reminders.
   static const String _columns =
-      '*, current_step_id, due_on, planned_event_id, last_contact_on, '
+      '*, current_step_id, due_on, planned_event_id, needs_next, '
+      'last_contact_on, '
       'reminder($_reminderColumns)';
 
   static const String _reminderColumns = 'id, text, due_on, created_at';
@@ -346,6 +347,7 @@ Person personFromRow(Map<String, dynamic> row) {
     },
     currentStepId: row['current_step_id'] as String?,
     plannedEventId: row['planned_event_id'] as String?,
+    needsNext: row['needs_next'] as bool? ?? false,
     dueOn: switch (row['due_on']) {
       // A bare date parses as local midnight, like last_tick.
       final String day => DateTime.parse(day),

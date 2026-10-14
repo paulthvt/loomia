@@ -94,6 +94,16 @@ class WorkflowEditor extends ConsumerWidget {
           (repository) => repository.setRepeats(workflow.id, on),
         ),
         onDelete: () => _delete(context, ref, owner, workflow),
+        others: [
+          for (final other in forStage(list ?? const [], workflow.stage))
+            if (other.id != workflow.id) other,
+        ],
+        onNext: (id, on) => editWorkflows(
+          ref,
+          (repository) => on
+              ? repository.addNext(workflow.id, id)
+              : repository.removeNext(workflow.id, id),
+        ),
       ),
     );
   }
@@ -136,7 +146,7 @@ class WorkflowEditor extends ConsumerWidget {
 }
 
 /// What a write in flight disables: the control that started it.
-enum _Control { name, steps, isDefault, repeats, delete }
+enum _Control { name, steps, next, isDefault, repeats, delete }
 
 /// The editor, fed the saved workflow and one callback per write; each
 /// write callback throws `PeopleFailure`. Nothing is optimistic: a dropped
@@ -152,6 +162,8 @@ class WorkflowEditorView extends StatefulWidget {
     required this.onDefault,
     required this.onRepeats,
     required this.onDelete,
+    this.others = const [],
+    this.onNext,
     super.key,
   });
 
@@ -171,6 +183,13 @@ class WorkflowEditorView extends StatefulWidget {
 
   /// Asks first; does nothing when the user cancels.
   final Future<void> Function() onDelete;
+
+  /// The stage's other workflows, as `forStage` sorts them: what can come
+  /// next (#316).
+  final List<Workflow> others;
+
+  /// [id] offered next, or not; null hides the section (previews).
+  final Future<void> Function(String id, bool on)? onNext;
 
   @override
   State<WorkflowEditorView> createState() => _WorkflowEditorViewState();
@@ -379,6 +398,37 @@ class _WorkflowEditorViewState extends State<WorkflowEditorView> {
               ),
           ],
         ),
+        if (widget.onNext case final onNext?) ...[
+          const SizedBox(height: AppSpacing.lg),
+          SectionHeader(title: l10n.workflowNext),
+          SettingsGroup(
+            children: [
+              if (widget.others.isEmpty)
+                ListTile(title: Text(l10n.workflowNextNone))
+              else
+                for (final other in widget.others)
+                  CheckboxListTile(
+                    value: workflow.next.contains(other.id),
+                    title: Text(other.name),
+                    onChanged: _busy.contains(_Control.next)
+                        ? null
+                        : (on) => unawaited(
+                            _run(
+                              _Control.next,
+                              () => onNext(other.id, on ?? false),
+                            ),
+                          ),
+                  ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.workflowNextNote(workflow.name),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
         SettingsGroup(
           children: [

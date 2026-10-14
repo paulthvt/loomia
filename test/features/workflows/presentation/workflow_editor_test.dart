@@ -96,6 +96,36 @@ void main() {
     expect(_name(tester), 'Samples');
   });
 
+  testWidgets('What\'s next: the stage\'s other workflows, ticked to offer', (
+    tester,
+  ) async {
+    final workflows = FakeWorkflowRepository(FakeWorkflowRepository.samples());
+    await openWorkflows(
+      tester,
+      Routes.settingsWorkflowLocation('samples'),
+      size: const Size(390, 2400),
+      workflows: workflows,
+    );
+
+    expect(find.text("WHAT'S NEXT"), findsOneWidget);
+    final health = find.widgetWithText(
+      CheckboxListTile,
+      'Health professionals',
+    );
+    expect(health, findsOneWidget);
+    expect(find.widgetWithText(CheckboxListTile, 'Samples'), findsNothing);
+    expect(find.widgetWithText(CheckboxListTile, 'New customer'), findsNothing);
+
+    await tester.tap(health);
+    await tester.pumpAndSettle();
+    expect(workflows.calls, contains('addNext(samples, health)'));
+    expect(tester.widget<CheckboxListTile>(health).value, isTrue);
+
+    await tester.tap(health);
+    await tester.pumpAndSettle();
+    expect(workflows.calls, contains('removeNext(samples, health)'));
+  });
+
   testWidgets('a new name is trimmed, saved and shown', (tester) async {
     final workflows = FakeWorkflowRepository(FakeWorkflowRepository.samples());
     await openWorkflows(

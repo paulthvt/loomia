@@ -1248,6 +1248,47 @@
       "when": { "type": "String" }
     }
   },
+  "nextWhatTitle": "What's next for {name}?",
+  "@nextWhatTitle": {
+    "description": "Once someone is done with a workflow that offers others after it: on Today, on their NEXT STEP card and as the sheet's title. name is their first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "nextWhatDone": "{workflow} is done",
+  "@nextWhatDone": {
+    "description": "Under What's next for …?: which workflow just ended. workflow is its name, e.g. 'Samples is done'.",
+    "placeholders": {
+      "workflow": { "type": "String" }
+    }
+  },
+  "nextWhatNothing": "Nothing for now",
+  "@nextWhatNothing": {
+    "description": "Last choice of the What's next sheet: no workflow for now, and the question goes."
+  },
+  "nextWhatChoose": "Choose",
+  "@nextWhatChoose": {
+    "description": "Button on the NEXT STEP card once a workflow is done: opens the What's next sheet."
+  },
+  "nextWhatSave": "Done",
+  "@nextWhatSave": {
+    "description": "Button of the What's next sheet: saves the answer."
+  },
+  "nextLoyaltyQuestion": "Did {name} start an LRP?",
+  "@nextLoyaltyQuestion": {
+    "description": "Question at the top of the What's next sheet for a customer without a loyalty rewards program (LRP, dōTERRA's term). name is their first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "nextLoyaltyYes": "Yes",
+  "@nextLoyaltyYes": {
+    "description": "Answer to Did … start an LRP?: their LRP starts today."
+  },
+  "nextLoyaltyNotYet": "Not yet",
+  "@nextLoyaltyNotYet": {
+    "description": "Answer to Did … start an LRP?: no LRP for now."
+  },
   "nextStepMarkDone": "Mark \"{step}\" done",
   "@nextStepMarkDone": {
     "description": "Screen-reader label of the round button that marks the next step as done.",
@@ -1924,6 +1965,21 @@
   "workflowStepRepeatFirstSameDay": "When you start, then right after the last step",
   "@workflowStepRepeatFirstSameDay": {
     "description": "Under step 1 of a workflow that starts over, when step 1 has 0 days: due the day the person starts, and on later rounds the day the last step is ticked."
+  },
+  "workflowNext": "What's next",
+  "@workflowNext": {
+    "description": "Heading in the workflow editor, above the other workflows of the same stage that can follow this one once it is done."
+  },
+  "workflowNextNote": "When {name} is done, Today offers these. Same stage only.",
+  "@workflowNextNote": {
+    "description": "Under the What's next list in the workflow editor. name is this workflow's name. Today is the app's home screen.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "workflowNextNone": "No other workflow for this stage yet.",
+  "@workflowNextNone": {
+    "description": "In the workflow editor's What's next section when the stage has no other workflow to offer."
   },
   "workflowRepeats": "Start over after the last step",
   "@workflowRepeats": {

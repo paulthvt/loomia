@@ -223,4 +223,36 @@ void main() {
 
     expect((due.single as DueStep).missed?.id, 'e1');
   });
+
+  test('done and asked what comes next: one row, on the last tick\'s day', () {
+    final sophie = Person(
+      id: 's',
+      name: 'Sophie',
+      stage: Stage.prospect,
+      stageSince: DateTime.utc(2026),
+      place: (
+        workflowId: 'samples',
+        atPosition: 1e9,
+        lastTick: DateTime(2026, 9, 25),
+      ),
+      needsNext: true,
+    );
+    final quiet = Person(
+      id: 'q',
+      name: 'Quiet',
+      stage: Stage.prospect,
+      stageSince: DateTime.utc(2026),
+      place: (
+        workflowId: 'samples',
+        atPosition: 1e9,
+        lastTick: DateTime(2026, 9, 25),
+      ),
+    );
+
+    final due = dueToday([sophie, quiet], _workflows, _today);
+
+    expect(_keys(due), ['next:s']);
+    expect(due.single.day, DateTime(2026, 9, 25));
+    expect((due.single as DueNext).workflow.id, 'samples');
+  });
 }

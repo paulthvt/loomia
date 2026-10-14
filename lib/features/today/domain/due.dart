@@ -48,6 +48,20 @@ final class DueReminder extends Due {
   String get key => reminder.id;
 }
 
+/// Done with [workflow], and asked what comes next (#316): on the day of
+/// the last tick, never late.
+final class DueNext extends Due {
+  const DueNext(super.person, this.workflow);
+
+  final Workflow workflow;
+
+  @override
+  DateTime get day => person.place!.lastTick;
+
+  @override
+  String get key => 'next:${person.id}';
+}
+
 /// Someone invited to [event] who hasn't said they're going, due to be
 /// followed up.
 final class DueFollowUp extends Due {
@@ -81,6 +95,9 @@ List<Due> dueToday(
     for (final person in people) ...[
       for (final reminder in person.reminders)
         if (!reminder.dueOn.isAfter(today)) DueReminder(person, reminder),
+      if (progressOf(person, findWorkflow(workflows, person.place?.workflowId))
+          case Done(:final workflow) when person.needsNext)
+        DueNext(person, workflow),
       if (progressOf(person, findWorkflow(workflows, person.place?.workflowId))
           case final OnStep step when !step.due.isAfter(today))
         DueStep(
@@ -119,5 +136,6 @@ List<Due> dueToday(
 int _rank(Due due) => switch (due) {
   DueReminder() => 0,
   DueFollowUp() => 1,
-  DueStep() => 2,
+  DueNext() => 2,
+  DueStep() => 3,
 };

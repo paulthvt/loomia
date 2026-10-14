@@ -86,6 +86,36 @@ class FakeWorkflowRepository implements WorkflowRepository {
   Future<void> delete(String id) async {
     await _record('delete($id)');
     store.removeWhere((workflow) => workflow.id == id);
+    // As the cascade on workflow_next.
+    for (final (index, workflow) in store.indexed.toList()) {
+      if (workflow.next.contains(id)) {
+        store[index] = _copy(
+          workflow,
+          next: [...workflow.next.where((other) => other != id)],
+        );
+      }
+    }
+  }
+
+  /// As the same-stage trigger: another stage fails.
+  @override
+  Future<void> addNext(String workflowId, String nextId) async {
+    await _record('addNext($workflowId, $nextId)');
+    final from = findWorkflow(store, workflowId);
+    final to = findWorkflow(store, nextId);
+    if (from == null || to == null || from.stage != to.stage) {
+      throw PeopleFailure.unknown;
+    }
+    _change(workflowId, (w) => _copy(w, next: {...w.next, nextId}.toList()));
+  }
+
+  @override
+  Future<void> removeNext(String workflowId, String nextId) async {
+    await _record('removeNext($workflowId, $nextId)');
+    _change(
+      workflowId,
+      (w) => _copy(w, next: [...w.next.where((id) => id != nextId)]),
+    );
   }
 
   @override
@@ -217,6 +247,7 @@ class FakeWorkflowRepository implements WorkflowRepository {
     bool? isDefault,
     bool? repeats,
     List<WorkflowStep>? steps,
+    List<String>? next,
   }) => Workflow(
     id: workflow.id,
     stage: workflow.stage,
@@ -224,6 +255,7 @@ class FakeWorkflowRepository implements WorkflowRepository {
     isDefault: isDefault ?? workflow.isDefault,
     repeats: repeats ?? workflow.repeats,
     steps: steps ?? workflow.steps,
+    next: next ?? workflow.next,
   );
 
   /// The English defaults of spec §2.1.
