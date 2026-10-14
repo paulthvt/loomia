@@ -1,8 +1,8 @@
--- Event workflows (#153): an event's checklist, the workflows people who
--- were there start, and the seeded Workshop. Run with `supabase test db`.
+-- Event workflows (#153): an event's checklist and the workflows people who
+-- were there start (mark_event_done, for builds before #318). Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(11);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -12,37 +12,24 @@ set local role authenticated;
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 
-select public.seed_workflows('en', '2026-10-01');
-
--- 1-4: the seeded Workshop.
-select is(
-  (select count(*)::int from public.event_workflow where name = 'Workshop'), 1,
-  'the seed creates Workshop'
-);
-select results_eq(
-  $$ select s.label, s.days from public.event_workflow_step s
-     join public.event_workflow w on w.id = s.event_workflow_id
-     order by s.days $$,
-  $$ values ('Remind everyone it''s tomorrow', -1),
-            ('Send a thank-you and the notes', 1) $$,
-  'with a reminder the day before and a thank-you the day after'
-);
-select is(
-  (select prospect_workflow_id from public.event_workflow),
-  (select id from public.workflow where stage = 'prospect' and is_default),
-  'prospects who were there start the default prospect workflow'
-);
-select ok(
-  (select team_workflow_id is null from public.event_workflow),
-  'the team keeps their workflow'
-);
-
--- 5: once.
-select public.seed_workflows('en', '2026-10-02');
-select is(
-  (select count(*)::int from public.event_workflow), 1,
-  'seeding again creates no second Workshop'
-);
+-- The workflows and Workshop as seeded before #319: what the stage mapping
+-- (kept for builds before #318) acts on.
+insert into public.workflow (id, stage, name, is_default) values
+  ('00000000-0000-0000-0000-0000000000f1', 'prospect', 'Samples', true),
+  ('00000000-0000-0000-0000-0000000000f2', 'prospect', 'Health professionals', false),
+  ('00000000-0000-0000-0000-0000000000f3', 'customer', 'New customer', true),
+  ('00000000-0000-0000-0000-0000000000f4', 'team', 'Getting started', true);
+insert into public.workflow_step (workflow_id, position, label, days)
+  select w.id, p.position, w.name || ' ' || p.position, 1
+  from public.workflow w cross join (values (1), (2), (3)) as p(position);
+insert into public.event_workflow
+  (name, prospect_workflow_id, customer_workflow_id) values
+  ('Workshop', '00000000-0000-0000-0000-0000000000f1',
+   '00000000-0000-0000-0000-0000000000f3');
+insert into public.event_workflow_step (event_workflow_id, label, days)
+  select id, v.label, v.days from public.event_workflow,
+    (values ('Remind everyone it''s tomorrow', -1),
+            ('Send a thank-you and the notes', 1)) as v(label, days);
 
 -- 6-7: constraints.
 select throws_ok(
