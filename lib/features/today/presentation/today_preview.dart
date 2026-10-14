@@ -51,7 +51,6 @@ Widget todayEventsMobileLight() => _app(
   AppTheme.light,
   [
     _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
-    _renewal('Anna Lopez'),
     _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
     _due('Julie Bernard', 1, DateTime(2026, 9, 29)),
   ],
@@ -226,6 +225,7 @@ Due _renewal(String name) => DueLoyalty(
 /// Oldest first, then by name, as `dueToday` sorts.
 final _book = [
   _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
+  _renewal('Anna Lopez'),
   _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
   _toPlan('Julie Martin', DateTime(2026, 9, 28)),
   _followUp('Marc Petit', DateTime(2026, 9, 28)),
