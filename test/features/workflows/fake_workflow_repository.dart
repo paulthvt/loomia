@@ -117,6 +117,7 @@ class FakeWorkflowRepository implements WorkflowRepository {
     String? note,
     required num position,
     bool loyaltySetup = false,
+    String? eventWorkflowId,
   }) async {
     await _record('addStep($workflowId, $label, $days, $position)');
     _change(
@@ -132,6 +133,7 @@ class FakeWorkflowRepository implements WorkflowRepository {
             days: days,
             note: note,
             loyaltySetup: loyaltySetup,
+            eventWorkflowId: eventWorkflowId,
           ),
         ],
       ),
@@ -145,6 +147,7 @@ class FakeWorkflowRepository implements WorkflowRepository {
     required int days,
     String? note,
     required bool loyaltySetup,
+    String? eventWorkflowId,
   }) async {
     await _record('updateStep($stepId, $label, $days)');
     _changeStep(
@@ -156,6 +159,7 @@ class FakeWorkflowRepository implements WorkflowRepository {
         days: days,
         note: note,
         loyaltySetup: loyaltySetup,
+        eventWorkflowId: eventWorkflowId,
       ),
     );
   }
@@ -172,6 +176,7 @@ class FakeWorkflowRepository implements WorkflowRepository {
         days: step.days,
         note: step.note,
         loyaltySetup: step.loyaltySetup,
+        eventWorkflowId: step.eventWorkflowId,
       ),
     );
   }

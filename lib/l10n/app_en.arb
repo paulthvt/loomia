@@ -217,6 +217,49 @@
       "day": { "type": "DateTime", "format": "E" }
     }
   },
+  "planEventTitle": "{type} — {name}",
+  "@planEventTitle": {
+    "description": "Proposed title of an event planned for one person from their workflow step, e.g. 'Wellness check — Sophie'. type is the event type's name, name the person's first name.",
+    "placeholders": {
+      "type": { "type": "String" },
+      "name": { "type": "String" }
+    }
+  },
+  "planGroupTitle": "Invite {name} to {type}",
+  "@planGroupTitle": {
+    "description": "Title of the sheet that adds someone to an event with several people, from their workflow step, e.g. 'Invite Marc to Workshop'. name is their first name, type the event type's name.",
+    "placeholders": {
+      "name": { "type": "String" },
+      "type": { "type": "String" }
+    }
+  },
+  "planGroupBody": "{name} starts as invited. Today reminds you to follow up after 3 days.",
+  "@planGroupBody": {
+    "description": "Body of the sheet that adds someone to an event with several people. name is their first name. Today is the app's home screen.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "planEventOption": "{title} · {day} · {people}",
+  "@planEventOption": {
+    "description": "One upcoming event to pick in that sheet: its title, its day (e.g. 'Thu, Oct 20') and how many are invited (eventInvitedCount).",
+    "placeholders": {
+      "title": { "type": "String" },
+      "day": { "type": "DateTime", "format": "MMMEd" },
+      "people": { "type": "String" }
+    }
+  },
+  "planGroupNew": "New {type}",
+  "@planGroupNew": {
+    "description": "Last choice in that sheet: create a new event of this type instead, e.g. 'New Workshop'. type is the event type's name.",
+    "placeholders": {
+      "type": { "type": "String" }
+    }
+  },
+  "planInvite": "Invite",
+  "@planInvite": {
+    "description": "Button of that sheet: adds the person to the event picked, as invited."
+  },
   "todayFollowUp": "Follow up {name} about {event} · {day}",
   "@todayFollowUp": {
     "description": "Row on Today for someone invited to an event who has not said they are coming. name is their first name, event the event's title, day its short weekday, e.g. 'Follow up Marc about Huiles et sommeil · Tue'.",
@@ -1178,6 +1221,33 @@
       "note": { "type": "String" }
     }
   },
+  "nextStepPlan": "Plan",
+  "@nextStepPlan": {
+    "description": "Button on a workflow step that is an event (an unboxing call, a wellness check): plans that event with the person. On their NEXT STEP card and on Today."
+  },
+  "nextStepLater": "Later",
+  "@nextStepLater": {
+    "description": "Button next to Plan: puts the step off to a day the user picks."
+  },
+  "nextStepMissed": "Book again · missed {event} on {day}",
+  "@nextStepMissed": {
+    "description": "Second line of an event step when the person was not at the event planned for it. event is its title, day its short weekday, e.g. 'Book again · missed Huiles et sommeil on Tue'. Neutral, never a reproach.",
+    "placeholders": {
+      "event": { "type": "String" },
+      "day": { "type": "DateTime", "format": "E" }
+    }
+  },
+  "nextStepPlanned": "Planned",
+  "@nextStepPlanned": {
+    "description": "Second line of an event step whose event is planned, while the calendar is still loading."
+  },
+  "nextStepPlannedWhen": "Planned · {when}",
+  "@nextStepPlannedWhen": {
+    "description": "Second line of an event step whose event is planned. when is the event's day and time, e.g. 'Tuesday, October 20 · 7:00 PM'.",
+    "placeholders": {
+      "when": { "type": "String" }
+    }
+  },
   "nextStepMarkDone": "Mark \"{step}\" done",
   "@nextStepMarkDone": {
     "description": "Screen-reader label of the round button that marks the next step as done.",
@@ -1798,6 +1868,14 @@
   },
   "goalLineOpen": "Open Goals",
   "@goalLineOpen": { "description": "Screen-reader hint of the goal line on Today: tapping it opens Goals." },
+  "stepEvent": "Event",
+  "@stepEvent": {
+    "description": "Row of the step sheet in workflow settings: makes the step an event to plan (an unboxing call, a wellness check). Its dropdown lists None and the event types."
+  },
+  "stepEventNone": "None",
+  "@stepEventNone": {
+    "description": "Choice of the step sheet's Event row: a plain step, ticked by hand."
+  },
   "stepLoyalty": "Counts as a loyalty setup",
   "@stepLoyalty": {
     "description": "Switch on a workflow step: ticking this step means the person set up a loyalty order (an LRP for dōTERRA). Goals counts these."

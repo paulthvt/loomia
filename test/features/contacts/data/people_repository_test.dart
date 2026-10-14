@@ -50,6 +50,14 @@ void main() {
       expect(personFromRow(_row()).loyaltySince, isNull);
     });
 
+    test('reads the event planned for their step, absent as none', () {
+      expect(
+        personFromRow(_row({'planned_event_id': 'e1'})).plannedEventId,
+        'e1',
+      );
+      expect(personFromRow(_row()).plannedEventId, isNull);
+    });
+
     test('an edit never writes the LRP: only setLoyalty does', () {
       final person = personFromRow(_row({'loyalty_since': '2026-10-02'}));
 

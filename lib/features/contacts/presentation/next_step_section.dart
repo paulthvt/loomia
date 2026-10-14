@@ -5,11 +5,18 @@ import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/slide_swap.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/missed.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
+import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/plan_sheet.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
@@ -18,8 +25,10 @@ import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/contacts/presentation/reminder_sheet.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -64,6 +73,21 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
     if (mounted) setState(() => _busy = false);
   }
 
+  /// Plan on an event step: the event, then the book reloads.
+  Future<void> _plan(EventWorkflow type) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await planEvent(context, widget.person, type);
+    if (mounted) setState(() => _busy = false);
+  }
+
+  /// Later on an event step: a day from tomorrow, three days out to start.
+  Future<void> _later(OnStep step) async {
+    final day = await pickLater(context);
+    if (day == null || !mounted) return;
+    await _run((people) => people.postponeStep(widget.person, step, day));
+  }
+
   @override
   Widget build(BuildContext context) {
     final person = widget.person;
@@ -73,6 +97,9 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
     // Paused needs no workflow; everything else waits for them.
     final waiting = list == null && person.pausedAt == null;
     final workflow = findWorkflow(list ?? const [], person.place?.workflowId);
+    final owner = ref.watch(accountProvider)?.email;
+    final events = ref.watch(eventsProvider(owner)).value ?? const [];
+    final types = ref.watch(eventWorkflowsProvider(owner)).value;
     return NextStepCard(
       person: person,
       progress: waiting ? null : progressOf(person, workflow),
@@ -96,6 +123,18 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
       onTick: (step) => unawaited(
         _run((people) => people.completeStep(person, step, today())),
       ),
+      events: events,
+      // Until the types load, Plan has nothing to plan.
+      onPlan: types == null
+          ? null
+          : (step) {
+              if (findEventWorkflow(types, step.step.eventWorkflowId)
+                  case final type?) {
+                unawaited(_plan(type));
+              }
+            },
+      onLater: (step) => unawaited(_later(step)),
+      onOpenEvent: (id) => openEvent(context, id),
       onResume: () =>
           unawaited(_run((people) => people.resume(person, today()))),
       onNotNow: () => unawaited(_run((people) => people.pause(person))),
@@ -123,6 +162,10 @@ class NextStepCard extends StatelessWidget {
     required this.onFollowWith,
     required this.onBecameCustomer,
     this.onOpen,
+    this.events = const [],
+    this.onPlan,
+    this.onLater,
+    this.onOpenEvent,
     this.busy = false,
     this.waiting = false,
     this.onRetry,
@@ -149,6 +192,16 @@ class NextStepCard extends StatelessWidget {
 
   /// Opens the whole workflow; null with none to show.
   final VoidCallback? onOpen;
+
+  /// The calendar, for a planned step's event and a missed one (#315).
+  final List<CalendarEvent> events;
+
+  /// Plan and Later on an event step; null disables them.
+  final ValueChanged<OnStep>? onPlan;
+  final ValueChanged<OnStep>? onLater;
+
+  /// A planned step's row: opens its event.
+  final ValueChanged<String>? onOpenEvent;
 
   /// A write is in flight: no tick, buttons disabled.
   final bool busy;
@@ -234,7 +287,8 @@ class NextStepCard extends StatelessWidget {
                     ],
                   )
                 : switch (progress) {
-                    final OnStep on => _step(l10n, on),
+                    final OnStep on => _step(context, l10n, on),
+                    final Planned planned => _planned(context, l10n, planned),
                     Done(:final workflow) when person.stage == Stage.prospect =>
                       _Panel(
                         onOpen: onOpen,
@@ -319,11 +373,16 @@ class NextStepCard extends StatelessWidget {
     );
   }
 
-  Widget _step(AppLocalizations l10n, OnStep on) {
+  Widget _step(BuildContext context, AppLocalizations l10n, OnStep on) {
     final due = dueLabel(l10n, on.due, today);
-    final when = switch (on.step.note) {
-      final note? => l10n.nextStepWithNote(due, note),
-      null => due,
+    final missed = on.isEvent ? missedEvent(person, on.step, events) : null;
+    final when = switch ((missed, on.step.note)) {
+      (final event?, _) => l10n.nextStepMissed(
+        event.title,
+        event.startsAt.toLocal(),
+      ),
+      (null, final note?) => l10n.nextStepWithNote(due, note),
+      (null, null) => due,
     };
     return SlideSwap(
       child: ActionItem(
@@ -337,9 +396,53 @@ class NextStepCard extends StatelessWidget {
         onResolve: () => onTick(on),
         resolved: busy,
         resolveLabel: l10n.nextStepMarkDone(on.step.label),
+        actions: on.isEvent
+            ? planButtons(
+                context,
+                onPlan: busy || onPlan == null ? null : () => onPlan!(on),
+                onLater: busy || onLater == null ? null : () => onLater!(on),
+              )
+            : null,
       ),
     );
   }
+
+  /// Waiting for its event: the event's title and when; opens it.
+  Widget _planned(BuildContext context, AppLocalizations l10n, Planned on) {
+    final event = events.where((e) => e.id == on.eventId).firstOrNull;
+    final open = onOpenEvent;
+    return SlideSwap(
+      child: ActionItem(
+        key: ValueKey('${on.step.id}:${on.eventId}'),
+        name: person.name,
+        icon: Icons.event_rounded,
+        title: event?.title ?? on.step.label,
+        reason: event == null
+            ? l10n.nextStepPlanned
+            : l10n.nextStepPlannedWhen(whenLabel(context, event)),
+        detail: l10n.nextStepProgress(on.workflow.name, on.index, on.total),
+        onOpen: open == null ? null : () => open(on.eventId),
+      ),
+    );
+  }
+}
+
+/// Plan (tonal) and Later on an event step, here and on Today (#315). Null
+/// callbacks disable them.
+List<Widget> planButtons(
+  BuildContext context, {
+  required VoidCallback? onPlan,
+  required VoidCallback? onLater,
+}) {
+  final l10n = AppLocalizations.of(context);
+  return [
+    FilledButton.tonal(
+      style: AppTheme.tonal(context),
+      onPressed: onPlan,
+      child: Text(l10n.nextStepPlan),
+    ),
+    TextButton(onPressed: onLater, child: Text(l10n.nextStepLater)),
+  ];
 }
 
 /// A card with an optional title, a line, and its buttons.

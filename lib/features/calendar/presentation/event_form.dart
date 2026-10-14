@@ -26,23 +26,29 @@ import 'package:material_ui/material_ui.dart';
 
 /// A new event on [day], or [event] to change: a sheet on mobile, a dialog
 /// elsewhere. Resolves to the saved event, or null when dismissed.
+/// A new event on [day], or [event] to edit. A new one can start with its
+/// [type] chosen and a [title] (Plan on an event step, #315).
 Future<CalendarEvent?> showEventForm(
   BuildContext context, {
   CalendarEvent? event,
   DateTime? day,
+  EventWorkflow? type,
+  String? title,
 }) => LoomiaDialog.show<CalendarEvent>(
   context,
-  (_) => _EventForm(event: event, day: day),
+  (_) => _EventForm(event: event, day: day, type: type, title: title),
 );
 
 /// A new event starts in the evening, when most workshops are.
 const _defaultStart = TimeOfDay(hour: 19, minute: 0);
 
 class _EventForm extends ConsumerStatefulWidget {
-  const _EventForm({this.event, this.day});
+  const _EventForm({this.event, this.day, this.type, this.title});
 
   final CalendarEvent? event;
   final DateTime? day;
+  final EventWorkflow? type;
+  final String? title;
 
   @override
   ConsumerState<_EventForm> createState() => _EventFormState();
@@ -78,6 +84,12 @@ class _EventFormState extends ConsumerState<_EventForm> {
     if (event == null) {
       _day = widget.day ?? today();
       _start = _defaultStart;
+      if (widget.type case final type?) {
+        _typeName = type.name;
+        _eventWorkflowId = type.id;
+        _followUps = {...type.followUps};
+        _title.text = widget.title ?? type.name;
+      }
       return;
     }
     final starts = event.startsAt.toLocal();

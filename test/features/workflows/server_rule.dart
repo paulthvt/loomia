@@ -6,7 +6,15 @@ import 'package:loomia/features/workflows/domain/workflow.dart';
 /// The one Dart copy of the server's rule (`current_step_id`, `due_on`,
 /// `complete_step`), so fakes answer like the database. Test-only: the app
 /// never computes a step. supabase/tests/due_test.sql pins the real one.
-Person withServerFields(Person person, List<Workflow> workflows) {
+///
+/// [plannedEventId] stands in for `planned_event_id`: an open event of the
+/// current step's type they attend. It counts only on an event step, and
+/// then the step waits (`due_on` null).
+Person withServerFields(
+  Person person,
+  List<Workflow> workflows, {
+  String? plannedEventId,
+}) {
   final place = person.place;
   final step = place == null
       ? null
@@ -14,6 +22,7 @@ Person withServerFields(Person person, List<Workflow> workflows) {
           workflows,
           place.workflowId,
         )?.steps.where((step) => step.position >= place.atPosition).firstOrNull;
+  final planned = step != null && step.isEvent ? plannedEventId : null;
   return Person(
     id: person.id,
     name: person.name,
@@ -41,9 +50,14 @@ Person withServerFields(Person person, List<Workflow> workflows) {
     place: place,
     pausedAt: person.pausedAt,
     currentStepId: step?.id,
-    dueOn: step == null || place == null || person.pausedAt != null
+    dueOn:
+        step == null ||
+            place == null ||
+            person.pausedAt != null ||
+            planned != null
         ? null
         : addDays(place.lastTick, step.days),
+    plannedEventId: planned,
     lastContactOn: person.lastContactOn,
     reminders: person.reminders,
     photoPath: person.photoPath,
@@ -81,6 +95,7 @@ Person withLastContact(Person person, DateTime? day) => Person(
   pausedAt: person.pausedAt,
   currentStepId: person.currentStepId,
   dueOn: person.dueOn,
+  plannedEventId: person.plannedEventId,
   lastContactOn: day,
   photoPath: person.photoPath,
   loyaltySince: person.loyaltySince,

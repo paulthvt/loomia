@@ -105,6 +105,7 @@ Widget workflowStepLight() => _app(
       model: BusinessModel.other,
       offersLoyalty: _samples.stage != Stage.prospect,
       number: 2,
+      eventTypes: [_workshop],
       step: _samples.steps[1],
       onSave: (_) async {},
       onRemove: () async {},

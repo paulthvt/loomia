@@ -15,6 +15,7 @@ import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 
 import '../../../core/photos/fake_photo_repository.dart';
 import '../../auth/fake_auth_repository.dart';
@@ -704,6 +705,52 @@ void main() {
 
     expect(world.container.read(book).value!.single.place, isNull);
     expect(world.people.calls.last, 'setPlace(p1, none)');
+  });
+
+  test('postponeStep puts an event step off to the day picked', () async {
+    final booking = Workflow(
+      id: 'new-customer',
+      stage: Stage.customer,
+      name: 'New customer',
+      isDefault: true,
+      steps: const [
+        WorkflowStep(
+          id: 'book',
+          position: 1,
+          label: 'Book the unboxing call',
+          days: 0,
+          eventWorkflowId: 'unboxing',
+        ),
+      ],
+    );
+    final world = _world([
+      Person(
+        id: 'p1',
+        name: 'Julie',
+        stage: Stage.customer,
+        stageSince: DateTime.utc(2026, 9),
+        place: (
+          workflowId: 'new-customer',
+          atPosition: 1,
+          lastTick: DateTime(2026, 10, 1),
+        ),
+      ),
+    ]);
+    world.people.workflows = [booking];
+    final book = _book(world.container);
+    await world.container.read(book.future);
+    final julie = world.container.read(book).value!.single;
+    final progress = progressOf(julie, booking)! as OnStep;
+
+    await world.container
+        .read(book.notifier)
+        .postponeStep(julie, progress, DateTime(2026, 10, 20));
+
+    expect(
+      world.container.read(book).value!.single.dueOn,
+      DateTime(2026, 10, 20),
+    );
+    expect(world.people.calls, contains('postponeStep(p1:book:2026-10-20)'));
   });
 
   test('completeStep moves to the next step and reloads the history', () async {
