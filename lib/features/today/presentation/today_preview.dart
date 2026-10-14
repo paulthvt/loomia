@@ -18,10 +18,11 @@ import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Today in both modes and both layouts, for `flutter widget-preview start`,
-/// on a fixed morning so the goldens never follow the clock. Nine people
-/// are due: among them an unboxing call to plan (#315), a workshop follow-up
-/// (#314) and a finished Samples asking what's next (#316). A phone shows
-/// five rows and the rest behind "more", a desktop six.
+/// on a fixed morning so the goldens never follow the clock. Ten people
+/// are due: among them an LRP renewal (#317), an unboxing call to plan
+/// (#315), a workshop follow-up (#314) and a finished Samples asking what's
+/// next (#316). A phone shows five rows and the rest behind "more", a
+/// desktop six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
 Widget todayMobileLight() =>
@@ -208,9 +209,23 @@ Due _whatsNext(String name) => DueNext(
   _samples,
 );
 
+/// An LRP renewing on October 1st, asked from September 28th (#317).
+Due _renewal(String name) => DueLoyalty(
+  Person(
+    id: name,
+    name: name,
+    stage: Stage.customer,
+    stageSince: DateTime.utc(2026, 3),
+    loyaltySince: DateTime(2026, 3, 1),
+    loyaltyDay: 1,
+  ),
+  DateTime(2026, 10),
+);
+
 /// Oldest first, then by name, as `dueToday` sorts.
 final _book = [
   _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
+  _renewal('Anna Lopez'),
   _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
   _toPlan('Julie Martin', DateTime(2026, 9, 28)),
   _followUp('Marc Petit', DateTime(2026, 9, 28)),

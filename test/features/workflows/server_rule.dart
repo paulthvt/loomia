@@ -71,6 +71,8 @@ Person withServerFields(
     reminders: person.reminders,
     photoPath: person.photoPath,
     loyaltySince: person.loyaltySince,
+    loyaltyDay: person.loyaltyDay,
+    loyaltyCheckedFor: person.loyaltyCheckedFor,
   );
 }
 
@@ -109,6 +111,8 @@ Person withLastContact(Person person, DateTime? day) => Person(
   lastContactOn: day,
   photoPath: person.photoPath,
   loyaltySince: person.loyaltySince,
+  loyaltyDay: person.loyaltyDay,
+  loyaltyCheckedFor: person.loyaltyCheckedFor,
   reminders: person.reminders,
 );
 

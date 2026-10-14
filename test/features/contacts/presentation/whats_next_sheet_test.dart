@@ -108,6 +108,7 @@ void main() {
 
     await tester.tap(find.text('Yes'));
     await tester.pumpAndSettle();
+    expect(find.text('Loyalty orders renews on day'), findsOneWidget);
     await tester.tap(save);
     await tester.pumpAndSettle();
 

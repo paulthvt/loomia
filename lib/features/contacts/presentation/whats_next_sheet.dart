@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/presentation/loyalty_sheet.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -55,6 +57,9 @@ class _WhatsNextState extends ConsumerState<_WhatsNext> {
 
   /// Null until answered, when asked at all.
   bool? _loyalty;
+
+  /// The day it renews, once started here: today's by default.
+  late int _renewalDay = renewalDayFor(today());
   bool _saving = false;
   PeopleFailure? _failure;
 
@@ -74,6 +79,9 @@ class _WhatsNextState extends ConsumerState<_WhatsNext> {
     try {
       if (_loyalty ?? false) {
         await people.setLoyalty(widget.person, day, day);
+        if (_renewalDay != renewalDayFor(day)) {
+          await people.setLoyaltyDay(widget.person, _renewalDay);
+        }
       }
       // With the LRP started and nothing to offer, nothing is left to ask.
       if (widget.options.isNotEmpty || !(_loyalty ?? false)) {
@@ -145,6 +153,18 @@ class _WhatsNextState extends ConsumerState<_WhatsNext> {
                   ? null
                   : (picked) => setState(() => _loyalty = picked.firstOrNull),
             ),
+            if (_loyalty ?? false)
+              LoyaltyDayField(
+                label: l10n.loyaltyLabel(
+                  (ref.watch(accountProvider)?.businessModel ??
+                          BusinessModel.other)
+                      .name,
+                ),
+                value: _renewalDay,
+                onChanged: _saving
+                    ? null
+                    : (picked) => setState(() => _renewalDay = picked),
+              ),
           ],
           if (widget.options.isNotEmpty)
             RadioGroup<String>(

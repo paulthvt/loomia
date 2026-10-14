@@ -108,6 +108,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       doneTodayProvider((owner: ref.read(accountProvider)?.email, day: today()))
           .notifier,
     );
+    final l10n = AppLocalizations.of(context);
+    final model =
+        ref.read(accountProvider)?.businessModel ?? BusinessModel.other;
     try {
       final ticked = await writePeople(
         context,
@@ -123,6 +126,12 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           // Its row has buttons instead of the ring: see _invite.
           DueFollowUp() => throw StateError('a follow-up has no ring'),
           DueNext() => throw StateError('what comes next has no ring'),
+          DueLoyalty(:final person, :final renewal) => people.checkLoyalty(
+            person,
+            renewal,
+            today(),
+            loyaltyRenewsText(l10n, model, person, renewal),
+          ),
         },
       );
       // The book dropped the row in this same microtask: the bar moves in
@@ -890,6 +899,11 @@ class _TodayViewState extends State<TodayView> {
       ),
       DueFollowUp() => throw StateError('built by _followUp'),
       DueNext() => throw StateError('built by _whatsNext'),
+      DueLoyalty(:final person, :final renewal) => (
+        due.key,
+        loyaltyRenewsText(l10n, widget.model, person, renewal),
+        null,
+      ),
     };
     return ActionItem(
       key: ValueKey(key),
@@ -898,8 +912,9 @@ class _TodayViewState extends State<TodayView> {
       reason: reason,
       detail: detail,
       tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),
-      // The accent chip only when a real date drives it: late.
-      chip: due.day.isBefore(day)
+      // The accent chip only when a real date drives it: late. A renewal is
+      // never late: it is asked until its day.
+      chip: due is! DueLoyalty && due.day.isBefore(day)
           ? DateChip(dueLabel(l10n, due.day, day))
           : null,
       onOpen: () => widget.onOpen(due.person),
@@ -936,3 +951,16 @@ class _UpToDate extends StatelessWidget {
     );
   }
 }
+
+/// "Julie's LRP renews Oct 15": the Today row, and the history entry its
+/// tick writes.
+String loyaltyRenewsText(
+  AppLocalizations l10n,
+  BusinessModel model,
+  Person person,
+  DateTime renewal,
+) => l10n.todayLoyaltyRenews(
+  firstName(person),
+  l10n.loyaltyLabel(model.name),
+  renewal,
+);

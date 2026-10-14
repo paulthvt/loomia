@@ -547,6 +547,43 @@ void main() {
     expect(find.text('Samples is done'), findsNothing);
   });
 
+  testWidgets('an LRP renewal: ticking checks it in, and the row leaves', (
+    tester,
+  ) async {
+    // Within the 3 days ahead there is always a day from 1 to 28.
+    final day = [
+      for (var ahead = 0; ahead <= 3; ahead++) addDays(today(), ahead).day,
+    ].firstWhere((day) => day <= 28);
+    final activities = FakeActivityRepository();
+    final people = FakePeopleRepository([
+      Person(
+        id: 'p1',
+        name: 'Julie Martin',
+        stage: Stage.customer,
+        stageSince: DateTime.utc(2026, 9),
+        loyaltySince: DateTime(2026, 1, day),
+        loyaltyDay: day,
+      ),
+    ])..activities = activities;
+    await pumpLoomia(
+      tester,
+      size: _tallPhone,
+      people: people,
+      activities: activities,
+    );
+    final row = find.textContaining("Julie's Loyalty orders renews");
+    expect(row, findsOneWidget);
+
+    await tester.tap(find.byTooltip(RegExp('^Mark "Julie')));
+    await tester.pumpAndSettle();
+
+    expect(
+      people.calls.where((c) => c.startsWith('checkLoyalty(p1:')),
+      hasLength(1),
+    );
+    expect(row, findsNothing);
+  });
+
   group('an event step', () {
     final flow = Workflow(
       id: 'flow',

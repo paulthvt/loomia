@@ -161,6 +161,8 @@ class FakePeopleRepository implements PeopleRepository {
       // As personToRow: an update never writes the photo, nor the LRP.
       photoPath: stored.photoPath,
       loyaltySince: stored.loyaltySince,
+      loyaltyDay: stored.loyaltyDay,
+      loyaltyCheckedFor: stored.loyaltyCheckedFor,
     );
     store[person.id] = saved;
     // As the trigger: the latest stage entry follows a corrected since.
@@ -385,7 +387,56 @@ class FakePeopleRepository implements PeopleRepository {
         place: before.place,
         pausedAt: before.pausedAt,
         loyaltySince: () => since,
+        // As set_loyalty: a start fills the day, a move keeps it, a stop
+        // clears it and the check.
+        loyaltyDay: () => since == null
+            ? null
+            : before.loyaltyDay ?? (since.day > 28 ? 28 : since.day),
+        loyaltyCheckedFor: () =>
+            since == null ? null : before.loyaltyCheckedFor,
       ),
+    );
+  }
+
+  @override
+  Future<Person> setLoyaltyDay(String id, int day) async {
+    await _record('setLoyaltyDay($id, $day)');
+    final before = store[id]!;
+    return _with(
+      before,
+      place: before.place,
+      pausedAt: before.pausedAt,
+      loyaltyDay: () => day,
+    );
+  }
+
+  /// As check_loyalty: a reminder entry, the renewal checked, once.
+  @override
+  Future<Person> checkLoyalty(
+    String personId,
+    DateTime renewal,
+    DateTime on,
+    String text,
+  ) async {
+    await _record('checkLoyalty($personId:${dayColumn(renewal)})');
+    final before = store[personId]!;
+    if (before.loyaltySince == null) throw PeopleFailure.unknown;
+    if (before.loyaltyCheckedFor == renewal) return _served(before);
+    activities?.store.add(
+      Activity(
+        id: 'a-reminder-${_next++}',
+        personId: personId,
+        kind: ActivityKind.reminder,
+        happenedOn: on,
+        text: text,
+        createdAt: DateTime.utc(2026, 10, 8, 12),
+      ),
+    );
+    return _with(
+      before,
+      place: before.place,
+      pausedAt: before.pausedAt,
+      loyaltyCheckedFor: () => renewal,
     );
   }
 
@@ -486,6 +537,8 @@ class FakePeopleRepository implements PeopleRepository {
     required DateTime? pausedAt,
     String? Function()? photoPath,
     DateTime? Function()? loyaltySince,
+    int? Function()? loyaltyDay,
+    DateTime? Function()? loyaltyCheckedFor,
   }) {
     final newStage = stage ?? before.stage;
     final person = Person(
@@ -518,6 +571,10 @@ class FakePeopleRepository implements PeopleRepository {
       pausedAt: pausedAt,
       photoPath: photoPath == null ? before.photoPath : photoPath(),
       loyaltySince: loyaltySince == null ? before.loyaltySince : loyaltySince(),
+      loyaltyDay: loyaltyDay == null ? before.loyaltyDay : loyaltyDay(),
+      loyaltyCheckedFor: loyaltyCheckedFor == null
+          ? before.loyaltyCheckedFor
+          : loyaltyCheckedFor(),
     );
     store[person.id] = person;
     return _served(person);

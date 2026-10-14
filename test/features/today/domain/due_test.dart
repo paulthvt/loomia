@@ -255,4 +255,22 @@ void main() {
     expect(due.single.day, DateTime(2026, 9, 25));
     expect((due.single as DueNext).workflow.id, 'samples');
   });
+
+  test('an LRP renewal: from 3 days before, ranked after reminders', () {
+    final julie = Person(
+      id: 'j',
+      name: 'Julie',
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026),
+      loyaltySince: DateTime(2026, 8, 1),
+      loyaltyDay: 1,
+      reminders: [_reminder('r-j', DateTime(2026, 9, 28))],
+    );
+
+    final due = dueToday([julie], _workflows, _today);
+
+    expect(_keys(due), ['r-j', 'lrp:j']);
+    expect((due.last as DueLoyalty).renewal, DateTime(2026, 10));
+    expect(due.last.day, DateTime(2026, 9, 28));
+  });
 }

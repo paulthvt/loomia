@@ -298,14 +298,19 @@ class ContactDetails extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           icon: const Icon(Icons.chevron_right),
-          label: Text(
-            since == null
-                ? l10n.contactLoyaltyNone(label)
-                : since.year == DateTime.now().year
+          label: Text(switch ((since, person.loyaltyDay)) {
+            (null, _) => l10n.contactLoyaltyNone(label),
+            (final since?, final day) => switch (since.year ==
+                    DateTime.now().year
                 ? l10n.contactLoyaltySince(label, since)
-                : l10n.contactLoyaltySinceWithYear(label, since),
-            style: AppTypography.label,
-          ),
+                : l10n.contactLoyaltySinceWithYear(label, since)) {
+              final line when day != null => l10n.contactLoyaltyRenews(
+                line,
+                day,
+              ),
+              final line => line,
+            },
+          }, style: AppTypography.label),
         ),
       );
     }

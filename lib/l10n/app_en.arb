@@ -260,6 +260,15 @@
   "@planInvite": {
     "description": "Button of that sheet: adds the person to the event picked, as invited."
   },
+  "todayLoyaltyRenews": "{name}'s {label} renews {day}",
+  "@todayLoyaltyRenews": {
+    "description": "Row on Today from 3 days before a customer's loyalty order renews, and the history entry ticking it writes. name is their first name, label the loyalty programme's name (loyaltyLabel, e.g. 'LRP'), day the renewal, e.g. \"Julie's LRP renews Oct 15\".",
+    "placeholders": {
+      "name": { "type": "String" },
+      "label": { "type": "String" },
+      "day": { "type": "DateTime", "format": "MMMd" }
+    }
+  },
   "todayFollowUp": "Follow up {name} about {event} · {day}",
   "@todayFollowUp": {
     "description": "Row on Today for someone invited to an event who has not said they are coming. name is their first name, event the event's title, day its short weekday, e.g. 'Follow up Marc about Huiles et sommeil · Tue'.",
@@ -619,6 +628,25 @@
       "label": { "type": "String" },
       "date": { "type": "DateTime", "format": "MMMd" }
     }
+  },
+  "contactLoyaltyRenews": "{line} · renews on day {day}",
+  "@contactLoyaltyRenews": {
+    "description": "The loyalty line on a contact with its renewal day of the month added. line is contactLoyaltySince's text, day a number from 1 to 28.",
+    "placeholders": {
+      "line": { "type": "String" },
+      "day": { "type": "int" }
+    }
+  },
+  "loyaltyRenewsOn": "{label} renews on day",
+  "@loyaltyRenewsOn": {
+    "description": "Label of the field picking the day of the month a loyalty order renews (1 to 28), in the loyalty sheet and the What's next sheet. label is the programme's name, e.g. 'LRP'.",
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "loyaltyRenewsHint": "Day of the month, 1 to 28. Today reminds you 3 days before.",
+  "@loyaltyRenewsHint": {
+    "description": "Under the renewal day field. Today is the app's home screen."
   },
   "contactLoyaltySinceWithYear": "{label} · Since {date}",
   "@contactLoyaltySinceWithYear": {
