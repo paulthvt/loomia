@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/today/domain/due.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 
 import '../../workflows/fake_workflow_repository.dart';
 
@@ -178,5 +179,48 @@ void main() {
 
       expect(_keys(due), ['r-anna', 'e1:a', 'a']);
     });
+  });
+
+  test('an event step carries the event they missed', () {
+    final flow = Workflow(
+      id: 'flow',
+      stage: Stage.customer,
+      name: 'New customer',
+      isDefault: true,
+      steps: const [
+        WorkflowStep(
+          id: 'book',
+          position: 1,
+          label: 'Book the unboxing call',
+          days: 0,
+          eventWorkflowId: 'unboxing',
+        ),
+      ],
+    );
+    final julie = Person(
+      id: 'j',
+      name: 'Julie',
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026),
+      place: (
+        workflowId: 'flow',
+        atPosition: 1,
+        lastTick: DateTime(2026, 9, 20),
+      ),
+      currentStepId: 'book',
+      dueOn: DateTime(2026, 9, 20),
+    );
+    final missed = CalendarEvent(
+      id: 'e1',
+      title: 'Unboxing call — Julie',
+      startsAt: DateTime(2026, 9, 25, 19),
+      eventWorkflowId: 'unboxing',
+      doneAt: DateTime(2026, 9, 25, 21),
+      attendees: const [Attendee(personId: 'j')],
+    );
+
+    final due = dueToday([julie], [flow], _today, events: [missed]);
+
+    expect((due.single as DueStep).missed?.id, 'e1');
   });
 }

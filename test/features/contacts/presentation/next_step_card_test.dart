@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/next_step_section.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -49,6 +50,9 @@ class _Calls {
   final editedReminders = <Reminder>[];
   var addReminders = 0;
   var retries = 0;
+  final plans = <OnStep>[];
+  final laters = <OnStep>[];
+  final openedEvents = <String>[];
 }
 
 Future<_Calls> _pump(
@@ -58,6 +62,7 @@ Future<_Calls> _pump(
   bool busy = false,
   bool waiting = false,
   bool failed = false,
+  List<CalendarEvent> events = const [],
 }) async {
   final calls = _Calls();
   await tester.pumpWidget(
@@ -82,6 +87,10 @@ Future<_Calls> _pump(
           onTickReminder: calls.tickedReminders.add,
           onEditReminder: calls.editedReminders.add,
           onAddReminder: () => calls.addReminders++,
+          events: events,
+          onPlan: calls.plans.add,
+          onLater: calls.laters.add,
+          onOpenEvent: calls.openedEvents.add,
         ),
       ),
     ),
@@ -276,6 +285,106 @@ void main() {
       expect(find.text('Nothing planned'), findsNothing);
       await tester.tap(find.text('Try again'));
       expect(calls.retries, 1);
+    });
+  });
+
+  group('an event step', () {
+    const book = WorkflowStep(
+      id: 'book',
+      position: 1,
+      label: 'Book the unboxing call',
+      days: 0,
+      eventWorkflowId: 'unboxing',
+    );
+    final flow = Workflow(
+      id: 'new-customer',
+      stage: Stage.customer,
+      name: 'New customer',
+      isDefault: true,
+      steps: const [book],
+    );
+    final julie = Person(
+      id: 'p1',
+      name: 'Julie Martin',
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026, 9),
+      place: (
+        workflowId: 'new-customer',
+        atPosition: 1,
+        lastTick: DateTime(2026, 9, 20),
+      ),
+    );
+    final on = OnStep(
+      workflow: flow,
+      step: book,
+      index: 1,
+      total: 3,
+      due: _today,
+    );
+
+    testWidgets('to plan: Plan and Later, no ring', (tester) async {
+      final calls = await _pump(tester, on, person: julie);
+
+      expect(find.text('Book the unboxing call'), findsOneWidget);
+      expect(
+        find.byTooltip('Mark "Book the unboxing call" done'),
+        findsNothing,
+      );
+      await tester.tap(find.text('Plan'));
+      await tester.tap(find.text('Later'));
+
+      expect(calls.plans.single.step.id, 'book');
+      expect(calls.laters.single.step.id, 'book');
+    });
+
+    testWidgets('missed: Book again, with the event', (tester) async {
+      await _pump(
+        tester,
+        on,
+        person: julie,
+        events: [
+          CalendarEvent(
+            id: 'e1',
+            title: 'Unboxing call — Julie',
+            startsAt: DateTime(2026, 9, 22, 19),
+            eventWorkflowId: 'unboxing',
+            doneAt: DateTime(2026, 9, 22, 21),
+            attendees: const [Attendee(personId: 'p1')],
+          ),
+        ],
+      );
+
+      expect(
+        find.text('Book again · missed Unboxing call — Julie on Tue'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('planned: the event and when; it opens; no buttons', (
+      tester,
+    ) async {
+      final calls = await _pump(
+        tester,
+        Planned(workflow: flow, step: book, index: 1, total: 3, eventId: 'e2'),
+        person: julie,
+        events: [
+          CalendarEvent(
+            id: 'e2',
+            title: 'Unboxing call — Julie',
+            startsAt: DateTime(2026, 10, 6, 19),
+            eventWorkflowId: 'unboxing',
+          ),
+        ],
+      );
+
+      expect(find.text('Unboxing call — Julie'), findsOneWidget);
+      expect(
+        find.textContaining('Planned · Tuesday, October 6'),
+        findsOneWidget,
+      );
+      expect(find.text('Plan'), findsNothing);
+      await tester.tap(find.text('Unboxing call — Julie'));
+      expect(calls.openedEvents, ['e2']);
     });
   });
 }

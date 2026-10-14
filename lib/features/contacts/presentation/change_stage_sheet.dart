@@ -87,7 +87,9 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
     final ending = [
       for (final person in people)
         if (findWorkflow(workflows, person.place?.workflowId)
-            case final workflow? when progressOf(person, workflow) is OnStep)
+            case final workflow?
+            when progressOf(person, workflow) is OnStep ||
+                progressOf(person, workflow) is Planned)
           workflow,
     ];
     // The database clears a prospect's status when they leave prospects.

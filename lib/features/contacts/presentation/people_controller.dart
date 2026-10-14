@@ -166,6 +166,15 @@ class PeopleController extends AsyncNotifier<List<Person>> {
       ..invalidateSelf();
   }
 
+  /// Later on an event step: due on [until].
+  Future<void> postponeStep(
+    Person person,
+    OnStep progress,
+    DateTime until,
+  ) async => _replace(
+    await _repository.postponeStep(person.id, progress.step.id, until),
+  );
+
   Future<void> addReminder(Person person, String text, DateTime dueOn) async {
     final added = await _repository.addReminder(person.id, text, dueOn);
     _changeReminders(person.id, (reminders) => [...reminders, added]);

@@ -13,6 +13,7 @@ import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goal_line.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -503,6 +504,90 @@ void main() {
 
     // Opens the event page, not the sheet.
     expect(find.byType(EventPage), findsOneWidget);
+  });
+
+  group('an event step', () {
+    final flow = Workflow(
+      id: 'flow',
+      stage: Stage.customer,
+      name: 'New customer',
+      isDefault: true,
+      steps: const [
+        WorkflowStep(
+          id: 'book',
+          position: 1,
+          label: 'Book the unboxing call',
+          days: 0,
+          eventWorkflowId: 'workshop',
+        ),
+      ],
+    );
+    Person julie() => Person(
+      id: 'p1',
+      name: 'Julie Martin',
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026, 9),
+      place: (workflowId: 'flow', atPosition: 1, lastTick: today()),
+    );
+
+    testWidgets('Plan and Later instead of the ring; Later puts it off and '
+        'the row leaves', (tester) async {
+      final workflows = FakeWorkflowRepository([flow]);
+      final people = FakePeopleRepository([julie()])
+        ..workflows = workflows.store;
+      await pumpLoomia(
+        tester,
+        size: _tallPhone,
+        people: people,
+        workflows: workflows,
+      );
+      expect(find.text('Book the unboxing call'), findsOneWidget);
+      expect(
+        find.byTooltip('Mark "Book the unboxing call" done'),
+        findsNothing,
+      );
+
+      await tester.tap(find.text('Later'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(
+        people.calls.where((c) => c.startsWith('postponeStep(p1:book:')),
+        hasLength(1),
+      );
+      expect(find.text('Book the unboxing call'), findsNothing);
+    });
+
+    testWidgets('Plan on a group type invites them to the event picked', (
+      tester,
+    ) async {
+      final workflows = FakeWorkflowRepository([flow]);
+      final people = FakePeopleRepository([julie()])
+        ..workflows = workflows.store;
+      final events = FakeEventRepository([
+        CalendarEvent(
+          id: 'e1',
+          title: 'Huiles et sommeil',
+          startsAt: DateTime.now().add(const Duration(days: 4)),
+          eventWorkflowId: 'workshop',
+        ),
+      ]);
+      await pumpLoomia(
+        tester,
+        size: _tallPhone,
+        people: people,
+        workflows: workflows,
+        events: events,
+      );
+
+      await tester.tap(find.text('Plan'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Invite'));
+      await tester.pumpAndSettle();
+
+      expect(events.calls, contains('invite(e1:p1)'));
+    });
   });
 
   group('following up an invitation', () {

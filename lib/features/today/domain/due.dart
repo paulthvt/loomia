@@ -1,4 +1,5 @@
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/missed.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -20,9 +21,13 @@ sealed class Due {
 }
 
 final class DueStep extends Due {
-  const DueStep(super.person, this.step);
+  const DueStep(super.person, this.step, {this.missed});
 
   final OnStep step;
+
+  /// On an event step: the event planned for it that they missed, for
+  /// "Book again" (#315).
+  final CalendarEvent? missed;
 
   @override
   DateTime get day => step.due;
@@ -78,7 +83,11 @@ List<Due> dueToday(
         if (!reminder.dueOn.isAfter(today)) DueReminder(person, reminder),
       if (progressOf(person, findWorkflow(workflows, person.place?.workflowId))
           case final OnStep step when !step.due.isAfter(today))
-        DueStep(person, step),
+        DueStep(
+          person,
+          step,
+          missed: step.isEvent ? missedEvent(person, step.step, events) : null,
+        ),
     ],
     for (final event in events)
       if (!event.day.isBefore(today))

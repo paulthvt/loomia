@@ -18,9 +18,10 @@ import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Today in both modes and both layouts, for `flutter widget-preview start`,
-/// on a fixed morning so the goldens never follow the clock. Seven people
-/// are due, one of them to follow up about a workshop (#314): a phone shows
-/// five rows and the rest behind "more", a desktop six.
+/// on a fixed morning so the goldens never follow the clock. Eight people
+/// are due, one with an unboxing call to plan (#315) and one to follow up
+/// about a workshop (#314): a phone shows five rows and the rest behind
+/// "more", a desktop six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
 Widget todayMobileLight() =>
@@ -155,10 +156,46 @@ Due _followUp(String name, DateTime due) => DueFollowUp(
   ),
 );
 
+final _newCustomer = Workflow(
+  id: 'new-customer',
+  stage: Stage.customer,
+  name: 'New customer',
+  isDefault: true,
+  steps: const [
+    WorkflowStep(
+      id: 'book',
+      position: 1,
+      label: 'Book the unboxing call',
+      days: 0,
+      eventWorkflowId: 'unboxing',
+    ),
+    WorkflowStep(id: 'access', position: 2, label: 'Give VIP access', days: 0),
+    WorkflowStep(
+      id: 'consult',
+      position: 3,
+      label: 'Propose a consultation',
+      days: 15,
+    ),
+  ],
+);
+
+/// An event step to plan (#315): Plan and Later instead of the ring.
+Due _toPlan(String name, DateTime due) => DueStep(
+  _sample(name),
+  OnStep(
+    workflow: _newCustomer,
+    step: _newCustomer.steps.first,
+    index: 1,
+    total: _newCustomer.steps.length,
+    due: due,
+  ),
+);
+
 /// Oldest first, then by name, as `dueToday` sorts.
 final _book = [
   _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
   _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
+  _toPlan('Julie Martin', DateTime(2026, 9, 28)),
   _followUp('Marc Petit', DateTime(2026, 9, 28)),
   _reminder(
     'Julie Bernard',
@@ -248,6 +285,8 @@ Widget _app(
       onGoing: (_) {},
       onFollowedUp: (_) {},
       onRemoveInvite: (_) {},
+      onPlan: (_) {},
+      onLater: (_) {},
       onOpen: (_) {},
       onRetry: () {},
       onRefresh: () async {},

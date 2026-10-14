@@ -21,7 +21,8 @@ class PeopleRepository {
   /// Every column, the server's computed step, due day and last contact, and
   /// the open reminders.
   static const String _columns =
-      '*, current_step_id, due_on, last_contact_on, reminder($_reminderColumns)';
+      '*, current_step_id, due_on, planned_event_id, last_contact_on, '
+      'reminder($_reminderColumns)';
 
   static const String _reminderColumns = 'id, text, due_on, created_at';
 
@@ -125,6 +126,24 @@ class PeopleRepository {
                 'p_person': personId,
                 'p_step': stepId,
                 'p_on': dayColumn(on),
+              },
+            )
+            .select(_columns)
+            .single();
+        return personFromRow(row);
+      });
+
+  /// Puts off [stepId], the person's current event step, to [until] (#315).
+  /// The server refuses another step, or a plain one.
+  Future<Person> postponeStep(String personId, String stepId, DateTime until) =>
+      guardPeople(() async {
+        final row = await _client
+            .rpc<Object?>(
+              'postpone_step',
+              params: {
+                'p_person': personId,
+                'p_step': stepId,
+                'p_until': dayColumn(until),
               },
             )
             .select(_columns)
@@ -326,6 +345,7 @@ Person personFromRow(Map<String, dynamic> row) {
       _ => null,
     },
     currentStepId: row['current_step_id'] as String?,
+    plannedEventId: row['planned_event_id'] as String?,
     dueOn: switch (row['due_on']) {
       // A bare date parses as local midnight, like last_tick.
       final String day => DateTime.parse(day),

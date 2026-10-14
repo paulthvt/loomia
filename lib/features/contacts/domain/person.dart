@@ -47,6 +47,7 @@ class Person {
     this.pausedAt,
     this.currentStepId,
     this.dueOn,
+    this.plannedEventId,
     this.lastContactOn,
     this.reminders = const [],
     this.photoPath,
@@ -118,8 +119,13 @@ class Person {
   final String? currentStepId;
 
   /// The server's answer (`due_on`): the day that step is due, local midnight.
-  /// Null while paused, with no workflow, or done. Read-only.
+  /// Null while paused, with no workflow, done, or planned. Read-only.
   final DateTime? dueOn;
+
+  /// The server's answer (`planned_event_id`, #315): the open event of their
+  /// current event step's type that they attend. Null on a plain step or
+  /// before it is planned. Read-only.
+  final String? plannedEventId;
 
   /// The server's answer (`last_contact_on`): the latest day anything was
   /// logged with them, stage changes aside. Local midnight. Read-only.
@@ -176,6 +182,7 @@ class Person {
     pausedAt: pausedAt,
     currentStepId: currentStepId,
     dueOn: dueOn,
+    plannedEventId: plannedEventId,
     lastContactOn: lastContactOn,
     reminders: reminders,
     photoPath: photoPath,

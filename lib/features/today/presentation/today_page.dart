@@ -23,11 +23,13 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/calendar/presentation/plan_sheet.dart';
 import 'package:loomia/features/calendar/presentation/who_was_there_sheet.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
+import 'package:loomia/features/contacts/presentation/next_step_section.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
@@ -47,6 +49,7 @@ import 'package:loomia/features/today/domain/today_events.dart';
 import 'package:loomia/features/today/presentation/done_today.dart';
 import 'package:loomia/features/today/presentation/today_event_items.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -153,6 +156,37 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     }
   }
 
+  /// Plan on an event step: the event, then the book reloads and the row
+  /// leaves.
+  Future<void> _planStep(DueStep due, EventWorkflow type) async {
+    final key = due.key;
+    if (!_busy.add(key)) return;
+    setState(() {});
+    try {
+      await planEvent(context, due.person, type);
+    } finally {
+      if (mounted) setState(() => _busy.remove(key));
+    }
+  }
+
+  /// Later on an event step: due on the day picked.
+  Future<void> _later(DueStep due) async {
+    final day = await pickLater(context);
+    if (day == null || !mounted) return;
+    final key = due.key;
+    if (!_busy.add(key)) return;
+    setState(() {});
+    try {
+      await writePeople(
+        context,
+        ref,
+        (people) => people.postponeStep(due.person, due.step, day),
+      );
+    } finally {
+      if (mounted) setState(() => _busy.remove(key));
+    }
+  }
+
   Future<void> _tickStep(DueEventStep due) async {
     final events = ref.read(
       eventsProvider(ref.read(accountProvider)?.email).notifier,
@@ -239,6 +273,17 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           (events) => events.followedUp(due.event.id, due.person.id, today()),
         ),
       ),
+      onPlan: switch (eventWorkflows.value) {
+        // Until the types load, there is nothing to plan.
+        null => null,
+        final types => (due) {
+          if (findEventWorkflow(types, due.step.step.eventWorkflowId)
+              case final type?) {
+            unawaited(_planStep(due, type));
+          }
+        },
+      },
+      onLater: (due) => unawaited(_later(due)),
       onRemoveInvite: (due) => unawaited(
         _invite(due, (events) => events.uninvite(due.event.id, due.person.id)),
       ),
@@ -365,6 +410,8 @@ class TodayView extends StatefulWidget {
     this.onGoing,
     this.onFollowedUp,
     this.onRemoveInvite,
+    this.onPlan,
+    this.onLater,
     this.accountAction,
     this.goals,
     this.model = BusinessModel.other,
@@ -402,6 +449,10 @@ class TodayView extends StatefulWidget {
   final void Function(DueFollowUp due)? onGoing;
   final void Function(DueFollowUp due)? onFollowedUp;
   final void Function(DueFollowUp due)? onRemoveInvite;
+
+  /// An event step's buttons (#315).
+  final void Function(DueStep due)? onPlan;
+  final void Function(DueStep due)? onLater;
   final void Function(Person person) onOpen;
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
@@ -763,7 +814,7 @@ class _TodayViewState extends State<TodayView> {
       reason: l10n.todayFollowUp(
         firstName(due.person),
         due.event.title,
-        due.event.startsAt,
+        due.event.startsAt.toLocal(),
       ),
       tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),
       chip: due.day.isBefore(day)
@@ -792,6 +843,11 @@ class _TodayViewState extends State<TodayView> {
     if (due is DueFollowUp) return _followUp(l10n, due, day);
     // A new step or reminder is a new card: it slides in.
     final (key, reason, detail) = switch (due) {
+      DueStep(:final step, missed: final event?) => (
+        step.step.id,
+        step.step.label,
+        l10n.nextStepMissed(event.title, event.startsAt.toLocal()),
+      ),
       DueStep(:final step) => (
         step.step.id,
         step.step.label,
@@ -819,6 +875,19 @@ class _TodayViewState extends State<TodayView> {
       onResolve: () => widget.onTick(due),
       resolved: widget.busy.contains(due.key),
       resolveLabel: l10n.nextStepMarkDone(reason),
+      actions: due is DueStep && due.step.isEvent ? _plan(due) : null,
+    );
+  }
+
+  /// Plan and Later instead of the ring; disabled while busy.
+  List<Widget> _plan(DueStep due) {
+    final busy = widget.busy.contains(due.key);
+    void Function()? on(void Function(DueStep)? action) =>
+        busy || action == null ? null : () => action(due);
+    return planButtons(
+      context,
+      onPlan: on(widget.onPlan),
+      onLater: on(widget.onLater),
     );
   }
 }

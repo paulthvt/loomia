@@ -4,6 +4,7 @@ import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 
 import '../workflows/fake_workflow_repository.dart';
@@ -42,10 +43,15 @@ class FakePeopleRepository implements PeopleRepository {
   /// them: every person returned gets them from here, as the database would.
   List<Workflow> workflows = FakeWorkflowRepository.samples();
 
+  /// Person id → an open event they attend, as `planned_event_id` would find
+  /// it on their event step. Tests set it; the fake never plans.
+  final Map<String, String> plannedEvents = {};
+
   Person _served(Person person) {
     final served = withServerFields(
       person,
       workflows,
+      plannedEventId: plannedEvents[person.id],
     ).withReminders(reminders[person.id] ?? const []);
     final history = activities;
     if (history == null) return served;
@@ -307,6 +313,36 @@ class FakePeopleRepository implements PeopleRepository {
     );
     if (starts) _addLoyaltyEntry(personId, ActivityKind.loyaltyStart, on);
     return withLastContact(moved, before.lastContactOn);
+  }
+
+  /// As postpone_step: the current event step only, due on [until].
+  @override
+  Future<Person> postponeStep(
+    String personId,
+    String stepId,
+    DateTime until,
+  ) async {
+    await _record('postponeStep($personId:$stepId:${dayColumn(until)})');
+    final before = _served(store[personId]!);
+    final place = before.place;
+    final step = place == null
+        ? null
+        : findWorkflow(
+            workflows,
+            place.workflowId,
+          )?.steps.where((step) => step.id == stepId).firstOrNull;
+    if (before.currentStepId != stepId || step == null || !step.isEvent) {
+      throw PeopleFailure.unknown;
+    }
+    return _with(
+      before,
+      place: (
+        workflowId: place!.workflowId,
+        atPosition: place.atPosition,
+        lastTick: addDays(until, -step.days),
+      ),
+      pausedAt: before.pausedAt,
+    );
   }
 
   @override

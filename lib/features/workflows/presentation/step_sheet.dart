@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -11,14 +12,23 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// What the step sheet saves: a trimmed label, 0 to 365 days, a trimmed
 /// note or null, and whether ticking it counts a loyalty setup.
-typedef StepDraft = ({String label, int days, String? note, bool loyaltySetup});
+/// [eventWorkflowId] makes it an event step (#315).
+typedef StepDraft = ({
+  String label,
+  int days,
+  String? note,
+  bool loyaltySetup,
+  String? eventWorkflowId,
+});
 
 /// Edits the step at [index] of [workflow], or adds one at the end when
 /// [index] is null. The sheet reads its own `ref`, so it does not depend on
@@ -35,6 +45,9 @@ Future<void> showStepSheet(
       builder: (context, ref, _) => StepForm(
         model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
         offersLoyalty: workflow.stage != Stage.prospect,
+        eventTypes: ref
+            .watch(eventWorkflowsProvider(ref.watch(accountProvider)?.email))
+            .value,
         number: (index ?? workflow.steps.length) + 1,
         step: step,
         loopOthers: workflow.repeats
@@ -53,6 +66,7 @@ Future<void> showStepSheet(
                   note: draft.note,
                   position: positionAt(workflow.steps, workflow.steps.length),
                   loyaltySetup: draft.loyaltySetup,
+                  eventWorkflowId: draft.eventWorkflowId,
                 )
               : repository.updateStep(
                   step.id,
@@ -60,6 +74,7 @@ Future<void> showStepSheet(
                   days: draft.days,
                   note: draft.note,
                   loyaltySetup: draft.loyaltySetup,
+                  eventWorkflowId: draft.eventWorkflowId,
                 ),
         ),
         onRemove: step == null
@@ -82,6 +97,7 @@ class StepForm extends StatefulWidget {
     required this.offersLoyalty,
     required this.number,
     required this.onSave,
+    this.eventTypes,
     this.step,
     this.loopOthers,
     this.onRemove,
@@ -96,6 +112,10 @@ class StepForm extends StatefulWidget {
 
   /// From 1. Step 1 counts from the start, the others from the one before.
   final int number;
+
+  /// What an event step can plan; null while loading, and then the Event
+  /// row waits.
+  final List<EventWorkflow>? eventTypes;
 
   /// The step edited; null adds one.
   final WorkflowStep? step;
@@ -121,6 +141,7 @@ class _StepFormState extends State<StepForm> {
   );
   late final _note = TextEditingController(text: widget.step?.note);
   late bool _loyalty = widget.step?.loyaltySetup ?? false;
+  late String? _eventType = widget.step?.eventWorkflowId;
   bool _saving = false;
   PeopleFailure? _failure;
 
@@ -185,6 +206,7 @@ class _StepFormState extends State<StepForm> {
           days: int.parse(_days.text),
           note: note.isEmpty ? null : note,
           loyaltySetup: _loyalty,
+          eventWorkflowId: _eventType,
         )),
       ),
     );
@@ -275,6 +297,7 @@ class _StepFormState extends State<StepForm> {
                 textCapitalization: TextCapitalization.sentences,
               ),
             ),
+            ?_eventRow(l10n),
             // A plain switch row, like the editor's default switch, not the
             // outlined box of the Figma frame: one switch style in the app.
             if (widget.offersLoyalty)
@@ -288,6 +311,43 @@ class _StepFormState extends State<StepForm> {
                     : (on) => setState(() => _loyalty = on),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Which event an event step plans: None, or a type. Hidden with no types;
+  /// disabled while they load or the step saves.
+  Widget? _eventRow(AppLocalizations l10n) {
+    final types = widget.eventTypes;
+    if (types != null && types.isEmpty && _eventType == null) return null;
+    // A type not (yet) in the list shows as None; saving keeps it.
+    final current = types != null && types.any((t) => t.id == _eventType)
+        ? _eventType
+        : null;
+    Widget item(String text) => Text(text, overflow: TextOverflow.ellipsis);
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(l10n.stepEvent),
+      trailing: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 200),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String?>(
+            value: current,
+            isExpanded: true,
+            style: AppTheme.rowDropdown(context),
+            items: [
+              DropdownMenuItem<String?>(child: item(l10n.stepEventNone)),
+              for (final type in types ?? const <EventWorkflow>[])
+                DropdownMenuItem<String?>(
+                  value: type.id,
+                  child: item(type.name),
+                ),
+            ],
+            onChanged: types == null || _saving
+                ? null
+                : (id) => setState(() => _eventType = id),
+          ),
         ),
       ),
     );

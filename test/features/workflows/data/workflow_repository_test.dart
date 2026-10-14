@@ -18,6 +18,7 @@ void main() {
         'days': 1,
         'note': null,
         'loyalty_setup': true,
+        'event_workflow_id': 'unboxing',
       },
       {
         'id': 's1',
@@ -45,6 +46,16 @@ void main() {
     final workflow = workflowFromRow(row());
 
     expect([for (final s in workflow.steps) s.loyaltySetup], [false, true]);
+  });
+
+  test('reads which step is an event step', () {
+    final workflow = workflowFromRow(row());
+
+    expect(
+      [for (final s in workflow.steps) s.eventWorkflowId],
+      [null, 'unboxing'],
+    );
+    expect(workflow.steps.last.isEvent, isTrue);
   });
 
   test('an unknown stage is an unknown failure', () {

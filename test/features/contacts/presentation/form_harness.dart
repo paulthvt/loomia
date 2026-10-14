@@ -6,12 +6,14 @@ import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
+import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../auth/fake_auth_repository.dart';
+import '../../workflows/fake_event_workflow_repository.dart';
 import '../../workflows/fake_workflow_repository.dart';
 import '../fake_activity_repository.dart';
 import '../fake_people_repository.dart';
@@ -23,6 +25,7 @@ Future<void> pumpFormHarness(
   required FakePeopleRepository people,
   FakeActivityRepository? activities,
   FakeWorkflowRepository? workflows,
+  FakeEventWorkflowRepository? eventWorkflows,
   Account account = const Account(firstName: 'Pauline', email: 'p@example.com'),
   required Future<Object?> Function(BuildContext context) open,
   required void Function(Object? value) result,
@@ -41,6 +44,12 @@ Future<void> pumpFormHarness(
         ),
         workflowRepositoryProvider.overrideWithValue(
           workflows ?? FakeWorkflowRepository(FakeWorkflowRepository.samples()),
+        ),
+        eventWorkflowRepositoryProvider.overrideWithValue(
+          eventWorkflows ??
+              FakeEventWorkflowRepository(
+                FakeEventWorkflowRepository.samples(),
+              ),
         ),
       ],
       child: MaterialApp(

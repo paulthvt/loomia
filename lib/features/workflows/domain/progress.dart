@@ -18,6 +18,24 @@ final class Done extends WorkflowProgress {
   final Workflow workflow;
 }
 
+/// On an event step whose event is planned (#315): it waits for
+/// [eventId], and moves on once that is done with them there.
+final class Planned extends WorkflowProgress {
+  const Planned({
+    required this.workflow,
+    required this.step,
+    required this.index,
+    required this.total,
+    required this.eventId,
+  });
+
+  final Workflow workflow;
+  final WorkflowStep step;
+  final int index;
+  final int total;
+  final String eventId;
+}
+
 final class OnStep extends WorkflowProgress {
   const OnStep({
     required this.workflow,
@@ -34,6 +52,9 @@ final class OnStep extends WorkflowProgress {
   final int index;
   final int total;
   final DateTime due;
+
+  /// Planned as an event: Plan and Later instead of the ring.
+  bool get isEvent => step.isEvent;
 }
 
 /// The server decides the step and its day (`current_step_id`, `due_on`, in
@@ -53,8 +74,18 @@ WorkflowProgress? progressOf(Person person, Workflow? workflow) {
   if (stepId == null) return Done(workflow);
   final steps = workflow.steps;
   final index = steps.indexWhere((step) => step.id == stepId);
+  if (index == -1) return null;
+  if (person.plannedEventId case final eventId?) {
+    return Planned(
+      workflow: workflow,
+      step: steps[index],
+      index: index + 1,
+      total: steps.length,
+      eventId: eventId,
+    );
+  }
   final due = person.dueOn;
-  if (index == -1 || due == null) return null;
+  if (due == null) return null;
   return OnStep(
     workflow: workflow,
     step: steps[index],

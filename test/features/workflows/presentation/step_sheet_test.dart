@@ -337,4 +337,36 @@ void main() {
       expect(writes('removeStep'), ['removeStep(w2)']);
     });
   });
+
+  testWidgets('an event step: the Event row picks a type, saved with the '
+      'step', (tester) async {
+    await open(tester);
+
+    await tester.enterText(field('What to do'), 'Book the workshop');
+    await tester.tap(find.text('None'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Workshop').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final samples = workflows.store.firstWhere((w) => w.id == 'samples');
+    expect(samples.steps.last.label, 'Book the workshop');
+    expect(samples.steps.last.eventWorkflowId, 'workshop');
+  });
+
+  testWidgets('an event step opens with its type', (tester) async {
+    final samples = workflows.store.firstWhere((w) => w.id == 'samples');
+    await workflows.updateStep(
+      samples.steps.first.id,
+      label: samples.steps.first.label,
+      days: samples.steps.first.days,
+      loyaltySetup: false,
+      eventWorkflowId: 'training',
+    );
+    await open(tester, index: 0);
+
+    expect(find.text('Training'), findsOneWidget);
+    expect(find.text('None'), findsNothing);
+  });
 }

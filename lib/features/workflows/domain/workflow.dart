@@ -9,6 +9,7 @@ class WorkflowStep {
     required this.days,
     this.note,
     this.loyaltySetup = false,
+    this.eventWorkflowId,
   });
 
   final String id;
@@ -21,6 +22,12 @@ class WorkflowStep {
 
   /// Ticking it starts their LRP (loyalty setup), if they have none (#255).
   final bool loyaltySetup;
+
+  /// An event step (#315): planned as an event of this type, and moved past
+  /// when that event is done with them there.
+  final String? eventWorkflowId;
+
+  bool get isEvent => eventWorkflowId != null;
 }
 
 /// A user's list of steps for one stage. Their own data once seeded.

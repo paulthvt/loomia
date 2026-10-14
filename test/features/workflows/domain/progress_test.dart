@@ -73,6 +73,39 @@ void main() {
     expect(progress.step.label, 'Post the samples');
   });
 
+  test('an event step: on it until its event is planned, then planned', () {
+    final workflow = _samples([
+      _step(1, 'Send a first message', 0),
+      const WorkflowStep(
+        id: 's2',
+        position: 2,
+        label: 'Book a wellness check',
+        days: 0,
+        eventWorkflowId: 'check',
+      ),
+    ]);
+
+    final on = progressOf(_at('s2', due: DateTime(2026, 9, 28)), workflow);
+    expect(on, isA<OnStep>().having((step) => step.isEvent, 'isEvent', true));
+
+    final planned = Person(
+      id: 'p1',
+      name: 'Sarah',
+      stage: Stage.prospect,
+      stageSince: DateTime.utc(2026, 9),
+      place: (workflowId: 'w1', atPosition: 2, lastTick: DateTime(2026, 9, 28)),
+      currentStepId: 's2',
+      plannedEventId: 'e1',
+    );
+    expect(
+      progressOf(planned, workflow),
+      isA<Planned>()
+          .having((p) => p.eventId, 'eventId', 'e1')
+          .having((p) => p.index, 'index', 2)
+          .having((p) => p.total, 'total', 2),
+    );
+  });
+
   test('no current step is done', () {
     expect(progressOf(_at(null), _samples()), isA<Done>());
   });
