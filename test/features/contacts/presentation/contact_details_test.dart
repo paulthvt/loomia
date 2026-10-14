@@ -22,7 +22,9 @@ Person _person({
   DateTime? pausedAt,
   String? photoPath,
   DateTime? loyaltySince,
+  int? loyaltyDay,
 }) => Person(
+  loyaltyDay: loyaltyDay,
   id: 'p1',
   name: 'Marie Dupont',
   stage: stage,
@@ -120,6 +122,20 @@ void main() {
       expect(find.text('LRP · Since Oct 2'), findsOneWidget);
       await tester.tap(find.text('LRP · Since Oct 2'));
       expect(calls.loyalty, 1);
+    });
+
+    testWidgets('with its renewal day', (tester) async {
+      await _pump(
+        tester,
+        _person(
+          stage: Stage.customer,
+          loyaltySince: DateTime(thisYear, 10, 2),
+          loyaltyDay: 15,
+        ),
+        model: BusinessModel.doterra,
+      );
+
+      expect(find.text('LRP · Since Oct 2 · renews on day 15'), findsOneWidget);
     });
 
     testWidgets('an earlier year says the year', (tester) async {

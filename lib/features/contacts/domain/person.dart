@@ -53,6 +53,8 @@ class Person {
     this.reminders = const [],
     this.photoPath,
     this.loyaltySince,
+    this.loyaltyDay,
+    this.loyaltyCheckedFor,
   }) : assert(
          prospectStatus == null || stage == Stage.prospect,
          'Only prospects have a status',
@@ -149,6 +151,13 @@ class Person {
   /// by ticking a loyalty step.
   final DateTime? loyaltySince;
 
+  /// The day of the month their LRP renews, 1 to 28 (#317). Set with it.
+  final int? loyaltyDay;
+
+  /// The renewal last checked in about from Today, local midnight.
+  /// Read-only: `check_loyalty` writes it.
+  final DateTime? loyaltyCheckedFor;
+
   Person withStatus(ProspectStatus? status) =>
       _copy(prospectStatus: status, reminders: reminders);
 
@@ -194,6 +203,8 @@ class Person {
     reminders: reminders,
     photoPath: photoPath,
     loyaltySince: loyaltySince,
+    loyaltyDay: loyaltyDay,
+    loyaltyCheckedFor: loyaltyCheckedFor,
   );
 }
 

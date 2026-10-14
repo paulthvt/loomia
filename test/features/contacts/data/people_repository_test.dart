@@ -58,6 +58,15 @@ void main() {
       expect(personFromRow(_row()).plannedEventId, isNull);
     });
 
+    test('reads the LRP renewal day and the last one checked', () {
+      final person = personFromRow(
+        _row({'loyalty_day': 15, 'loyalty_checked_for': '2026-10-15'}),
+      );
+      expect(person.loyaltyDay, 15);
+      expect(person.loyaltyCheckedFor, DateTime(2026, 10, 15));
+      expect(personToRow(person).containsKey('loyalty_day'), isFalse);
+    });
+
     test('reads whether to ask what is next, absent as no', () {
       expect(personFromRow(_row({'needs_next': true})).needsNext, isTrue);
       expect(personFromRow(_row()).needsNext, isFalse);

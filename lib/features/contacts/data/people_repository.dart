@@ -152,6 +152,34 @@ class PeopleRepository {
         return personFromRow(row);
       });
 
+  /// Their LRP renews on [day] of the month, 1 to 28 (#317).
+  Future<Person> setLoyaltyDay(String id, int day) =>
+      _write(id, {'loyalty_day': day});
+
+  /// Checked in about the LRP renewal on [renewal], on [on]: a reminder
+  /// entry with [text], in one transaction. The same renewal again adds
+  /// nothing.
+  Future<Person> checkLoyalty(
+    String personId,
+    DateTime renewal,
+    DateTime on,
+    String text,
+  ) => guardPeople(() async {
+    final row = await _client
+        .rpc<Object?>(
+          'check_loyalty',
+          params: {
+            'p_person': personId,
+            'p_renewal': dayColumn(renewal),
+            'p_on': dayColumn(on),
+            'p_text': text,
+          },
+        )
+        .select(_columns)
+        .single();
+    return personFromRow(row);
+  });
+
   /// Starts their LRP on [since], moves it there, or stops it ([since] null,
   /// dated [today]). The server writes the history entry in the same
   /// transaction.
@@ -361,6 +389,11 @@ Person personFromRow(Map<String, dynamic> row) {
     photoPath: _text(row['photo_path']),
     loyaltySince: switch (row['loyalty_since']) {
       // A bare date parses as local midnight.
+      final String day => DateTime.parse(day),
+      _ => null,
+    },
+    loyaltyDay: row['loyalty_day'] as int?,
+    loyaltyCheckedFor: switch (row['loyalty_checked_for']) {
       final String day => DateTime.parse(day),
       _ => null,
     },

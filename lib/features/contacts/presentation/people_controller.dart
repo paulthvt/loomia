@@ -142,6 +142,21 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     if (ref.mounted) ref.invalidate(historyProvider(person.id));
   }
 
+  /// Their LRP renews on [day] of the month.
+  Future<void> setLoyaltyDay(Person person, int day) async =>
+      _replace(await _repository.setLoyaltyDay(person.id, day));
+
+  /// Ticks the LRP renewal on [renewal] from Today; [text] is the entry.
+  Future<void> checkLoyalty(
+    Person person,
+    DateTime renewal,
+    DateTime today,
+    String text,
+  ) async {
+    _replace(await _repository.checkLoyalty(person.id, renewal, today, text));
+    if (ref.mounted) ref.invalidate(historyProvider(person.id));
+  }
+
   /// Change workflow, for all of [people] in one write; null is "Nothing for
   /// now".
   Future<void> setWorkflow(List<Person> people, FollowWith? follow) async {

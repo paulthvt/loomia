@@ -1,5 +1,6 @@
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/missed.dart';
+import 'package:loomia/features/contacts/domain/loyalty_renewal.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -46,6 +47,21 @@ final class DueReminder extends Due {
 
   @override
   String get key => reminder.id;
+}
+
+/// Their LRP renews on [renewal] (#317): from [loyaltyRenewalAhead] days
+/// before, never late.
+final class DueLoyalty extends Due {
+  const DueLoyalty(super.person, this.renewal);
+
+  final DateTime renewal;
+
+  @override
+  DateTime get day =>
+      DateTime(renewal.year, renewal.month, renewal.day - loyaltyRenewalAhead);
+
+  @override
+  String get key => 'lrp:${person.id}';
 }
 
 /// Done with [workflow], and asked what comes next (#316): on the day of
@@ -95,6 +111,8 @@ List<Due> dueToday(
     for (final person in people) ...[
       for (final reminder in person.reminders)
         if (!reminder.dueOn.isAfter(today)) DueReminder(person, reminder),
+      if (loyaltyRenewal(person, today) case final renewal?)
+        DueLoyalty(person, renewal),
       if (progressOf(person, findWorkflow(workflows, person.place?.workflowId))
           case Done(:final workflow) when person.needsNext)
         DueNext(person, workflow),
@@ -135,7 +153,8 @@ List<Due> dueToday(
 
 int _rank(Due due) => switch (due) {
   DueReminder() => 0,
-  DueFollowUp() => 1,
-  DueNext() => 2,
-  DueStep() => 3,
+  DueLoyalty() => 1,
+  DueFollowUp() => 2,
+  DueNext() => 3,
+  DueStep() => 4,
 };

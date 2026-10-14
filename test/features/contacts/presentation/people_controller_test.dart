@@ -707,6 +707,42 @@ void main() {
     expect(world.people.calls.last, 'setPlace(p1, none)');
   });
 
+  test(
+    'checkLoyalty records the renewal; setLoyaltyDay moves the day',
+    () async {
+      final world = _world([
+        Person(
+          id: 'p1',
+          name: 'Julie',
+          stage: Stage.customer,
+          stageSince: DateTime.utc(2026, 9),
+          loyaltySince: DateTime(2026, 9, 15),
+          loyaltyDay: 15,
+        ),
+      ]);
+      final book = _book(world.container);
+      await world.container.read(book.future);
+      final notifier = world.container.read(book.notifier);
+      final julie = world.container.read(book).value!.single;
+
+      await notifier.checkLoyalty(
+        julie,
+        DateTime(2026, 10, 15),
+        DateTime(2026, 10, 13),
+        "Julie's LRP renews Oct 15",
+      );
+      expect(
+        world.container.read(book).value!.single.loyaltyCheckedFor,
+        DateTime(2026, 10, 15),
+      );
+      expect(world.people.calls, contains('checkLoyalty(p1:2026-10-15)'));
+      expect(world.activities.store.single.text, "Julie's LRP renews Oct 15");
+
+      await notifier.setLoyaltyDay(julie, 20);
+      expect(world.container.read(book).value!.single.loyaltyDay, 20);
+    },
+  );
+
   test('postponeStep puts an event step off to the day picked', () async {
     final booking = Workflow(
       id: 'new-customer',

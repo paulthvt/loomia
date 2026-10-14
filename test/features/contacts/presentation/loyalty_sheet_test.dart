@@ -12,12 +12,13 @@ import 'package:material_ui/material_ui.dart';
 import '../fake_people_repository.dart';
 import 'form_harness.dart';
 
-Person _claire({DateTime? loyaltySince}) => Person(
+Person _claire({DateTime? loyaltySince, int? loyaltyDay}) => Person(
   id: 'p1',
   name: 'Claire Moreau',
   stage: Stage.customer,
   stageSince: DateTime.utc(2026, 3, 4),
   loyaltySince: loyaltySince,
+  loyaltyDay: loyaltyDay,
 );
 
 void main() {
@@ -70,6 +71,40 @@ void main() {
     expect(people.calls, contains('setLoyalty(p1)'));
     expect(people.store['p1']!.loyaltySince, isNull);
     expect(find.text('When did it start?'), findsNothing);
+  });
+
+  testWidgets('the renewal day: its own, and another one picked is saved', (
+    tester,
+  ) async {
+    await open(
+      tester,
+      _claire(loyaltySince: DateTime(2026, 10, 2), loyaltyDay: 15),
+    );
+
+    expect(find.text('LRP renews on day'), findsOneWidget);
+    expect(find.text('15'), findsOneWidget);
+    await tester.tap(find.text('15'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('20').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls, contains('setLoyaltyDay(p1, 20)'));
+    expect(people.store['p1']!.loyaltyDay, 20);
+  });
+
+  testWidgets('a start keeps the day it fills: no second write', (
+    tester,
+  ) async {
+    await open(tester, _claire());
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls.where((c) => c.startsWith('setLoyaltyDay')), isEmpty);
+    final day = today().day > 28 ? 28 : today().day;
+    expect(people.store['p1']!.loyaltyDay, day);
   });
 
   testWidgets('a failure says so and keeps the sheet open', (tester) async {

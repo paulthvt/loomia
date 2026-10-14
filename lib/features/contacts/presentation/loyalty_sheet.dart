@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -26,8 +27,55 @@ class LoyaltyForm extends ConsumerStatefulWidget {
   ConsumerState<LoyaltyForm> createState() => _LoyaltyFormState();
 }
 
+/// The day an LRP started on [since] renews by default: the same, the 29th
+/// to 31st on the 28th, as `set_loyalty` fills it.
+int renewalDayFor(DateTime since) => since.day > 28 ? 28 : since.day;
+
+/// The day of the month an LRP renews, 1 to 28 (#317).
+class LoyaltyDayField extends StatelessWidget {
+  const LoyaltyDayField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  /// The programme's name, e.g. "LRP".
+  final String label;
+  final int value;
+
+  /// Null disables it.
+  final ValueChanged<int>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final change = onChanged;
+    return LabeledField(
+      label: l10n.loyaltyRenewsOn(label),
+      child: DropdownButtonFormField<int>(
+        initialValue: value,
+        decoration: InputDecoration(helperText: l10n.loyaltyRenewsHint),
+        items: [
+          for (var day = 1; day <= 28; day++)
+            DropdownMenuItem(value: day, child: Text('$day')),
+        ],
+        onChanged: change == null
+            ? null
+            : (day) {
+                if (day != null) change(day);
+              },
+      ),
+    );
+  }
+}
+
 class _LoyaltyFormState extends ConsumerState<LoyaltyForm> {
   late DateTime _day = widget.person.loyaltySince ?? today();
+
+  /// Follows the start day until picked, for an LRP that has no day yet.
+  late int? _renewal = widget.person.loyaltyDay;
+  int get _renewalDay => _renewal ?? renewalDayFor(_day);
   bool _saving = false;
   PeopleFailure? _failure;
 
@@ -52,6 +100,11 @@ class _LoyaltyFormState extends ConsumerState<LoyaltyForm> {
     });
     try {
       await people.setLoyalty(widget.person, since, today());
+      // set_loyalty keeps a day it has, or fills one from the start.
+      if (since != null &&
+          _renewalDay != (widget.person.loyaltyDay ?? renewalDayFor(since))) {
+        await people.setLoyaltyDay(widget.person, _renewalDay);
+      }
       if (mounted) Navigator.pop(context);
     } on PeopleFailure catch (failure) {
       if (mounted) {
@@ -115,6 +168,14 @@ class _LoyaltyFormState extends ConsumerState<LoyaltyForm> {
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: AppSpacing.ms),
+          LoyaltyDayField(
+            // Rebuilt when it follows a new start day.
+            key: ValueKey(_renewalDay),
+            label: l10n.loyaltyLabel(model.name),
+            value: _renewalDay,
+            onChanged: _saving ? null : (day) => setState(() => _renewal = day),
           ),
         ],
       ),
