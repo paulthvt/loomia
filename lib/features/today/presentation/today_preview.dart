@@ -18,8 +18,9 @@ import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Today in both modes and both layouts, for `flutter widget-preview start`,
-/// on a fixed morning so the goldens never follow the clock. Six people are
-/// due: a phone shows five and "And one more waiting", a desktop all six.
+/// on a fixed morning so the goldens never follow the clock. Seven people
+/// are due, one of them to follow up about a workshop (#314): a phone shows
+/// five rows and the rest behind "more", a desktop six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
 Widget todayMobileLight() =>
@@ -138,10 +139,27 @@ Due _reminder(String name, String text, DateTime due) => DueReminder(
   (id: 'r-$name', text: text, dueOn: due, createdAt: DateTime.utc(2026, 9)),
 );
 
+/// Invited to a workshop on Thursday, not going yet, due a follow-up [due].
+Due _followUp(String name, DateTime due) => DueFollowUp(
+  _sample(name),
+  CalendarEvent(
+    id: 'workshop',
+    title: 'Huiles et sommeil',
+    startsAt: DateTime(2026, 10, 1, 19),
+  ),
+  Attendee(
+    personId: name,
+    going: false,
+    invitedOn: DateTime(2026, 9, 25),
+    followUpOn: due,
+  ),
+);
+
 /// Oldest first, then by name, as `dueToday` sorts.
 final _book = [
   _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
   _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
+  _followUp('Marc Petit', DateTime(2026, 9, 28)),
   _reminder(
     'Julie Bernard',
     'Call back about the diffuser',
@@ -173,7 +191,10 @@ final _events = (
       startsAt: DateTime(2026, 9, 29, 19, 0),
       endsAt: DateTime(2026, 9, 29, 20, 30),
       link: 'https://meet.example.com/oils',
-      attendees: List.generate(6, (i) => (personId: 'person$i', came: false)),
+      attendees: List.generate(
+        6,
+        (i) => Attendee(personId: 'person$i', came: false),
+      ),
     ),
   ],
   toMark: [
@@ -184,7 +205,7 @@ final _events = (
       endsAt: DateTime(2026, 9, 22, 16, 0),
       attendees: List.generate(
         3,
-        (i) => (personId: 'person${i + 10}', came: false),
+        (i) => Attendee(personId: 'person${i + 10}', came: false),
       ),
     ),
   ],

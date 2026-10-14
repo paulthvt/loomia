@@ -25,6 +25,7 @@ class ActionItem extends StatelessWidget {
     this.onResolve,
     this.resolveLabel,
     this.resolved = false,
+    this.actions,
     super.key,
   });
 
@@ -62,6 +63,10 @@ class ActionItem extends StatelessWidget {
 
   /// The tick is in flight: the ring stays filled and takes no second tap.
   final bool resolved;
+
+  /// Buttons under the text, for an item resolved more than one way
+  /// (Going, Followed up, Remove); replaces the ring.
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
@@ -145,10 +150,18 @@ class ActionItem extends StatelessWidget {
                         const SizedBox(height: AppSpacing.sm),
                         chipWidget,
                       ],
+                      if (actions case final buttons?) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Wrap(
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
+                          children: buttons,
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                if (onResolve != null) ...[
+                if (onResolve != null && actions == null) ...[
                   const SizedBox(width: AppSpacing.sm),
                   Center(
                     child: IconButton(

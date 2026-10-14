@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
@@ -115,11 +116,38 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           ),
           DueReminder(:final person, :final reminder) =>
             people.completeReminder(person, reminder, today()),
+          // Its row has buttons instead of the ring: see _invite.
+          DueFollowUp() => throw StateError('a follow-up has no ring'),
         },
       );
       // The book dropped the row in this same microtask: the bar moves in
       // the frame the row starts to leave.
       if (ticked && mounted) done.add();
+    } finally {
+      if (mounted) setState(() => _busy.remove(key));
+    }
+  }
+
+  /// Going, Followed up or Remove on a follow-up row: the row leaves once
+  /// the events reload; a failure keeps it and says so.
+  Future<void> _invite(
+    DueFollowUp due,
+    Future<void> Function(EventsController events) write,
+  ) async {
+    final key = due.key;
+    if (!_busy.add(key)) return;
+    setState(() {});
+    final events = ref.read(
+      eventsProvider(ref.read(accountProvider)?.email).notifier,
+    );
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    try {
+      await write(events);
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
     } finally {
       if (mounted) setState(() => _busy.remove(key));
     }
@@ -171,7 +199,13 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       // `.value` survives a failed refresh, so the rows stay on screen.
       due: switch ((people.value, workflows.value)) {
         (final everyone?, final all?) => AsyncData(
-          dueToday(everyone, all, today()),
+          // A failed events load hides follow-ups, not the list.
+          dueToday(
+            everyone,
+            all,
+            today(),
+            events: calendarEvents.value ?? const [],
+          ),
         ),
         _ when people.hasError => AsyncError(
           people.error!,
@@ -196,6 +230,18 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           : const AccountButton(),
       busy: _busy,
       onTick: (due) => unawaited(_tick(due)),
+      onGoing: (due) => unawaited(
+        _invite(due, (events) => events.setGoing(due.event.id, due.person.id)),
+      ),
+      onFollowedUp: (due) => unawaited(
+        _invite(
+          due,
+          (events) => events.followedUp(due.event.id, due.person.id, today()),
+        ),
+      ),
+      onRemoveInvite: (due) => unawaited(
+        _invite(due, (events) => events.uninvite(due.event.id, due.person.id)),
+      ),
       onOpen: (person) => openContact(context, person.id),
       onRetry: () {
         if (people.hasError) ref.invalidate(book);
@@ -316,6 +362,9 @@ class TodayView extends StatefulWidget {
     required this.onRefresh,
     this.done,
     this.busy = const {},
+    this.onGoing,
+    this.onFollowedUp,
+    this.onRemoveInvite,
     this.accountAction,
     this.goals,
     this.model = BusinessModel.other,
@@ -348,6 +397,11 @@ class TodayView extends StatefulWidget {
   final Set<String> busy;
 
   final void Function(Due due) onTick;
+
+  /// A follow-up row's buttons.
+  final void Function(DueFollowUp due)? onGoing;
+  final void Function(DueFollowUp due)? onFollowedUp;
+  final void Function(DueFollowUp due)? onRemoveInvite;
   final void Function(Person person) onOpen;
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
@@ -697,7 +751,45 @@ class _TodayViewState extends State<TodayView> {
     return slots;
   }
 
+  /// Someone not going yet: Going, Followed up, Remove instead of the ring.
+  Widget _followUp(AppLocalizations l10n, DueFollowUp due, DateTime day) {
+    final busy = widget.busy.contains(due.key);
+    void Function()? on(void Function(DueFollowUp)? action) =>
+        busy || action == null ? null : () => action(due);
+    return ActionItem(
+      key: ValueKey(due.key),
+      name: due.person.name,
+      photoPath: due.person.photoPath,
+      reason: l10n.todayFollowUp(
+        firstName(due.person),
+        due.event.title,
+        due.event.startsAt,
+      ),
+      tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),
+      chip: due.day.isBefore(day)
+          ? DateChip(dueLabel(l10n, due.day, day))
+          : null,
+      onOpen: () => widget.onOpen(due.person),
+      actions: [
+        FilledButton.tonal(
+          style: AppTheme.tonal(context),
+          onPressed: on(widget.onGoing),
+          child: Text(l10n.eventGoing),
+        ),
+        TextButton(
+          onPressed: on(widget.onFollowedUp),
+          child: Text(l10n.eventFollowedUp),
+        ),
+        TextButton(
+          onPressed: on(widget.onRemoveInvite),
+          child: Text(l10n.todayRemoveInvite),
+        ),
+      ],
+    );
+  }
+
   Widget _row(AppLocalizations l10n, Due due, DateTime day) {
+    if (due is DueFollowUp) return _followUp(l10n, due, day);
     // A new step or reminder is a new card: it slides in.
     final (key, reason, detail) = switch (due) {
       DueStep(:final step) => (
@@ -710,6 +802,7 @@ class _TodayViewState extends State<TodayView> {
         reminder.text,
         l10n.todayReminderDetail,
       ),
+      DueFollowUp() => throw StateError('built by _followUp'),
     };
     return ActionItem(
       key: ValueKey(key),

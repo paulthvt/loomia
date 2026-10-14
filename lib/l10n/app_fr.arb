@@ -510,7 +510,6 @@
   "eventPersonInvited": "{stage} · invité",
   "eventPersonWasThere": "{stage} · présent",
   "eventPersonMissed": "{stage} · absent",
-  "eventRemovePerson": "Retirer {name} de l’événement",
   "eventMarkWhoWasThere": "Indiquer qui était là",
   "eventWhoWasThere": "Qui était là ?",
   "eventWhoWasThereBody": "Tout le monde est coché. Décoche les personnes absentes.",

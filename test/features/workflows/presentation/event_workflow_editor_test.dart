@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
@@ -97,6 +99,27 @@ void main() {
           .having((step) => step.label, 'label', 'Book the room')
           .having((step) => step.days, 'days', -3),
     );
+  });
+
+  testWidgets('Several people: on for a workshop, off saves, disabled while '
+      'saving', (tester) async {
+    final eventWorkflows = FakeEventWorkflowRepository(
+      FakeEventWorkflowRepository.samples(),
+    );
+    await _openWorkshop(tester, eventWorkflows);
+    final toggle = find.widgetWithText(SwitchListTile, 'Several people');
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+
+    final gate = eventWorkflows.gate = Completer<void>();
+    await tester.tap(toggle);
+    await tester.pump();
+    expect(tester.widget<SwitchListTile>(toggle).onChanged, isNull);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(eventWorkflows.calls, contains('setGroup(workshop, false)'));
+    expect(_workshop(eventWorkflows).isGroup, isFalse);
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
   });
 
   testWidgets('prospects can keep their workflow', (tester) async {

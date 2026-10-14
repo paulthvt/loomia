@@ -491,7 +491,7 @@ void main() {
         id: 'workshop',
         title: 'Workshop',
         startsAt: addDays(today(), -1).add(const Duration(hours: 19)),
-        attendees: const [(personId: 'p1', came: false)],
+        attendees: const [Attendee(personId: 'p1', came: false)],
         followUps: const {Stage.prospect: 'samples'},
       ),
     ]);
@@ -503,5 +503,77 @@ void main() {
 
     // Opens the event page, not the sheet.
     expect(find.byType(EventPage), findsOneWidget);
+  });
+
+  group('following up an invitation', () {
+    final marc = Person(
+      id: 'p1',
+      name: 'Marc Petit',
+      stage: Stage.prospect,
+      stageSince: DateTime.utc(2026, 9),
+    );
+    CalendarEvent workshop() {
+      final day = today();
+      return CalendarEvent(
+        id: 'e1',
+        title: 'Huiles et sommeil',
+        startsAt: addDays(day, 2).add(const Duration(hours: 19)),
+        eventWorkflowId: 'workshop',
+        attendees: [
+          Attendee(
+            personId: 'p1',
+            going: false,
+            invitedOn: addDays(day, -3),
+            followUpOn: day,
+          ),
+        ],
+      );
+    }
+
+    Finder row() => find.textContaining('Follow up Marc about Huiles');
+
+    for (final (button, call) in [
+      ('Going', 'setGoing(e1:p1)'),
+      ('Followed up', 'followedUp(e1:p1)'),
+      ('Remove', 'uninvite(e1:p1)'),
+    ]) {
+      testWidgets('$button writes once and the row leaves', (tester) async {
+        final events = FakeEventRepository([workshop()]);
+        await pumpLoomia(
+          tester,
+          size: _tallPhone,
+          people: FakePeopleRepository([marc]),
+          events: events,
+        );
+        expect(row(), findsOneWidget);
+        expect(
+          find.text('One person is worth a message today'),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text(button));
+        await tester.pumpAndSettle();
+
+        expect(events.calls.where((c) => c == call), hasLength(1));
+        expect(row(), findsNothing);
+      });
+    }
+
+    testWidgets('a failure says so and keeps the row', (tester) async {
+      final events = FakeEventRepository([workshop()]);
+      await pumpLoomia(
+        tester,
+        size: _tallPhone,
+        people: FakePeopleRepository([marc]),
+        events: events,
+      );
+      events.failWith = PeopleFailure.network;
+
+      await tester.tap(find.text('Going'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(row(), findsOneWidget);
+    });
   });
 }

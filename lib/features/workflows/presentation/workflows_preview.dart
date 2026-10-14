@@ -126,6 +126,7 @@ Widget eventWorkflowEditorLight() => _app(
         workflow: _workshop,
         workflows: _workflows,
         onRename: (_) async {},
+        onGroup: (_) async {},
         onFollowUps: (_) async {},
         onAddStep: () {},
         onOpenStep: (_) {},

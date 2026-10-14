@@ -13,7 +13,7 @@ final _workshop = EventWorkflow(
   ],
 );
 
-const _invited = [(personId: 'p1', came: false)];
+const _invited = [Attendee(personId: 'p1', came: false)];
 
 CalendarEvent _event(
   String id,

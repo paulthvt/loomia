@@ -25,6 +25,7 @@ class EventWorkflow {
     required this.name,
     required List<EventWorkflowStep> steps,
     this.followUps = const {},
+    this.isGroup = true,
   }) : steps = byDays(steps);
 
   final String id;
@@ -35,6 +36,9 @@ class EventWorkflow {
 
   /// Stage → person workflow id.
   final Map<Stage, String> followUps;
+
+  /// Several people per event: people added start invited (#314).
+  final bool isGroup;
 }
 
 /// Chronological: by days, then by label.

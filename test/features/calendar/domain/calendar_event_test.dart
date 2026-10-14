@@ -83,7 +83,7 @@ void main() {
   group('canMarkDone', () {
     final starts = DateTime(2026, 10, 8, 19);
     CalendarEvent event({
-      List<Attendee> attendees = const [(personId: 'p1', came: false)],
+      List<Attendee> attendees = const [Attendee(personId: 'p1', came: false)],
       DateTime? doneAt,
     }) => CalendarEvent(
       id: 'e1',

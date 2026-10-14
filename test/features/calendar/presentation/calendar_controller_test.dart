@@ -39,6 +39,8 @@ EventDraft _draft(String title, DateTime startsAt) => (
   followUps: const {},
 );
 
+final _day = DateTime(2026, 10, 10);
+
 final _workshop = CalendarEvent(
   id: 'e1',
   title: 'Workshop',
@@ -144,17 +146,54 @@ void main() {
     await container.read(eventsProvider(_owner).future);
     final events = container.read(eventsProvider(_owner).notifier);
 
-    await events.invite('e1', ['p1', 'p2']);
+    await events.invite('e1', ['p1', 'p2'], _day);
     expect(container.read(eventsProvider(_owner)).value!.single.attendees, [
-      (personId: 'p1', came: false),
-      (personId: 'p2', came: false),
+      Attendee(personId: 'p1', came: false, invitedOn: _day),
+      Attendee(personId: 'p2', came: false, invitedOn: _day),
     ]);
 
     await events.uninvite('e1', 'p1');
     expect(container.read(eventsProvider(_owner)).value!.single.attendees, [
-      (personId: 'p2', came: false),
+      Attendee(personId: 'p2', came: false, invitedOn: _day),
     ]);
     expect(fake.calls.where((call) => call == 'list()'), hasLength(3));
+  });
+
+  test('on a group type, people start invited; going and following up '
+      'move their follow-up day', () async {
+    final fake = FakeEventRepository([
+      CalendarEvent(
+        id: 'e1',
+        title: 'Huiles et sommeil',
+        startsAt: DateTime(2026, 10, 20, 19),
+        eventWorkflowId: 'workshop',
+      ),
+    ]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    Attendee attendee(String id) => container
+        .read(eventsProvider(_owner))
+        .value!
+        .single
+        .attendees
+        .firstWhere((a) => a.personId == id);
+
+    await events.invite('e1', ['p1', 'p2'], _day);
+    expect(attendee('p1').going, isFalse);
+    expect(attendee('p1').followUpOn, DateTime(2026, 10, 13));
+
+    await events.followedUp('e1', 'p1', DateTime(2026, 10, 14));
+    expect(attendee('p1').followedUpOn, DateTime(2026, 10, 14));
+    expect(attendee('p1').followUpOn, DateTime(2026, 10, 17));
+
+    await events.setGoing('e1', 'p2');
+    expect(attendee('p2').going, isTrue);
+    expect(attendee('p2').followUpOn, isNull);
+    expect(
+      fake.calls,
+      containsAllInOrder(['followedUp(e1:p1)', 'setGoing(e1:p2)']),
+    );
   });
 
   test('a repeating event: its occurrences, the first one back', () async {
@@ -192,9 +231,9 @@ void main() {
     );
     final second = container.read(eventsProvider(_owner)).value![1];
 
-    await events.invite(second.id, ['p1']);
+    await events.invite(second.id, ['p1'], _day);
     await events.uninvite(second.id, 'p1');
-    await events.invite(first.id, ['p2']);
+    await events.invite(first.id, ['p2'], _day);
 
     expect(fake.calls.where((call) => call.startsWith('invite')), isEmpty);
     expect(
@@ -214,7 +253,7 @@ void main() {
     await container.read(peopleProvider(_owner).future);
     final listed = people.calls.where((call) => call == 'list()').length;
     final events = container.read(eventsProvider(_owner).notifier);
-    await events.invite('e1', ['p1', 'p2']);
+    await events.invite('e1', ['p1', 'p2'], _day);
 
     await events.markDone('e1', ['p1'], DateTime(2026, 10, 9));
     await container.read(peopleProvider(_owner).future);
@@ -222,8 +261,8 @@ void main() {
     final done = container.read(eventsProvider(_owner)).value!.single;
     expect(done.done, isTrue);
     expect(done.attendees, [
-      (personId: 'p1', came: true),
-      (personId: 'p2', came: false),
+      Attendee(personId: 'p1', came: true, invitedOn: _day),
+      Attendee(personId: 'p2', came: false, invitedOn: _day),
     ]);
     expect(fake.calls, contains('markDone(e1:p1)'));
     expect(people.calls.where((call) => call == 'list()').length, listed + 1);
@@ -234,7 +273,7 @@ void main() {
     final container = _container(fake);
     await container.read(eventsProvider(_owner).future);
     final events = container.read(eventsProvider(_owner).notifier);
-    await events.invite('e1', ['p1']);
+    await events.invite('e1', ['p1'], _day);
 
     await events.markDone('e1', ['p1'], DateTime(2026, 10, 9));
 

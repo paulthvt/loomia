@@ -125,8 +125,8 @@ void main() {
           startsAt: DateTime(2026, 10, 8, 19),
           place: 'Studio Lumière',
           attendees: const [
-            (personId: 'p1', came: false),
-            (personId: 'p2', came: false),
+            Attendee(personId: 'p1', came: false),
+            Attendee(personId: 'p2', came: false),
           ],
         ),
         CalendarEvent(
@@ -134,7 +134,7 @@ void main() {
           title: 'Training',
           startsAt: DateTime(2026, 10, 8, 10),
           doneAt: DateTime(2026, 10, 8, 12),
-          attendees: const [(personId: 'p1', came: true)],
+          attendees: const [Attendee(personId: 'p1', came: true)],
         ),
       ],
     );
@@ -255,8 +255,8 @@ void main() {
         title: 'Workshop',
         startsAt: startsAt,
         attendees: const [
-          (personId: 'p1', came: false),
-          (personId: 'p2', came: false),
+          Attendee(personId: 'p1', came: false),
+          Attendee(personId: 'p2', came: false),
         ],
       ),
     ]);
@@ -284,7 +284,7 @@ void main() {
       id: 'e1',
       title: 'Workshop',
       startsAt: startsAt,
-      attendees: const [(personId: 'p1', came: false)],
+      attendees: const [Attendee(personId: 'p1', came: false)],
     );
     await container.read(peopleProvider('p@example.com').notifier).remove([
       'p2',

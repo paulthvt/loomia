@@ -21,4 +21,19 @@ void main() {
     expect(workflow.steps.map((step) => step.id), ['s1', 's2']);
     expect(workflow.steps.first.note, 'By text');
   });
+
+  test('reads whether it gathers several people; missing is yes', () {
+    expect(
+      eventWorkflowFromRow({
+        'id': 'w1',
+        'name': 'Wellness check',
+        'is_group': false,
+      }).isGroup,
+      isFalse,
+    );
+    expect(
+      eventWorkflowFromRow({'id': 'w2', 'name': 'Workshop'}).isGroup,
+      isTrue,
+    );
+  });
 }

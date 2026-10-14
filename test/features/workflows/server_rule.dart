@@ -1,3 +1,4 @@
+import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
@@ -94,4 +95,12 @@ num positionAfter(Workflow workflow, String stepId) {
   final index = steps.indexWhere((step) => step.id == stepId);
   if (index + 1 < steps.length) return steps[index + 1].position;
   return workflow.repeats ? steps.first.position : 1e9;
+}
+
+/// The Dart copy of `follow_up_on`: 3 days after the invite or the last
+/// follow-up, for someone not yet going on an event not [done].
+DateTime? followUpOn(Attendee attendee, {required bool done}) {
+  final from = attendee.followedUpOn ?? attendee.invitedOn;
+  if (attendee.going || done || from == null) return null;
+  return addDays(from, 3);
 }
