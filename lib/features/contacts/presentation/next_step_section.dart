@@ -25,6 +25,7 @@ import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/contacts/presentation/reminder_sheet.dart';
+import 'package:loomia/features/contacts/presentation/whats_next_sheet.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
@@ -135,6 +136,9 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
             },
       onLater: (step) => unawaited(_later(step)),
       onOpenEvent: (id) => openEvent(context, id),
+      onWhatsNext: workflow == null || list == null
+          ? null
+          : () => unawaited(showWhatsNext(context, person, workflow, list)),
       onResume: () =>
           unawaited(_run((people) => people.resume(person, today()))),
       onNotNow: () => unawaited(_run((people) => people.pause(person))),
@@ -166,6 +170,7 @@ class NextStepCard extends StatelessWidget {
     this.onPlan,
     this.onLater,
     this.onOpenEvent,
+    this.onWhatsNext,
     this.busy = false,
     this.waiting = false,
     this.onRetry,
@@ -202,6 +207,9 @@ class NextStepCard extends StatelessWidget {
 
   /// A planned step's row: opens its event.
   final ValueChanged<String>? onOpenEvent;
+
+  /// Done and asked what comes next (`needsNext`, #316): opens the sheet.
+  final VoidCallback? onWhatsNext;
 
   /// A write is in flight: no tick, buttons disabled.
   final bool busy;
@@ -289,6 +297,20 @@ class NextStepCard extends StatelessWidget {
                 : switch (progress) {
                     final OnStep on => _step(context, l10n, on),
                     final Planned planned => _planned(context, l10n, planned),
+                    Done(:final workflow) when person.needsNext => _Panel(
+                      onOpen: onOpen,
+                      title: l10n.nextWhatTitle(name),
+                      body: l10n.nextWhatDone(workflow.name),
+                      actions: [
+                        FilledButton(
+                          onPressed: switch (onWhatsNext) {
+                            final open? => _unlessBusy(open),
+                            null => null,
+                          },
+                          child: Text(l10n.nextWhatChoose),
+                        ),
+                      ],
+                    ),
                     Done(:final workflow) when person.stage == Stage.prospect =>
                       _Panel(
                         onOpen: onOpen,

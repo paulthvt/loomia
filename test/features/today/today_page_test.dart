@@ -506,6 +506,47 @@ void main() {
     expect(find.byType(EventPage), findsOneWidget);
   });
 
+  testWidgets('What\'s next: the row opens the sheet; answering makes it '
+      'leave', (tester) async {
+    final samples = FakeWorkflowRepository.samples();
+    final flows = [
+      Workflow(
+        id: 'samples',
+        stage: Stage.prospect,
+        name: 'Samples',
+        isDefault: true,
+        steps: samples.first.steps,
+        next: const ['health'],
+      ),
+      ...samples.skip(1),
+    ];
+    final workflows = FakeWorkflowRepository(flows);
+    final people = FakePeopleRepository([
+      Person(
+        id: 'p1',
+        name: 'Sophie Bernard',
+        stage: Stage.prospect,
+        stageSince: DateTime.utc(2026, 9),
+        place: (workflowId: 'samples', atPosition: 1e9, lastTick: today()),
+      ),
+    ])..workflows = workflows.store;
+    await pumpLoomia(
+      tester,
+      size: _tallPhone,
+      people: people,
+      workflows: workflows,
+    );
+    expect(find.text('Samples is done'), findsOneWidget);
+
+    await tester.tap(find.text("What's next for Sophie?"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls, contains('setPlace(p1, health)'));
+    expect(find.text('Samples is done'), findsNothing);
+  });
+
   group('an event step', () {
     final flow = Workflow(
       id: 'flow',

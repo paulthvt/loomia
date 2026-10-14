@@ -53,6 +53,7 @@ class _Calls {
   final plans = <OnStep>[];
   final laters = <OnStep>[];
   final openedEvents = <String>[];
+  var whatsNext = 0;
 }
 
 Future<_Calls> _pump(
@@ -91,6 +92,7 @@ Future<_Calls> _pump(
           onPlan: calls.plans.add,
           onLater: calls.laters.add,
           onOpenEvent: calls.openedEvents.add,
+          onWhatsNext: () => calls.whatsNext++,
         ),
       ),
     ),
@@ -386,5 +388,28 @@ void main() {
       await tester.tap(find.text('Unboxing call — Julie'));
       expect(calls.openedEvents, ['e2']);
     });
+  });
+
+  testWidgets('done and asked what comes next: Choose opens the sheet', (
+    tester,
+  ) async {
+    final calls = await _pump(
+      tester,
+      Done(_samples),
+      person: Person(
+        id: 'p1',
+        name: 'Sarah Martin',
+        stage: Stage.prospect,
+        stageSince: DateTime.utc(2026, 3, 4),
+        needsNext: true,
+      ),
+    );
+
+    expect(find.text("What's next for Sarah?"), findsOneWidget);
+    expect(find.text('Samples is done'), findsOneWidget);
+    expect(find.text('Became a customer'), findsNothing);
+    await tester.tap(find.text('Choose'));
+
+    expect(calls.whatsNext, 1);
   });
 }

@@ -16,12 +16,14 @@ Person withServerFields(
   String? plannedEventId,
 }) {
   final place = person.place;
+  final workflow = place == null
+      ? null
+      : findWorkflow(workflows, place.workflowId);
   final step = place == null
       ? null
-      : findWorkflow(
-          workflows,
-          place.workflowId,
-        )?.steps.where((step) => step.position >= place.atPosition).firstOrNull;
+      : workflow?.steps
+            .where((step) => step.position >= place.atPosition)
+            .firstOrNull;
   final planned = step != null && step.isEvent ? plannedEventId : null;
   return Person(
     id: person.id,
@@ -58,6 +60,13 @@ Person withServerFields(
         ? null
         : addDays(place.lastTick, step.days),
     plannedEventId: planned,
+    // As needs_next.
+    needsNext:
+        workflow != null &&
+        step == null &&
+        person.pausedAt == null &&
+        (workflow.next.isNotEmpty ||
+            (person.stage == Stage.customer && person.loyaltySince == null)),
     lastContactOn: person.lastContactOn,
     reminders: person.reminders,
     photoPath: person.photoPath,
@@ -96,6 +105,7 @@ Person withLastContact(Person person, DateTime? day) => Person(
   currentStepId: person.currentStepId,
   dueOn: person.dueOn,
   plannedEventId: person.plannedEventId,
+  needsNext: person.needsNext,
   lastContactOn: day,
   photoPath: person.photoPath,
   loyaltySince: person.loyaltySince,

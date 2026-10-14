@@ -39,6 +39,7 @@ class Workflow {
     required this.isDefault,
     required List<WorkflowStep> steps,
     this.repeats = false,
+    this.next = const [],
   }) : steps = _sortedSteps(steps);
 
   final String id;
@@ -47,6 +48,10 @@ class Workflow {
 
   /// The one someone new at [stage] starts.
   final bool isDefault;
+
+  /// Workflows of the same stage offered once this one is done (#316), by
+  /// id, in no order: screens list them as `forStage` sorts.
+  final List<String> next;
 
   /// After the last step, the first comes back (#296): never Done.
   final bool repeats;

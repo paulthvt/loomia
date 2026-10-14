@@ -32,6 +32,7 @@ import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/contacts/presentation/next_step_section.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/whats_next_sheet.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/presentation/goal_line.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
@@ -121,6 +122,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
             people.completeReminder(person, reminder, today()),
           // Its row has buttons instead of the ring: see _invite.
           DueFollowUp() => throw StateError('a follow-up has no ring'),
+          DueNext() => throw StateError('what comes next has no ring'),
         },
       );
       // The book dropped the row in this same microtask: the bar moves in
@@ -284,6 +286,14 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         },
       },
       onLater: (due) => unawaited(_later(due)),
+      onNext: (due) => unawaited(
+        showWhatsNext(
+          context,
+          due.person,
+          due.workflow,
+          workflows.value ?? const [],
+        ),
+      ),
       onRemoveInvite: (due) => unawaited(
         _invite(due, (events) => events.uninvite(due.event.id, due.person.id)),
       ),
@@ -412,6 +422,7 @@ class TodayView extends StatefulWidget {
     this.onRemoveInvite,
     this.onPlan,
     this.onLater,
+    this.onNext,
     this.accountAction,
     this.goals,
     this.model = BusinessModel.other,
@@ -453,6 +464,9 @@ class TodayView extends StatefulWidget {
   /// An event step's buttons (#315).
   final void Function(DueStep due)? onPlan;
   final void Function(DueStep due)? onLater;
+
+  /// "What's next for Sophie?": opens the sheet (#316).
+  final void Function(DueNext due)? onNext;
   final void Function(Person person) onOpen;
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
@@ -802,6 +816,21 @@ class _TodayViewState extends State<TodayView> {
     return slots;
   }
 
+  /// Done with a workflow: the row opens what comes next. No ring, no date:
+  /// nothing about it is late.
+  Widget _whatsNext(AppLocalizations l10n, DueNext due) {
+    final open = widget.onNext;
+    return ActionItem(
+      key: ValueKey(due.key),
+      name: due.person.name,
+      photoPath: due.person.photoPath,
+      reason: l10n.nextWhatTitle(firstName(due.person)),
+      detail: l10n.nextWhatDone(due.workflow.name),
+      tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),
+      onOpen: open == null ? null : () => open(due),
+    );
+  }
+
   /// Someone not going yet: Going, Followed up, Remove instead of the ring.
   Widget _followUp(AppLocalizations l10n, DueFollowUp due, DateTime day) {
     final busy = widget.busy.contains(due.key);
@@ -841,6 +870,7 @@ class _TodayViewState extends State<TodayView> {
 
   Widget _row(AppLocalizations l10n, Due due, DateTime day) {
     if (due is DueFollowUp) return _followUp(l10n, due, day);
+    if (due is DueNext) return _whatsNext(l10n, due);
     // A new step or reminder is a new card: it slides in.
     final (key, reason, detail) = switch (due) {
       DueStep(:final step, missed: final event?) => (
@@ -859,6 +889,7 @@ class _TodayViewState extends State<TodayView> {
         l10n.todayReminderDetail,
       ),
       DueFollowUp() => throw StateError('built by _followUp'),
+      DueNext() => throw StateError('built by _whatsNext'),
     };
     return ActionItem(
       key: ValueKey(key),

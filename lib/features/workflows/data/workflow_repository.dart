@@ -9,12 +9,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// The `workflow` and `workflow_step` tables. Every method throws
 /// [PeopleFailure] and nothing else. RLS scopes everything to the user.
 class WorkflowRepository {
+  /// Two foreign keys point at a workflow from `workflow_next`: the embed
+  /// names the one from this workflow.
+  static const String _columns =
+      '*, workflow_step(*), '
+      'workflow_next!workflow_next_from_fkey(next_workflow_id)';
+
   WorkflowRepository(this._client);
 
   final SupabaseClient _client;
 
   Future<List<Workflow>> list() => guardPeople(() async {
-    final rows = await _client.from('workflow').select('*, workflow_step(*)');
+    final rows = await _client.from('workflow').select(_columns);
     return rows.map(workflowFromRow).toList();
   });
 
@@ -33,7 +39,7 @@ class WorkflowRepository {
     final row = await _client
         .from('workflow')
         .insert({'stage': stage.name, 'name': name})
-        .select('*, workflow_step(*)')
+        .select(_columns)
         .single();
     return workflowFromRow(row);
   });
@@ -113,6 +119,25 @@ class WorkflowRepository {
   Future<void> removeStep(String stepId) => guardPeople(() async {
     await _client.from('workflow_step').delete().eq('id', stepId);
   });
+
+  /// [nextId] is offered once [workflowId] is done. Same stage only: the
+  /// server refuses another.
+  Future<void> addNext(String workflowId, String nextId) =>
+      guardPeople(() async {
+        await _client.from('workflow_next').insert({
+          'workflow_id': workflowId,
+          'next_workflow_id': nextId,
+        });
+      });
+
+  Future<void> removeNext(String workflowId, String nextId) =>
+      guardPeople(() async {
+        await _client
+            .from('workflow_next')
+            .delete()
+            .eq('workflow_id', workflowId)
+            .eq('next_workflow_id', nextId);
+      });
 }
 
 final workflowRepositoryProvider = Provider<WorkflowRepository>(
@@ -126,6 +151,12 @@ Workflow workflowFromRow(Map<String, dynamic> row) => Workflow(
   name: row['name'] as String,
   isDefault: row['is_default'] as bool,
   repeats: row['repeats'] as bool? ?? false,
+  next: [
+    for (final link
+        in ((row['workflow_next'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>())
+      link['next_workflow_id'] as String,
+  ],
   steps: [
     for (final step
         in (row['workflow_step'] as List).cast<Map<String, dynamic>>())

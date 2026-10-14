@@ -58,6 +58,11 @@ void main() {
       expect(personFromRow(_row()).plannedEventId, isNull);
     });
 
+    test('reads whether to ask what is next, absent as no', () {
+      expect(personFromRow(_row({'needs_next': true})).needsNext, isTrue);
+      expect(personFromRow(_row()).needsNext, isFalse);
+    });
+
     test('an edit never writes the LRP: only setLoyalty does', () {
       final person = personFromRow(_row({'loyalty_since': '2026-10-02'}));
 

@@ -58,6 +58,20 @@ void main() {
     expect(workflow.steps.last.isEvent, isTrue);
   });
 
+  test('reads what comes next; none without the embed', () {
+    expect(
+      workflowFromRow({
+        ...row(),
+        'workflow_next': [
+          {'next_workflow_id': 'check'},
+          {'next_workflow_id': 'invite'},
+        ],
+      }).next,
+      ['check', 'invite'],
+    );
+    expect(workflowFromRow(row()).next, isEmpty);
+  });
+
   test('an unknown stage is an unknown failure', () {
     expect(
       () => workflowFromRow(row(stage: 'vip')),

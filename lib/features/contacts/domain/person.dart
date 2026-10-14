@@ -48,6 +48,7 @@ class Person {
     this.currentStepId,
     this.dueOn,
     this.plannedEventId,
+    this.needsNext = false,
     this.lastContactOn,
     this.reminders = const [],
     this.photoPath,
@@ -127,6 +128,11 @@ class Person {
   /// before it is planned. Read-only.
   final String? plannedEventId;
 
+  /// The server's answer (`needs_next`, #316): done with a workflow that has
+  /// next options, or a customer done without an LRP. Today asks what's
+  /// next. Read-only.
+  final bool needsNext;
+
   /// The server's answer (`last_contact_on`): the latest day anything was
   /// logged with them, stage changes aside. Local midnight. Read-only.
   final DateTime? lastContactOn;
@@ -183,6 +189,7 @@ class Person {
     currentStepId: currentStepId,
     dueOn: dueOn,
     plannedEventId: plannedEventId,
+    needsNext: needsNext,
     lastContactOn: lastContactOn,
     reminders: reminders,
     photoPath: photoPath,
