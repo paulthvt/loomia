@@ -93,9 +93,8 @@ set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 
 -- 8-12: done with Julie there, without Nora.
-select public.mark_event_done('00000000-0000-0000-0000-0000000000e1',
-  array['00000000-0000-0000-0000-0000000000a1',
-        '00000000-0000-0000-0000-0000000000a3']::uuid[], '2026-10-08');
+select public.close_event('00000000-0000-0000-0000-0000000000e1',
+       '[{"person": "00000000-0000-0000-0000-0000000000a1"}, {"person": "00000000-0000-0000-0000-0000000000a3"}]', '{}', '2026-10-08');
 select results_eq(
   $$ select p.current_step_id, p.last_tick from public.person p
      where id = '00000000-0000-0000-0000-0000000000a1' $$,
