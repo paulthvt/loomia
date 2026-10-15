@@ -118,4 +118,29 @@ void main() {
 
     expect(people.store.values.single.place?.workflowId, 'samples');
   });
+
+  testWidgets('the workflow switch is on, naming the stage\'s default', (
+    tester,
+  ) async {
+    await open(tester);
+    expect(
+      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+      isTrue,
+    );
+    expect(find.text('Samples'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Customer'));
+    await tester.pump();
+    expect(find.text('New customer'), findsOneWidget);
+  });
+
+  testWidgets('switched off, someone new starts no workflow', (tester) async {
+    await open(tester);
+    await tester.enterText(field('Name'), 'Bruno Petit');
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(people.store.values.single.place, isNull);
+  });
 }

@@ -896,6 +896,10 @@
   "@addPersonReach": {
     "description": "Label of the single optional field in Add someone; the app recognises which one was typed."
   },
+  "addPersonStartWorkflow": "Start their workflow",
+  "@addPersonStartWorkflow": {
+    "description": "Switch in Add someone, under the stage chips; the name of the stage's default workflow (a series of follow-up steps, e.g. 'New customer') is shown under it. On by default: the person starts that workflow today. Off: they are added with no workflow. 'Their' is one person."
+  },
   "editPersonTitle": "Edit details",
   "@editPersonTitle": {
     "description": "Title of the form that edits a person's details."
