@@ -382,6 +382,7 @@ Person personFromRow(Map<String, dynamic> row) {
     strengths: _text(row['strengths']),
     stuckOn: _text(row['stuck_on']),
     stageSince: DateTime.parse(row['stage_since'] as String),
+    createdAt: DateTime.parse(row['created_at'] as String),
     place: switch ((row['workflow_id'], row['at_position'], row['last_tick'])) {
       (final String id, final num at, final String tick) => (
         workflowId: id,

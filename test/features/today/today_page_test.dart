@@ -454,7 +454,7 @@ void main() {
     expect(find.byType(GoalLine), findsOneWidget);
   });
 
-  testWidgets('a new team member is worth a check-in; logging clears it', (
+  testWidgets('a new team member is worth a catch-up; logging clears it', (
     tester,
   ) async {
     final activities = FakeActivityRepository();
@@ -464,6 +464,8 @@ void main() {
         name: 'Bea Martin',
         stage: Stage.team,
         stageSince: addDays(today(), -9).toUtc(),
+        // A prospect first: she joined the team inside Loomia.
+        createdAt: addDays(today(), -20).toUtc(),
       ),
     ])..activities = activities;
     await pumpLoomia(
@@ -472,7 +474,8 @@ void main() {
       people: people,
       activities: activities,
     );
-    expect(find.text('WORTH A CHECK-IN'), findsOneWidget);
+    // Nothing else is due: the section is open.
+    expect(find.text('CATCH UP'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Log something with Bea'));
     await tester.pumpAndSettle();
@@ -480,7 +483,7 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.text('WORTH A CHECK-IN'), findsNothing);
+    expect(find.text('CATCH UP'), findsNothing);
   });
 
   testWidgets('Mark who was there with people loading opens event page', (

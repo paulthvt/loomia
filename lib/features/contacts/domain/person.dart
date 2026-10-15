@@ -56,7 +56,9 @@ class Person {
     this.loyaltyDay,
     this.loyaltyCheckedFor,
     this.tagIds = const {},
-  }) : assert(
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? stageSince,
+       assert(
          prospectStatus == null || stage == Stage.prospect,
          'Only prospects have a status',
        );
@@ -68,6 +70,10 @@ class Person {
   /// When their current stage began. The database sets it on every stage
   /// change.
   final DateTime stageSince;
+
+  /// When they were added to Loomia (`created_at`). An import never
+  /// backdates it. Defaults to [stageSince]: added when their stage began.
+  final DateTime createdAt;
   final ProspectStatus? prospectStatus;
   final String? phone;
   final String? email;
@@ -188,6 +194,7 @@ class Person {
     name: name,
     stage: stage,
     stageSince: stageSince,
+    createdAt: createdAt,
     prospectStatus: prospectStatus,
     phone: phone,
     email: email,

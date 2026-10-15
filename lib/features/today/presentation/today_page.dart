@@ -496,8 +496,8 @@ class TodayView extends StatefulWidget {
   /// The close-and-plan card's Start: opens /goals/close.
   final VoidCallback? onRitual;
 
-  /// Team members worth a check-in: under the day on a phone, in the side
-  /// column on desktop.
+  /// Team members to catch up with: folded under the day on a phone or
+  /// tablet, in the side column on desktop.
   final List<CheckIn> checkIns;
 
   /// A check-in row's button: opens Log something.
@@ -531,6 +531,19 @@ class _TodayViewState extends State<TodayView> {
 
   /// "And N more waiting" was tapped. Resets on leaving Today.
   bool _expanded = false;
+
+  /// Show or Hide on Catch up; null follows [_catchUpShown]'s default.
+  /// Resets on leaving Today.
+  bool? _catchUpOpen;
+
+  /// Catch up unfolded: as last tapped, else only when nothing is due, so
+  /// Priority keeps the screen (#342).
+  bool get _catchUpShown =>
+      _catchUpOpen ??
+      switch (widget.due) {
+        AsyncData(:final value) => value.isEmpty,
+        _ => false,
+      };
 
   /// The priority rows as last built, by person; a null due is a row on its
   /// way out.
@@ -693,6 +706,9 @@ class _TodayViewState extends State<TodayView> {
                         widget.checkIns,
                         onOpen: widget.onOpen,
                         onCheckIn: widget.onCheckIn ?? (_) {},
+                        collapsed: !_catchUpShown,
+                        onToggle: () =>
+                            setState(() => _catchUpOpen = !_catchUpShown),
                       ),
                     ],
                   ],

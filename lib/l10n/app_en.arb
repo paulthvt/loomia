@@ -465,49 +465,71 @@
   "@navCalendar": {
     "description": "Navigation destination (bottom bar, sidebar) that opens the Calendar: the user's events, such as workshops."
   },
-  "teamSectionCheckIn": "Worth a check-in",
+  "teamSectionCheckIn": "Catch up",
   "@teamSectionCheckIn": {
-    "description": "Section header on the Team screen above the members who could use a message: new and not talked to yet, or quiet for two weeks. Shown in capitals."
+    "description": "Section header on Today above the team members the user could catch up with: new and not talked to yet, or nothing logged with them for a month. Shown in capitals. In French: 'Prendre des nouvelles'."
   },
   "teamChipNew": "New",
   "@teamChipNew": {
-    "description": "Chip on a check-in row: they joined the team less than 30 days ago and nothing is logged since."
+    "description": "Chip on a catch-up row: they moved to the team less than 30 days ago and nothing is logged since."
   },
-  "teamChipQuiet": "{count, plural, =1{Quiet a week} other{Quiet {count} weeks}}",
+  "teamChipQuiet": "{count, plural, =1{Quiet a month} other{Quiet {count} months}}",
   "@teamChipQuiet": {
-    "description": "Chip on a check-in row: nothing is logged with them for this many whole weeks (at least 2). Not a reproach.",
+    "description": "Chip on a catch-up row: nothing is logged with them for this many whole months (at least 1). Not a reproach.",
     "placeholders": {
       "count": { "type": "int" }
     }
   },
   "teamReasonNewToday": "Joined today and nothing is logged yet",
   "@teamReasonNewToday": {
-    "description": "Why a member is worth a check-in: they joined the team today."
+    "description": "Why the user could catch up with a team member: they joined the team today."
   },
   "teamReasonNewDays": "{count, plural, =1{Joined yesterday and nothing is logged since} other{Joined {count} days ago and nothing is logged since}}",
   "@teamReasonNewDays": {
-    "description": "Why a member is worth a check-in: they joined the team 1 to 6 days ago and nothing is logged with them since.",
+    "description": "Why the user could catch up with a team member: they joined the team 1 to 6 days ago and nothing is logged with them since.",
     "placeholders": {
       "count": { "type": "int" }
     }
   },
   "teamReasonNewWeeks": "{count, plural, =1{Joined a week ago and nothing is logged since} other{Joined {count} weeks ago and nothing is logged since}}",
   "@teamReasonNewWeeks": {
-    "description": "Why a member is worth a check-in: they joined the team this many whole weeks ago (under 30 days) and nothing is logged with them since.",
+    "description": "Why the user could catch up with a team member: they joined the team this many whole weeks ago (under 30 days) and nothing is logged with them since.",
     "placeholders": {
       "count": { "type": "int" }
     }
   },
   "teamReasonQuiet": "You last talked on {date}",
   "@teamReasonQuiet": {
-    "description": "Why a member is worth a check-in: the latest thing logged with them, two weeks ago or more, e.g. 'You last talked on September 12'. Informal register.",
+    "description": "Why the user could catch up with a team member: the latest thing logged with them, a month ago or more, e.g. 'You last talked on September 12'. Informal register.",
     "placeholders": {
       "date": { "type": "DateTime", "format": "MMMMd" }
     }
   },
+  "teamReasonQuietAdded": "Nothing is logged since you added them on {date}",
+  "@teamReasonQuietAdded": {
+    "description": "Why the user could catch up with a team member: they were added to the app a month ago or more and nothing was ever logged with them, e.g. '… added them on September 3'. Informal register.",
+    "placeholders": {
+      "date": { "type": "DateTime", "format": "MMMMd" }
+    }
+  },
+  "todayCatchUpSummary": "{count, plural, =1{1 person you could catch up with} other{{count} people you could catch up with}}",
+  "@todayCatchUpSummary": {
+    "description": "On Today on a phone, the folded Catch up section: one line beside their avatars saying how many team members the user could catch up with. Tapping it unfolds the list.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "todayCatchUpShow": "Show",
+  "@todayCatchUpShow": {
+    "description": "Button in the Catch up section header on Today: unfolds the list of team members."
+  },
+  "todayCatchUpHide": "Hide",
+  "@todayCatchUpHide": {
+    "description": "Button in the Catch up section header on Today: folds the list of team members back to one line."
+  },
   "teamReasonQuietNothing": "Nothing is logged since they joined on {date}",
   "@teamReasonQuietNothing": {
-    "description": "Why a member is worth a check-in: they joined more than 30 days ago and nothing was ever logged with them, e.g. '… joined on August 3'.",
+    "description": "Why the user could catch up with a team member: they joined more than 30 days ago and nothing was ever logged with them, e.g. '… joined on August 3'.",
     "placeholders": {
       "date": { "type": "DateTime", "format": "MMMMd" }
     }

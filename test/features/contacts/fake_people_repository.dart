@@ -115,6 +115,8 @@ class FakePeopleRepository implements PeopleRepository {
         name: draft.name.trim(),
         stage: draft.stage,
         stageSince: stageSince ?? DateTime.utc(2026, 9, 28),
+        // Inserted now; the stage may be backdated.
+        createdAt: DateTime.utc(2026, 9, 28),
         phone: draft.phone,
         email: draft.email,
         place: place,
@@ -135,6 +137,7 @@ class FakePeopleRepository implements PeopleRepository {
       name: person.name,
       stage: stored.stage,
       stageSince: stageSince ?? stored.stageSince,
+      createdAt: stored.createdAt,
       prospectStatus: stored.stage == Stage.prospect
           ? person.prospectStatus
           : null,
@@ -564,6 +567,7 @@ class FakePeopleRepository implements PeopleRepository {
       name: before.name,
       stage: newStage,
       stageSince: stageSince ?? before.stageSince,
+      createdAt: before.createdAt,
       prospectStatus: newStage == Stage.prospect
           ? status ?? before.prospectStatus
           : null,
