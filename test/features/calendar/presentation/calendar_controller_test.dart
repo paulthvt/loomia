@@ -36,10 +36,12 @@ EventDraft _draft(String title, DateTime startsAt) => (
   link: null,
   notes: null,
   eventWorkflowId: null,
-  followUps: const {},
 );
 
 final _day = DateTime(2026, 10, 10);
+
+There _there(String id) =>
+    (personId: id, customer: false, amount: null, text: null);
 
 final _workshop = CalendarEvent(
   id: 'e1',
@@ -255,7 +257,7 @@ void main() {
     final events = container.read(eventsProvider(_owner).notifier);
     await events.invite('e1', ['p1', 'p2'], _day);
 
-    await events.markDone('e1', ['p1'], DateTime(2026, 10, 9));
+    await events.close('e1', [_there('p1')], const [], DateTime(2026, 10, 9));
     await container.read(peopleProvider(_owner).future);
 
     final done = container.read(eventsProvider(_owner)).value!.single;
@@ -264,24 +266,24 @@ void main() {
       Attendee(personId: 'p1', came: true, invitedOn: _day),
       Attendee(personId: 'p2', came: false, invitedOn: _day),
     ]);
-    expect(fake.calls, contains('markDone(e1:p1)'));
+    expect(fake.calls, contains('close(e1:p1|next:)'));
     expect(people.calls.where((call) => call == 'list()').length, listed + 1);
   });
 
-  test('markDone succeeds even if reload fails', () async {
+  test('close succeeds even if reload fails', () async {
     final fake = _FailAfterMark([_workshop]);
     final container = _container(fake);
     await container.read(eventsProvider(_owner).future);
     final events = container.read(eventsProvider(_owner).notifier);
     await events.invite('e1', ['p1'], _day);
 
-    await events.markDone('e1', ['p1'], DateTime(2026, 10, 9));
+    await events.close('e1', [_there('p1')], const [], DateTime(2026, 10, 9));
 
-    expect(fake.calls, contains('markDone(e1:p1)'));
+    expect(fake.calls, contains('close(e1:p1|next:)'));
     expect(fake.calls.last, 'list()');
   });
 
-  test('markDone invalidates and rethrows on failure', () async {
+  test('close invalidates and rethrows on failure', () async {
     final fake = FakeEventRepository([_workshop]);
     final container = _container(fake);
     await container.read(eventsProvider(_owner).future);
@@ -289,11 +291,11 @@ void main() {
     fake.failWith = PeopleFailure.unknown;
 
     await expectLater(
-      events.markDone('e1', [], DateTime(2026, 10, 9)),
+      events.close('e1', const [], const [], DateTime(2026, 10, 9)),
       throwsA(PeopleFailure.unknown),
     );
 
-    expect(fake.calls, contains('markDone(e1:)'));
+    expect(fake.calls, contains('close(e1:|next:)'));
     expect(container.read(eventsProvider(_owner)).isLoading, isTrue);
   });
 
@@ -317,19 +319,20 @@ void main() {
   });
 }
 
-/// Fails list() once after markDone.
+/// Fails list() once after close.
 class _FailAfterMark extends FakeEventRepository {
   _FailAfterMark(super.events);
 
   var _failNext = false;
 
   @override
-  Future<void> markDone(
+  Future<void> close(
     String eventId,
-    Iterable<String> came,
+    List<There> there,
+    Iterable<String> inviteNext,
     DateTime today,
   ) async {
-    await super.markDone(eventId, came, today);
+    await super.close(eventId, there, inviteNext, today);
     _failNext = true;
   }
 

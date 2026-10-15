@@ -7,15 +7,12 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../../calendar/fake_event_repository.dart';
 import '../fake_event_workflow_repository.dart';
-
-const _failed = "Couldn't save. Check your connection and try again.";
 
 EventWorkflow _workshop(FakeEventWorkflowRepository repository) =>
     repository.store.firstWhere((w) => w.id == 'workshop');
@@ -120,44 +117,6 @@ void main() {
     expect(eventWorkflows.calls, contains('setGroup(workshop, false)'));
     expect(_workshop(eventWorkflows).isGroup, isFalse);
     expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
-  });
-
-  testWidgets('prospects can keep their workflow', (tester) async {
-    final eventWorkflows = FakeEventWorkflowRepository(
-      FakeEventWorkflowRepository.samples(),
-    );
-    await _openWorkshop(tester, eventWorkflows);
-
-    await tester.tap(find.text('Samples'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Keep their workflow').last);
-    await tester.pumpAndSettle();
-
-    expect(eventWorkflows.calls, contains('setFollowUps(workshop)'));
-    expect(_workshop(eventWorkflows).followUps, {
-      Stage.customer: 'new-customer',
-    });
-    expect(find.text('Samples'), findsNothing);
-  });
-
-  testWidgets('a failed follow-up save shows the saved one again', (
-    tester,
-  ) async {
-    final eventWorkflows = FakeEventWorkflowRepository(
-      FakeEventWorkflowRepository.samples(),
-    );
-    await _openWorkshop(tester, eventWorkflows);
-    eventWorkflows.failWith = PeopleFailure.network;
-
-    await tester.tap(find.text('Samples'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Keep their workflow').last);
-    await tester.pumpAndSettle();
-
-    expect(eventWorkflows.calls, contains('setFollowUps(workshop)'));
-    expect(find.text(_failed), findsOneWidget);
-    expect(find.text('Samples'), findsOneWidget);
-    expect(_workshop(eventWorkflows).followUps[Stage.prospect], 'samples');
   });
 
   testWidgets('desktop: typed name saved when go() tears down the editor', (

@@ -47,7 +47,6 @@ class FakeEventRepository implements EventRepository {
     attendees: attendees,
     doneAt: doneAt,
     eventWorkflowId: draft.eventWorkflowId,
-    followUps: draft.followUps,
     stepsDone: stepsDone,
     series: series,
   );
@@ -124,7 +123,6 @@ class FakeEventRepository implements EventRepository {
           link: draft.link,
           notes: draft.notes,
           eventWorkflowId: draft.eventWorkflowId,
-          followUps: draft.followUps,
         ), series: series),
       );
     }
@@ -192,7 +190,6 @@ class FakeEventRepository implements EventRepository {
       ],
       doneAt: doneAt ?? event.doneAt,
       eventWorkflowId: event.eventWorkflowId,
-      followUps: event.followUps,
       stepsDone: stepsDone ?? event.stepsDone,
       series: event.series,
     );
@@ -271,22 +268,53 @@ class FakeEventRepository implements EventRepository {
     );
   }
 
+  /// The last [close]'s who was there, as sent.
+  List<There>? closedThere;
+
+  /// As close_event, for the event: who came, and done. People's changes
+  /// are the server's; [inviteNext] joins the next one of its type.
   @override
-  Future<void> markDone(
+  Future<void> close(
     String eventId,
-    Iterable<String> came,
+    List<There> there,
+    Iterable<String> inviteNext,
     DateTime today,
   ) async {
-    _record('markDone($eventId:${came.join(',')})');
-    final there = came.toSet();
-    _with(
+    _record(
+      'close($eventId:${there.map((t) => t.personId).join(',')}'
+      '|next:${inviteNext.join(',')})',
+    );
+    closedThere = there;
+    final came = {for (final t in there) t.personId};
+    final closed = _with(
       eventId,
       (attendees) => [
         for (final attendee in attendees)
-          _copy(attendee, came: there.contains(attendee.personId)),
+          _copy(attendee, came: came.contains(attendee.personId)),
       ],
       doneAt: DateTime.now(),
     );
+    final type = closed.eventWorkflowId;
+    final next = type == null || !isGroup(type) || inviteNext.isEmpty
+        ? null
+        : byStart([
+            for (final event in store)
+              if (event.eventWorkflowId == type &&
+                  !event.done &&
+                  event.startsAt.isAfter(closed.startsAt))
+                event,
+          ]).firstOrNull;
+    if (next != null) {
+      _with(
+        next.id,
+        (attendees) => [
+          ...attendees,
+          for (final id in inviteNext)
+            if (!attendees.any((a) => a.personId == id))
+              Attendee(personId: id, going: false, invitedOn: today),
+        ],
+      );
+    }
   }
 
   @override

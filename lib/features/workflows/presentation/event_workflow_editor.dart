@@ -12,7 +12,6 @@ import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_scroll.dart';
@@ -21,7 +20,6 @@ import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/event_step_copy.dart';
 import 'package:loomia/features/workflows/presentation/event_step_sheet.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
-import 'package:loomia/features/workflows/presentation/follow_up_picker.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -88,10 +86,6 @@ class EventWorkflowEditor extends ConsumerWidget {
           ref,
           (repository) => repository.setGroup(workflow.id, on),
         ),
-        onFollowUps: (followUps) => editEventWorkflows(
-          ref,
-          (repository) => repository.setFollowUps(workflow.id, followUps),
-        ),
         onAddStep: () => unawaited(showEventStepSheet(context, workflow)),
         onOpenStep: (step) =>
             unawaited(showEventStepSheet(context, workflow, step: step)),
@@ -122,7 +116,7 @@ class EventWorkflowEditor extends ConsumerWidget {
   }
 }
 
-enum _Control { name, group, followUps, delete }
+enum _Control { name, group, delete }
 
 /// The editor, fed the saved workflow and callbacks per write; each write
 /// callback throws `PeopleFailure`.
@@ -132,7 +126,6 @@ class EventWorkflowEditorView extends StatefulWidget {
     required this.workflows,
     required this.onRename,
     required this.onGroup,
-    required this.onFollowUps,
     required this.onAddStep,
     required this.onOpenStep,
     required this.onDelete,
@@ -148,8 +141,6 @@ class EventWorkflowEditorView extends StatefulWidget {
   /// Several people per event, or one.
   final Future<void> Function(bool on) onGroup;
 
-  /// Every stage; one missing keeps their workflow.
-  final Future<void> Function(Map<Stage, String> followUps) onFollowUps;
   final VoidCallback onAddStep;
   final ValueChanged<EventWorkflowStep> onOpenStep;
   final Future<void> Function() onDelete;
@@ -318,38 +309,6 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
         const SizedBox(height: AppSpacing.sm),
         Text(
           l10n.eventWorkflowGroupNote,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        SectionHeader(title: l10n.eventWorkflowAfter),
-        SettingsGroup(
-          children: [
-            for (final stage in Stage.values)
-              FollowUpPicker(
-                stage: stage,
-                workflows: widget.workflows,
-                value: workflow.followUps[stage],
-                onChanged: _busy.contains(_Control.followUps)
-                    ? null
-                    : (id) => unawaited(
-                        _run(
-                          _Control.followUps,
-                          () => widget.onFollowUps({
-                            for (final MapEntry(:key, :value)
-                                in workflow.followUps.entries)
-                              if (key != stage) key: value,
-                            stage: ?id,
-                          }),
-                        ),
-                      ),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          l10n.eventWorkflowAfterHint,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

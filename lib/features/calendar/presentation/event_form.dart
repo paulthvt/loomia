@@ -13,14 +13,10 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
-import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
-import 'package:loomia/features/workflows/presentation/follow_up_picker.dart';
-import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -67,7 +63,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
   bool _saving = false;
   PeopleFailure? _failure;
   String? _eventWorkflowId;
-  Map<Stage, String> _followUps = const {};
   String? _typeName;
 
   /// New events only: every 1, 2 or 4 weeks; null doesn't repeat.
@@ -87,7 +82,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
       if (widget.type case final type?) {
         _typeName = type.name;
         _eventWorkflowId = type.id;
-        _followUps = {...type.followUps};
         _title.text = widget.title ?? type.name;
       }
       return;
@@ -98,7 +92,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
     final ends = event.endsAt;
     _end = ends == null ? null : TimeOfDay.fromDateTime(ends.toLocal());
     _eventWorkflowId = event.eventWorkflowId;
-    _followUps = event.followUps;
   }
 
   @override
@@ -184,7 +177,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
     }
     _typeName = workflow.name;
     _eventWorkflowId = workflow.id;
-    _followUps = {...workflow.followUps};
   }
 
   Future<void> _submit() async {
@@ -211,16 +203,9 @@ class _EventFormState extends ConsumerState<_EventForm> {
     // once the lists say so.
     final owner = ref.read(accountProvider)?.email;
     final eventWorkflows = _eventWorkflows;
-    final workflows = ref.read(workflowsProvider(owner)).value;
     final eventWorkflowId = eventWorkflows == null
         ? _eventWorkflowId
         : findEventWorkflow(eventWorkflows, _eventWorkflowId)?.id;
-    final followUps = workflows == null
-        ? _followUps
-        : {
-            for (final MapEntry(:key, :value) in _followUps.entries)
-              if (findWorkflow(workflows, value) != null) key: value,
-          };
 
     final EventDraft draft = (
       title: _title.text.trim(),
@@ -230,7 +215,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
       link: normaliseLink(_link.text),
       notes: text(_notes),
       eventWorkflowId: eventWorkflowId,
-      followUps: followUps,
     );
     setState(() {
       _saving = true;
@@ -363,7 +347,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
     final owner = ref.watch(accountProvider)?.email;
     final eventWorkflows =
         ref.watch(eventWorkflowsProvider(owner)).value ?? const [];
-    final workflows = ref.watch(workflowsProvider(owner)).value ?? const [];
 
     return Form(
       key: _form,
@@ -400,10 +383,8 @@ class _EventFormState extends ConsumerState<_EventForm> {
                     ChoiceChip(
                       label: Text(l10n.eventTypeNone),
                       selected: _eventWorkflowId == null,
-                      onSelected: (_) => setState(() {
-                        _eventWorkflowId = null;
-                        _followUps = const {};
-                      }),
+                      onSelected: (_) =>
+                          setState(() => _eventWorkflowId = null),
                     ),
                     for (final w in eventWorkflows)
                       ChoiceChip(
@@ -496,28 +477,6 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 textCapitalization: TextCapitalization.sentences,
               ),
             ),
-            if (_eventWorkflowId != null || _followUps.isNotEmpty)
-              ExpansionTile(
-                title: Text(l10n.eventWorkflowAfter),
-                shape: const Border(),
-                collapsedShape: const Border(),
-                children: [
-                  for (final stage in Stage.values)
-                    FollowUpPicker(
-                      stage: stage,
-                      workflows: workflows,
-                      value: _followUps[stage],
-                      onChanged: (id) => setState(() {
-                        _followUps = {
-                          for (final MapEntry(:key, :value)
-                              in _followUps.entries)
-                            if (key != stage) key: value,
-                          stage: ?id,
-                        };
-                      }),
-                    ),
-                ],
-              ),
           ],
         ),
       ),

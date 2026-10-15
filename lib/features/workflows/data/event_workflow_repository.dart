@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,7 +23,7 @@ class EventWorkflowRepository {
     return rows.map(eventWorkflowFromRow).toList();
   });
 
-  /// A new one with no steps, and every stage keeping their workflow.
+  /// A new one with no steps.
   Future<EventWorkflow> create(String name) => guardPeople(() async {
     final row = await _client
         .from('event_workflow')
@@ -41,15 +40,6 @@ class EventWorkflowRepository {
   Future<void> setGroup(String id, bool on) => guardPeople(() async {
     await _client.from('event_workflow').update({'is_group': on}).eq('id', id);
   });
-
-  /// Every stage: one missing from [followUps] keeps their workflow.
-  Future<void> setFollowUps(String id, Map<Stage, String> followUps) =>
-      guardPeople(() async {
-        await _client
-            .from('event_workflow')
-            .update(followUpsToRow(followUps))
-            .eq('id', id);
-      });
 
   /// Its steps go with it; its events keep their title, without a checklist.
   Future<void> delete(String id) => guardPeople(() async {
@@ -91,21 +81,9 @@ final eventWorkflowRepositoryProvider = Provider<EventWorkflowRepository>(
   (ref) => EventWorkflowRepository(ref.watch(supabaseClientProvider)),
 );
 
-/// The three stage columns of [row], the missing ones left out.
-Map<Stage, String> followUpsFromRow(Map<String, dynamic> row) => {
-  for (final stage in Stage.values)
-    if (row[followUpColumn(stage)] case final String id) stage: id,
-};
-
-/// Every stage column, null for "keep their workflow".
-Map<String, Object?> followUpsToRow(Map<Stage, String> followUps) => {
-  for (final stage in Stage.values) followUpColumn(stage): followUps[stage],
-};
-
 EventWorkflow eventWorkflowFromRow(Map<String, dynamic> row) => EventWorkflow(
   id: row['id'] as String,
   name: row['name'] as String,
-  followUps: followUpsFromRow(row),
   isGroup: row['is_group'] as bool? ?? true,
   steps: [
     for (final step

@@ -1,4 +1,3 @@
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
 /// Someone invited to an event: going or not yet (#314), and whether they
@@ -75,7 +74,6 @@ class CalendarEvent {
     this.attendees = const [],
     this.doneAt,
     this.eventWorkflowId,
-    this.followUps = const {},
     this.stepsDone = const {},
     this.series,
   });
@@ -103,9 +101,6 @@ class CalendarEvent {
   /// The event's workflow: its checklist and what the people there start.
   final String? eventWorkflowId;
 
-  /// Stage → person workflow id. A stage not in here keeps their workflow.
-  final Map<Stage, String> followUps;
-
   /// Step id → the day it was ticked.
   final Map<String, DateTime> stepsDone;
 
@@ -131,6 +126,16 @@ class CalendarEvent {
   }
 }
 
+/// Someone who was there, as Who was there sends them (#318): a prospect
+/// who became a customer, and an order with an [amount] or a [text] (the
+/// registration order has one or the other).
+typedef There = ({
+  String personId,
+  bool customer,
+  double? amount,
+  String? text,
+});
+
 /// What the form saves. Text is trimmed and empty text is null by then.
 typedef EventDraft = ({
   String title,
@@ -140,7 +145,6 @@ typedef EventDraft = ({
   String? link,
   String? notes,
   String? eventWorkflowId,
-  Map<Stage, String> followUps,
 });
 
 /// Earliest first.
@@ -192,24 +196,4 @@ Uri mapsUri(String place, {required bool apple}) => apple
 DateTime stepDue(CalendarEvent event, EventWorkflowStep step) {
   final day = event.day;
   return DateTime(day.year, day.month, day.day + step.days);
-}
-
-/// "Who was there?"'s summary line: how many were there at a stage, and the
-/// workflow they start (null: they keep theirs).
-typedef ThereLine = ({Stage stage, int count, String? workflowId});
-
-/// One line per stage present in [stagesThere], in stage order.
-List<ThereLine> thereSummary(
-  Iterable<Stage> stagesThere,
-  Map<Stage, String> followUps,
-) {
-  final counts = <Stage, int>{};
-  for (final stage in stagesThere) {
-    counts.update(stage, (count) => count + 1, ifAbsent: () => 1);
-  }
-  return [
-    for (final stage in Stage.values)
-      if (counts[stage] case final count?)
-        (stage: stage, count: count, workflowId: followUps[stage]),
-  ];
 }

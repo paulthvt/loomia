@@ -3,7 +3,6 @@ import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
-import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// The `event` table. Every method throws [PeopleFailure] and nothing else.
@@ -128,19 +127,31 @@ class EventRepository {
         .eq('person_id', personId),
   );
 
-  /// Who was there, an Event entry in each of their histories on [today],
-  /// and the event done, in one transaction. An event already done, or an
-  /// id that isn't invited, is refused.
-  Future<void> markDone(
+  /// Marks it done (#318), in one transaction: who was there, an Event entry
+  /// in each of their histories on [today], past their event step of its
+  /// type, a prospect who became a customer, the orders; [inviteNext], who
+  /// missed it, invited to the next one of its type. An event already done,
+  /// or someone not invited, is refused.
+  Future<void> close(
     String eventId,
-    Iterable<String> came,
+    List<There> there,
+    Iterable<String> inviteNext,
     DateTime today,
   ) => guardPeople(
     () => _client.rpc<Object?>(
-      'mark_event_done',
+      'close_event',
       params: {
         'p_event': eventId,
-        'p_came': came.toList(),
+        'p_there': [
+          for (final person in there)
+            {
+              'person': person.personId,
+              'customer': person.customer,
+              'amount': person.amount,
+              'text': person.text,
+            },
+        ],
+        'p_invite_next': inviteNext.toList(),
         'p_today': dayColumn(today),
       },
     ),
@@ -210,7 +221,6 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
       ),
   ],
   eventWorkflowId: row['event_workflow_id'] as String?,
-  followUps: followUpsFromRow(row),
   stepsDone: {
     for (final done in (row['event_step_done'] as List?) ?? const [])
       (done as Map<String, dynamic>)['step_id'] as String: DateTime.parse(
@@ -254,7 +264,6 @@ Map<String, Object?> seriesToRow(
     'link': draft.link,
     'notes': draft.notes,
     'event_workflow_id': draft.eventWorkflowId,
-    ...followUpsToRow(draft.followUps),
   };
 }
 
@@ -266,5 +275,4 @@ Map<String, Object?> draftToEventRow(EventDraft draft) => {
   'link': draft.link,
   'notes': draft.notes,
   'event_workflow_id': draft.eventWorkflowId,
-  ...followUpsToRow(draft.followUps),
 };

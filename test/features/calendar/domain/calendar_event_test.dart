@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
-import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
 CalendarEvent _event(String id, DateTime startsAt) =>
@@ -128,20 +127,5 @@ void main() {
         DateTime(2026, 11),
       );
     });
-  });
-
-  test('who was there, per stage, with what they start', () {
-    expect(
-      thereSummary(
-        [Stage.customer, Stage.prospect, Stage.prospect, Stage.team],
-        {Stage.prospect: 'samples', Stage.customer: 'new-customer'},
-      ),
-      [
-        (stage: Stage.prospect, count: 2, workflowId: 'samples'),
-        (stage: Stage.customer, count: 1, workflowId: 'new-customer'),
-        (stage: Stage.team, count: 1, workflowId: null),
-      ],
-    );
-    expect(thereSummary(const [], const {}), isEmpty);
   });
 }
