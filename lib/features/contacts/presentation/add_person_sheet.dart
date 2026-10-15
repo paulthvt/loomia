@@ -32,6 +32,9 @@ class _AddPersonFormState extends ConsumerState<_AddPersonForm> {
   final _name = TextEditingController();
   final _reach = TextEditingController();
   Stage _stage = Stage.prospect;
+
+  /// Whether they start the stage's default workflow (#337), as on import.
+  bool _start = true;
   bool _saving = false;
   PeopleFailure? _failure;
 
@@ -65,7 +68,7 @@ class _AddPersonFormState extends ConsumerState<_AddPersonForm> {
               email: value(ChannelKind.email),
               instagram: value(ChannelKind.instagram),
             ),
-            workflow: defaultFor(workflows, _stage),
+            workflow: _start ? defaultFor(workflows, _stage) : null,
             today: today(),
           );
       if (mounted) Navigator.pop(context, person);
@@ -84,8 +87,9 @@ class _AddPersonFormState extends ConsumerState<_AddPersonForm> {
     final l10n = AppLocalizations.of(context);
     final material = MaterialLocalizations.of(context);
     final failure = _failure;
-    // Loads the workflows, so the default is there by the time Add is tapped.
-    ref.watch(workflowsProvider(ref.watch(accountProvider)?.email));
+    final owner = ref.watch(accountProvider)?.email;
+    final workflows = ref.watch(workflowsProvider(owner)).value ?? const [];
+    final workflow = defaultFor(workflows, _stage);
 
     return Form(
       key: _form,
@@ -144,6 +148,15 @@ class _AddPersonFormState extends ConsumerState<_AddPersonForm> {
                   ),
               ],
             ),
+            if (workflow != null)
+              // The app's one switch style, as in the import sheet.
+              SwitchListTile(
+                value: _start,
+                title: Text(l10n.addPersonStartWorkflow),
+                subtitle: Text(workflow.name),
+                contentPadding: EdgeInsets.zero,
+                onChanged: (on) => setState(() => _start = on),
+              ),
           ],
         ),
       ),
