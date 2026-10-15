@@ -27,24 +27,29 @@ select lives_ok(
   'a second seed runs'
 );
 select is(
-  (select count(*)::int from public.workflow), 5,
-  'seeding twice inserts the five workflows once'
+  (select count(*)::int from public.workflow), 8,
+  'seeding twice inserts the eight workflows once'
 );
 select is(
   (select count(*)::int from public.workflow where is_default), 3,
   'one default per stage'
 );
 select is(
-  (select count(*)::int from public.workflow_step), 20,
+  (select count(*)::int from public.workflow_step), 16,
   'the steps come along'
 );
-select results_eq(
-  $$ select w.name, p.at_position, p.last_tick
-     from public.person p join public.workflow w on w.id = p.workflow_id
-     where p.id = '00000000-0000-0000-0000-0000000000a1' $$,
-  $$ values ('Samples'::text, 1::numeric, '2026-09-29'::date) $$,
-  'the seed starts an existing person on their stage''s default'
+select is(
+  (select count(*)::int from public.person where workflow_id is not null), 0,
+  'the seed places nobody (#319)'
 );
+update public.person
+  set workflow_id = (select id from public.workflow where name = 'Samples'),
+      at_position = 1, last_tick = '2026-09-29'
+  where id = '00000000-0000-0000-0000-0000000000a1';
+update public.person
+  set workflow_id = (select id from public.workflow where name = 'New customer'),
+      at_position = 1, last_tick = '2026-09-29'
+  where id = '00000000-0000-0000-0000-0000000000a2';
 select throws_ok(
   $$ insert into public.workflow (stage, name, is_default)
      values ('prospect', 'Another', true) $$,
@@ -67,7 +72,7 @@ select lives_ok(
 );
 select is(
   (select text from public.activity where kind = 'step'),
-  'Send a first message',
+  'First contact (offer)',
   'complete_step writes one step entry with the label'
 );
 select results_eq(
@@ -135,7 +140,7 @@ set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 
 select is(
-  (select count(*)::int from public.workflow where name <> 'Stolen'), 6,
+  (select count(*)::int from public.workflow where name <> 'Stolen'), 9,
   'another user cannot update or delete the workflows'
 );
 

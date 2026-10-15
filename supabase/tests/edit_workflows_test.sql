@@ -28,21 +28,26 @@ select is(
 );
 select public.seed_workflows('en', '2026-09-29');
 select is(
-  (select count(*)::int from public.workflow), 5,
+  (select count(*)::int from public.workflow), 8,
   'a second seed no-ops'
 );
+-- The seed places nobody (#319): Sarah starts Samples here.
+update public.person
+  set workflow_id = (select id from public.workflow where name = 'Samples'),
+      at_position = 1, last_tick = '2026-09-29'
+  where id = '00000000-0000-0000-0000-0000000000a1';
 
 -- 4-8: set_default.
 select lives_ok(
   $$ select public.set_default(
-       (select id from public.workflow where name = 'Health professionals'),
+       (select id from public.workflow where name = 'Wellness check'),
        true) $$,
   'set_default on runs'
 );
 select results_eq(
   $$ select name from public.workflow
      where stage = 'prospect' and is_default $$,
-  $$ values ('Health professionals'::text) $$,
+  $$ values ('Wellness check'::text) $$,
   'on moves the stage''s default'
 );
 select is(
@@ -51,7 +56,7 @@ select is(
 );
 select lives_ok(
   $$ select public.set_default(
-       (select id from public.workflow where name = 'Health professionals'),
+       (select id from public.workflow where name = 'Wellness check'),
        false) $$,
   'set_default off runs'
 );
@@ -61,15 +66,15 @@ select is(
   'off leaves the stage without a default'
 );
 
--- 9: the seed started Sarah on Samples at position 1. Moving that step
--- after the next one leaves her on what now sits at her place.
+-- 9: Sarah is on Samples at position 1. Moving that step after the next
+-- one leaves her on what now sits at her place.
 update public.workflow_step set position = 2.5
-  where label = 'Send a first message';
+  where label = 'First contact (offer)';
 select is(
   (select s.label from public.person p
      join public.workflow_step s on s.id = public.current_step_id(p)
     where p.id = '00000000-0000-0000-0000-0000000000a1'),
-  'Send the samples',
+  'Prepare and send',
   'moving the current step moves the person on'
 );
 

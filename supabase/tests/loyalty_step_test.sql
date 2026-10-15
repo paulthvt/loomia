@@ -3,7 +3,7 @@
 -- Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(7);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com');
@@ -68,21 +68,12 @@ select lives_ok(
   'other entries still save'
 );
 
--- The seed: New customer ends on its loyalty step; nothing else is one.
+-- The seed marks no loyalty step (#319): finishing New customer asks about
+-- the LRP instead (#316).
 select public.seed_workflows('en', '2026-10-04');
-select results_eq(
-  $$ select w.name, s.label from public.workflow_step s
-     join public.workflow w on w.id = s.workflow_id
-     where s.loyalty_setup $$,
-  $$ values ('New customer'::text, 'Set up a refill routine'::text) $$,
-  'the seed marks one loyalty step, at the end of New customer'
-);
 select is(
-  (select s.position from public.workflow_step s
-     join public.workflow w on w.id = s.workflow_id
-     where w.name = 'New customer' and s.loyalty_setup),
-  4::numeric,
-  'it stays the last of the four steps'
+  (select count(*)::int from public.workflow_step where loyalty_setup), 0,
+  'the seed marks no loyalty step'
 );
 
 select * from finish();
