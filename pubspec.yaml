@@ -1,7 +1,7 @@
 name: loomia
 description: "Loomia — a cross-platform productivity app for people who manage relationships, follow-ups and personal goals."
 publish_to: 'none'
-version: 2026.10.0 # x-yeet-version
+version: 2026.10.1 # x-yeet-version
 
 environment:
   sdk: ^3.13.0
