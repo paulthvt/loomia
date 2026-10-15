@@ -169,6 +169,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                 ),
               ),
               GoRoute(
+                path: Routes.settingsTagsSegment,
+                name: Routes.settingsTagsName,
+                pageBuilder: (context, state) =>
+                    _settingsPage(context, state, SettingsSection.tags),
+              ),
+              GoRoute(
                 path: Routes.settingsWorkflowsSegment,
                 name: Routes.settingsWorkflowsName,
                 pageBuilder: (context, state) =>

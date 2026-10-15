@@ -190,6 +190,38 @@ void main() {
     expect(world.people.calls.last, 'delete(1, 3)');
   });
 
+  test('setTags writes once for everyone and keeps their new tags', () async {
+    final world = _world([_person('1', 'Anne'), _person('2', 'Bruno')]);
+    final book = _book(world.container);
+    final people = await world.container.read(book.future);
+
+    await world.container.read(book.notifier).setTags(people, {
+      'lyon',
+    }, const {});
+
+    expect(world.people.calls.last, 'setTags(1, 2, +lyon, -)');
+    expect(
+      [for (final p in world.container.read(book).value!) p.tagIds],
+      [
+        {'lyon'},
+        {'lyon'},
+      ],
+    );
+  });
+
+  test('setTags with nothing to change writes nothing', () async {
+    final world = _world([_person('1', 'Anne')]);
+    final book = _book(world.container);
+    final people = await world.container.read(book.future);
+    final before = world.people.calls.length;
+
+    await world.container
+        .read(book.notifier)
+        .setTags(people, const {}, const {});
+
+    expect(world.people.calls.length, before);
+  });
+
   group('setPhoto', () {
     test('saves the new path and discards the old file', () async {
       final marie = _person('1', 'Marie', photoPath: 'u1/old');

@@ -18,6 +18,8 @@ import 'package:loomia/features/contacts/presentation/change_workflow_sheet.dart
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/tag_sheet.dart';
+import 'package:loomia/features/contacts/presentation/tags_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -170,6 +172,8 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
         onMove: (people, stage) => showChangeStage(context, people, stage),
         onChangeWorkflow: (people) => showChangeWorkflow(context, people),
         onDelete: _delete,
+        onTag: (people) => showTagSheet(context, people),
+        tags: watchTags(ref),
         model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
         selectedId: widget.selectedId,
         showRefresh: sideNavigation,

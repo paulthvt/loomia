@@ -18,12 +18,12 @@ class PeopleRepository {
 
   static const String _table = 'person';
 
-  /// Every column, the server's computed step, due day and last contact, and
-  /// the open reminders.
+  /// Every column, the server's computed step, due day and last contact, the
+  /// open reminders and the tags' ids.
   static const String _columns =
       '*, current_step_id, due_on, planned_event_id, needs_next, '
       'last_contact_on, '
-      'reminder($_reminderColumns)';
+      'reminder($_reminderColumns), person_tag(tag_id)';
 
   static const String _reminderColumns = 'id, text, due_on, created_at';
 
@@ -94,6 +94,28 @@ class PeopleRepository {
   /// also ends a pause.
   Future<List<Person>> setPlace(List<String> ids, WorkflowPlace? place) =>
       _writeAll(ids, {...placeToRow(place), 'paused_at': null});
+
+  /// Adds [add] to and removes [remove] from all of [ids], in one
+  /// transaction (#332); returns the rows as it left them.
+  Future<List<Person>> setTags(
+    List<String> ids,
+    Set<String> add,
+    Set<String> remove,
+  ) => guardPeople(() async {
+    await _client.rpc<void>(
+      'set_person_tags',
+      params: {
+        'p_people': ids,
+        'p_add': add.toList(),
+        'p_remove': remove.toList(),
+      },
+    );
+    final rows = await _client
+        .from(_table)
+        .select(_columns)
+        .inFilter('id', ids);
+    return rows.map(personFromRow).toList();
+  });
 
   /// Null: no photo. The file itself is the caller's (`swapPhoto`).
   Future<Person> setPhoto(String id, String? path) =>
@@ -401,6 +423,10 @@ Person personFromRow(Map<String, dynamic> row) {
       for (final reminder in (row['reminder'] as List?) ?? const [])
         reminderFromRow(reminder as Map<String, dynamic>),
     ]),
+    tagIds: {
+      for (final link in (row['person_tag'] as List?) ?? const [])
+        (link as Map<String, dynamic>)['tag_id'] as String,
+    },
   );
 }
 

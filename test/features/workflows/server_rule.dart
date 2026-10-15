@@ -73,6 +73,7 @@ Person withServerFields(
     loyaltySince: person.loyaltySince,
     loyaltyDay: person.loyaltyDay,
     loyaltyCheckedFor: person.loyaltyCheckedFor,
+    tagIds: person.tagIds,
   );
 }
 

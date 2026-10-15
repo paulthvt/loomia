@@ -14,6 +14,7 @@ import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
 import 'package:loomia/features/contacts/presentation/change_workflow_sheet.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
@@ -26,6 +27,8 @@ import 'package:loomia/features/contacts/presentation/loyalty_sheet.dart';
 import 'package:loomia/features/contacts/presentation/next_step_section.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/tag_sheet.dart';
+import 'package:loomia/features/contacts/presentation/tags_controller.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -149,6 +152,8 @@ class ContactPane extends ConsumerWidget {
         );
       },
       onLoyalty: () => unawaited(showLoyalty(context, person)),
+      tags: tagsOf(person.tagIds, watchTags(ref)),
+      onTags: () => unawaited(showTagSheet(context, [person])),
       onLaunch: (uri) => unawaited(openExternal(context, uri)),
       onRefresh: () {
         ref.invalidate(historyProvider(person.id));

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:loomia/app/theme/app_colors.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:material_ui/material_ui.dart';
@@ -13,6 +14,7 @@ class ContactRow extends StatelessWidget {
     this.photo,
     this.subtitle,
     this.trailing,
+    this.titleTrailing,
     this.selected = false,
     this.checked,
     this.onTap,
@@ -30,6 +32,9 @@ class ContactRow extends StatelessWidget {
   final ImageProvider? photo;
   final String? subtitle;
   final Widget? trailing;
+
+  /// After the name, on its line: the tag dots. The name gives way first.
+  final Widget? titleTrailing;
 
   /// The person open beside the list, on desktop.
   final bool selected;
@@ -58,7 +63,18 @@ class ContactRow extends StatelessWidget {
           turned: checked ?? false,
         ),
       ),
-      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: switch (titleTrailing) {
+        null => Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        final after => Row(
+          spacing: AppSpacing.sm,
+          children: [
+            Flexible(
+              child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+            after,
+          ],
+        ),
+      },
       subtitle: text == null
           ? null
           : Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),

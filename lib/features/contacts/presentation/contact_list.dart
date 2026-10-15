@@ -8,8 +8,10 @@ import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
+import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/search_key.dart';
+import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/contacts/presentation/stage_filter.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -30,7 +32,9 @@ class ContactList extends StatefulWidget {
     required this.onMove,
     required this.onChangeWorkflow,
     required this.onDelete,
+    required this.onTag,
     required this.model,
+    this.tags = const [],
     this.onImport,
     this.selectedId,
     this.showRefresh = false,
@@ -51,6 +55,12 @@ class ContactList extends StatefulWidget {
   final Future<bool> Function(List<Person> people, Stage stage) onMove;
   final Future<bool> Function(List<Person> people) onChangeWorkflow;
   final Future<bool> Function(List<Person> people) onDelete;
+
+  /// Opens the tag sheet for the picked people (#332).
+  final Future<bool> Function(List<Person> people) onTag;
+
+  /// The account's tags, sorted: the filter row and the row dots.
+  final List<Tag> tags;
 
   /// Words the LRP chip.
   final BusinessModel model;
@@ -84,6 +94,9 @@ class _ContactListState extends State<ContactList> {
 
   /// Only people with an LRP; applies while the chip shows.
   bool _loyalty = false;
+
+  /// The tag chips on: people with all of them.
+  Set<String> _tags = const {};
 
   /// The ids picked; null while not picking. Kept through search and filter
   /// changes, so a filter then Select all picks a whole stage.
@@ -166,6 +179,13 @@ class _ContactListState extends State<ContactList> {
             : null,
       ),
       (
+        label: l10n.tagsAction,
+        short: l10n.tagsAction,
+        icon: Icons.sell_outlined,
+        destructive: false,
+        onTap: picked.isEmpty ? null : () => _done(widget.onTag(picked)),
+      ),
+      (
         label: l10n.contactsDeleteSelected,
         short: l10n.contactsDeleteSelected,
         icon: Icons.delete_outline_rounded,
@@ -183,12 +203,17 @@ class _ContactListState extends State<ContactList> {
     // The chip shows once anyone has an LRP; stopping the last one never
     // leaves the list filtered behind a hidden chip.
     final anyLoyalty = people.any((person) => person.loyaltySince != null);
+    // Likewise a tag deleted meanwhile never keeps the list filtered.
+    final tagFilter = _tags.intersection({
+      for (final tag in widget.tags) tag.id,
+    });
     final shown = [
       for (final person in people)
         if (StageFilter.shows(
               _stage,
               person,
               loyalty: _loyalty && anyLoyalty,
+              tags: tagFilter,
             ) &&
             searchKey(person.name).contains(query))
           person,
@@ -325,6 +350,14 @@ class _ContactListState extends State<ContactList> {
               loyalty: _loyalty,
               onLoyaltyChanged: (on) => setState(() => _loyalty = on),
             ),
+            if (widget.tags.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              TagFilter(
+                tags: widget.tags,
+                selected: tagFilter,
+                onChanged: (tags) => setState(() => _tags = tags),
+              ),
+            ],
             const SizedBox(height: AppSpacing.ms),
             if (shown.isEmpty)
               Padding(
@@ -342,6 +375,15 @@ class _ContactListState extends State<ContactList> {
                   name: person.name,
                   photoPath: person.photoPath,
                   subtitle: contactSubtitle(l10n, person),
+                  titleTrailing: switch (tagsOf(person.tagIds, widget.tags)) {
+                    [] => null,
+                    final tags => TagDots(
+                      tags: [
+                        for (final tag in tags)
+                          (name: tag.name, color: tag.color),
+                      ],
+                    ),
+                  },
                   trailing: LoomiaChip(label: stageLabel(l10n, person.stage)),
                   selected: person.id == widget.selectedId,
                   checked: pickedIds?.contains(person.id),

@@ -5,6 +5,7 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
+import 'package:loomia/features/contacts/data/tag_repository.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
@@ -17,12 +18,14 @@ import '../../workflows/fake_event_workflow_repository.dart';
 import '../../workflows/fake_workflow_repository.dart';
 import '../fake_activity_repository.dart';
 import '../fake_people_repository.dart';
+import '../fake_tag_repository.dart';
 
 /// Pumps a screen with one "Open" button that runs [open], with the book
 /// already loaded from [people]. Returns what [open] resolved to via [result].
 Future<void> pumpFormHarness(
   WidgetTester tester, {
   required FakePeopleRepository people,
+  FakeTagRepository? tags,
   FakeActivityRepository? activities,
   FakeWorkflowRepository? workflows,
   FakeEventWorkflowRepository? eventWorkflows,
@@ -39,6 +42,7 @@ Future<void> pumpFormHarness(
       overrides: [
         authRepositoryProvider.overrideWithValue(auth),
         peopleRepositoryProvider.overrideWithValue(people),
+        tagRepositoryProvider.overrideWithValue(tags ?? FakeTagRepository()),
         activityRepositoryProvider.overrideWithValue(
           activities ?? FakeActivityRepository(),
         ),
