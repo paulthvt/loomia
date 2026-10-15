@@ -119,8 +119,8 @@ set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 
 -- 13: done, nothing to follow up.
-select public.mark_event_done('00000000-0000-0000-0000-0000000000e1',
-  array[]::uuid[], '2026-10-22');
+select public.close_event('00000000-0000-0000-0000-0000000000e1',
+       '[]', '{}', '2026-10-22');
 select is(
   (select public.follow_up_on(a) from public.event_attendee a
     where person_id = '00000000-0000-0000-0000-0000000000a1'),

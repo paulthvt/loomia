@@ -1,5 +1,5 @@
 -- Event attendees (#152): who is invited, who was there, and marking an
--- event done. Run with `supabase test db`.
+-- event done (close_event since #329). Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(14);
@@ -44,8 +44,8 @@ select is(
 
 -- 4-5: refusals, nothing written.
 select throws_ok(
-  $$ select public.mark_event_done('00000000-0000-0000-0000-0000000000e1',
-       array['00000000-0000-0000-0000-0000000000ff']::uuid[], '2026-10-08') $$,
+  $$ select public.close_event('00000000-0000-0000-0000-0000000000e1',
+       '[{"person": "00000000-0000-0000-0000-0000000000ff"}]', '{}', '2026-10-08') $$,
   'P0001', null,
   'someone not invited cannot be marked as there'
 );
@@ -53,8 +53,8 @@ select ok((select done_at is null from public.event), 'a refused call leaves the
 
 -- 6-10: marking done.
 select lives_ok(
-  $$ select public.mark_event_done('00000000-0000-0000-0000-0000000000e1',
-       array['00000000-0000-0000-0000-0000000000a1']::uuid[], '2026-10-09') $$,
+  $$ select public.close_event('00000000-0000-0000-0000-0000000000e1',
+       '[{"person": "00000000-0000-0000-0000-0000000000a1"}]', '{}', '2026-10-09') $$,
   'the event is marked done'
 );
 select ok(
@@ -75,8 +75,8 @@ select results_eq(
   'only who was there gets an Event entry, on the device''s day'
 );
 select throws_ok(
-  $$ select public.mark_event_done('00000000-0000-0000-0000-0000000000e1',
-       array[]::uuid[], '2026-10-09') $$,
+  $$ select public.close_event('00000000-0000-0000-0000-0000000000e1',
+       '[]', '{}', '2026-10-09') $$,
   'P0001', null,
   'an event is marked done once'
 );
@@ -103,8 +103,8 @@ select is(
   'another user sees nobody'
 );
 select throws_ok(
-  $$ select public.mark_event_done('00000000-0000-0000-0000-0000000000e1',
-       array[]::uuid[], '2026-10-09') $$,
+  $$ select public.close_event('00000000-0000-0000-0000-0000000000e1',
+       '[]', '{}', '2026-10-09') $$,
   'P0002', null,
   'another user cannot mark it done'
 );
