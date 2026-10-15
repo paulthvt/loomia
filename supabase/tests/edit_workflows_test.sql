@@ -40,14 +40,14 @@ update public.person
 -- 4-8: set_default.
 select lives_ok(
   $$ select public.set_default(
-       (select id from public.workflow where name = 'Wellness check'),
+       (select id from public.workflow where name = 'Wellness check invite'),
        true) $$,
   'set_default on runs'
 );
 select results_eq(
   $$ select name from public.workflow
      where stage = 'prospect' and is_default $$,
-  $$ values ('Wellness check'::text) $$,
+  $$ values ('Wellness check invite'::text) $$,
   'on moves the stage''s default'
 );
 select is(
@@ -56,7 +56,7 @@ select is(
 );
 select lives_ok(
   $$ select public.set_default(
-       (select id from public.workflow where name = 'Wellness check'),
+       (select id from public.workflow where name = 'Wellness check invite'),
        false) $$,
   'set_default off runs'
 );

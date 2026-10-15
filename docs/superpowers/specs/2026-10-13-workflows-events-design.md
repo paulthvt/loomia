@@ -158,9 +158,9 @@ of type T.
 
 | Workflow | Steps (days) | Next |
 | --- | --- | --- |
-| Échantillons / Samples (default) | Premier contact (proposition) 0 · Préparation et envoi 1 · Confirmation de réception 4 · Feedback 2 · Proposition de bilan bien-être ou atelier 0 | Bilan bien-être, Invitation atelier |
-| Bilan bien-être / Wellness check | Proposer et caler le bilan 0 ⟨Bilan⟩, note "Envoyer le questionnaire en même temps" | — |
-| Invitation atelier / Workshop invite | Inviter à un atelier 0 ⟨Atelier⟩ | Bilan bien-être |
+| Échantillons / Samples (default) | Premier contact (proposition) 0 · Préparation et envoi 1 · Confirmation de réception 4 · Feedback 2 · Proposition de bilan bien-être ou atelier 0 | Invitation bilan bien-être, Invitation atelier |
+| Invitation bilan bien-être / Wellness check invite (#340) | Proposer et caler le bilan 0 ⟨Bilan⟩, note "Envoyer le questionnaire en même temps" | — |
+| Invitation atelier / Workshop invite | Inviter à un atelier 0 ⟨Atelier⟩ | Invitation bilan bien-être |
 
 **Customer**
 
