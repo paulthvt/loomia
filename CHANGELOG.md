@@ -1,5 +1,32 @@
 # Changelog
 
+## [v2026.10.1](https://github.com/paulthvt/loomia/compare/v2026.10.0...v2026.10.1) (2026-10-15)
+
+### ✨ Features
+
+- **workflows:** new default workflows and account reset (#331) ([3f856aa](https://github.com/paulthvt/loomia/commit/3f856aa7581a7a2d0d4f6cf91614544459530c67))
+- **calendar:** who was there records what changed (#330) ([bcf7856](https://github.com/paulthvt/loomia/commit/bcf7856ac0de9f053ac16e052399d7f2de94f961))
+- **contacts:** LRP renewal reminder (#327) ([47649a2](https://github.com/paulthvt/loomia/commit/47649a27959f415b2ebe88b269540f13dc83836f))
+- **workflows:** what's next when a workflow ends (#326) ([9fe7b3e](https://github.com/paulthvt/loomia/commit/9fe7b3eb01889882eaa6f5c73631761a0299cc9d))
+- **workflows:** event steps (#325) ([fee1b06](https://github.com/paulthvt/loomia/commit/fee1b060df5d0612b15085bfe134566040030424))
+- **calendar:** invitations on group events (#321) ([603f4f1](https://github.com/paulthvt/loomia/commit/603f4f154bb19e8fec717b97e455326439814c79))
+- **goals:** push when it's time to close the month (#311) ([483d951](https://github.com/paulthvt/loomia/commit/483d951c3ff2c8b7b73434123ce4df79b584fc58))
+
+### 🐛 Bug Fixes
+
+- **app:** reset status bar icons after the launch splash (#309) ([50a4a9e](https://github.com/paulthvt/loomia/commit/50a4a9e0a2ff86cebf279506be7df0a2614cedc4))
+
+### 📚 Documentation
+
+- migrations stay compatible with the released app (#324) ([9422607](https://github.com/paulthvt/loomia/commit/9422607291d141207ad229cbc1911e1c3c15eabb))
+- **workflows:** design for linked workflows and events (#320) ([da352db](https://github.com/paulthvt/loomia/commit/da352db4442b558d57014dcce20f17885854e635))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#322) ([80eb07b](https://github.com/paulthvt/loomia/commit/80eb07bf8004beb9a6b18763611e35329588b670))
+- **l10n:** sync translations (#312) ([f5e4891](https://github.com/paulthvt/loomia/commit/f5e48911a90813d951e1a24c554da95caae52824))
+- release with CalVer and yeet (#307) ([7f6e2b7](https://github.com/paulthvt/loomia/commit/7f6e2b7923767ed5ab0cba5cdc284922b17b1ff8))
+
 ## [0.11.0](https://github.com/paulthvt/loomia/compare/0.10.0...0.11.0) (2026-10-13)
 
 
