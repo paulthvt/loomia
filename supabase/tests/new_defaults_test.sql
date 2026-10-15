@@ -39,7 +39,7 @@ select results_eq(
      order by array_position(array['prospect', 'customer', 'team'], stage::text),
               name $$,
   $$ values ('prospect', 'Samples', true, false),
-            ('prospect', 'Wellness check', false, false),
+            ('prospect', 'Wellness check invite', false, false),
             ('prospect', 'Workshop invite', false, false),
             ('customer', 'New customer', true, false),
             ('team', 'Onboarding', true, false),
@@ -74,7 +74,7 @@ select results_eq(
 select is(
   (select s.note from public.workflow_step s
      join public.workflow w on w.id = s.workflow_id
-     where w.name = 'Wellness check'),
+     where w.name = 'Wellness check invite'),
   'Send the questionnaire at the same time',
   'the questionnaire goes when the bilan is booked'
 );
@@ -88,9 +88,9 @@ select results_eq(
   $$ values ('Onboarding', 'Team check-in — every 2 weeks'),
             ('Onboarding', 'Team check-in — monthly'),
             ('Onboarding', 'Team check-in — weekly'),
-            ('Samples', 'Wellness check'),
+            ('Samples', 'Wellness check invite'),
             ('Samples', 'Workshop invite'),
-            ('Workshop invite', 'Wellness check') $$,
+            ('Workshop invite', 'Wellness check invite') $$,
   'Samples and Workshop invite lead on; Onboarding to a check-in'
 );
 
@@ -106,7 +106,7 @@ set local request.jwt.claims =
 select public.seed_workflows('fr', '2026-10-15');
 select results_eq(
   $$ select name from public.workflow order by name $$,
-  $$ select unnest(array['Bilan bien-être', 'Échantillons', 'Invitation atelier',
+  $$ select unnest(array['Échantillons', 'Invitation atelier', 'Invitation bilan bien-être',
             'Nouveau client', 'Onboarding', 'Suivi équipe — hebdo',
             'Suivi équipe — mensuel', 'Suivi équipe — toutes les 2 semaines'])
      order by 1 $$,
