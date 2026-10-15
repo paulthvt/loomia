@@ -72,6 +72,11 @@ ring · overflow count pill (`+4`) on `surface/sunken`.
 Secondary = pace; **Accent = anchored to a real date only** (birthday, promised
 call-back). No red chip exists. Chips are not filters unless they are in a filter
 row — filters use Primary for the active one.
+*Tag chip (#332):* the same shape in one of the 8 tag palette colours
+(`tag/<key>/container`, `tag/<key>/ink`). In the tag filter row an off chip is
+sunken with an ink dot, an on chip takes its tag's container with a check — the
+one exception to "the active filter is Primary". The name is always shown;
+colour never carries meaning alone. Code: `lib/core/ui/tag_chip.dart`.
 
 ### 7. ProgressBar
 *Purpose:* pace, not score.

@@ -242,6 +242,24 @@ class FakePeopleRepository implements PeopleRepository {
   }
 
   @override
+  Future<List<Person>> setTags(
+    List<String> ids,
+    Set<String> add,
+    Set<String> remove,
+  ) async {
+    await _record(
+      'setTags(${ids.join(', ')}, +${add.join('+')}, -${remove.join('-')})',
+    );
+    return [
+      for (final id in ids)
+        if (store[id] case final before?)
+          store[id] = before.withTagIds(
+            before.tagIds.union(add).difference(remove),
+          ),
+    ];
+  }
+
+  @override
   Future<Person> pause(String id, DateTime at, {required bool notNow}) async {
     await _record('pause($id)');
     final before = store[id]!;
@@ -575,6 +593,7 @@ class FakePeopleRepository implements PeopleRepository {
       loyaltyCheckedFor: loyaltyCheckedFor == null
           ? before.loyaltyCheckedFor
           : loyaltyCheckedFor(),
+      tagIds: before.tagIds,
     );
     store[person.id] = person;
     return _served(person);

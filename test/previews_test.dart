@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/theme_preview.dart';
+import 'package:loomia/core/ui/tag_preview.dart';
 import 'package:loomia/core/ui/ui_preview.dart';
 import 'package:loomia/features/calendar/presentation/calendar_preview.dart';
 import 'package:loomia/features/contacts/presentation/contacts_preview.dart';
@@ -92,6 +93,8 @@ void main() {
     ),
     'components_light': (const Size(420, 2000), uiComponentsLight),
     'components_dark': (const Size(420, 2000), uiComponentsDark),
+    'tags_light': (const Size(420, 640), tagsLight),
+    'tags_dark': (const Size(420, 640), tagsDark),
     'tokens_colour_light': (const Size(420, 900), colourTokensLight),
     'tokens_colour_dark': (const Size(420, 900), colourTokensDark),
     'tokens_type_light': (const Size(420, 900), typeRampLight),

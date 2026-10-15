@@ -4,6 +4,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/preview_photo.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:loomia/features/contacts/presentation/next_step_section.dart';
@@ -96,6 +97,13 @@ final _samples = Workflow(
 // A fixed day, so the golden never changes with the calendar.
 final _previewToday = DateTime(2026, 9, 29);
 
+// As in Figma "Tags — #332".
+const _tags = [
+  Tag(id: 'lyon', name: 'Lyon', color: TagColor.sage),
+  Tag(id: 'sleep', name: 'Sleep', color: TagColor.sky),
+  Tag(id: 'workshop', name: 'Workshop May', color: TagColor.sand),
+];
+
 final _sample = [
   Person(
     id: 'p1',
@@ -108,6 +116,7 @@ final _sample = [
     profession: 'Nurse',
     notes: 'Met at the Saturday market. Asked about lavender.',
     stageSince: DateTime.utc(2026, 3, 4),
+    tagIds: const {'lyon', 'sleep', 'workshop'},
   ),
   Person(
     id: 'p2',
@@ -149,6 +158,8 @@ Widget _list({String? selectedId, bool showRefresh = false}) => ContactList(
   onMove: (_, _) async => false,
   onChangeWorkflow: (_) async => false,
   onDelete: (_) async => false,
+  onTag: (_) async => false,
+  tags: _tags,
   model: BusinessModel.other,
   selectedId: selectedId,
   showRefresh: showRefresh,
@@ -161,6 +172,8 @@ Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
   onChoosePhoto: () async {},
   onRemovePhoto: () async {},
   onLoyalty: () {},
+  tags: tagsOf((person ?? _sample.first).tagIds, _tags),
+  onTags: () {},
   model: BusinessModel.other,
   onStatus: (_) {},
   onEdit: (_) {},

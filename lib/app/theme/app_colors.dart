@@ -269,3 +269,54 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     );
   }
 }
+
+/// A tag's two colours in one mode: the chip's fill, and its text, dot and
+/// check.
+typedef TagInk = ({Color container, Color ink});
+
+/// The tag palette (#332), Figma `tag/<key>/container` and `tag/<key>/ink`.
+/// Stored by name in `tag.color`; the order is the order new tags take them.
+/// No red: no chip is red (components.md #6).
+enum TagColor {
+  stone(
+    light: (container: Color(0xFFECE8E3), ink: Color(0xFF6B6158)),
+    dark: (container: Color(0xFF3A3631), ink: Color(0xFFDDD6CD)),
+  ),
+  sand(
+    light: (container: Color(0xFFF2E7CF), ink: Color(0xFF7D5B0F)),
+    dark: (container: Color(0xFF45391F), ink: Color(0xFFEBD7AA)),
+  ),
+  olive(
+    light: (container: Color(0xFFE7E9CD), ink: Color(0xFF5F6614)),
+    dark: (container: Color(0xFF3B3D1F), ink: Color(0xFFD6DAA6)),
+  ),
+  sage(
+    light: (container: Color(0xFFDCEADC), ink: Color(0xFF36714A)),
+    dark: (container: Color(0xFF283D2C), ink: Color(0xFFB9D9BE)),
+  ),
+  teal(
+    light: (container: Color(0xFFD3EAE7), ink: Color(0xFF176D66)),
+    dark: (container: Color(0xFF1E3D3A), ink: Color(0xFFA9DCD5)),
+  ),
+  sky(
+    light: (container: Color(0xFFD8E7F3), ink: Color(0xFF285F94)),
+    dark: (container: Color(0xFF20364A), ink: Color(0xFFB4D2EC)),
+  ),
+  indigo(
+    light: (container: Color(0xFFDFE1F4), ink: Color(0xFF4A52AE)),
+    dark: (container: Color(0xFF2C3058), ink: Color(0xFFC5CAF2)),
+  ),
+  violet(
+    light: (container: Color(0xFFEBE0F2), ink: Color(0xFF7A47A6)),
+    dark: (container: Color(0xFF3D2C4D), ink: Color(0xFFDCC6EE)),
+  );
+
+  const TagColor({required this.light, required this.dark});
+
+  final TagInk light;
+  final TagInk dark;
+
+  /// This key's colours in the theme's mode.
+  TagInk of(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? dark : light;
+}

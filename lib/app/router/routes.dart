@@ -72,6 +72,10 @@ abstract final class Routes {
   static const String settingsWorkflows = '$settings/$settingsWorkflowsSegment';
   static const String settingsWorkflowsName = 'settingsWorkflows';
 
+  static const String settingsTagsSegment = 'tags';
+  static const String settingsTags = '$settings/$settingsTagsSegment';
+  static const String settingsTagsName = 'settingsTags';
+
   /// One workflow, nested under [settingsWorkflows] so back returns to it.
   static const String settingsWorkflowSegment = ':id';
   static const String settingsWorkflowName = 'settingsWorkflow';

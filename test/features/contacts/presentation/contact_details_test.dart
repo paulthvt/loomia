@@ -1,9 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/section_header.dart';
+import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
 import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -42,6 +45,7 @@ Person _person({
 );
 
 class _Calls {
+  var tagSheets = 0;
   final statuses = <ProspectStatus?>[];
   final launched = <Uri>[];
   final edits = <EditPart>[];
@@ -62,6 +66,7 @@ Future<_Calls> _pump(
   Size size = const Size(800, 600),
   String? workflowName,
   BusinessModel model = BusinessModel.other,
+  List<Tag> tags = const [],
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -90,6 +95,8 @@ Future<_Calls> _pump(
           onChoosePhoto: () async => calls.photoChoices++,
           onRemovePhoto: () async => calls.photoRemovals++,
           onLoyalty: () => calls.loyalty++,
+          tags: tags,
+          onTags: () => calls.tagSheets++,
           workflowName: workflowName,
         ),
       ),
@@ -100,6 +107,32 @@ Future<_Calls> _pump(
 }
 
 void main() {
+  group('tags', () {
+    testWidgets('none: Add tag opens the sheet', (tester) async {
+      final calls = await _pump(tester, _person());
+      expect(find.byType(TagChip), findsNothing);
+      await tester.tap(find.text('Add tag'));
+      expect(calls.tagSheets, 1);
+    });
+
+    testWidgets('some: their chips, then the edit action', (tester) async {
+      final calls = await _pump(
+        tester,
+        _person(),
+        tags: const [
+          Tag(id: 'l', name: 'Lyon', color: TagColor.sage),
+          Tag(id: 's', name: 'Sleep', color: TagColor.sky),
+        ],
+      );
+      expect(find.text('Lyon'), findsOneWidget);
+      expect(find.text('Sleep'), findsOneWidget);
+      expect(find.text('Add tag'), findsNothing);
+      await tester.tap(find.byTooltip('Edit tags'));
+      await tester.tap(find.text('Lyon'));
+      expect(calls.tagSheets, 2);
+    });
+  });
+
   testWidgets('the header says the stage and since when', (tester) async {
     await _pump(tester, _person());
 

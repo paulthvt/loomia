@@ -30,6 +30,20 @@ Map<String, dynamic> _row([Map<String, dynamic> changes = const {}]) => {
 
 void main() {
   group('personFromRow', () {
+    test("reads the tags' ids, none when absent", () {
+      final tagged = personFromRow(
+        _row({
+          'person_tag': [
+            {'tag_id': 't1'},
+            {'tag_id': 't2'},
+          ],
+        }),
+      );
+      expect(tagged.tagIds, {'t1', 't2'});
+      expect(personFromRow(_row({'person_tag': <Object>[]})).tagIds, isEmpty);
+      expect(personFromRow(_row()).tagIds, isEmpty);
+    });
+
     test('reads the photo path, blank as none', () {
       expect(personFromRow(_row({'photo_path': 'u1/abc'})).photoPath, 'u1/abc');
       expect(personFromRow(_row({'photo_path': ' '})).photoPath, isNull);

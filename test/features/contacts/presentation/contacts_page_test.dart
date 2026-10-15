@@ -817,9 +817,10 @@ void main() {
     // The step is still there, below.
     expect(find.text('Send a first message'), findsOneWidget);
 
-    await tester.tap(
-      find.byTooltip('Mark "Call back about the diffuser" done'),
-    );
+    final tick = find.byTooltip('Mark "Call back about the diffuser" done');
+    await tester.ensureVisible(tick);
+    await tester.pumpAndSettle();
+    await tester.tap(tick);
     await tester.pumpAndSettle();
 
     expect(people.calls, contains(startsWith('completeReminder(')));

@@ -1,5 +1,8 @@
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -24,11 +27,17 @@ class StageFilter extends StatelessWidget {
   final bool loyalty;
   final ValueChanged<bool>? onLoyaltyChanged;
 
-  /// Whether [person] passes the filter set to [stage], and to people with
-  /// an LRP when [loyalty].
-  static bool shows(Stage? stage, Person person, {bool loyalty = false}) =>
+  /// Whether [person] passes the filter set to [stage], to people with an
+  /// LRP when [loyalty], and to people with every one of [tags].
+  static bool shows(
+    Stage? stage,
+    Person person, {
+    bool loyalty = false,
+    Set<String> tags = const {},
+  }) =>
       (stage == null || person.stage == stage) &&
-      (!loyalty || person.loyaltySince != null);
+      (!loyalty || person.loyaltySince != null) &&
+      person.tagIds.containsAll(tags);
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +63,46 @@ class StageFilter extends StatelessWidget {
             onSelected: onLoyaltyChanged,
           ),
       ],
+    );
+  }
+}
+
+/// The tag chips under the stage chips (#332), one per tag in [tags]' order,
+/// each on or off. Several on: people with all of them. A phone scrolls them
+/// sideways on one line; wider screens wrap them.
+class TagFilter extends StatelessWidget {
+  const TagFilter({
+    required this.tags,
+    required this.selected,
+    required this.onChanged,
+    super.key,
+  });
+
+  final List<Tag> tags;
+  final Set<String> selected;
+  final ValueChanged<Set<String>> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = [
+      for (final tag in tags)
+        TagChip(
+          label: tag.name,
+          color: tag.color,
+          selected: selected.contains(tag.id),
+          onTap: () => onChanged(
+            selected.contains(tag.id)
+                ? selected.difference({tag.id})
+                : {...selected, tag.id},
+          ),
+        ),
+    ];
+    if (!context.screenSize.isMobile) {
+      return Wrap(spacing: AppSpacing.sm, children: chips);
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(spacing: AppSpacing.sm, children: chips),
     );
   }
 }

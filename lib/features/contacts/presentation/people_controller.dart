@@ -163,6 +163,17 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     _replaceAll(await _repository.setPlace(_ids(people), _placeFor(follow)));
   }
 
+  /// Adds [add] to and removes [remove] from all of [people], in one write
+  /// (#332). Nothing to change: no write.
+  Future<void> setTags(
+    List<Person> people,
+    Set<String> add,
+    Set<String> remove,
+  ) async {
+    if (add.isEmpty && remove.isEmpty) return;
+    _replaceAll(await _repository.setTags(_ids(people), add, remove));
+  }
+
   /// Ticks [progress]'s step on [today]: a history entry, and the next step.
   Future<void> completeStep(
     Person person,

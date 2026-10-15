@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
+import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
+import 'package:loomia/features/contacts/presentation/stage_filter.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -17,6 +21,7 @@ Person _person(
   Stage stage, {
   String? profession,
   DateTime? loyaltySince,
+  Set<String> tags = const {},
 }) => Person(
   id: id,
   name: name,
@@ -24,6 +29,7 @@ Person _person(
   profession: profession,
   stageSince: DateTime.utc(2026, 3, 4),
   loyaltySince: loyaltySince,
+  tagIds: tags,
 );
 
 const _phone = Size(390, 844);
@@ -45,6 +51,8 @@ Future<void> _pump(
   Future<bool> Function(List<Person> people, Stage stage)? onMove,
   Future<bool> Function(List<Person> people)? onChangeWorkflow,
   Future<bool> Function(List<Person> people)? onDelete,
+  Future<bool> Function(List<Person> people)? onTag,
+  List<Tag> tags = const [],
   ValueChanged<bool>? onPickingChanged,
   Size size = _tablet,
   BusinessModel model = BusinessModel.doterra,
@@ -67,6 +75,8 @@ Future<void> _pump(
           onMove: onMove ?? (_, _) async => true,
           onChangeWorkflow: onChangeWorkflow ?? (_) async => true,
           onDelete: onDelete ?? (_) async => true,
+          onTag: onTag ?? (_) async => true,
+          tags: tags,
           onImport: onImport,
           onPickingChanged: onPickingChanged,
           model: model,
@@ -225,6 +235,107 @@ void main() {
     expect(find.byTooltip('Import from your contacts'), findsNothing);
   });
 
+  group('tags', () {
+    const lyon = Tag(id: 'lyon', name: 'Lyon', color: TagColor.sage);
+    const sleep = Tag(id: 'sleep', name: 'Sleep', color: TagColor.sky);
+    final book = [
+      _person('1', 'Anne Martin', Stage.customer, tags: {'lyon', 'sleep'}),
+      _person('2', 'Bruno Leroy', Stage.customer, tags: {'lyon'}),
+      _person('3', 'Hélène Petit', Stage.prospect, tags: {'lyon', 'sleep'}),
+      _person('4', 'Zoé Roux', Stage.customer),
+    ];
+
+    testWidgets('no tag yet: no tag row', (tester) async {
+      await _pump(tester, people: book);
+      expect(find.byType(TagFilter), findsNothing);
+    });
+
+    testWidgets('two on narrow to people with both, within the stage', (
+      tester,
+    ) async {
+      await _pump(tester, people: book, tags: const [lyon, sleep]);
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Customers'));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(TagFilter),
+          matching: find.text('Lyon'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Bruno Leroy'), findsOneWidget);
+      expect(find.text('Zoé Roux'), findsNothing);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(TagFilter),
+          matching: find.text('Sleep'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Anne Martin'), findsOneWidget);
+      expect(find.text('Bruno Leroy'), findsNothing);
+      expect(find.text('Hélène Petit'), findsNothing);
+    });
+
+    testWidgets('a tag deleted meanwhile no longer filters', (tester) async {
+      await _pump(tester, people: book, tags: const [lyon, sleep]);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(TagFilter),
+          matching: find.text('Sleep'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Bruno Leroy'), findsNothing);
+
+      await _pump(tester, people: book, tags: const [lyon]);
+      expect(find.text('Bruno Leroy'), findsOneWidget);
+    });
+
+    testWidgets('rows carry their tags as dots, +N past three', (tester) async {
+      final many = [
+        for (final (i, color) in TagColor.values.take(5).indexed)
+          Tag(id: 't$i', name: 'T$i', color: color),
+      ];
+      await _pump(
+        tester,
+        people: [
+          _person(
+            '1',
+            'Anne Martin',
+            Stage.customer,
+            tags: {for (final t in many) t.id},
+          ),
+        ],
+        tags: many,
+      );
+      expect(find.byType(TagDots), findsOneWidget);
+      expect(find.text('+2'), findsOneWidget);
+    });
+
+    testWidgets('Tag acts on the picked people', (tester) async {
+      List<Person>? tagged;
+      await _pump(
+        tester,
+        people: book,
+        tags: const [lyon],
+        size: _phone,
+        onTag: (people) async {
+          tagged = people;
+          return true;
+        },
+      );
+      await tester.longPress(find.text('Anne Martin'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bruno Leroy'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tag'));
+      await tester.pumpAndSettle();
+
+      expect([for (final p in tagged!) p.id], unorderedEquals(['1', '2']));
+    });
+  });
+
   group('picking several', () {
     testWidgets('a long press starts it; a tap then picks, not opens', (
       tester,
@@ -317,7 +428,7 @@ void main() {
       await tester.longPress(find.text('Anne Martin'));
       await tester.pumpAndSettle();
 
-      for (final label in ['Move to…', 'Change workflow', 'Delete']) {
+      for (final label in ['Move to…', 'Change workflow', 'Tag', 'Delete']) {
         expect(find.text(label), findsOneWidget);
       }
       expect(

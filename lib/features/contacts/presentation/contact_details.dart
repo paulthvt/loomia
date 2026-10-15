@@ -10,7 +10,9 @@ import 'package:loomia/core/ui/fact_row.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
+import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
@@ -66,6 +68,8 @@ class ContactDetails extends StatelessWidget {
     required this.onChoosePhoto,
     required this.onRemovePhoto,
     required this.onLoyalty,
+    required this.tags,
+    required this.onTags,
     this.photo,
     this.workflowName,
     this.nextStep,
@@ -109,6 +113,12 @@ class ContactDetails extends StatelessWidget {
 
   /// Opens the LRP sheet; offered to customers and team members.
   final VoidCallback onLoyalty;
+
+  /// Their tags, resolved and sorted (#332).
+  final List<Tag> tags;
+
+  /// Opens the tag sheet.
+  final VoidCallback onTags;
 
   /// The current workflow's name, shown beside Change workflow in ⋯.
   final String? workflowName;
@@ -349,6 +359,15 @@ class ContactDetails extends StatelessWidget {
               ),
               LoomiaChip(label: stageLabel(l10n, person.stage)),
               if (person.stage != Stage.prospect) loyalty(),
+              Wrap(
+                spacing: AppSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  for (final tag in tags)
+                    TagChip(label: tag.name, color: tag.color, onTap: onTags),
+                  TagAction(empty: tags.isEmpty, onTap: onTags),
+                ],
+              ),
             ],
           ),
         ),

@@ -13,6 +13,8 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/presentation/account_photo.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
+import 'package:loomia/features/contacts/presentation/tags_controller.dart';
+import 'package:loomia/features/contacts/presentation/tags_settings.dart';
 import 'package:loomia/features/notifications/presentation/notification_settings_form.dart';
 import 'package:loomia/features/notifications/presentation/notification_settings_section.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
@@ -29,7 +31,14 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-enum SettingsSection { account, language, appearance, notifications, workflows }
+enum SettingsSection {
+  account,
+  language,
+  appearance,
+  notifications,
+  workflows,
+  tags,
+}
 
 /// The installed app version, major.minor.patch ("0.1.3"): the build number
 /// only matters to the stores. Loaded once: it never changes while the app runs.
@@ -68,6 +77,7 @@ class SettingsPage extends StatelessWidget {
       SettingsSection.appearance => Routes.settingsAppearance,
       SettingsSection.notifications => Routes.settingsNotifications,
       SettingsSection.workflows => Routes.settingsWorkflows,
+      SettingsSection.tags => Routes.settingsTags,
     };
     if (context.screenSize.isDesktop) {
       context.go(location);
@@ -193,6 +203,10 @@ class _Section extends StatelessWidget {
           child: const WorkflowsSettings(),
         ),
       },
+      SettingsSection.tags => SettingsScroll(
+        title: l10n.tagsTitle,
+        child: const TagsSettings(),
+      ),
     };
   }
 }
@@ -285,6 +299,18 @@ class _SettingsListState extends ConsumerState<_SettingsList>
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () =>
                   SettingsPage.open(context, SettingsSection.workflows),
+            ),
+            ListTile(
+              selected: selected == SettingsSection.tags,
+              leading: const Icon(Icons.sell_outlined),
+              title: Text(l10n.tagsTitle),
+              subtitle: Text(
+                l10n.tagsSummary(
+                  ref.watch(tagsProvider(account?.email)).value?.length ?? 0,
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => SettingsPage.open(context, SettingsSection.tags),
             ),
           ],
         ),

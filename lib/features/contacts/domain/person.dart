@@ -55,6 +55,7 @@ class Person {
     this.loyaltySince,
     this.loyaltyDay,
     this.loyaltyCheckedFor,
+    this.tagIds = const {},
   }) : assert(
          prospectStatus == null || stage == Stage.prospect,
          'Only prospects have a status',
@@ -158,17 +159,30 @@ class Person {
   /// Read-only: `check_loyalty` writes it.
   final DateTime? loyaltyCheckedFor;
 
+  /// Their tags' ids, from `person_tag` (#332). Read-only: written by
+  /// `set_person_tags`. May hold a tag deleted on another device until the
+  /// next load, so readers resolve ids through the account's tags.
+  final Set<String> tagIds;
+
   Person withStatus(ProspectStatus? status) =>
-      _copy(prospectStatus: status, reminders: reminders);
+      _copy(prospectStatus: status, reminders: reminders, tagIds: tagIds);
 
   Person withReminders(Iterable<Reminder> reminders) => _copy(
     prospectStatus: prospectStatus,
     reminders: sortedReminders(reminders),
+    tagIds: tagIds,
+  );
+
+  Person withTagIds(Set<String> tagIds) => _copy(
+    prospectStatus: prospectStatus,
+    reminders: reminders,
+    tagIds: tagIds,
   );
 
   Person _copy({
     required ProspectStatus? prospectStatus,
     required List<Reminder> reminders,
+    required Set<String> tagIds,
   }) => Person(
     id: id,
     name: name,
@@ -205,6 +219,7 @@ class Person {
     loyaltySince: loyaltySince,
     loyaltyDay: loyaltyDay,
     loyaltyCheckedFor: loyaltyCheckedFor,
+    tagIds: tagIds,
   );
 }
 
