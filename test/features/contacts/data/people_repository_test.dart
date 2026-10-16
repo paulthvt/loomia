@@ -103,6 +103,7 @@ void main() {
       expect(person.needs, 'Sleep, stress');
       expect(person.profession, 'Nurse');
       expect(person.stageSince, DateTime.utc(2026, 4, 1, 8));
+      expect(person.createdAt, DateTime.utc(2026, 3, 4, 10));
     });
 
     test("reads a team member's own profile", () {
@@ -348,6 +349,7 @@ void main() {
       'name': 'Sarah',
       'stage': 'prospect',
       'stage_since': '2026-09-01T10:00:00Z',
+      'created_at': '2026-09-01T10:00:00Z',
       ...extra,
     };
 

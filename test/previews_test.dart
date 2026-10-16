@@ -38,6 +38,10 @@ void main() {
     ),
     'today_events_mobile_light': (const Size(390, 844), todayEventsMobileLight),
     'today_nudge_mobile_light': (const Size(390, 844), todayNudgeMobileLight),
+    'today_catch_up_mobile_light': (
+      const Size(390, 844),
+      todayCatchUpMobileLight,
+    ),
     'notifications_mobile_light': (
       const Size(390, 844),
       notificationsMobileLight,

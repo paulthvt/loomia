@@ -244,23 +244,94 @@ void main() {
       tester,
       now: DateTime(2026, 9, 29, 9),
       size: const Size(390, 1600),
-      checkIns: [
-        (
-          person: Person(
-            id: 'Bruno',
-            name: 'Bruno',
-            stage: Stage.team,
-            stageSince: DateTime(2026, 5),
-            lastContactOn: DateTime(2026, 9),
-          ),
-          reason: CheckInReason.quiet,
-          since: DateTime(2026, 9),
-          days: 28,
-        ),
-      ],
+      checkIns: [_quiet('Bruno')],
     );
 
-    expect(find.text('WORTH A CHECK-IN'), findsOneWidget);
-    expect(find.text('Bruno'), findsOneWidget);
+    expect(find.text('CATCH UP'), findsOneWidget);
+    expect(find.text('1 person you could catch up with'), findsOneWidget);
+  });
+
+  group('catch up on one column', () {
+    Future<void> folded(WidgetTester tester, {Size size = _phone}) => pump(
+      tester,
+      now: DateTime(2026, 9, 29, 9),
+      size: size,
+      checkIns: [_quiet('Bruno'), _quiet('Léa')],
+    );
+
+    testWidgets('folded under Priority; Show and Hide', (tester) async {
+      await folded(tester);
+
+      expect(find.text('2 people you could catch up with'), findsOneWidget);
+      expect(find.text('Bruno'), findsNothing);
+
+      await tester.tap(find.text('Show'));
+      await tester.pump();
+      expect(find.text('Bruno'), findsOneWidget);
+      expect(find.text('Léa'), findsOneWidget);
+      expect(find.text('2 people you could catch up with'), findsNothing);
+
+      await tester.tap(find.text('Hide'));
+      await tester.pump();
+      expect(find.text('Bruno'), findsNothing);
+    });
+
+    testWidgets('the summary line opens it too, as one button', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await folded(tester);
+
+      expect(
+        find.bySemanticsLabel('2 people you could catch up with'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('2 people you could catch up with'));
+      await tester.pump();
+      expect(find.text('Bruno'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('a tablet folds it too', (tester) async {
+      await folded(tester, size: const Size(800, 1600));
+
+      expect(find.text('Show'), findsOneWidget);
+      expect(find.text('Bruno'), findsNothing);
+    });
+
+    testWidgets('nothing due: open', (tester) async {
+      await pump(
+        tester,
+        now: DateTime(2026, 9, 29, 9),
+        size: _phone,
+        due: const [],
+        checkIns: [_quiet('Bruno')],
+      );
+
+      expect(find.text('Bruno'), findsOneWidget);
+      expect(find.text('Hide'), findsOneWidget);
+      expect(find.text('1 person you could catch up with'), findsNothing);
+    });
+
+    testWidgets('desktop: the rows, no Show', (tester) async {
+      await folded(tester, size: const Size(1440, 1200));
+
+      expect(find.text('Bruno'), findsOneWidget);
+      expect(find.text('Show'), findsNothing);
+      expect(find.text('Hide'), findsNothing);
+    });
   });
 }
+
+const _phone = Size(390, 1600);
+
+CheckIn _quiet(String name) => (
+  person: Person(
+    id: name,
+    name: name,
+    stage: Stage.team,
+    stageSince: DateTime(2026, 5),
+    lastContactOn: DateTime(2026, 8, 20),
+  ),
+  reason: CheckInReason.quiet,
+  since: DateTime(2026, 8, 20),
+  days: 40,
+);
