@@ -197,6 +197,7 @@
     "addPersonName": "Name",
     "addPersonNameRequired": "Enter a name.",
     "addPersonReach": "Phone, email or Instagram",
+    "addPersonStartWorkflow": "Start their workflow",
     "editPersonTitle": "Edit details",
     "contactLogSomething": "Log something",
     "contactMoveToProspects": "Move to prospects",

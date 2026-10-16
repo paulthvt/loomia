@@ -197,6 +197,7 @@
   "addPersonName": "Nom",
   "addPersonNameRequired": "Saisis un nom.",
   "addPersonReach": "Téléphone, e-mail ou Instagram",
+  "addPersonStartWorkflow": "Démarrer son parcours",
   "editPersonTitle": "Modifier les infos",
   "contactLogSomething": "Noter quelque chose",
   "contactMoveToProspects": "Passer en prospects",
