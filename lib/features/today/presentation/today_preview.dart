@@ -79,6 +79,19 @@ Widget todayNudgeMobileLight() => _app(
   done: 1,
 );
 
+/// Catch up folded under a short Priority list, as a phone shows it
+/// (#342, Figma frame 1).
+@Preview(group: 'Today', name: 'Catch up — light', size: Size(390, 844))
+Widget todayCatchUpMobileLight() => _app(
+  AppTheme.light,
+  [
+    _due('Sarah Martin', 2, DateTime(2026, 9, 26)),
+    _due('Claire Dubois', 1, DateTime(2026, 9, 28)),
+  ],
+  done: 1,
+  checkIns: _catchUp,
+);
+
 final _now = DateTime(2026, 9, 29, 9);
 
 /// September planned and not closed: on the 29th, the line reads "150 PV to
