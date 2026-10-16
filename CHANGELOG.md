@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2026.10.2](https://github.com/paulthvt/loomia/compare/v2026.10.1...v2026.10.2) (2026-10-16)
+
+### ✨ Features
+
+- **today:** catch up replaces worth a check-in (#343) ([064144e](https://github.com/paulthvt/loomia/commit/064144e760d4573ba5e7db462a94d03599143863))
+- **contacts:** start-workflow switch when adding someone (#338) ([86c460d](https://github.com/paulthvt/loomia/commit/86c460d62a42381426f30a7b10d6a04909556bc4))
+- **contacts:** tag contacts and filter by tag (#333) ([8292b28](https://github.com/paulthvt/loomia/commit/8292b280fcb01f2740f79d897400627b114229bc))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#339) ([3ae4645](https://github.com/paulthvt/loomia/commit/3ae4645c6a332cf098d548fc7b1c4b5af6c97752))
+- **workflows:** rename Wellness check workflow to Wellness check invite (#341) ([da1e653](https://github.com/paulthvt/loomia/commit/da1e653fd679ff079cda1e28fa0ea37a0d2c559f))
+- **l10n:** sync translations (#335) ([ade8e01](https://github.com/paulthvt/loomia/commit/ade8e012fc12995f00f90d82226a2ba09da2ac67))
+- **calendar:** drop mark_event_done and the stage mapping columns (#336) ([0ac0516](https://github.com/paulthvt/loomia/commit/0ac0516432affa4050e334624ca252ab932ec0a0))
+
 ## [v2026.10.1](https://github.com/paulthvt/loomia/compare/v2026.10.0...v2026.10.1) (2026-10-15)
 
 ### ✨ Features
