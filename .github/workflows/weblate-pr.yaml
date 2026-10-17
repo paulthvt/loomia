@@ -1,0 +1,63 @@
+# Weblate's translation pull request (branch weblate/l10n), made mergeable: the
+# push copy regenerated from the new ARB files. Weblate sets the title itself.
+#
+# Weblate force-pushes its branch, dropping this commit each time; the push
+# re-runs this job, which adds it back. Pushed with the yeet App token: a
+# GITHUB_TOKEN push does not run CI, and main requires checks on the head
+# commit. A run with nothing to regenerate commits nothing, so the run its own
+# push triggers ends there.
+name: Weblate pull request
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+
+# Only the latest Weblate push matters; an older run would push onto a branch
+# Weblate already replaced.
+concurrency:
+  group: weblate-pr
+  cancel-in-progress: true
+
+jobs:
+  push-strings:
+    name: Push strings
+    if: >-
+      github.head_ref == 'weblate/l10n' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        id: app
+        with:
+          client-id: ${{ vars.YEET_APP_ID }}
+          private-key: ${{ secrets.YEET_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ steps.app.outputs.token }}
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - run: flutter pub get
+
+      - run: dart run tool/push_strings.dart
+
+      - name: Commit push strings
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          BOT: ${{ steps.app.outputs.app-slug }}[bot]
+        run: |
+          git add android/app/src/main/res/values/push_strings.xml ios/Runner/Localizable.strings
+          git diff --cached --quiet && exit 0
+          git config user.name "$BOT"
+          git config user.email "$(gh api "/users/$BOT" --jq .id)+$BOT@users.noreply.github.com"
+          git commit -m 'chore(l10n): push strings'
+          git push

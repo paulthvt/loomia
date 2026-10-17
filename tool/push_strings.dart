@@ -6,8 +6,9 @@
 // Every `push*` key of every language goes into one file per platform, its
 // name suffixed with the plural form and the language
 // (`push_summary_body_other_fr`): the sender picks the key, so the push follows
-// the language chosen in the app, not only the phone's. Run by the l10n sync;
-// test/tool/push_strings_test.dart fails when the committed files are stale.
+// the language chosen in the app, not only the phone's. Run on Weblate's pull
+// request (.github/workflows/weblate-pr.yaml); test/tool/push_strings_test.dart
+// fails when the committed files are stale.
 // res/raw/push_keep.xml keeps them through release resource shrinking.
 //
 // A whole-message plural becomes `_one` (`=1`, `one`) and `_other`; anything
@@ -30,8 +31,8 @@ Map<String, Parts> pushStrings(Map<String, Map<String, dynamic>> arbs) {
   final english = arbs['en'] ?? const <String, dynamic>{};
   final result = <String, Parts>{};
   for (final MapEntry(key: locale, value: arb) in arbs.entries) {
-    // A key the language lacks yet (until the l10n sync) goes in English, so
-    // the sender's key always exists on the phone.
+    // A key the language lacks yet (until Weblate translates it) goes in
+    // English, so the sender's key always exists on the phone.
     for (final MapEntry(:key, :value) in {...english, ...arb}.entries) {
       if (!key.startsWith('push') || value is! String) continue;
       final meta = (english['@$key'] ?? arb['@$key']) as Map<String, dynamic>?;

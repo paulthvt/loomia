@@ -24,7 +24,8 @@ void main() {
       expect(
         _keys(file).difference(english),
         isEmpty,
-        reason: '$name has keys English does not: run the l10n sync workflow',
+        reason:
+            '$name has keys English does not: check the Weblate pull request',
       );
     }
   });

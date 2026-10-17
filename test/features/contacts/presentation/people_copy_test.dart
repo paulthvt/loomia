@@ -225,8 +225,8 @@ void main() {
 
     test('French groups with a narrow no-break space', () {
       final fr = lookupAppLocalizations(const Locale('fr'));
-      // Until the l10n sync PR, FR falls back to the English words, but the
-      // number is formatted for French.
+      // Until Weblate translates them, FR falls back to the English words, but
+      // the number is formatted for French.
       expect(
         activityTitle(fr, order(), BusinessModel.doterra),
         contains('1\u202F840'),
