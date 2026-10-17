@@ -1,4 +1,4 @@
-// The one Gemini call tool/translate.dart and tool/release_notes.dart make.
+// The one Gemini call tool/release_notes.dart makes.
 //
 // The key is a free-tier Google AI Studio key: no billing, rate-limited, and
 // Google may use the requests to improve its products. Fine here, the input is
