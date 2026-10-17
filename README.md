@@ -206,8 +206,10 @@ and arrives as a pull request.
   one pull request, `chore(l10n): sync translations`, from `weblate/l10n`.
   `.github/workflows/weblate-pr.yaml` regenerates the push copy on it after
   every Weblate push; merge it when CI is green.
-- **Removing a string:** delete it from `app_en.arb`; Weblate removes it from
-  every language.
+- **Removing or renaming a string:** change the key in `app_en.arb` *and*
+  delete the old one from every `app_xx.arb`, in the same pull request —
+  `test/l10n/arb_keys_test.dart` fails on a key English no longer has.
+  Weblate picks up the change from `main`.
 - **Fixing a translation:** in Weblate, not in the ARB. Weblate force-pushes
   `weblate/l10n`, so a commit added there by hand is lost.
 - **Adding a language:** in Weblate, *Start new translation*. The app supports

@@ -24,8 +24,7 @@ void main() {
       expect(
         _keys(file).difference(english),
         isEmpty,
-        reason:
-            '$name has keys English does not: check the Weblate pull request',
+        reason: '$name has keys English does not: delete them there too',
       );
     }
   });

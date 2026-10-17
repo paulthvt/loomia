@@ -16,9 +16,10 @@ permissions:
   contents: read
 
 # Only the latest Weblate push matters; an older run would push onto a branch
-# Weblate already replaced.
+# Weblate already replaced. Keyed by branch: every pull request queues a run
+# here, and one on another branch must not cancel Weblate's.
 concurrency:
-  group: weblate-pr
+  group: weblate-pr-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
