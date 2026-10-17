@@ -1,6 +1,6 @@
 {
   "@@locale": "fr",
-  "todayTitle": "Aujourd’hui (probe fuzzy)",
+  "todayTitle": "Aujourd'hui",
   "authEmailRequired": "Saisis ton adresse e-mail (probe).",
   "authEmailInvalid": "Cette adresse ne semble pas valide.",
   "authPasswordRequired": "Saisis un mot de passe.",
