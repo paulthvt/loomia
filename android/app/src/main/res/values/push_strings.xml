@@ -6,7 +6,7 @@
     <string name="push_ritual_plan_body_en">Pick a few numbers before the month starts.</string>
     <string name="push_ritual_plan_body_fr">Choisis quelques chiffres avant que le mois ne commence.</string>
     <string name="push_ritual_plan_title_en">Plan %1$s</string>
-    <string name="push_ritual_plan_title_fr">Planifier %1$s</string>
+    <string name="push_ritual_plan_title_fr">Prépare %1$s</string>
     <string name="push_ritual_title_en">Close %1$s, plan %2$s</string>
     <string name="push_ritual_title_fr">Clôture %1$s, prépare %2$s</string>
     <string name="push_summary_body_one_en">One person is worth a message today</string>
