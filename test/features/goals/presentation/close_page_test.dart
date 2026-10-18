@@ -109,6 +109,26 @@ void main() {
     expect(goals.calls, isNot(contains('progress(2026-09)')));
   });
 
+  testWidgets('the last days, October drafted: the draft opens again', (
+    tester,
+  ) async {
+    goals = FakeGoalsRepository(
+      plans: [
+        MonthPlan(month: september, ownVolumeTarget: 2800),
+        MonthPlan(month: october, ownVolumeTarget: 3000),
+      ],
+    );
+    await open(tester, DateTime(2026, 9, 30));
+
+    expect(find.text('What are you aiming for in October?'), findsOneWidget);
+    expect(find.textContaining('STEP'), findsNothing);
+    expect(
+      tester.widget<TextFormField>(field('Own volume (PV)')).controller!.text,
+      '3000',
+    );
+    expect(find.text('Nothing to close or plan right now.'), findsNothing);
+  });
+
   testWidgets('nothing left: says so and goes back', (tester) async {
     goals = FakeGoalsRepository();
     await open(tester, DateTime(2026, 9, 15));

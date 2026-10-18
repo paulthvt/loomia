@@ -566,8 +566,8 @@ class _TodayViewState extends State<TodayView> {
           );
     final ritualCard = [
       if (!desktop && ritual != null) ...[
-        const SizedBox(height: AppSpacing.md),
-        RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
+        SizedBox(height: ritual.drafted ? AppSpacing.sm : AppSpacing.md),
+        ritualInvitation(ritual, widget.onRitual ?? () {}),
       ],
     ];
     final goalWidgets = [?goalLine, ...ritualCard];
@@ -581,8 +581,7 @@ class _TodayViewState extends State<TodayView> {
           model: widget.model,
           onTap: widget.onGoals,
         ),
-      if (ritual != null)
-        RitualCard(ritual: ritual, onStart: widget.onRitual ?? () {}),
+      if (ritual != null) ritualInvitation(ritual, widget.onRitual ?? () {}),
       // One group: its rows keep their own 12px rhythm.
       if (widget.checkIns.isNotEmpty)
         Column(

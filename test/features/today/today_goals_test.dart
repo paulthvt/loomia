@@ -43,7 +43,7 @@ Due _due(String name, DateTime due) => DueStep(
   ),
 );
 
-GoalsMonth _goals() => (
+GoalsMonth _goals({bool drafted = false}) => (
   month: _september,
   plan: MonthPlan(month: _september, ownVolumeTarget: 2800),
   progress: const Progress(
@@ -54,7 +54,10 @@ GoalsMonth _goals() => (
     loyalty: 0,
   ),
   forecast: 0,
-  plans: [MonthPlan(month: _september, ownVolumeTarget: 2800)],
+  plans: [
+    MonthPlan(month: _september, ownVolumeTarget: 2800),
+    if (drafted) MonthPlan(month: DateTime(2026, 10), ownVolumeTarget: 2800),
+  ],
 );
 
 void main() {
@@ -125,6 +128,57 @@ void main() {
     expect(find.text('Plan October'), findsOneWidget);
     await tester.tap(find.text('Start'));
     expect(ritualTaps, 1);
+  });
+
+  testWidgets('the last days, October drafted: one line opens it', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      now: DateTime(2026, 9, 30, 9),
+      goals: _goals(drafted: true),
+    );
+
+    final line = find.text(
+      "October's plan is drafted. Change it before the 1st.",
+    );
+    expect(line, findsOneWidget);
+    expect(find.text('Start'), findsNothing);
+    expect(
+      tester.getTopLeft(line).dy,
+      greaterThan(tester.getTopLeft(find.textContaining('1,800 PV to go')).dy),
+    );
+    await tester.tap(line);
+    expect(ritualTaps, 1);
+  });
+
+  testWidgets('the 1st: the card closes the month', (tester) async {
+    await pump(
+      tester,
+      now: DateTime(2026, 10, 1, 9),
+      goals: _goals(drafted: true),
+    );
+
+    expect(find.text('Close September, plan October'), findsOneWidget);
+  });
+
+  testWidgets('desktop, October drafted: the line on the side', (tester) async {
+    await pump(
+      tester,
+      now: DateTime(2026, 9, 30, 9),
+      goals: _goals(drafted: true),
+      size: const Size(1440, 900),
+    );
+
+    final priority = tester.getTopLeft(find.text('PRIORITY')).dx;
+    expect(
+      tester
+          .getTopLeft(
+            find.text("October's plan is drafted. Change it before the 1st."),
+          )
+          .dx,
+      greaterThan(priority + 600),
+    );
   });
 
   testWidgets('no one due: the line and the card still show', (tester) async {
