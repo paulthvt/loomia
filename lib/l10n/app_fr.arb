@@ -619,5 +619,23 @@
   "tagColorSky": "Ciel",
   "tagColorIndigo": "Indigo",
   "tagColorViolet": "Violet",
-  "tagsDone": "Terminé"
+  "tagsDone": "Terminé",
+  "ritualDrafted": "Le plan pour {month} est ébauché. Modifie-le avant le 1er.",
+  "@ritualDrafted": {
+    "description": "One line on Today and Goals in the last 3 days of a month, once next month's plan is saved; tapping it opens that plan again.",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "ritualDraftedOpen": "modifier le plan",
+  "@ritualDraftedOpen": {
+    "description": "Screen reader hint on the drafted-plan line: what tapping it does."
+  },
+  "planFromDraft": "Créé à partir de ton brouillon. Modifie ce que tu veux, puis enregistre.",
+  "@planFromDraft": {
+    "description": "Under the title of step 2 of closing a month, in place of the intro, when next month's plan was drafted before the 1st."
+  }
 }
