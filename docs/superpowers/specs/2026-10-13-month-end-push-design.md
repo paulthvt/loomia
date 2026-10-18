@@ -6,6 +6,10 @@ page "04 — Screens (Light)". Builds on
 strings) and `2026-10-02-goals-design.md` (the close-and-plan ritual). Closes
 that spec's "Push reminder for the ritual: waits for FCM".
 
+> Changed by `2026-10-18-draft-then-close-design.md` (#354): the last 3 days
+> only plan next month (a draft), the month is closed from the 1st, and the
+> push goes out once per half.
+
 ## Intent
 
 Closing a month is the one thing Goals asks of the user each month, and it is

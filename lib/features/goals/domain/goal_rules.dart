@@ -16,8 +16,8 @@ Pace? pace(num? target, num done, DateTime today) {
 /// The month to close and the month to plan, both the 1st at local midnight.
 typedef Ritual = ({DateTime close, DateTime plan});
 
-/// Open the last 3 days of a month (closing it) and the first 5 of the next
-/// (closing the one before). Null in between.
+/// Open the last 3 days of a month (planning the next) and the first 5 of
+/// the next (closing the one before). Null in between.
 Ritual? ritualWindow(DateTime today) {
   final month = DateTime(today.year, today.month);
   if (today.day >= _daysIn(today) - 2) {
@@ -29,21 +29,43 @@ Ritual? ritualWindow(DateTime today) {
   return null;
 }
 
-/// What the month-end window still asks: close [close] when it was planned
-/// and isn't closed, then plan [plan] if it has no plan.
-typedef PendingRitual = ({DateTime close, DateTime plan, bool closes});
+/// What the month-end window still asks. The last 3 days of a month only
+/// plan the next, and stay [drafted] once it has a plan, so it can change
+/// until the 1st. From the 1st, close [close] when it was planned and isn't
+/// closed, then plan [plan] (#354).
+typedef PendingRitual = ({
+  DateTime close,
+  DateTime plan,
+  bool closes,
+  bool drafted,
+});
 
-/// Null outside the window, or when both are done. A month never planned has
-/// nothing to look back on, so only the plan is asked.
+/// Null outside the window, or from the 1st when both are done. A month never
+/// planned has nothing to look back on, so only the plan is asked; a month is
+/// never closed before it ends.
 PendingRitual? pendingRitual(DateTime today, List<MonthPlan> plans) {
   final window = ritualWindow(today);
   if (window == null) return null;
   MonthPlan? find(DateTime month) =>
       plans.where((plan) => plan.month == month).firstOrNull;
+  final planned = find(window.plan) != null;
+  if (today.day > 5) {
+    return (
+      close: window.close,
+      plan: window.plan,
+      closes: false,
+      drafted: planned,
+    );
+  }
   final closing = find(window.close);
   final closes = closing != null && !closing.closed;
-  if (!closes && find(window.plan) != null) return null;
-  return (close: window.close, plan: window.plan, closes: closes);
+  if (!closes && planned) return null;
+  return (
+    close: window.close,
+    plan: window.plan,
+    closes: closes,
+    drafted: false,
+  );
 }
 
 /// Targets to start from. Loyalty comes from the forecast instead, and the

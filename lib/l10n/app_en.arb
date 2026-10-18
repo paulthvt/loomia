@@ -1876,6 +1876,15 @@
   "@pushRitualPlanBody": { "description": "Under the card's title, and the month-end push body, when only next month's plan is left." },
   "ritualStart": "Start",
   "@ritualStart": { "description": "Button of the close-and-plan card; opens the flow." },
+  "ritualDrafted": "{month}'s plan is drafted. Change it before the 1st.",
+  "@ritualDrafted": {
+    "description": "One line on Today and Goals in the last 3 days of a month, once next month's plan is saved; tapping it opens that plan again.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "ritualDraftedOpen": "change the plan",
+  "@ritualDraftedOpen": { "description": "Screen reader hint on the drafted-plan line: what tapping it does." },
+  "planFromDraft": "Started from your draft. Change anything, then save.",
+  "@planFromDraft": { "description": "Under the title of step 2 of closing a month, in place of the intro, when next month's plan was drafted before the 1st." },
   "closeStep": "Step {step} of {total}",
   "@closeStep": {
     "description": "Eyebrow above the close-and-plan titles, shown uppercased.",

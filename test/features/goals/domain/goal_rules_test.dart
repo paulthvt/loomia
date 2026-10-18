@@ -116,11 +116,64 @@ void main() {
     });
 
     test('a planned month to close, then the next to plan', () {
-      expect(pendingRitual(DateTime(2026, 9, 29), [planned(september)]), (
+      expect(pendingRitual(DateTime(2026, 10, 1), [planned(september)]), (
         close: september,
         plan: october,
         closes: true,
+        drafted: false,
       ));
+    });
+
+    test('last 3 days: never closes', () {
+      expect(pendingRitual(DateTime(2026, 9, 28), [planned(september)]), (
+        close: september,
+        plan: october,
+        closes: false,
+        drafted: false,
+      ));
+    });
+
+    test('last 3 days, next drafted: still offered', () {
+      final ritual = pendingRitual(DateTime(2026, 9, 30), [
+        planned(september),
+        planned(october),
+      ]);
+      expect(ritual?.drafted, isTrue);
+      expect(ritual?.closes, isFalse);
+    });
+
+    test('February drafts from the 26th', () {
+      expect(
+        pendingRitual(DateTime(2027, 2, 26), const [])?.plan,
+        DateTime(2027, 3),
+      );
+      expect(pendingRitual(DateTime(2027, 2, 25), const []), isNull);
+    });
+
+    test('December drafts January', () {
+      expect(
+        pendingRitual(DateTime(2026, 12, 29), const [])?.plan,
+        DateTime(2027),
+      );
+    });
+
+    test('the 1st, next drafted: still asks to close', () {
+      final ritual = pendingRitual(DateTime(2026, 10, 1), [
+        planned(september),
+        planned(october),
+      ]);
+      expect(ritual?.closes, isTrue);
+      expect(ritual?.drafted, isFalse);
+    });
+
+    test('closed early, next drafted: nothing on the 1st', () {
+      expect(
+        pendingRitual(DateTime(2026, 10, 1), [
+          planned(september, closed: true),
+          planned(october),
+        ]),
+        isNull,
+      );
     });
 
     test('never planned: nothing to close, only the plan', () {

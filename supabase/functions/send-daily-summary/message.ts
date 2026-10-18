@@ -26,12 +26,16 @@ export function summaryMessage(token: string, locale: string, count: number) {
   }
 }
 
-/** claim_month_rituals(): the months as `YYYY-MM-01`. */
+/**
+ * claim_month_rituals(): the months as `YYYY-MM-01`, and the date the claim
+ * is filed under, one per half of the window (#354).
+ */
 export type RitualClaim = {
   owner_id: string
   to_close: string
   to_plan: string
   closes: boolean
+  claim_date: string
 }
 
 /**

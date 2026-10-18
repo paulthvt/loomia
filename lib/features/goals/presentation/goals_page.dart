@@ -147,7 +147,7 @@ class GoalsView extends StatelessWidget {
                   // Desktop's dashboard has it in the side column.
                   if (showRitual &&
                       !(desktop && month.value?.plan != null)) ...[
-                    RitualCard(ritual: ritual, onStart: onRitual),
+                    ritualInvitation(ritual, onRitual),
                     const SizedBox(height: AppSpacing.md),
                   ],
                   ...switch (month) {
@@ -170,7 +170,7 @@ class GoalsView extends StatelessWidget {
                           main: main,
                           side: [
                             if (showRitual) ...[
-                              RitualCard(ritual: ritual, onStart: onRitual),
+                              ritualInvitation(ritual, onRitual),
                               const SizedBox(height: AppSpacing.lg),
                             ],
                             SectionHeader(title: l10n.ordersTitle(value.month)),

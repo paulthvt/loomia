@@ -1,3 +1,4 @@
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
@@ -51,3 +52,46 @@ class RitualCard extends StatelessWidget {
     );
   }
 }
+
+/// The invitation once next month is drafted, in the last 3 days: one line,
+/// as [GoalLine], that opens the draft again until the 1st (#354).
+class DraftLine extends StatelessWidget {
+  const DraftLine({required this.month, required this.onTap, super.key});
+
+  final DateTime month;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = LoomiaColors.of(context);
+    return Semantics(
+      button: true,
+      onTapHint: l10n.ritualDraftedOpen,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.ritualDrafted(month),
+                  style: Theme.of(context).textTheme.bodyLarge
+                      ?.copyWith(color: colors.textMuted),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: colors.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// [RitualCard], or [DraftLine] once next month is drafted.
+Widget ritualInvitation(PendingRitual ritual, VoidCallback onStart) =>
+    ritual.drafted
+    ? DraftLine(month: ritual.plan, onTap: onStart)
+    : RitualCard(ritual: ritual, onStart: onStart);

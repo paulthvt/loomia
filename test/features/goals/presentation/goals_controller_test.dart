@@ -83,7 +83,7 @@ void main() {
       forecastValue: 3,
     );
     final c = container(goals);
-    final key = (email: null, day: DateTime(2026, 9, 29));
+    final key = (email: null, day: DateTime(2026, 10, 1));
     c.listen(closingProvider(key), (_, _) {});
 
     final closing = (await c.read(closingProvider(key).future))!;

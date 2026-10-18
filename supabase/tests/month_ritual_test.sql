@@ -1,12 +1,13 @@
--- The month-end push (#148): what the close-and-plan window still asks, and
--- who is claimed, once per window, at their summary time. The pending_ritual
+-- The month-end push (#148, #354): what the close-and-plan window still asks,
+-- and who is claimed, once per half of it, at their summary time. The pending_ritual
 -- cases mirror pendingRitual in test/features/goals/domain/goal_rules_test.dart.
 -- Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(32);
 
--- September 2026 has 30 days: the window is Mon 28 Sep – Mon 5 Oct. Paris is
+-- September 2026 has 30 days: the window is Mon 28 Sep – Mon 5 Oct, drafting
+-- October until the 30th, closing September from the 1st. Paris is
 -- UTC+2. A: September planned, open. B: no plan at all. C: September closed,
 -- October not planned. D: September closed, October planned. E: like A, the
 -- push off. F: like A, Sundays only.
@@ -91,8 +92,19 @@ select is_empty(
 select results_eq(
   $$ select * from public.pending_ritual(
        '00000000-0000-0000-0000-00000000000a', '2026-09-28') $$,
+  $$ values ('2026-09-01'::date, '2026-10-01'::date, false) $$,
+  'the 28th: only the plan, a month is never closed before it ends'
+);
+select results_eq(
+  $$ select * from public.pending_ritual(
+       '00000000-0000-0000-0000-00000000000a', '2026-10-01') $$,
   $$ values ('2026-09-01'::date, '2026-10-01'::date, true) $$,
-  'the 28th: a planned month to close, then the next to plan'
+  'the 1st: a planned month to close, then the next to plan'
+);
+select is_empty(
+  $$ select * from public.pending_ritual(
+       '00000000-0000-0000-0000-00000000000d', '2026-09-28') $$,
+  'the 28th, next already drafted: nothing to send'
 );
 select results_eq(
   $$ select * from public.pending_ritual(
@@ -140,22 +152,22 @@ select is_empty(
   'closed and the next planned: nothing left'
 );
 
--- Who is claimed, and when.
+-- Who is claimed, and when: once while drafting, once from the 1st.
 select is_empty(
   $$ select * from public.claim_month_rituals('2026-09-28 16:55Z') $$,
   'Monday 28th, 18:55 in Paris: not yet'
 );
 select results_eq(
-  $$ select owner_id, to_close, to_plan, closes
+  $$ select owner_id, to_close, to_plan, closes, claim_date
      from public.claim_month_rituals('2026-09-28 17:00Z') order by owner_id $$,
   $$ values
      ('00000000-0000-0000-0000-00000000000a'::uuid, '2026-09-01'::date,
-      '2026-10-01'::date, true),
+      '2026-10-01'::date, false, '2026-09-30'::date),
      ('00000000-0000-0000-0000-00000000000b'::uuid, '2026-09-01'::date,
-      '2026-10-01'::date, false),
+      '2026-10-01'::date, false, '2026-09-30'::date),
      ('00000000-0000-0000-0000-00000000000c'::uuid, '2026-09-01'::date,
-      '2026-10-01'::date, false) $$,
-  '19:00: A, B, C; not D (nothing left), E (off), F (Sundays only)'
+      '2026-10-01'::date, false, '2026-09-30'::date) $$,
+  '19:00: A, B, C to plan October; not D (drafted), E (off), F (Sundays only)'
 );
 select is_empty(
   $$ select * from public.claim_month_rituals('2026-09-28 17:15Z') $$,
@@ -163,37 +175,66 @@ select is_empty(
 );
 select is_empty(
   $$ select * from public.claim_month_rituals('2026-09-29 17:00Z') $$,
-  'nor the next day of the window'
+  'nor the next day of the drafting half'
+);
+
+-- A failed send hands the drafting half back, not the closing one.
+select public.release_month_ritual(
+  '00000000-0000-0000-0000-00000000000a', '2026-09-30');
+select results_eq(
+  $$ select owner_id, claim_date
+     from public.claim_month_rituals('2026-09-29 17:15Z') $$,
+  $$ values ('00000000-0000-0000-0000-00000000000a'::uuid, '2026-09-30'::date) $$,
+  'released while drafting: claimed again'
+);
+
+-- A drafts October after the push.
+reset role;
+insert into public.month_plan (owner_id, month, own_volume_target) values
+  ('00000000-0000-0000-0000-00000000000a', '2026-10-01', 100);
+set local role service_role;
+select is_empty(
+  $$ select * from public.claim_month_rituals('2026-09-30 17:00Z') $$,
+  'the 30th: nothing new'
+);
+select results_eq(
+  $$ select owner_id, closes, claim_date
+     from public.claim_month_rituals('2026-10-01 17:00Z') order by owner_id $$,
+  $$ values
+     ('00000000-0000-0000-0000-00000000000a'::uuid, true, '2026-10-01'::date),
+     ('00000000-0000-0000-0000-00000000000b'::uuid, false, '2026-10-01'::date),
+     ('00000000-0000-0000-0000-00000000000c'::uuid, false, '2026-10-01'::date) $$,
+  'the 1st: A drafted but still asked to close; B, C still to plan'
 );
 select is_empty(
-  $$ select * from public.claim_month_rituals('2026-10-01 17:00Z') $$,
-  'nor its second half, in the next month'
+  $$ select * from public.claim_month_rituals('2026-10-02 17:00Z') $$,
+  'nor the next day of the closing half'
 );
 select results_eq(
   $$ select owner_id from public.claim_month_rituals('2026-10-04 17:00Z') $$,
   $$ values ('00000000-0000-0000-0000-00000000000f'::uuid) $$,
-  'Sunday 4th: F, on the first of their days in the window'
+  'Sunday 4th: F, on the first of their days in the closing half'
 );
 
--- A failed send hands the window back, three attempts at most.
+-- A failed send hands the half back, three attempts at most.
 select public.release_month_ritual(
   '00000000-0000-0000-0000-00000000000a', '2026-10-01');
 select results_eq(
-  $$ select owner_id from public.claim_month_rituals('2026-10-02 17:00Z') $$,
+  $$ select owner_id from public.claim_month_rituals('2026-10-02 17:15Z') $$,
   $$ values ('00000000-0000-0000-0000-00000000000a'::uuid) $$,
   'released: claimed again'
 );
 select public.release_month_ritual(
   '00000000-0000-0000-0000-00000000000a', '2026-10-01');
 select results_eq(
-  $$ select owner_id from public.claim_month_rituals('2026-10-02 17:15Z') $$,
+  $$ select owner_id from public.claim_month_rituals('2026-10-02 17:30Z') $$,
   $$ values ('00000000-0000-0000-0000-00000000000a'::uuid) $$,
   'a third attempt'
 );
 select public.release_month_ritual(
   '00000000-0000-0000-0000-00000000000a', '2026-10-01');
 select is_empty(
-  $$ select * from public.claim_month_rituals('2026-10-02 17:30Z') $$,
+  $$ select * from public.claim_month_rituals('2026-10-02 17:45Z') $$,
   'no fourth attempt'
 );
 reset role;
@@ -201,6 +242,7 @@ select results_eq(
   $$ select kind::text, attempts::int, claimed_at is not null
      from public.notification_sent
      where owner_id = '00000000-0000-0000-0000-00000000000a'
+       and local_date = '2026-10-01'
      order by kind $$,
   $$ values ('daily_summary'::text, 1, true), ('month_ritual'::text, 3, false) $$,
   'the summary''s claim on the same date is untouched'

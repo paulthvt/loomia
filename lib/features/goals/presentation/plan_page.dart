@@ -286,7 +286,11 @@ class _PlanFormState extends State<PlanForm> {
                 const SizedBox(height: AppSpacing.md),
               ],
               Text(
-                firstTime ? l10n.planIntroFirst : l10n.planIntro,
+                widget.step != null && widget.month.plan != null
+                    ? l10n.planFromDraft
+                    : firstTime
+                    ? l10n.planIntroFirst
+                    : l10n.planIntro,
                 style: Theme.of(context).textTheme.bodyLarge
                     ?.copyWith(color: colors.textMuted),
               ),
