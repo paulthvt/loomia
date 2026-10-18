@@ -70,7 +70,7 @@ void main() {
       ),
       forecastValue: 3,
     );
-    await open(tester, DateTime(2026, 9, 29));
+    await open(tester, DateTime(2026, 10, 1));
 
     expect(find.text('How did September go?'), findsOneWidget);
     await tester.enterText(field('OV'), '5000');
@@ -122,7 +122,7 @@ void main() {
     goals = FakeGoalsRepository(
       plans: [MonthPlan(month: september, ownVolumeTarget: 2800)],
     );
-    await open(tester, DateTime(2026, 9, 29));
+    await open(tester, DateTime(2026, 10, 1));
     goals.failWith = PeopleFailure.network;
 
     await tester.tap(find.text('Next'));

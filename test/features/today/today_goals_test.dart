@@ -119,10 +119,10 @@ void main() {
     expect(goalsTaps, 1);
   });
 
-  testWidgets('the window: the card opens the close flow', (tester) async {
+  testWidgets('the last days: the card opens the plan', (tester) async {
     await pump(tester, now: DateTime(2026, 9, 29, 9), goals: _goals());
 
-    expect(find.text('Close September, plan October'), findsOneWidget);
+    expect(find.text('Plan October'), findsOneWidget);
     await tester.tap(find.text('Start'));
     expect(ritualTaps, 1);
   });
@@ -137,7 +137,7 @@ void main() {
 
     expect(find.text('You are up to date'), findsOneWidget);
     expect(find.text('1,800 PV to go · 1 day left'), findsOneWidget);
-    expect(find.text('Close September, plan October'), findsOneWidget);
+    expect(find.text('Plan October'), findsOneWidget);
   });
 
   testWidgets('everything done: the line under the goal, above the card', (
@@ -158,12 +158,7 @@ void main() {
         tester.getTopLeft(find.text('1,800 PV to go · 1 day left')).dy,
       ),
     );
-    expect(
-      body.dy,
-      lessThan(
-        tester.getTopLeft(find.text('Close September, plan October')).dy,
-      ),
-    );
+    expect(body.dy, lessThan(tester.getTopLeft(find.text('Plan October')).dy));
   });
 
   testWidgets('Goals not loaded: Today as before', (tester) async {
@@ -192,7 +187,7 @@ void main() {
       greaterThan(priority + 600),
     );
     expect(
-      tester.getTopLeft(find.text('Close September, plan October')).dx,
+      tester.getTopLeft(find.text('Plan October')).dx,
       greaterThan(priority + 600),
     );
     await tester.tap(find.text('Own volume'));

@@ -65,7 +65,12 @@ Widget goalsCloseLight() => _app(
     body: SafeArea(
       child: CloseForm(
         closing: (
-          ritual: (close: _september, plan: DateTime(2026, 10), closes: true),
+          ritual: (
+            close: _september,
+            plan: DateTime(2026, 10),
+            closes: true,
+            drafted: false,
+          ),
           closing: _month.plan,
           done: const Progress(
             ownVolume: 2650,

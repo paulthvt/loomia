@@ -245,14 +245,14 @@ void main() {
     expect(logs, 1);
   });
 
-  testWidgets('the last days: a card to close and plan', (tester) async {
+  testWidgets('the last days: a card to plan next month', (tester) async {
     await pumpGoals(
       tester,
       AsyncData(month(plan: full, progress: progress)),
       day: DateTime(2026, 9, 29),
     );
 
-    expect(find.text('Close September, plan October'), findsOneWidget);
+    expect(find.text('Plan October'), findsOneWidget);
     await tester.tap(find.text('Start'));
     expect(rituals, 1);
   });

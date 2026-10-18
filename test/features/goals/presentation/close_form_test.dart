@@ -15,7 +15,12 @@ import 'package:material_ui/material_ui.dart';
 final _september = DateTime(2026, 9);
 
 Closing _closing({MonthPlan? plan, Progress? done}) => (
-  ritual: (close: _september, plan: DateTime(2026, 10), closes: true),
+  ritual: (
+    close: _september,
+    plan: DateTime(2026, 10),
+    closes: true,
+    drafted: false,
+  ),
   closing:
       plan ??
       MonthPlan(
