@@ -51,14 +51,14 @@ export const summaryJob = (
   message: (c, d) => summaryMessage(d.token, d.locale, c.people),
 })
 
-/** The month-end push (#148): claim_month_rituals, per window. */
+/** The month-end push (#148): claim_month_rituals, per half (#354). */
 export const ritualJob = (
   claim: () => Promise<RitualClaim[]>,
-  release: (owner: string, plan: string) => Promise<void>,
+  release: (owner: string, date: string) => Promise<void>,
 ): Job<RitualClaim> => ({
   kind: 'month_ritual',
   claim,
-  release: (c) => release(c.owner_id, c.to_plan),
+  release: (c) => release(c.owner_id, c.claim_date),
   message: (c, d) => ritualMessage(d.token, d.locale, c),
 })
 

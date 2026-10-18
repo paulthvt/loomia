@@ -70,11 +70,12 @@ export default {
         ritualJob(
           async () =>
             check(await db.rpc('claim_month_rituals')) as RitualClaim[],
-          async (owner, plan) => {
+          async (owner, date) => {
             check(
               await db.rpc('release_month_ritual', {
                 p_owner: owner,
-                p_plan: plan,
+                // The claim's date; the parameter kept its #148 name.
+                p_plan: date,
               }),
             )
           },

@@ -43,6 +43,7 @@ Deno.test('the month-end push is the card, title and body, in the phone language
     to_close: '2026-09-01',
     to_plan: '2026-10-01',
     closes: true,
+    claim_date: '2026-10-01',
   }
   const en = ritualMessage('t', 'en', claim).message
   eq(en.android.notification, {
@@ -183,6 +184,7 @@ Deno.test('an app without the kind is not sent it, and the claim is kept', async
     to_close: '2026-09-01',
     to_plan: '2026-10-01',
     closes: true,
+    claim_date: '2026-10-01',
   })
   const result = await handle(
     deps,
@@ -197,6 +199,25 @@ Deno.test('an app without the kind is not sent it, and the claim is kept', async
   eq(sent, ['new'])
   eq(released, [], 'A has no phone for it: nothing to retry')
   eq(result.sent, 1)
+})
+
+Deno.test('a month-end claim goes back under its own half', async () => {
+  const released: string[] = []
+  const job = ritualJob(
+    () => Promise.resolve([]),
+    (owner, date) => {
+      released.push(`${owner} ${date}`)
+      return Promise.resolve()
+    },
+  )
+  await job.release({
+    owner_id: 'A',
+    to_close: '2026-09-01',
+    to_plan: '2026-10-01',
+    closes: false,
+    claim_date: '2026-09-30',
+  })
+  eq(released, ['A 2026-09-30'], 'the drafting half, not the 1st')
 })
 
 Deno.test('nothing claimed, nothing asked', async () => {
