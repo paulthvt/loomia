@@ -4,6 +4,10 @@ Epic: #136 (sub-issues #137–#149, and #100). Figma: "Goals — mobile" and the
 frames listed under *Figma* below. Calendar is a separate epic (#150), sketched
 at the end so the navigation stays coherent.
 
+> Changed by `2026-10-18-draft-then-close-design.md` (#354): the last 3 days
+> only plan next month (a draft), the month is closed from the 1st, and the
+> push goes out once per half.
+
 ## Intent
 
 Goals answers "what did I say I would do this month, and where am I?". The
