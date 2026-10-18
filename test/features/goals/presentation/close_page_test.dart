@@ -82,6 +82,7 @@ void main() {
     expect(closed.teamVolumeActual, 5000);
     expect(find.text('STEP 2 OF 2'), findsOneWidget);
     expect(find.text('What are you aiming for in October?'), findsOneWidget);
+    expect(find.textContaining('Started from your draft'), findsNothing);
     // Starts from the month just closed.
     expect(
       tester.widget<TextFormField>(field('Own volume (PV)')).controller!.text,
@@ -96,6 +97,30 @@ void main() {
     // Leaving: the page doesn't reload into "Nothing to close" on its way out.
     await tester.pumpAndSettle();
     expect(find.text('Nothing to close or plan right now.'), findsNothing);
+  });
+
+  testWidgets('the 1st, October drafted: step 2 starts from the draft', (
+    tester,
+  ) async {
+    goals = FakeGoalsRepository(
+      plans: [
+        MonthPlan(month: september, ownVolumeTarget: 2800),
+        MonthPlan(month: october, ownVolumeTarget: 3000),
+      ],
+    );
+    await open(tester, DateTime(2026, 10, 1));
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('STEP 2 OF 2'), findsOneWidget);
+    expect(
+      find.text('Started from your draft. Change anything, then save.'),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<TextFormField>(field('Own volume (PV)')).controller!.text,
+      '3000',
+    );
   });
 
   testWidgets('closed, next not planned: straight to the plan', (tester) async {

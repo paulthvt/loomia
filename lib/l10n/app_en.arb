@@ -1883,6 +1883,8 @@
   },
   "ritualDraftedOpen": "change the plan",
   "@ritualDraftedOpen": { "description": "Screen reader hint on the drafted-plan line: what tapping it does." },
+  "planFromDraft": "Started from your draft. Change anything, then save.",
+  "@planFromDraft": { "description": "Under the title of step 2 of closing a month, in place of the intro, when next month's plan was drafted before the 1st." },
   "closeStep": "Step {step} of {total}",
   "@closeStep": {
     "description": "Eyebrow above the close-and-plan titles, shown uppercased.",
