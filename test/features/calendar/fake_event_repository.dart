@@ -106,27 +106,166 @@ class FakeEventRepository implements EventRepository {
       firstOn: first,
       untilOn: rule.untilOn,
     );
+    _generate(series, draft, from: first);
+    return id;
+  }
+
+  /// Occurrences of [series] from [from] (local midnight, included) up to
+  /// a year after its first day or its end day, at [template]'s times.
+  void _generate(
+    EventSeries series,
+    EventDraft template, {
+    required DateTime from,
+  }) {
+    final first = series.firstOn;
     final last =
-        rule.untilOn ?? DateTime(first.year + 1, first.month, first.day);
-    for (var week = 0; ; week += rule.everyWeeks) {
+        series.untilOn ?? DateTime(first.year + 1, first.month, first.day);
+    for (var week = 0; ; week += series.everyWeeks) {
       final day = DateTime(first.year, first.month, first.day + 7 * week);
       if (day.isAfter(last)) break;
-      DateTime at(DateTime time) =>
-          DateTime(day.year, day.month, day.day, time.hour, time.minute);
-      final end = draft.endsAt;
+      if (day.isBefore(from)) continue;
       store.add(
-        _fromDraft('$id-$week', (
-          title: draft.title,
-          startsAt: at(start),
-          endsAt: end == null ? null : at(end),
-          place: draft.place,
-          link: draft.link,
-          notes: draft.notes,
-          eventWorkflowId: draft.eventWorkflowId,
-        ), series: series),
+        _fromDraft(
+          '${series.id}-${dayKey(day)}',
+          _on(template, day),
+          series: series,
+        ),
       );
     }
-    return id;
+  }
+
+  static String dayKey(DateTime day) =>
+      '${day.year}${day.month.toString().padLeft(2, '0')}'
+      '${day.day.toString().padLeft(2, '0')}';
+
+  /// [draft]'s times on [day].
+  static EventDraft _on(EventDraft draft, DateTime day) {
+    DateTime at(DateTime time) =>
+        DateTime(day.year, day.month, day.day, time.hour, time.minute);
+    final end = draft.endsAt;
+    return (
+      title: draft.title,
+      startsAt: at(draft.startsAt),
+      endsAt: end == null ? null : at(end),
+      place: draft.place,
+      link: draft.link,
+      notes: draft.notes,
+      eventWorkflowId: draft.eventWorkflowId,
+    );
+  }
+
+  static EventDraft _draftOf(CalendarEvent event) => (
+    title: event.title,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+    place: event.place,
+    link: event.link,
+    notes: event.notes,
+    eventWorkflowId: event.eventWorkflowId,
+  );
+
+  CalendarEvent _keep(CalendarEvent event, EventDraft draft, EventSeries? s) =>
+      _fromDraft(
+        event.id,
+        draft,
+        attendees: event.attendees,
+        doneAt: event.doneAt,
+        stepsDone: event.stepsDone,
+        series: s,
+      );
+
+  /// Every event of [seriesId] now says [series] (null: none).
+  void _reseries(String seriesId, EventSeries? series) {
+    for (final (i, event) in store.indexed) {
+      if (event.series?.id == seriesId) {
+        store[i] = _keep(event, _draftOf(event), series);
+      }
+    }
+  }
+
+  /// Not done occurrences of [from]'s series from it on.
+  bool _following(CalendarEvent event, CalendarEvent from) =>
+      event.series?.id == from.series?.id &&
+      !event.done &&
+      !event.day.isBefore(from.day);
+
+  /// As repeat_event: [eventId] is the first occurrence; its people stay
+  /// on it only (the fake keeps no series people).
+  @override
+  Future<void> repeat(String eventId, RepeatRule rule, String zone) async {
+    _record('repeat($eventId, ${rule.everyWeeks}, $zone)');
+    final event = store.firstWhere((event) => event.id == eventId);
+    final series = (
+      id: 'series${++_next}',
+      everyWeeks: rule.everyWeeks,
+      firstOn: event.day,
+      untilOn: rule.untilOn,
+    );
+    store[store.indexOf(event)] = _keep(event, _draftOf(event), series);
+    _generate(
+      series,
+      _draftOf(event),
+      from: DateTime(event.day.year, event.day.month, event.day.day + 1),
+    );
+  }
+
+  /// As update_event_series: in place, or from the new day on a new rule.
+  @override
+  Future<String> updateSeries(
+    String eventId,
+    EventDraft draft,
+    RepeatRule rule,
+    DateTime today,
+  ) async {
+    _record('updateSeries($eventId, ${rule.everyWeeks})');
+    final from = store.firstWhere((event) => event.id == eventId);
+    final old = from.series!;
+    final start = draft.startsAt;
+    final day = DateTime(start.year, start.month, start.day);
+    if (rule.everyWeeks == old.everyWeeks &&
+        rule.untilOn == old.untilOn &&
+        day == from.day) {
+      for (final (i, event) in [...store.indexed]) {
+        if (!_following(event, from)) continue;
+        store[i] = _keep(
+          event,
+          event.id == eventId ? draft : _on(draft, event.day),
+          old,
+        );
+      }
+      return eventId;
+    }
+    store.removeWhere((event) => _following(event, from));
+    final series = (
+      id: old.id,
+      everyWeeks: rule.everyWeeks,
+      firstOn: day,
+      untilOn: rule.untilOn,
+    );
+    _reseries(old.id, series);
+    _generate(series, draft, from: day);
+    return '${old.id}-${dayKey(day)}';
+  }
+
+  /// As end_event_series.
+  @override
+  Future<void> endSeries(String eventId) async {
+    _record('endSeries($eventId)');
+    final from = store.firstWhere((event) => event.id == eventId);
+    final old = from.series!;
+    store.removeWhere((event) => _following(event, from));
+    final until = DateTime(from.day.year, from.day.month, from.day.day - 1);
+    _reseries(
+      old.id,
+      from.day.isAfter(old.firstOn)
+          ? (
+              id: old.id,
+              everyWeeks: old.everyWeeks,
+              firstOn: old.firstOn,
+              untilOn: until,
+            )
+          : null,
+    );
   }
 
   /// As set_series_attendees: [eventId] and the not done occurrences after.

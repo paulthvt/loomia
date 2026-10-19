@@ -384,6 +384,111 @@ void main() {
     );
   });
 
+  group('an occurrence', () {
+    /// A weekly call from tonight; returns the repository and the second
+    /// occurrence's id.
+    Future<(FakeEventRepository, String)> weekly() async {
+      final events = FakeEventRepository();
+      final day = today();
+      await events.addSeries(
+        (
+          title: 'Team call',
+          startsAt: DateTime(day.year, day.month, day.day, 19),
+          endsAt: null,
+          place: null,
+          link: null,
+          notes: null,
+          eventWorkflowId: null,
+        ),
+        (everyWeeks: 1, untilOn: null),
+        'Europe/Paris',
+      );
+      return (events, events.store[1].id);
+    }
+
+    testWidgets('delete asks once; This and following ends the series', (
+      tester,
+    ) async {
+      final (events, id) = await weekly();
+      final container = await pumpLoomia(
+        tester,
+        size: const Size(390, 844),
+        events: events,
+      );
+      container.read(routerProvider).go(Routes.eventLocation(id));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Delete event'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete a repeating event'), findsOneWidget);
+      await tester.tap(find.text('This and following events'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(events.calls, contains('endSeries($id)'));
+      expect(events.calls, isNot(contains('remove($id)')));
+      expect(find.text('Team call'), findsOneWidget);
+      expect(events.store, hasLength(1));
+    });
+
+    testWidgets('delete, This event: that one only', (tester) async {
+      final (events, id) = await weekly();
+      final container = await pumpLoomia(
+        tester,
+        size: const Size(390, 844),
+        events: events,
+      );
+      container.read(routerProvider).go(Routes.eventLocation(id));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Delete event'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(events.calls, contains('remove($id)'));
+      expect(events.store.length, greaterThan(50));
+    });
+
+    testWidgets('add and remove people ask, then reach the following', (
+      tester,
+    ) async {
+      final (events, id) = await weekly();
+      final container = await pumpLoomia(
+        tester,
+        size: const Size(390, 1000),
+        events: events,
+        people: FakePeopleRepository([_claire, _sarah]),
+      );
+      container.read(routerProvider).go(Routes.eventLocation(id));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Add people'), 200);
+      await tester.tap(find.text('Add people'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Claire Moreau'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add one person'));
+      await tester.pumpAndSettle();
+      expect(find.text('Change a repeating event'), findsOneWidget);
+      await tester.tap(find.text('This and following events'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+      expect(events.calls, contains('setSeriesPeople($id:+p1-)'));
+
+      await tester.tap(find.byTooltip('More for Claire Moreau'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from the event'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+      expect(events.calls, contains('uninvite($id:p1)'));
+      expect(events.store[2].attendees.single.personId, 'p1');
+    });
+  });
+
   testWidgets('desktop: the event opens in the pane, the month stays', (
     tester,
   ) async {

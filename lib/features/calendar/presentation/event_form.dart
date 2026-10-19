@@ -12,6 +12,7 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
@@ -65,7 +66,7 @@ class _EventFormState extends ConsumerState<_EventForm> {
   String? _eventWorkflowId;
   String? _typeName;
 
-  /// New events only: every 1, 2 or 4 weeks; null doesn't repeat.
+  /// Every 1, 2 or 4 weeks; null doesn't repeat. Not on a done event.
   int? _repeatWeeks;
 
   /// The last day it can take place; null is forever.
@@ -92,6 +93,10 @@ class _EventFormState extends ConsumerState<_EventForm> {
     final ends = event.endsAt;
     _end = ends == null ? null : TimeOfDay.fromDateTime(ends.toLocal());
     _eventWorkflowId = event.eventWorkflowId;
+    if (event.series case final series?) {
+      _repeatWeeks = series.everyWeeks;
+      _until = series.untilOn;
+    }
   }
 
   @override
@@ -216,15 +221,35 @@ class _EventFormState extends ConsumerState<_EventForm> {
       notes: text(_notes),
       eventWorkflowId: eventWorkflowId,
     );
+    final event = widget.event;
+    final series = event?.series;
+    EventScope? scope;
+    if (event != null && series != null && !event.done) {
+      // An occurrence: a new rule or day only reaches the following ones.
+      scope = await pickScope(
+        context,
+        ruleChanged:
+            repeatWeeks != series.everyWeeks ||
+            until != series.untilOn ||
+            _day != event.day,
+      );
+      if (scope == null || !mounted) return;
+    }
     setState(() {
       _saving = true;
       _failure = null;
     });
     try {
       final events = ref.read(eventsProvider(owner).notifier);
-      final event = widget.event;
       final CalendarEvent saved;
-      if (event != null) {
+      if (event != null && scope != null) {
+        saved = scope == EventScope.one
+            ? await events.save(event.id, draft)
+            : await events.saveFollowing(event.id, draft, (
+                everyWeeks: repeatWeeks!,
+                untilOn: until,
+              ));
+      } else if (event != null && (event.done || repeatWeeks == null)) {
         saved = await events.save(event.id, draft);
       } else if (repeatWeeks != null) {
         // Null when the device can't say: guessing UTC would move every
@@ -232,10 +257,10 @@ class _EventFormState extends ConsumerState<_EventForm> {
         final zone =
             await ref.read(deviceTimeZoneProvider.future) ??
             (throw PeopleFailure.unknown);
-        saved = await events.addRepeating(draft, (
-          everyWeeks: repeatWeeks,
-          untilOn: until,
-        ), zone);
+        final RepeatRule rule = (everyWeeks: repeatWeeks, untilOn: until);
+        saved = event == null
+            ? await events.addRepeating(draft, rule, zone)
+            : await events.repeat(event.id, draft, rule, zone);
       } else {
         saved = await events.add(draft);
       }
@@ -270,11 +295,14 @@ class _EventFormState extends ConsumerState<_EventForm> {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
-                ChoiceChip(
-                  label: Text(l10n.eventRepeatNever),
-                  selected: weeks == null,
-                  onSelected: (_) => setState(() => _repeatWeeks = null),
-                ),
+                // ponytail: an occurrence stops repeating by Delete, This
+                // and following; "Doesn't repeat" here would need a split.
+                if (widget.event?.series == null)
+                  ChoiceChip(
+                    label: Text(l10n.eventRepeatNever),
+                    selected: weeks == null,
+                    onSelected: (_) => setState(() => _repeatWeeks = null),
+                  ),
                 for (final every in repeatWeeks)
                   ChoiceChip(
                     label: Text(l10n.eventRepeatEvery(every)),
@@ -443,7 +471,7 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 ),
               ],
             ),
-            if (widget.event == null) ..._repeat(l10n),
+            if (!(widget.event?.done ?? false)) ..._repeat(l10n),
             LabeledField(
               label: l10n.eventPlace,
               child: TextFormField(

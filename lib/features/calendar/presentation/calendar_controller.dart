@@ -74,15 +74,62 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
     ]);
   }
 
-  /// Throws `PeopleFailure`, and then nobody is added. On an occurrence,
-  /// they join it, the not done ones after it, and the series.
+  /// Saves the single event [id] as [draft], then makes it the first
+  /// occurrence of a series repeating by [rule] in [zone] (#299). Resolves
+  /// to it, reloaded. Throws `PeopleFailure`.
+  Future<CalendarEvent> repeat(
+    String id,
+    EventDraft draft,
+    RepeatRule rule,
+    String zone,
+  ) async {
+    final repository = ref.read(eventRepositoryProvider);
+    await repository.update(id, draft);
+    await repository.repeat(id, rule, zone);
+    return _reloadTo(id);
+  }
+
+  /// "This and following events" on Save (#299): the occurrence [id], the
+  /// not done ones after it and their series become [draft] repeating by
+  /// [rule]. Resolves to the event in its place, which a new rule or day
+  /// generates again. Throws `PeopleFailure`.
+  Future<CalendarEvent> saveFollowing(
+    String id,
+    EventDraft draft,
+    RepeatRule rule,
+  ) async {
+    final now = await ref
+        .read(eventRepositoryProvider)
+        .updateSeries(id, draft, rule, today());
+    return _reloadTo(now);
+  }
+
+  /// "This and following events" on Delete (#299): the series ends before
+  /// the occurrence [id]. Throws `PeopleFailure`.
+  Future<void> endSeries(String id) async {
+    await ref.read(eventRepositoryProvider).endSeries(id);
+    await _reload();
+  }
+
+  Future<CalendarEvent> _reloadTo(String id) async {
+    await _reload();
+    final event = (state.value ?? const <CalendarEvent>[])
+        .where((event) => event.id == id)
+        .firstOrNull;
+    // Saved, the reload failed: the list says so.
+    return event ?? (throw PeopleFailure.network);
+  }
+
+  /// Throws `PeopleFailure`, and then nobody is added. [following], on an
+  /// occurrence: they join it, the not done ones after it, and the series.
   Future<void> invite(
     String eventId,
     Iterable<String> personIds,
-    DateTime on,
-  ) async {
+    DateTime on, {
+    bool following = false,
+  }) async {
     final repository = ref.read(eventRepositoryProvider);
-    await (_inSeries(eventId)
+    await (following
         ? repository.setSeriesPeople(eventId, add: personIds)
         : repository.invite(eventId, personIds, on));
     await _reload();
@@ -98,17 +145,18 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
     await _reload();
   }
 
-  Future<void> uninvite(String eventId, String personId) async {
+  /// [following] as for [invite].
+  Future<void> uninvite(
+    String eventId,
+    String personId, {
+    bool following = false,
+  }) async {
     final repository = ref.read(eventRepositoryProvider);
-    await (_inSeries(eventId)
+    await (following
         ? repository.setSeriesPeople(eventId, remove: [personId])
         : repository.uninvite(eventId, personId));
     await _reload();
   }
-
-  // ponytail: #299 asks "This event / This and following" here.
-  bool _inSeries(String eventId) =>
-      state.value?.any((e) => e.id == eventId && e.series != null) ?? false;
 
   /// Marks it done with who was there and what changed for them. Their
   /// stages, workflows and histories move with it, so the book and any open

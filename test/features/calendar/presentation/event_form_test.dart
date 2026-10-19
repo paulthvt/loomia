@@ -3,6 +3,7 @@ import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
+import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -257,20 +258,138 @@ void main() {
       expect(events.store, isEmpty);
     });
 
-    testWidgets('editing an event offers no Repeat', (tester) async {
+    testWidgets('a single event made to repeat becomes a series', (
+      tester,
+    ) async {
       final event = CalendarEvent(
         id: 'e1',
         title: 'Coffee',
         startsAt: DateTime(2026, 10, 8, 10),
       );
+      final events = FakeEventRepository([event]);
+      Object? saved;
       await pumpCalendarHarness(
         tester,
-        events: FakeEventRepository([event]),
+        events: events,
+        open: (context) => showEventForm(context, event: event),
+        result: (value) => saved = value,
+      );
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Every week'));
+      await tester.pumpAndSettle();
+      await save(tester);
+
+      expect(
+        events.calls,
+        containsAllInOrder(['update(e1)', 'repeat(e1, 1, Europe/Paris)']),
+      );
+      expect((saved! as CalendarEvent).series?.everyWeeks, 1);
+      expect(find.text('Change a repeating event'), findsNothing);
+    });
+
+    group('on an occurrence', () {
+      Future<(FakeEventRepository, CalendarEvent)> occurrence() async {
+        final events = FakeEventRepository();
+        await events.addSeries(
+          (
+            title: 'Team call',
+            startsAt: DateTime(2026, 10, 13, 19),
+            endsAt: null,
+            place: null,
+            link: null,
+            notes: null,
+            eventWorkflowId: null,
+          ),
+          (everyWeeks: 1, untilOn: null),
+          'Europe/Paris',
+        );
+        events.calls.clear();
+        return (events, events.store[1]);
+      }
+
+      Future<void> edit(
+        WidgetTester tester,
+        FakeEventRepository events,
+        CalendarEvent event,
+      ) => pumpCalendarHarness(
+        tester,
+        events: events,
         open: (context) => showEventForm(context, event: event),
         result: (_) {},
       );
 
-      expect(find.text('Repeat'), findsNothing);
+      RadioListTile<EventScope> radio(WidgetTester tester, String label) =>
+          tester.widget(find.widgetWithText(RadioListTile<EventScope>, label));
+
+      testWidgets('Save asks; This event changes that one', (tester) async {
+        final (events, event) = await occurrence();
+        await edit(tester, events, event);
+
+        expect(find.text("Doesn't repeat"), findsNothing);
+        await tester.enterText(_field('Title'), 'Big call');
+        await save(tester);
+        expect(find.text('Change a repeating event'), findsOneWidget);
+        expect(radio(tester, 'This event').enabled, isTrue);
+        await tester.tap(find.widgetWithText(FilledButton, 'Save').last);
+        await tester.pumpAndSettle();
+
+        expect(events.calls, contains('update(${event.id})'));
+        expect(events.store[1].title, 'Big call');
+        expect(events.store[2].title, 'Team call');
+      });
+
+      testWidgets('This and following changes the rest', (tester) async {
+        final (events, event) = await occurrence();
+        await edit(tester, events, event);
+
+        await tester.enterText(_field('Title'), 'Big call');
+        await save(tester);
+        await tester.tap(find.text('This and following events'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Save').last);
+        await tester.pumpAndSettle();
+
+        expect(events.calls, contains('updateSeries(${event.id}, 1)'));
+        expect(events.store[0].title, 'Team call');
+        expect(events.store[1].title, 'Big call');
+        expect(events.store[2].title, 'Big call');
+      });
+
+      testWidgets('a new repeat only reaches the following ones', (
+        tester,
+      ) async {
+        final (events, event) = await occurrence();
+        await edit(tester, events, event);
+
+        await tester.tap(find.widgetWithText(ChoiceChip, 'Every 2 weeks'));
+        await tester.pumpAndSettle();
+        await save(tester);
+
+        expect(radio(tester, 'This event').enabled, isFalse);
+        expect(
+          find.text('A new repeat applies to this and the following events.'),
+          findsOneWidget,
+        );
+        await tester.tap(find.widgetWithText(FilledButton, 'Save').last);
+        await tester.pumpAndSettle();
+
+        expect(events.calls, contains('updateSeries(${event.id}, 2)'));
+      });
+
+      testWidgets('Cancel keeps the form open, unsaved', (tester) async {
+        final (events, event) = await occurrence();
+        await edit(tester, events, event);
+
+        await save(tester);
+        await tester.tap(find.text('Cancel').last);
+        await tester.pumpAndSettle();
+
+        expect(
+          events.calls.where((call) => call.startsWith('update')),
+          isEmpty,
+        );
+        expect(find.text('Edit event'), findsOneWidget);
+      });
     });
   });
 }

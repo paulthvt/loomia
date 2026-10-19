@@ -22,6 +22,7 @@ import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/people_picker.dart';
+import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/calendar/presentation/who_was_there_sheet.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -175,8 +176,10 @@ class EventPane extends ConsumerWidget {
     );
     if (!context.mounted) return;
     if (picked == null || picked.isEmpty) return;
+    final following = await _following(context, event);
+    if (following == null) return;
     try {
-      await events.invite(event.id, picked, today());
+      await events.invite(event.id, picked, today(), following: following);
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
@@ -195,13 +198,24 @@ class EventPane extends ConsumerWidget {
     final events = ref.read(
       eventsProvider(ref.read(accountProvider)?.email).notifier,
     );
+    final following = await _following(context, event);
+    if (following == null) return;
     try {
-      await events.uninvite(event.id, person.id);
+      await events.uninvite(event.id, person.id, following: following);
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
       );
     }
+  }
+
+  /// On an occurrence, whether a change on its people reaches the following
+  /// ones: false on a single event, null when cancelled.
+  Future<bool?> _following(BuildContext context, CalendarEvent event) async {
+    if (event.series == null) return false;
+    final scope = await pickScope(context);
+    if (scope == null || !context.mounted) return null;
+    return scope == EventScope.following;
   }
 
   Future<void> _write(
@@ -270,13 +284,21 @@ class EventPane extends ConsumerWidget {
     final events = ref.read(
       eventsProvider(ref.read(accountProvider)?.email).notifier,
     );
-    final confirmed = await confirmDestructive(
-      context,
-      title: l10n.eventDeleteTitle(event.title),
-      body: l10n.eventDeleteBody,
-      action: l10n.eventDeleteAction,
-    );
-    if (!confirmed || !context.mounted) return;
+    final bool following;
+    if (event.series != null && !event.done) {
+      final scope = await pickScope(context, delete: true);
+      if (scope == null || !context.mounted) return;
+      following = scope == EventScope.following;
+    } else {
+      final confirmed = await confirmDestructive(
+        context,
+        title: l10n.eventDeleteTitle(event.title),
+        body: l10n.eventDeleteBody,
+        action: l10n.eventDeleteAction,
+      );
+      if (!confirmed || !context.mounted) return;
+      following = false;
+    }
     if (context.screenSize.isDesktop) {
       context.go(Routes.calendar);
     } else {
@@ -285,7 +307,7 @@ class EventPane extends ConsumerWidget {
       await leaving?.completed;
     }
     try {
-      await events.remove(event.id);
+      await (following ? events.endSeries(event.id) : events.remove(event.id));
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),

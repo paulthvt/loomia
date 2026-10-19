@@ -298,7 +298,7 @@ void main() {
     expect(fake.calls, contains('addSeries(Team call, 2, Europe/Paris)'));
   });
 
-  test('people on an occurrence reach the following ones', () async {
+  test('people on an occurrence: this one, or the following ones', () async {
     final fake = FakeEventRepository();
     final container = _container(fake);
     await container.read(eventsProvider(_owner).future);
@@ -310,17 +310,103 @@ void main() {
     );
     final second = container.read(eventsProvider(_owner)).value![1];
 
-    await events.invite(second.id, ['p1'], _day);
-    await events.uninvite(second.id, 'p1');
-    await events.invite(first.id, ['p2'], _day);
+    await events.invite(second.id, ['p1'], _day, following: true);
+    await events.uninvite(second.id, 'p1', following: true);
+    await events.invite(first.id, ['p2'], _day, following: true);
+    await events.invite(first.id, ['p3'], _day);
 
-    expect(fake.calls.where((call) => call.startsWith('invite')), isEmpty);
     expect(
       [
         for (final event in container.read(eventsProvider(_owner)).value!)
           event.attendees.map((a) => a.personId).join(),
       ],
-      ['p2', 'p2', 'p2'],
+      ['p2p3', 'p2', 'p2'],
+    );
+  });
+
+  test('This and following: in place, or again from a new rule', () async {
+    final fake = FakeEventRepository();
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    await events.addRepeating(_draft('Team call', DateTime(2026, 10, 13, 19)), (
+      everyWeeks: 1,
+      untilOn: DateTime(2026, 11, 10),
+    ), 'Europe/Paris');
+    final second = container.read(eventsProvider(_owner)).value![1];
+
+    final renamed = await events.saveFollowing(
+      second.id,
+      _draft('Big call', DateTime(2026, 10, 20, 20)),
+      (everyWeeks: 1, untilOn: DateTime(2026, 11, 10)),
+    );
+    expect(renamed.id, second.id);
+    List<String> titles() => [
+      for (final event in container.read(eventsProvider(_owner)).value!)
+        '${event.day.day}/${event.day.month} ${event.title} '
+            '${event.startsAt.hour}',
+    ];
+    expect(titles(), [
+      '13/10 Team call 19',
+      '20/10 Big call 20',
+      '27/10 Big call 20',
+      '3/11 Big call 20',
+      '10/11 Big call 20',
+    ]);
+
+    final moved = await events.saveFollowing(
+      second.id,
+      _draft('Big call', DateTime(2026, 10, 20, 20)),
+      (everyWeeks: 2, untilOn: DateTime(2026, 11, 10)),
+    );
+    expect(moved.day, DateTime(2026, 10, 20));
+    expect(titles(), [
+      '13/10 Team call 19',
+      '20/10 Big call 20',
+      '3/11 Big call 20',
+    ]);
+    expect(moved.series?.everyWeeks, 2);
+  });
+
+  test('ending a series from an occurrence', () async {
+    final fake = FakeEventRepository();
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+    await events.addRepeating(_draft('Team call', DateTime(2026, 10, 13, 19)), (
+      everyWeeks: 1,
+      untilOn: null,
+    ), 'Europe/Paris');
+    final third = container.read(eventsProvider(_owner)).value![2];
+
+    await events.endSeries(third.id);
+
+    final left = container.read(eventsProvider(_owner)).value!;
+    expect(left, hasLength(2));
+    expect(left.last.series?.untilOn, DateTime(2026, 10, 26));
+  });
+
+  test('a single event made to repeat', () async {
+    final fake = FakeEventRepository([_workshop]);
+    final container = _container(fake);
+    await container.read(eventsProvider(_owner).future);
+    final events = container.read(eventsProvider(_owner).notifier);
+
+    final first = await events.repeat(
+      'e1',
+      _draft('Workshop', _workshop.startsAt),
+      (everyWeeks: 4, untilOn: null),
+      'Europe/Paris',
+    );
+
+    expect(
+      fake.calls,
+      containsAllInOrder(['update(e1)', 'repeat(e1, 4, Europe/Paris)']),
+    );
+    expect(first.series?.everyWeeks, 4);
+    expect(
+      container.read(eventsProvider(_owner)).value!.length,
+      greaterThan(10),
     );
   });
 
