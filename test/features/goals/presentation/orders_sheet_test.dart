@@ -109,6 +109,64 @@ void main() {
     );
   });
 
+  testWidgets('tapping an order edits it, and the list shows the change', (
+    tester,
+  ) async {
+    await open(tester);
+
+    await tester.tap(find.text('Order · 80 PV'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(LoomiaDialog, 'Edit'), findsOneWidget);
+    // An order stays an order: no kind to pick.
+    expect(find.byType(ChoiceChip), findsNothing);
+
+    await tester.enterText(find.widgetWithText(TextFormField, '80'), '95');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(activities.calls, contains('update(o2)'));
+    expect(find.widgetWithText(LoomiaDialog, 'Edit'), findsNothing);
+    expect(find.text('Order · 95 PV'), findsOneWidget);
+    expect(find.text('Order · 80 PV'), findsNothing);
+  });
+
+  testWidgets("a contact's order needs no amount, like in their history", (
+    tester,
+  ) async {
+    activities = FakeActivityRepository([
+      Activity(
+        id: 'o4',
+        personId: 'p1',
+        kind: ActivityKind.order,
+        happenedOn: DateTime(now.year, now.month),
+        text: 'Lavender',
+        createdAt: DateTime.utc(now.year, now.month, 1, 12),
+      ),
+    ])..names['p1'] = 'Marie Dupont';
+    await open(tester);
+
+    await tester.tap(find.textContaining('Lavender'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(activities.calls, contains('update(o4)'));
+  });
+
+  testWidgets('Delete in the edit form confirms, then deletes', (tester) async {
+    await open(tester);
+
+    await tester.tap(find.text('Order · 80 PV'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(activities.calls, contains('delete(o2)'));
+    expect(find.text('Order · 80 PV'), findsNothing);
+  });
+
   testWidgets('no orders yet', (tester) async {
     activities = FakeActivityRepository();
     await open(tester);

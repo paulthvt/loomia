@@ -10,14 +10,15 @@ import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
+import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// [month]'s orders, contacts' and own, each deletable: a sheet on mobile, a
-/// dialog elsewhere.
+/// [month]'s orders, contacts' and own, each editable and deletable: a sheet
+/// on mobile, a dialog elsewhere.
 Future<void> showOrders(BuildContext context, DateTime month) =>
     LoomiaDialog.show<void>(
       context,
@@ -33,8 +34,8 @@ Future<void> showOrders(BuildContext context, DateTime month) =>
       ),
     );
 
-/// [month]'s orders, each deletable after a confirmation: the sheet's body,
-/// and the Goals side column on desktop.
+/// [month]'s orders: tap one to edit it, its button deletes it after a
+/// confirmation. The sheet's body, and the Goals side column on desktop.
 class OrdersList extends ConsumerStatefulWidget {
   const OrdersList({required this.month, super.key});
 
@@ -67,9 +68,24 @@ class _OrdersListState extends ConsumerState<OrdersList> {
       if (mounted) setState(() => _failure = failure);
       return;
     }
+    _changed(container, entry);
+  }
+
+  Future<void> _edit(MonthOrder entry) async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final delete = await showEditOrder(
+      context,
+      entry.order,
+      onSaved: () => _changed(container, entry),
+    );
+    if (delete == true && mounted) await _delete(entry);
+  }
+
+  /// After [entry] is edited or deleted: the month recounts, and the same
+  /// entry was in that person's history, where their last contact may move.
+  /// The container, not ref: the sheet may be closing.
+  static void _changed(ProviderContainer container, MonthOrder entry) {
     refreshOrders(container);
-    // The same entry was in that person's history, and their last contact
-    // may move.
     if (entry.order.personId case final personId?) {
       container.invalidate(historyProvider(personId));
     }
@@ -109,13 +125,20 @@ class _OrdersListState extends ConsumerState<OrdersList> {
                 Row(
                   children: [
                     Expanded(
-                      child: ActivityItem(
-                        title: activityTitle(l10n, entry.order, model),
-                        meta: l10n.historyMeta(
-                          dayLabel(l10n, entry.order.day, day),
-                          entry.personName ?? l10n.ordersOwn,
+                      // Tap edits, as in a contact's history.
+                      child: Semantics(
+                        onTapHint: l10n.editActivityTitle,
+                        child: InkWell(
+                          onTap: () => _edit(entry),
+                          child: ActivityItem(
+                            title: activityTitle(l10n, entry.order, model),
+                            meta: l10n.historyMeta(
+                              dayLabel(l10n, entry.order.day, day),
+                              entry.personName ?? l10n.ordersOwn,
+                            ),
+                            showRailLine: index < entries.length - 1,
+                          ),
                         ),
-                        showRailLine: index < entries.length - 1,
                       ),
                     ),
                     IconButton(

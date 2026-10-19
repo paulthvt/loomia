@@ -43,13 +43,27 @@ Future<bool?> showEditActivity(
   (_) => _LogActivityForm(person: person, editing: activity),
 );
 
+/// Edit [order] from the month's orders (#360), own or a contact's: the same
+/// form, saved straight to the repository. [onSaved] runs once it is saved,
+/// before the sheet closes. Resolves true when Delete is tapped; the list
+/// confirms and deletes.
+Future<bool?> showEditOrder(
+  BuildContext context,
+  Activity order, {
+  required VoidCallback onSaved,
+}) => LoomiaDialog.show<bool>(
+  context,
+  (_) => _LogActivityForm(editing: order, onSaved: onSaved),
+);
+
 class _LogActivityForm extends ConsumerStatefulWidget {
   const _LogActivityForm({this.person, this.onSaved, this.editing});
 
-  /// Null: the user's own order.
+  /// Null: an order from Goals, the user's own or, when editing, a
+  /// contact's.
   final Person? person;
 
-  /// Own order only: after the save, before the sheet closes.
+  /// Goals only: after the save, before the sheet closes.
   final VoidCallback? onSaved;
 
   /// Null when adding.
@@ -153,7 +167,10 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
       final person = widget.person;
       final editing = _editing;
       if (person == null) {
-        await ref.read(activityRepositoryProvider).addOwnOrder(draft);
+        final repository = ref.read(activityRepositoryProvider);
+        await (editing == null
+            ? repository.addOwnOrder(draft)
+            : repository.update(editing.id, draft));
         widget.onSaved?.call();
       } else if (editing == null) {
         await ref
@@ -296,9 +313,11 @@ class _LogActivityFormState extends ConsumerState<_LogActivityForm> {
                     validator: (value) {
                       final typed = (value ?? '').trim();
                       if (typed.isEmpty) {
-                        return person == null
-                            ? l10n.logOwnOrderAmountRequired
-                            : null;
+                        // Only an own order needs one (the database refuses
+                        // it without); a contact's may be just a note.
+                        final own =
+                            person == null && _editing?.personId == null;
+                        return own ? l10n.logOwnOrderAmountRequired : null;
                       }
                       return parseAmount(typed, l10n.localeName) != null
                           ? null
