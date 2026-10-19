@@ -2529,6 +2529,26 @@
   "@eventDeleteAction": {
     "description": "Destructive button of the dialog that confirms deleting an event."
   },
+  "eventScopeChangeTitle": "Change a repeating event",
+  "@eventScopeChangeTitle": {
+    "description": "Title of the dialog asked before saving, adding or removing people on one occurrence of a repeating event: does the change reach this one or the following ones too."
+  },
+  "eventScopeDeleteTitle": "Delete a repeating event",
+  "@eventScopeDeleteTitle": {
+    "description": "Title of the dialog asked before deleting one occurrence of a repeating event. Its Delete button confirms, with no second dialog."
+  },
+  "eventScopeThis": "This event",
+  "@eventScopeThis": {
+    "description": "Choice in the eventScopeChangeTitle / eventScopeDeleteTitle dialogs: only this occurrence changes. Selected by default."
+  },
+  "eventScopeFollowing": "This and following events",
+  "@eventScopeFollowing": {
+    "description": "Choice in the eventScopeChangeTitle / eventScopeDeleteTitle dialogs: this occurrence and every later one that isn't done yet change. Done ones never do."
+  },
+  "eventScopeRuleChanged": "A new repeat applies to this and the following events.",
+  "@eventScopeRuleChanged": {
+    "description": "Note under the choices of eventScopeChangeTitle when the repeat, its end or the date changed: eventScopeThis is then disabled."
+  },
   "eventNotFound": "This event isn't in your calendar any more.",
   "@eventNotFound": {
     "description": "Title shown when an event's link points to one that no longer exists."

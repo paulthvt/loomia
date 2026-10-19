@@ -61,6 +61,58 @@ class EventRepository {
     ),
   );
 
+  /// Makes [eventId], a single event not done, the first occurrence of a
+  /// series repeating by [rule] at its local time in [zone] (#299). Its
+  /// people become the series'; the next [list] has the following ones.
+  Future<void> repeat(String eventId, RepeatRule rule, String zone) =>
+      guardPeople(
+        () => _client.rpc<Object?>(
+          'repeat_event',
+          params: {
+            'p_event': eventId,
+            'p_every_weeks': rule.everyWeeks,
+            'p_until': _dayOrNull(rule.untilOn),
+            'p_time_zone': zone,
+          },
+        ),
+      );
+
+  /// "This and following events" on Save: [eventId]'s series and its not
+  /// done occurrences from it on become [draft] repeating by [rule]. A new
+  /// rule or day generates them again, up to a year after [today]. Returns
+  /// the id of the event now in [eventId]'s place.
+  Future<String> updateSeries(
+    String eventId,
+    EventDraft draft,
+    RepeatRule rule,
+    DateTime today,
+  ) => guardPeople(() async {
+    final row = draftToEventRow(draft);
+    return await _client.rpc<String>(
+      'update_event_series',
+      params: {
+        'p_event': eventId,
+        'p_title': row['title'],
+        'p_starts_at': row['starts_at'],
+        'p_ends_at': row['ends_at'],
+        'p_place': row['place'],
+        'p_link': row['link'],
+        'p_notes': row['notes'],
+        'p_event_workflow_id': row['event_workflow_id'],
+        'p_every_weeks': rule.everyWeeks,
+        'p_until': _dayOrNull(rule.untilOn),
+        'p_today': dayColumn(today),
+      },
+    );
+  });
+
+  /// "This and following events" on Delete: the series ends the day before
+  /// [eventId]; its not done occurrences from there go.
+  Future<void> endSeries(String eventId) => guardPeople(
+    () =>
+        _client.rpc<Object?>('end_event_series', params: {'p_event': eventId}),
+  );
+
   Future<CalendarEvent> add(EventDraft draft) => guardPeople(() async {
     final row = await _client
         .from(_table)
@@ -186,6 +238,8 @@ String? _text(Object? value) {
   return text == null || text.isEmpty ? null : text;
 }
 
+String? _dayOrNull(DateTime? day) => day == null ? null : dayColumn(day);
+
 /// A `date` column as local midnight.
 DateTime? _day(Object? value) => switch (value) {
   final String day => DateTime.parse(day),
@@ -251,7 +305,6 @@ Map<String, Object?> seriesToRow(
 ) {
   final start = draft.startsAt;
   String two(int value) => value.toString().padLeft(2, '0');
-  final until = rule.untilOn;
   return {
     'title': draft.title,
     'first_on': dayColumn(start),
@@ -259,7 +312,7 @@ Map<String, Object?> seriesToRow(
     'minutes': draft.endsAt?.difference(start).inMinutes,
     'time_zone': zone,
     'every_weeks': rule.everyWeeks,
-    'until_on': until == null ? null : dayColumn(until),
+    'until_on': _dayOrNull(rule.untilOn),
     'place': draft.place,
     'link': draft.link,
     'notes': draft.notes,
