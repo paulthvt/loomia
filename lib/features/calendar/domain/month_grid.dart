@@ -14,3 +14,13 @@ List<DateTime> monthDays(DateTime month, int firstDayOfWeek) {
       DateTime(month.year, month.month, 1 - lead + i),
   ];
 }
+
+/// The 7 days of [day]'s week, from [firstDayOfWeek] (0 is Sunday). Local
+/// midnights from calendar dates, as [monthDays].
+List<DateTime> weekDays(DateTime day, int firstDayOfWeek) {
+  final lead = (day.weekday % 7 - firstDayOfWeek) % 7;
+  return [
+    for (var i = 0; i < DateTime.daysPerWeek; i++)
+      DateTime(day.year, day.month, day.day - lead + i),
+  ];
+}

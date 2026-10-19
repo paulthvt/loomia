@@ -154,6 +154,18 @@ abstract final class AppTheme {
         focusedErrorBorder: _inputBorder(scheme.error, width: 2),
       ),
 
+      // The Calendar's Month / Week switch (Figma "CalendarViewSwitch"):
+      // the selected side in the primary tint, as an active filter chip.
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          selectedBackgroundColor: scheme.primaryContainer,
+          selectedForegroundColor: scheme.onPrimaryContainer,
+          foregroundColor: scheme.onSurface,
+          side: BorderSide(color: scheme.outline),
+          textStyle: AppTypography.label,
+        ),
+      ),
+
       chipTheme: ChipThemeData(
         backgroundColor: colors.surfaceSunken,
         side: BorderSide.none,

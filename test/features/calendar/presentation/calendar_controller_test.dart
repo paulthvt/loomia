@@ -108,6 +108,7 @@ void main() {
       final now = today();
 
       expect(container.read(calendarSelectionProvider), (
+        mode: CalendarMode.month,
         month: DateTime(now.year, now.month),
         day: now,
       ));
@@ -121,9 +122,43 @@ void main() {
           .select(DateTime(2026, 9, 28));
 
       expect(container.read(calendarSelectionProvider), (
+        mode: CalendarMode.month,
         month: DateTime(2026, 9),
         day: DateTime(2026, 9, 28),
       ));
+    });
+
+    test('the mode keeps the day, and selecting keeps the mode', () {
+      final container = ProviderContainer.test();
+      final selector = container.read(calendarSelectionProvider.notifier)
+        ..select(DateTime(2026, 9, 28))
+        ..setMode(CalendarMode.week);
+
+      expect(
+        container.read(calendarSelectionProvider).day,
+        DateTime(2026, 9, 28),
+      );
+
+      selector
+        ..select(DateTime(2026, 10, 2))
+        ..toToday();
+      expect(container.read(calendarSelectionProvider).mode, CalendarMode.week);
+      expect(container.read(calendarSelectionProvider).day, today());
+    });
+
+    test('showing a month selects its 1st, or today in this one', () {
+      final container = ProviderContainer.test();
+      final selector = container.read(calendarSelectionProvider.notifier)
+        ..showMonth(DateTime(2031, 3));
+      expect(container.read(calendarSelectionProvider), (
+        mode: CalendarMode.month,
+        month: DateTime(2031, 3),
+        day: DateTime(2031, 3),
+      ));
+
+      final now = today();
+      selector.showMonth(DateTime(now.year, now.month));
+      expect(container.read(calendarSelectionProvider).day, now);
     });
 
     test('another month selects its 1st; back to this one, today', () {
@@ -139,6 +174,48 @@ void main() {
 
       selector.shift(-1);
       expect(container.read(calendarSelectionProvider).day, now);
+    });
+
+    group('shiftedDay in week view', () {
+      // Monday October 19, 2026.
+      final now = DateTime(2026, 10, 19);
+      CalendarSelection on(DateTime day) => (
+        mode: CalendarMode.week,
+        month: DateTime(day.year, day.month),
+        day: day,
+      );
+
+      test('a week later keeps the weekday', () {
+        expect(
+          shiftedDay(on(DateTime(2026, 10, 21)), 1, now, 1),
+          DateTime(2026, 10, 28),
+        );
+        expect(
+          shiftedDay(on(DateTime(2026, 10, 1)), -1, now, 1),
+          DateTime(2026, 9, 24),
+        );
+      });
+
+      test("landing in today's week selects today", () {
+        expect(shiftedDay(on(DateTime(2026, 10, 14)), 1, now, 1), now);
+        expect(shiftedDay(on(DateTime(2026, 10, 28)), -1, now, 1), now);
+        // From Sunday, today's week is October 18 to 24.
+        expect(shiftedDay(on(DateTime(2026, 10, 17)), 1, now, 0), now);
+        expect(
+          shiftedDay(on(DateTime(2026, 10, 18)), -1, now, 0),
+          DateTime(2026, 10, 11),
+        );
+      });
+
+      test('in month view, the 1st or today', () {
+        final month = (
+          mode: CalendarMode.month,
+          month: DateTime(2026, 9),
+          day: DateTime(2026, 9, 14),
+        );
+        expect(shiftedDay(month, 1, now, 1), now);
+        expect(shiftedDay(month, -1, now, 1), DateTime(2026, 8));
+      });
     });
   });
 

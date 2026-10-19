@@ -49,4 +49,43 @@ void main() {
       }
     }
   });
+
+  group('weekDays', () {
+    test('the week of a Wednesday, from Monday and from Sunday', () {
+      final day = DateTime(2026, 10, 21);
+
+      expect(weekDays(day, _monday), [
+        for (var d = 19; d <= 25; d++) DateTime(2026, 10, d),
+      ]);
+      expect(weekDays(day, _sunday), [
+        for (var d = 18; d <= 24; d++) DateTime(2026, 10, d),
+      ]);
+    });
+
+    test('the first weekday starts its own week', () {
+      expect(
+        weekDays(DateTime(2026, 10, 19), _monday).first,
+        DateTime(2026, 10, 19),
+      );
+      expect(
+        weekDays(DateTime(2026, 10, 18), _sunday).first,
+        DateTime(2026, 10, 18),
+      );
+    });
+
+    test('a week across months and years', () {
+      final days = weekDays(DateTime(2026, 12, 31), _monday);
+
+      expect(days.first, DateTime(2026, 12, 28));
+      expect(days.last, DateTime(2027, 1, 3));
+    });
+
+    test('7 local midnights across a DST change', () {
+      final days = weekDays(DateTime(2026, 10, 25), _monday);
+
+      expect(days.toSet().length, 7);
+      expect(days.every((day) => day.hour == 0 && day.minute == 0), isTrue);
+      expect(days.last, DateTime(2026, 10, 25));
+    });
+  });
 }

@@ -2411,7 +2411,7 @@
   },
   "calendarToday": "Today",
   "@calendarToday": {
-    "description": "Button on the Calendar screen that goes back to the current month and selects today."
+    "description": "Button on the Calendar screen that selects today and shows its month, or its week in week view."
   },
   "calendarPreviousMonth": "Previous month",
   "@calendarPreviousMonth": {
@@ -2420,6 +2420,44 @@
   "calendarNextMonth": "Next month",
   "@calendarNextMonth": {
     "description": "Tooltip of the Calendar's button that shows the month after."
+  },
+  "calendarPreviousWeek": "Previous week",
+  "@calendarPreviousWeek": {
+    "description": "Tooltip of the Calendar's button that shows the week before, in week view."
+  },
+  "calendarNextWeek": "Next week",
+  "@calendarNextWeek": {
+    "description": "Tooltip of the Calendar's button that shows the week after, in week view."
+  },
+  "calendarViewMonth": "Month",
+  "@calendarViewMonth": {
+    "description": "Calendar screen: the switch segment that shows a whole month as a grid."
+  },
+  "calendarViewWeek": "Week",
+  "@calendarViewWeek": {
+    "description": "Calendar screen: the switch segment that shows one week, its events day by day."
+  },
+  "calendarWeek": "{start} – {end}",
+  "@calendarWeek": {
+    "description": "Title of the Calendar screen in week view: the week's first and last day, each already a short date in the locale's format with its month (e.g. 'Oct 19' and 'Oct 25'), and its year when the week crosses one. Keep the order and the dash.",
+    "placeholders": {
+      "start": { "type": "String", "example": "Oct 19" },
+      "end": { "type": "String", "example": "Oct 25" }
+    }
+  },
+  "calendarChooseMonth": "{month}, choose a month",
+  "@calendarChooseMonth": {
+    "description": "Screen-reader label of the Calendar's title in month view, a button that opens a month picker. The month follows the locale, e.g. 'October 2026'.",
+    "placeholders": {
+      "month": { "type": "DateTime", "format": "yMMMM" }
+    }
+  },
+  "calendarChooseWeek": "{week}, choose a week",
+  "@calendarChooseWeek": {
+    "description": "Screen-reader label of the Calendar's title in week view, a button that opens a date picker; the week shown is the picked day's. The week is the visible title, e.g. 'Oct 19 – Oct 25'.",
+    "placeholders": {
+      "week": { "type": "String", "example": "Oct 19 – Oct 25" }
+    }
   },
   "calendarDayTitle": "{day}",
   "@calendarDayTitle": {

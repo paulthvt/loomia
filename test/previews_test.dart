@@ -62,6 +62,11 @@ void main() {
     'calendar_mobile_light': (const Size(390, 844), calendarMobileLight),
     'calendar_mobile_dark': (const Size(390, 844), calendarMobileDark),
     'calendar_desktop_light': (const Size(1440, 900), calendarDesktopLight),
+    'calendar_week_light': (const Size(390, 844), calendarWeekLight),
+    'calendar_week_desktop_light': (
+      const Size(1440, 900),
+      calendarWeekDesktopLight,
+    ),
     'event_mobile_light': (const Size(390, 844), eventMobileLight),
     'event_done_mobile_light': (const Size(390, 844), eventDoneMobileLight),
     'goals_mobile_light': (const Size(390, 844), goalsMobileLight),

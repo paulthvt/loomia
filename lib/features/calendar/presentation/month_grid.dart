@@ -29,11 +29,69 @@ class MonthGrid extends StatelessWidget {
   final ValueChanged<DateTime> onSelect;
 
   @override
-  Widget build(BuildContext context) {
-    final days = monthDays(
+  Widget build(BuildContext context) => _DayRows(
+    days: monthDays(
       month,
       MaterialLocalizations.of(context).firstDayOfWeekIndex,
-    );
+    ),
+    inMonth: (day) => day.month == month.month,
+    selected: selected,
+    today: today,
+    counts: counts,
+    onSelect: onSelect,
+  );
+}
+
+/// One week of the month grid's day cells under their weekday names: the
+/// week view's strip.
+class WeekStrip extends StatelessWidget {
+  const WeekStrip({
+    required this.days,
+    required this.selected,
+    required this.today,
+    required this.counts,
+    required this.onSelect,
+    super.key,
+  });
+
+  /// The week's 7 days, as `weekDays`.
+  final List<DateTime> days;
+  final DateTime selected;
+  final DateTime today;
+  final Map<DateTime, int> counts;
+  final ValueChanged<DateTime> onSelect;
+
+  @override
+  Widget build(BuildContext context) => _DayRows(
+    days: days,
+    inMonth: (_) => true,
+    selected: selected,
+    today: today,
+    counts: counts,
+    onSelect: onSelect,
+  );
+}
+
+/// [days], whole weeks, as rows of [DayCell]s under the weekday names.
+class _DayRows extends StatelessWidget {
+  const _DayRows({
+    required this.days,
+    required this.inMonth,
+    required this.selected,
+    required this.today,
+    required this.counts,
+    required this.onSelect,
+  });
+
+  final List<DateTime> days;
+  final bool Function(DateTime day) inMonth;
+  final DateTime selected;
+  final DateTime today;
+  final Map<DateTime, int> counts;
+  final ValueChanged<DateTime> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
     final weekday = DateFormat.E(Localizations.localeOf(context).toString());
     final style = Theme.of(context).textTheme.labelSmall
         ?.copyWith(color: LoomiaColors.of(context).textMuted);
@@ -63,9 +121,9 @@ class MonthGrid extends StatelessWidget {
             children: [
               for (final day in days.sublist(start, start + week))
                 Expanded(
-                  child: _Day(
+                  child: DayCell(
                     day: day,
-                    inMonth: day.month == month.month,
+                    inMonth: inMonth(day),
                     selected: day == selected,
                     today: day == today,
                     past: day.isBefore(today),
@@ -80,8 +138,11 @@ class MonthGrid extends StatelessWidget {
   }
 }
 
-class _Day extends StatelessWidget {
-  const _Day({
+/// A day of the month grid, the week strip and the desktop week's column
+/// headings: its number in a circle (filled when selected, ringed today),
+/// up to three dots for its events.
+class DayCell extends StatelessWidget {
+  const DayCell({
     required this.day,
     required this.inMonth,
     required this.selected,
@@ -89,6 +150,7 @@ class _Day extends StatelessWidget {
     required this.past,
     required this.count,
     required this.onTap,
+    super.key,
   });
 
   static const double _circle = 40;
