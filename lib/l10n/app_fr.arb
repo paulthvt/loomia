@@ -637,5 +637,63 @@
   "planFromDraft": "Créé à partir de ton brouillon. Modifie ce que tu veux, puis enregistre.",
   "@planFromDraft": {
     "description": "Under the title of step 2 of closing a month, in place of the intro, when next month's plan was drafted before the 1st."
+  },
+  "calendarPreviousWeek": "Semaine précédente",
+  "@calendarPreviousWeek": {
+    "description": "Tooltip of the Calendar's button that shows the week before, in week view."
+  },
+  "calendarNextWeek": "Semaine suivante",
+  "@calendarNextWeek": {
+    "description": "Tooltip of the Calendar's button that shows the week after, in week view."
+  },
+  "calendarViewMonth": "Mois",
+  "@calendarViewMonth": {
+    "description": "Calendar screen: the switch segment that shows a whole month as a grid."
+  },
+  "monthPickerPreviousYear": "Année précédente",
+  "@monthPickerPreviousYear": {
+    "description": "Tooltip of the month picker's button that shows the year before (the picker lists one year's twelve months)."
+  },
+  "monthPickerNextYear": "Année suivante",
+  "@monthPickerNextYear": {
+    "description": "Tooltip of the month picker's button that shows the year after."
+  },
+  "calendarViewWeek": "Semaine",
+  "@calendarViewWeek": {
+    "description": "Calendar screen: the switch segment that shows one week, its events day by day."
+  },
+  "calendarWeek": "{start} – {end}",
+  "@calendarWeek": {
+    "description": "Title of the Calendar screen in week view: the week's first and last day, each already a short date in the locale's format with its month (e.g. 'Oct 19' and 'Oct 25'), and its year when the week crosses one. Keep the order and the dash.",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "Oct 19"
+      },
+      "end": {
+        "type": "String",
+        "example": "Oct 25"
+      }
+    }
+  },
+  "calendarChooseMonth": "{month}, choisis un mois",
+  "@calendarChooseMonth": {
+    "description": "Screen-reader label of the Calendar's title in month view, a button that opens a month picker. The month follows the locale, e.g. 'October 2026'.",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "yMMMM"
+      }
+    }
+  },
+  "calendarChooseWeek": "{week}, choisis une semaine",
+  "@calendarChooseWeek": {
+    "description": "Screen-reader label of the Calendar's title in week view, a button that opens a date picker; the week shown is the picked day's. The week is the visible title, e.g. 'Oct 19 – Oct 25'.",
+    "placeholders": {
+      "week": {
+        "type": "String",
+        "example": "Oct 19 – Oct 25"
+      }
+    }
   }
 }
