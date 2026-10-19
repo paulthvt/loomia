@@ -128,9 +128,14 @@ class CalendarPage extends ConsumerWidget {
       onRefresh: () => _refresh(context, ref),
       desktop: desktop,
       pane: side,
-      // With a sidebar, Settings is its account block instead.
+      // With a sidebar, Settings is its account block instead, and there
+      // is no pull to refresh on a mouse: a button, as on Today.
       accountAction: context.screenSize.usesSideNavigation
-          ? null
+          ? IconButton(
+              onPressed: () => unawaited(_refresh(context, ref)),
+              tooltip: AppLocalizations.of(context).contactsRefresh,
+              icon: const Icon(Icons.refresh_rounded),
+            )
           : const AccountButton(),
     );
   }
@@ -337,30 +342,40 @@ class CalendarView extends StatelessWidget {
 
     if (desktop) {
       final side = pane;
-      final calendar = ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xxl,
-          vertical: AppSpacing.xl,
-        ),
-        children: [
-          header,
-          const SizedBox(height: AppSpacing.md),
-          switcher,
-          const SizedBox(height: AppSpacing.lg),
-          if (week)
-            WeekColumns(
-              events: events,
-              days: days,
-              selected: selection.day,
-              today: today,
-              onSelect: onSelect,
-              onOpen: onOpen,
-              onRetry: onRetry,
-            )
-          else
-            pager,
-        ],
+      const padding = EdgeInsets.symmetric(
+        horizontal: AppSpacing.xxl,
+        vertical: AppSpacing.xl,
       );
+      final top = [
+        header,
+        const SizedBox(height: AppSpacing.md),
+        switcher,
+        const SizedBox(height: AppSpacing.lg),
+      ];
+      // The week's columns run to the bottom of the window, each scrolling
+      // its own cards; the month scrolls as one.
+      final calendar = week
+          ? Padding(
+              padding: padding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ...top,
+                  Expanded(
+                    child: WeekColumns(
+                      events: events,
+                      days: days,
+                      selected: selection.day,
+                      today: today,
+                      onSelect: onSelect,
+                      onOpen: onOpen,
+                      onRetry: onRetry,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView(padding: padding, children: [...top, pager]);
       return Scaffold(
         body: SafeArea(
           child: Row(
@@ -542,8 +557,12 @@ class _SwipePager extends StatefulWidget {
 
 class _SwipePagerState extends State<_SwipePager>
     with SingleTickerProviderStateMixin {
-  /// A fling faster than this, in px/s, turns the page however short it was.
-  static const double _fling = 300;
+  /// A release faster than this, in px/s, the way the page was dragged,
+  /// turns it however short the drag was: a thumb's flick, not only a fling.
+  static const double _fling = 100;
+
+  /// Released slower, a drag past this share of the width still turns.
+  static const double _past = 1 / 3;
 
   /// Where [_SwipePager.anchor]'s page sits, in page widths: −1 is off to
   /// the left with the next page fully in, 1 off to the right with the one
@@ -555,21 +574,22 @@ class _SwipePagerState extends State<_SwipePager>
   /// or 0 when nothing is turning.
   double _turning = 0;
 
-  /// A finger is on the page.
-  bool _dragging = false;
+  /// [_grab] landed a turn and already moved the offset onto the new page,
+  /// so the anchor change it causes must not move it again: the rebuild
+  /// may come mid-drag, or (in a test) only after the new release.
+  bool _rebased = false;
 
   @override
   void didUpdateWidget(_SwipePager old) {
     super.didUpdateWidget(old);
     if (widget.anchor == old.anchor) return;
-    final step = widget.anchor.isAfter(old.anchor) ? 1.0 : -1.0;
-    // After a drag the new page is already in place (−1 + 1 = 0); after
-    // the arrows or Today it starts on its side and slides in. A turn
-    // landed by [_grab] keeps the finger's offset (−0.9 + 1 = 0.1).
-    if (_dragging) {
-      _offset.value = (_offset.value + step).clamp(-1.0, 1.0);
+    if (_rebased) {
+      _rebased = false;
       return;
     }
+    final step = widget.anchor.isAfter(old.anchor) ? 1.0 : -1.0;
+    // After a drag the new page is already in place (−1 + 1 = 0); after
+    // the arrows or Today it starts on its side and slides in.
     _offset.value = context.reduceMotion
         ? 0
         : (_offset.value + step).clamp(-1.0, 1.0);
@@ -598,20 +618,27 @@ class _SwipePagerState extends State<_SwipePager>
   /// first; the new drag goes on from where the page visibly is.
   void _grab() {
     _offset.stop();
-    _dragging = true;
     final turning = _turning;
     _turning = 0;
-    // Left (−1) shows the next page.
-    if (turning != 0) widget.onShift(-turning.toInt());
+    if (turning == 0) return;
+    // The new page's own offset: the next page sits one width right of
+    // the old (−0.8 → 0.2). Left (−1) shows the next page.
+    _offset.value -= turning;
+    _rebased = true;
+    widget.onShift(-turning.toInt());
   }
 
   Future<void> _release(DragEndDetails details) async {
-    _dragging = false;
     final velocity = details.primaryVelocity ?? 0;
     final at = _offset.value;
-    final double target = velocity.abs() > _fling
+    // A flick back against the drag cancels it rather than turning the
+    // other way.
+    final double target =
+        velocity.abs() > _fling && (at == 0 || velocity.sign == at.sign)
         ? velocity.sign
-        : at.abs() > 0.5
+        : velocity.abs() > _fling
+        ? 0
+        : at.abs() > _past
         ? at.sign
         : 0;
     _turning = target;
@@ -636,10 +663,7 @@ class _SwipePagerState extends State<_SwipePager>
             ..onStart = ((_) => _grab())
             ..onUpdate = _drag
             ..onEnd = ((details) => unawaited(_release(details)))
-            ..onCancel = () {
-              _dragging = false;
-              unawaited(_settle(0));
-            },
+            ..onCancel = () => unawaited(_settle(0)),
         ),
       },
       // A five-week month and a six-week one: the height eases between them.

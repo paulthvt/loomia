@@ -219,41 +219,68 @@ class WeekColumns extends StatelessWidget {
     final weekday = DateFormat.E(Localizations.localeOf(context).toString());
     final counts = eventsPerDay(list);
     final columns = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.sm,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.xs,
       children: [
         for (final day in days)
           Expanded(
-            child: InkWell(
-              onTap: () => onSelect(day),
-              borderRadius: BorderRadius.circular(AppRadii.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: AppSpacing.sm,
-                children: [
-                  ExcludeSemantics(
-                    child: Text(
-                      weekday.format(day),
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colors.textMuted,
+            // The whole column, to the bottom, selects the day; the selected
+            // one is tinted all the way down (Figma "week columns").
+            child: Material(
+              color: day == selected
+                  ? theme.colorScheme.primaryContainer
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => onSelect(day),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: AppSpacing.sm,
+                    children: [
+                      ExcludeSemantics(
+                        child: Text(
+                          weekday.format(day),
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colors.textMuted,
+                          ),
+                        ),
                       ),
-                    ),
+                      DayCell(
+                        day: day,
+                        inMonth: true,
+                        selected: day == selected,
+                        today: day == today,
+                        past: day.isBefore(today),
+                        count: counts[day] ?? 0,
+                        onTap: () => onSelect(day),
+                      ),
+                      Expanded(
+                        child: ListView(
+                          children: [
+                            for (final (index, event) in eventsOn(
+                              list,
+                              day,
+                            ).indexed) ...[
+                              if (index > 0)
+                                const SizedBox(height: AppSpacing.sm),
+                              _WeekCard(
+                                event: event,
+                                onTap: () => onOpen(event),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  DayCell(
-                    day: day,
-                    inMonth: true,
-                    selected: day == selected,
-                    today: day == today,
-                    past: day.isBefore(today),
-                    count: counts[day] ?? 0,
-                    onTap: () => onSelect(day),
-                  ),
-                  for (final event in eventsOn(list, day))
-                    _WeekCard(event: event, onTap: () => onOpen(event)),
-                  // The rest of the column still selects the day.
-                  const SizedBox(height: AppSpacing.xxl),
-                ],
+                ),
               ),
             ),
           ),
@@ -263,7 +290,10 @@ class WeekColumns extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: AppSpacing.lg,
-      children: [?waiting, columns],
+      children: [
+        ?waiting,
+        Expanded(child: columns),
+      ],
     );
   }
 }

@@ -124,3 +124,11 @@
 - **`WeekStrip` and `DayCell` live in `month_grid.dart`**, sharing the month's day rows (`_DayRows`); `week_view.dart` holds the title, the list, the desktop columns and `eventsNotLoaded`, which `DaySection` now uses too.
 - **The switch row shrinks the switch first** (`Flexible`, labels ellipsised): French "Mois / Semaine" + « Aujourd'hui » overflowed 390 otherwise.
 - **`segmentedButtonTheme`** in `app_theme.dart`: selected `primaryContainer` / `onPrimaryContainer`, outline `scheme.outline`, as the Figma switch. It also restyles the What's next sheet's segmented button.
+
+### After the first review (on device and web)
+
+- **Missed swipes were mostly short ones.** A turn needed half the width or 300 px/s, so a 130 px thumb flick at ~200 px/s sprang back (pinned by "a short, unhurried swipe still turns"). Now a third of the width, or 100 px/s the way it was dragged; a flick back against the drag cancels. Pull to refresh only acts on vertical drags the page has already won, so it was not the cause.
+- **The early turn re-bases the offset itself** (`_rebased`) instead of in `didUpdateWidget`, which may run only after the new drag's release.
+- **Desktop week columns run to the bottom**, each scrolling its own cards, the selected one tinted `primaryContainer` full height as in the Figma (`398:13303`).
+- **Refresh button on desktop and tablet**, in the account slot, as Today and Contacts.
+- **Month picker off iOS is a year of months** (`_MonthDialog` in `pick_day.dart`): year with ‹ ›, 3 × 4 month buttons, the current one outlined, a tap picks. It replaces the Material calendar opened on its years, for "Member since"'s target month too. iOS keeps its month-and-year wheel; the week's day picker stays the platform date picker.

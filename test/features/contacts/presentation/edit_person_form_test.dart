@@ -1,6 +1,7 @@
 import 'package:cupertino_ui/cupertino_ui.dart'
     show CupertinoDatePicker, CupertinoDatePickerMode;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -275,8 +276,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      // The picker opens on this month; OK keeps it.
-      await tester.tap(find.text('OK'));
+      // The picker opens on this year; tapping this month picks it.
+      await tester.tap(find.text(DateFormat.MMM('en').format(thisMonth)));
       await tester.pumpAndSettle();
       await tester.ensureVisible(field('Each month (PV)'));
       await tester.enterText(field('Each month (PV)'), '100');
@@ -415,8 +416,15 @@ void main() {
       await tester.ensureVisible(find.text('January 2020'));
       await tester.tap(find.text('January 2020'));
       await tester.pumpAndSettle();
-      expect(find.byType(DatePickerDialog), findsOneWidget);
-      await tester.tap(find.text('OK'));
+      // The month list of 2020, January marked; Cancel keeps it.
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('2020'), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Cancel'),
+        ),
+      );
       await tester.pumpAndSettle();
       await save(tester);
 

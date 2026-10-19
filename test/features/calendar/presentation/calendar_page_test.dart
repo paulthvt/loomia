@@ -305,6 +305,8 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
     // The columns take the width beside the sidebar's place.
     expect(tester.getSize(find.byType(WeekColumns)).width, greaterThan(1000));
+    // And run to the bottom of the window, as in the Figma.
+    expect(tester.getBottomLeft(find.byType(WeekColumns)).dy, greaterThan(800));
 
     await tester.tap(find.text('Essential oils for sleep'));
     expect(opened, _workshop);
@@ -491,14 +493,53 @@ void main() {
     final grids = find.byType(MonthGrid);
 
     // The second starts while the first is still turning.
-    await tester.fling(grids.first, const Offset(-150, 0), 1500);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.fling(grids.first, const Offset(-150, 0), 1500);
+    // From the same spot: the page under it is still sliding out.
+    final from = tester.getCenter(grids);
+    await tester.flingFrom(from, const Offset(-150, 0), 1500);
+    // A few frames of the turn, as a finger coming back 80 ms later sees.
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.flingFrom(from, const Offset(-150, 0), 1500);
     await tester.pumpAndSettle();
 
     expect(
       container.read(calendarSelectionProvider).month,
       DateTime(month.year, month.month + 2),
+    );
+  });
+
+  testWidgets('in the app: a short, unhurried swipe still turns', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(390, 844));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    final month = container.read(calendarSelectionProvider).month;
+    final grids = find.byType(MonthGrid);
+
+    // A third of the width at ~200 px/s: a thumb's flick, not a fling.
+    await tester.timedDrag(
+      grids,
+      const Offset(-130, 0),
+      const Duration(milliseconds: 650),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      container.read(calendarSelectionProvider).month,
+      DateTime(month.year, month.month + 1),
+    );
+
+    // A nudge springs back.
+    await tester.timedDrag(
+      grids,
+      const Offset(40, 0),
+      const Duration(seconds: 1),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      container.read(calendarSelectionProvider).month,
+      DateTime(month.year, month.month + 1),
     );
   });
 
@@ -560,9 +601,14 @@ void main() {
     final day = container.read(calendarSelectionProvider).day;
     final strips = find.byType(WeekStrip);
 
-    await tester.fling(strips.first, const Offset(-150, 0), 1500);
-    await tester.pump(const Duration(milliseconds: 80));
-    await tester.fling(strips.first, const Offset(-150, 0), 1500);
+    // From the same spot: the page under it is still sliding out.
+    final from = tester.getCenter(strips);
+    await tester.flingFrom(from, const Offset(-150, 0), 1500);
+    // A few frames of the turn, as a finger coming back 80 ms later sees.
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.flingFrom(from, const Offset(-150, 0), 1500);
     await tester.pumpAndSettle();
 
     final selection = container.read(calendarSelectionProvider);
@@ -578,16 +624,39 @@ void main() {
 
     await tester.tap(find.text(DateFormat.yMMMM('en').format(now)));
     await tester.pumpAndSettle();
-    // The Material picker opens on its years.
-    await tester.tap(find.text('${now.year + 2}'));
+    // A year of months; the arrows change the year.
+    expect(find.text(DateFormat.MMM('en').format(now)), findsOneWidget);
+    await tester.tap(find.byTooltip('Next year'));
+    await tester.tap(find.byTooltip('Next year'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('OK'));
+    expect(find.text('${now.year + 2}'), findsOneWidget);
+    await tester.tap(find.text('Mar'));
     await tester.pumpAndSettle();
 
+    expect(find.byType(AlertDialog), findsNothing);
     expect(
       container.read(calendarSelectionProvider).month,
-      DateTime(now.year + 2, now.month),
+      DateTime(now.year + 2, 3),
     );
+  });
+
+  testWidgets('in the app, desktop: a button reloads the events', (
+    tester,
+  ) async {
+    final events = FakeEventRepository();
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(1440, 900),
+      events: events,
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    final loads = events.calls.where((call) => call == 'list()').length;
+
+    await tester.tap(find.byTooltip('Refresh'));
+    await tester.pumpAndSettle();
+
+    expect(events.calls.where((call) => call == 'list()').length, loads + 1);
   });
 
   testWidgets('in the app, desktop: week view has no day pane until an event '

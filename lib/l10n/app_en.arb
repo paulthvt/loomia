@@ -2433,6 +2433,14 @@
   "@calendarViewMonth": {
     "description": "Calendar screen: the switch segment that shows a whole month as a grid."
   },
+  "monthPickerPreviousYear": "Previous year",
+  "@monthPickerPreviousYear": {
+    "description": "Tooltip of the month picker's button that shows the year before (the picker lists one year's twelve months)."
+  },
+  "monthPickerNextYear": "Next year",
+  "@monthPickerNextYear": {
+    "description": "Tooltip of the month picker's button that shows the year after."
+  },
   "calendarViewWeek": "Week",
   "@calendarViewWeek": {
     "description": "Calendar screen: the switch segment that shows one week, its events day by day."
