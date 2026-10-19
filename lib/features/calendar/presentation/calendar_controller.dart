@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
@@ -166,29 +167,64 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
   }
 }
 
-/// The month the grid shows (its 1st) and the selected day, both local
-/// midnights.
-typedef CalendarSelection = ({DateTime month, DateTime day});
+/// The Calendar's two views.
+enum CalendarMode { month, week }
+
+/// The view, the month the grid shows (its 1st) and the selected day, both
+/// local midnights. In week view, [month] is the selected day's.
+typedef CalendarSelection = ({CalendarMode mode, DateTime month, DateTime day});
+
+/// The day [delta] pages away from [from]'s. Month view: that month's 1st,
+/// or [today] in the current month. Week view: the same weekday, or
+/// [today] in the current week, weeks starting on [firstDayOfWeek] (0 is
+/// Sunday). Calendar dates, never 24-hour steps.
+DateTime shiftedDay(
+  CalendarSelection from,
+  int delta,
+  DateTime today,
+  int firstDayOfWeek,
+) {
+  switch (from.mode) {
+    case CalendarMode.month:
+      final month = DateTime(from.month.year, from.month.month + delta);
+      return month.year == today.year && month.month == today.month
+          ? today
+          : month;
+    case CalendarMode.week:
+      final day = from.day;
+      final moved = DateTime(day.year, day.month, day.day + 7 * delta);
+      return weekDays(moved, firstDayOfWeek).first ==
+              weekDays(today, firstDayOfWeek).first
+          ? today
+          : moved;
+  }
+}
 
 /// What the Calendar shows. UI state: not per account, and it resets on
-/// restart, to today.
+/// restart, to today in month view.
 final calendarSelectionProvider =
     NotifierProvider<CalendarSelector, CalendarSelection>(CalendarSelector.new);
 
 class CalendarSelector extends Notifier<CalendarSelection> {
   @override
-  CalendarSelection build() => _on(today());
+  CalendarSelection build() => _on(today(), CalendarMode.month);
 
-  static CalendarSelection _on(DateTime day) =>
-      (month: DateTime(day.year, day.month), day: day);
+  static CalendarSelection _on(DateTime day, CalendarMode mode) =>
+      (mode: mode, month: DateTime(day.year, day.month), day: day);
 
   /// A day of a neighbouring month shows that month.
-  void select(DateTime day) => state = _on(day);
+  void select(DateTime day) => state = _on(day, state.mode);
 
-  /// The month [delta] months away, with its 1st selected, or today when
-  /// it is the current month.
-  void shift(int delta) {
-    final month = DateTime(state.month.year, state.month.month + delta);
+  /// Month or week; the selected day stays.
+  void setMode(CalendarMode mode) => state = _on(state.day, mode);
+
+  /// The page [delta] away: see [shiftedDay].
+  void shift(int delta, {int firstDayOfWeek = 0}) =>
+      select(shiftedDay(state, delta, today(), firstDayOfWeek));
+
+  /// [month] (its 1st) with its 1st selected, or today when it is the
+  /// current month.
+  void showMonth(DateTime month) {
     final now = today();
     select(month.year == now.year && month.month == now.month ? now : month);
   }

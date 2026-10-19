@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -38,6 +39,14 @@ Widget calendarDesktopLight() => _app(
     ),
   ),
 );
+
+@Preview(group: 'Calendar', name: 'Week — light', size: Size(390, 844))
+Widget calendarWeekLight() =>
+    _app(AppTheme.light, _calendar(mode: CalendarMode.week));
+
+@Preview(group: 'Calendar', name: 'Week desktop — light', size: Size(1440, 900))
+Widget calendarWeekDesktopLight() =>
+    _app(AppTheme.light, _calendar(mode: CalendarMode.week, desktop: true));
 
 @Preview(group: 'Calendar', name: 'Event — light', size: Size(390, 844))
 Widget eventMobileLight() => _app(
@@ -235,9 +244,13 @@ final _workshopSteps = [
   ),
 ];
 
-Widget _calendar({Widget? pane}) => CalendarView(
+Widget _calendar({
+  Widget? pane,
+  bool desktop = false,
+  CalendarMode mode = CalendarMode.month,
+}) => CalendarView(
   events: AsyncData(_events),
-  selection: (month: DateTime(2026, 10), day: _selected),
+  selection: (mode: mode, month: DateTime(2026, 10), day: _selected),
   today: _today,
   onSelect: (_) {},
   onShift: (_) {},
@@ -245,6 +258,7 @@ Widget _calendar({Widget? pane}) => CalendarView(
   onOpen: (_) {},
   onAdd: (_) {},
   onRetry: () {},
+  desktop: desktop || pane != null,
   pane: pane,
 );
 

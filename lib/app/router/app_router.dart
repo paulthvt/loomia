@@ -104,7 +104,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           // separate screens.
           ShellRoute(
             builder: (context, state, child) => context.screenSize.isDesktop
-                ? CalendarPage(pane: child)
+                ? CalendarPage(
+                    pane: child,
+                    eventOpen: state.pathParameters.containsKey('id'),
+                  )
                 : child,
             routes: [
               GoRoute(
