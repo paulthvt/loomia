@@ -695,5 +695,25 @@
         "example": "Oct 19 – Oct 25"
       }
     }
+  },
+  "eventScopeChangeTitle": "Modifier un événement récurrent",
+  "@eventScopeChangeTitle": {
+    "description": "Title of the dialog asked before saving, adding or removing people on one occurrence of a repeating event: does the change reach this one or the following ones too."
+  },
+  "eventScopeDeleteTitle": "Supprimer un événement récurrent",
+  "@eventScopeDeleteTitle": {
+    "description": "Title of the dialog asked before deleting one occurrence of a repeating event. Its Delete button confirms, with no second dialog."
+  },
+  "eventScopeThis": "Cet événement",
+  "@eventScopeThis": {
+    "description": "Choice in the eventScopeChangeTitle / eventScopeDeleteTitle dialogs: only this occurrence changes. Selected by default."
+  },
+  "eventScopeFollowing": "Cet événement et les suivants",
+  "@eventScopeFollowing": {
+    "description": "Choice in the eventScopeChangeTitle / eventScopeDeleteTitle dialogs: this occurrence and every later one that isn't done yet change. Done ones never do."
+  },
+  "eventScopeRuleChanged": "Une nouvelle récurrence s’applique à cet événement et aux suivants.",
+  "@eventScopeRuleChanged": {
+    "description": "Note under the choices of eventScopeChangeTitle when the repeat, its end or the date changed: eventScopeThis is then disabled."
   }
 }
