@@ -1,5 +1,28 @@
 # Changelog
 
+## [v2026.10.3](https://github.com/paulthvt/loomia/compare/v2026.10.2...v2026.10.3) (2026-10-20)
+
+### ✨ Features
+
+- **calendar:** edit a repeating event, this or following (#362) ([052a559](https://github.com/paulthvt/loomia/commit/052a5595a402bdab32e977c8c892ab66c4aa487c))
+- **goals:** edit orders from the month's list (#361) ([58d5792](https://github.com/paulthvt/loomia/commit/58d5792d37333d155a1f81b9fe5ef9b55f62d3bf))
+- **calendar:** week view, jump to a month, reliable swipes (#358) ([3dce422](https://github.com/paulthvt/loomia/commit/3dce4229acbc39f1e637d394cc18948148d20fde))
+- **goals:** draft next month before it starts, close on the 1st (#355) ([d52892b](https://github.com/paulthvt/loomia/commit/d52892b78fd9d6bbeb72db08a103eba56603a6d4))
+
+### 🔄 CI/CD
+
+- **l10n:** tighten the Weblate pull request workflow (#350) ([d8abbb9](https://github.com/paulthvt/loomia/commit/d8abbb9c3a4c7a9123dd97f231b4b7d35e23f0f8))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#363) ([c7763f4](https://github.com/paulthvt/loomia/commit/c7763f4c9b13437c3e607a4c4b59200152a591d0))
+- **l10n:** sync translations (#359) ([ed09e1f](https://github.com/paulthvt/loomia/commit/ed09e1f2cec633f483fd36b3641deadb8b2cf8ae))
+- **l10n:** sync translations (#353) ([65bb10f](https://github.com/paulthvt/loomia/commit/65bb10f915a7d88916729dd919442246d5343a29))
+- **deps:** update plugin org.jetbrains.kotlin.android to v2.4.21 (#211) ([95caf5b](https://github.com/paulthvt/loomia/commit/95caf5b4cbecf2de9d80a214da2448032444d9a3))
+- **deps:** update dependency flutter to v3.47.7 (#229) ([da92d87](https://github.com/paulthvt/loomia/commit/da92d876ba076648a30bbeacef03dc321ea7107c))
+- **l10n:** sync translations (#347) ([18f6b1e](https://github.com/paulthvt/loomia/commit/18f6b1e3a498f48734f3a9b2123936c868736e39))
+- **l10n:** move translations to Weblate (#346) ([29e7c3d](https://github.com/paulthvt/loomia/commit/29e7c3d87ba1a2e09394c942b5457e32d08bdba2))
+
 ## [v2026.10.2](https://github.com/paulthvt/loomia/compare/v2026.10.1...v2026.10.2) (2026-10-16)
 
 ### ✨ Features
