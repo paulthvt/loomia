@@ -85,6 +85,9 @@ class _MonthDialog extends StatefulWidget {
 class _MonthDialogState extends State<_MonthDialog> {
   static const int _columns = 3;
 
+  /// The Material date picker's portrait width, so both pickers match.
+  static const double _width = 328;
+
   late int _year = widget.initial.year;
 
   bool _within(DateTime month) =>
@@ -102,9 +105,11 @@ class _MonthDialogState extends State<_MonthDialog> {
       for (var m = 1; m <= DateTime.monthsPerYear; m++) DateTime(_year, m),
     ];
     return AlertDialog(
+      // A phone on its side is shorter than the year's four rows.
+      scrollable: true,
       contentPadding: const EdgeInsets.all(AppSpacing.md),
       content: SizedBox(
-        width: double.maxFinite,
+        width: _width,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           spacing: AppSpacing.sm,
