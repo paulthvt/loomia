@@ -2478,6 +2478,21 @@
   "@calendarAdd": {
     "description": "Action beside the selected day's heading on the Calendar screen: adds an event on that day."
   },
+  "calendarMoreEvents": "+{count} more",
+  "@calendarMoreEvents": {
+    "description": "Under the events shown in a day of the desktop Calendar's month, when the rest don't fit: how many more there are. Clicking the day lists them all.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "calendarShortEvent": "{time} · {title}",
+  "@calendarShortEvent": {
+    "description": "A short event on the desktop Calendar's week grid, on one line: its start time, then its title, e.g. '14:00 · Team check-in'.",
+    "placeholders": {
+      "time": { "type": "String" },
+      "title": { "type": "String" }
+    }
+  },
   "calendarNothingPlanned": "Nothing planned",
   "@calendarNothingPlanned": {
     "description": "Shown under the selected day on the Calendar screen when it has no event."

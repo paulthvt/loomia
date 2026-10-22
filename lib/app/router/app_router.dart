@@ -351,8 +351,8 @@ Page<void> _workflowPage(BuildContext context, GoRouterState state, String id) {
       : MaterialPage<void>(key: state.pageKey, name: state.name, child: child);
 }
 
-/// Desktop: the pane beside the month, swapped without a transition (see
-/// [_settingsPage]). Elsewhere: the month, or an event pushed above it.
+/// Desktop: an event's pane beside the month (none for the month alone),
+/// swapped without a transition (see [_settingsPage]). Elsewhere: the month, or an event pushed above it.
 Page<void> _calendarPage(
   BuildContext context,
   GoRouterState state,
@@ -363,7 +363,7 @@ Page<void> _calendarPage(
       key: state.pageKey,
       name: state.name,
       child: Scaffold(
-        body: id == null ? const CalendarDayPane() : EventPane(id: id),
+        body: id == null ? const SizedBox.shrink() : EventPane(id: id),
       ),
     );
   }

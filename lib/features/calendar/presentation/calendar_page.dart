@@ -15,6 +15,7 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
+import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
@@ -35,9 +36,8 @@ void openEvent(BuildContext context, String id) {
   }
 }
 
-/// The Calendar destination. On desktop it also holds [pane]: the selected
-/// day, or an event. In week view the columns are the days, so the day
-/// pane only shows while an event is open ([eventOpen]).
+/// The Calendar destination. On desktop it also holds [pane]: an open
+/// event, beside the month or week ([eventOpen]); a day opens in a popover.
 class CalendarPage extends ConsumerWidget {
   const CalendarPage({this.pane, this.eventOpen = false, super.key});
 
@@ -106,13 +106,13 @@ class CalendarPage extends ConsumerWidget {
     final selection = ref.watch(calendarSelectionProvider);
     final desktop = context.screenSize.isDesktop;
     final firstDay = MaterialLocalizations.of(context).firstDayOfWeekIndex;
-    final side = selection.mode == CalendarMode.week && !eventOpen
-        ? null
-        : pane;
     return CalendarView(
       events: ref.watch(provider),
       selection: selection,
       today: today(),
+      // ponytail: read on build, as Today; the line moves on the next
+      // rebuild, not by itself. A minute timer if it ever matters.
+      now: DateTime.now(),
       onSelect: (day) {
         selector.select(day);
         // Desktop: an open event gives the pane back to the day.
@@ -127,7 +127,7 @@ class CalendarPage extends ConsumerWidget {
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => _refresh(context, ref),
       desktop: desktop,
-      pane: side,
+      pane: eventOpen ? pane : null,
       // With a sidebar, Settings is its account block instead, and there
       // is no pull to refresh on a mouse: a button, as on Today.
       accountAction: context.screenSize.usesSideNavigation
@@ -141,39 +141,11 @@ class CalendarPage extends ConsumerWidget {
   }
 }
 
-/// Desktop's pane at `/calendar`: the selected day.
-class CalendarDayPane extends ConsumerWidget {
-  const CalendarDayPane({super.key});
-
-  Future<void> _add(BuildContext context, WidgetRef ref, DateTime day) async {
-    final saved = await showEventForm(context, day: day);
-    if (saved != null && context.mounted) {
-      ref.read(calendarSelectionProvider.notifier).select(saved.day);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = eventsProvider(ref.watch(accountProvider)?.email);
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        DaySection(
-          events: ref.watch(provider),
-          day: ref.watch(calendarSelectionProvider).day,
-          onOpen: (event) => openEvent(context, event.id),
-          onAdd: (day) => unawaited(_add(context, ref, day)),
-          onRetry: () => ref.invalidate(provider),
-        ),
-      ],
-    );
-  }
-}
-
 /// The screen as a function of its inputs, for previews and tests. Mobile
 /// and tablet: the month and the selected day, or the week strip and the
-/// week's days, and an add button. Desktop: the month or the week's
-/// columns on the left, [pane] on the right when there is one.
+/// week's days, and an add button. Desktop (#366): the full-width month or
+/// the week's hour grid, a day's popover on click, and [pane] (an open
+/// event) on the right when there is one.
 class CalendarView extends StatelessWidget {
   const CalendarView({
     required this.events,
@@ -188,6 +160,7 @@ class CalendarView extends StatelessWidget {
     this.onMode,
     this.onPickTitle,
     this.onRefresh,
+    this.now,
     this.desktop = false,
     this.pane,
     this.accountAction,
@@ -197,16 +170,14 @@ class CalendarView extends StatelessWidget {
   /// Fixed, like the Contacts list, so a resized window narrows the month.
   static const double _paneWidth = 440;
 
-  /// Desktop: the month column, padding included, stops growing here, so a
-  /// wide window doesn't spread the days out of reach of each other. The
-  /// week's columns take the full width.
-  static const double _monthMax = 840;
-
   final AsyncValue<List<CalendarEvent>> events;
   final CalendarSelection selection;
 
   /// The device's today, local midnight.
   final DateTime today;
+
+  /// The desktop week's now line. None without it.
+  final DateTime? now;
 
   final ValueChanged<DateTime> onSelect;
 
@@ -245,35 +216,65 @@ class CalendarView extends StatelessWidget {
     final title = week
         ? weekTitle(l10n, days)
         : l10n.calendarMonth(selection.month);
+    final modeSwitch = SegmentedButton<CalendarMode>(
+      segments: [
+        for (final (mode, label) in [
+          (CalendarMode.month, l10n.calendarViewMonth),
+          (CalendarMode.week, l10n.calendarViewWeek),
+        ])
+          ButtonSegment(
+            value: mode,
+            label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+      ],
+      selected: {selection.mode},
+      onSelectionChanged: (modes) => onMode?.call(modes.single),
+    );
+    final todayButton = TextButton(
+      onPressed: onToday,
+      child: Text(l10n.calendarToday),
+    );
+    final previous = IconButton(
+      onPressed: () => onShift(-1),
+      tooltip: week ? l10n.calendarPreviousWeek : l10n.calendarPreviousMonth,
+      icon: const Icon(Icons.chevron_left_rounded),
+    );
+    final next = IconButton(
+      onPressed: () => onShift(1),
+      tooltip: week ? l10n.calendarNextWeek : l10n.calendarNextMonth,
+      icon: const Icon(Icons.chevron_right_rounded),
+    );
+    Widget titleButton(TextStyle? style) => Expanded(
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: _TitleButton(
+          title: title,
+          semantics: week
+              ? l10n.calendarChooseWeek(title)
+              : l10n.calendarChooseMonth(selection.month),
+          style: style,
+          onTap: onPickTitle,
+        ),
+      ),
+    );
+
+    if (desktop) {
+      return _desktop(context, days, firstDay, [
+        titleButton(theme.textTheme.headlineSmall),
+        modeSwitch,
+        const SizedBox(width: AppSpacing.sm),
+        todayButton,
+        previous,
+        next,
+        ?accountAction,
+      ]);
+    }
+
     final header = Row(
       children: [
-        Expanded(
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: _TitleButton(
-              title: title,
-              semantics: week
-                  ? l10n.calendarChooseWeek(title)
-                  : l10n.calendarChooseMonth(selection.month),
-              style: desktop
-                  ? theme.textTheme.displaySmall
-                  : theme.textTheme.headlineSmall,
-              onTap: onPickTitle,
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: () => onShift(-1),
-          tooltip: week
-              ? l10n.calendarPreviousWeek
-              : l10n.calendarPreviousMonth,
-          icon: const Icon(Icons.chevron_left_rounded),
-        ),
-        IconButton(
-          onPressed: () => onShift(1),
-          tooltip: week ? l10n.calendarNextWeek : l10n.calendarNextMonth,
-          icon: const Icon(Icons.chevron_right_rounded),
-        ),
+        titleButton(theme.textTheme.headlineSmall),
+        previous,
+        next,
         ?accountAction,
       ],
     );
@@ -282,27 +283,8 @@ class CalendarView extends StatelessWidget {
       spacing: AppSpacing.sm,
       children: [
         // Shrinks before Today does, its labels cut with "…" if need be.
-        Flexible(
-          child: SegmentedButton<CalendarMode>(
-            segments: [
-              for (final (mode, label) in [
-                (CalendarMode.month, l10n.calendarViewMonth),
-                (CalendarMode.week, l10n.calendarViewWeek),
-              ])
-                ButtonSegment(
-                  value: mode,
-                  label: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-            ],
-            selected: {selection.mode},
-            onSelectionChanged: (modes) => onMode?.call(modes.single),
-          ),
-        ),
-        TextButton(onPressed: onToday, child: Text(l10n.calendarToday)),
+        Flexible(child: modeSwitch),
+        todayButton,
       ],
     );
     final counts = eventsPerDay(events.value ?? const []);
@@ -340,78 +322,6 @@ class CalendarView extends StatelessWidget {
             ),
           );
 
-    if (desktop) {
-      final side = pane;
-      const padding = EdgeInsets.symmetric(
-        horizontal: AppSpacing.xxl,
-        vertical: AppSpacing.xl,
-      );
-      final top = [
-        header,
-        const SizedBox(height: AppSpacing.md),
-        switcher,
-        const SizedBox(height: AppSpacing.lg),
-      ];
-      // The week's columns run to the bottom of the window, each scrolling
-      // its own cards; the month scrolls as one.
-      final calendar = week
-          ? Padding(
-              padding: padding,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ...top,
-                  Expanded(
-                    child: WeekColumns(
-                      events: events,
-                      days: days,
-                      selected: selection.day,
-                      today: today,
-                      onSelect: onSelect,
-                      onOpen: onOpen,
-                      onRetry: onRetry,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView(padding: padding, children: [...top, pager]);
-      return Scaffold(
-        body: SafeArea(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                // From the start edge, as the other desktop pages.
-                child: week
-                    ? calendar
-                    : Align(
-                        alignment: AlignmentDirectional.topStart,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: _monthMax,
-                          ),
-                          child: calendar,
-                        ),
-                      ),
-              ),
-              if (side != null)
-                Container(
-                  width: _paneWidth,
-                  decoration: BoxDecoration(
-                    border: Border(
-                      left: BorderSide(
-                        color: LoomiaColors.of(context).borderSubtle,
-                      ),
-                    ),
-                  ),
-                  child: side,
-                ),
-            ],
-          ),
-        ),
-      );
-    }
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () => onAdd(selection.day),
@@ -456,6 +366,101 @@ class CalendarView extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Desktop (#366): one header row, then the month or the week filling
+  /// the window; an open event's pane beside it.
+  Widget _desktop(
+    BuildContext context,
+    List<DateTime> days,
+    int firstDay,
+    List<Widget> header,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final list = events.value ?? const <CalendarEvent>[];
+    void openDay(DateTime day, Rect anchor) {
+      onSelect(day);
+      unawaited(
+        showDayPopover(
+          context,
+          anchor: anchor,
+          label: l10n.calendarDayTitle(day),
+          builder: (popover) => DaySection(
+            events: events,
+            day: day,
+            onOpen: (event) {
+              Navigator.pop(popover);
+              onOpen(event);
+            },
+            onAdd: (day) {
+              Navigator.pop(popover);
+              onAdd(day);
+            },
+            onRetry: onRetry,
+          ),
+        ),
+      );
+    }
+
+    final side = pane;
+    return Scaffold(
+      body: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xl,
+                  vertical: AppSpacing.lg,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppSpacing.md,
+                  children: [
+                    Row(children: header),
+                    ?eventsNotLoaded(context, events, onRetry),
+                    Expanded(
+                      child: selection.mode == CalendarMode.week
+                          ? WeekGrid(
+                              days: days,
+                              events: list,
+                              selected: selection.day,
+                              today: today,
+                              now: now,
+                              onOpen: onOpen,
+                              onDay: openDay,
+                            )
+                          : DesktopMonth(
+                              month: selection.month,
+                              days: monthDays(selection.month, firstDay),
+                              events: list,
+                              selected: selection.day,
+                              today: today,
+                              onOpen: onOpen,
+                              onDay: openDay,
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (side != null)
+              Container(
+                width: _paneWidth,
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: LoomiaColors.of(context).borderSubtle,
+                    ),
+                  ),
+                ),
+                child: side,
+              ),
+          ],
         ),
       ),
     );

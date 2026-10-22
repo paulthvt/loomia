@@ -1,4 +1,5 @@
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
@@ -10,8 +11,10 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
+import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
-import 'package:loomia/features/calendar/presentation/week_view.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -52,6 +55,7 @@ Future<void> _pump(
   ValueChanged<CalendarMode>? onMode,
   VoidCallback? onPickTitle,
   bool? desktop,
+  DateTime? now,
   Widget? accountAction,
   Widget? pane,
 }) async {
@@ -84,6 +88,7 @@ Future<void> _pump(
         onMode: onMode,
         onPickTitle: onPickTitle,
         desktop: desktop ?? pane != null,
+        now: now,
         accountAction: accountAction,
         pane: pane,
       ),
@@ -288,8 +293,106 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('week view on desktop: 7 columns and no pane', (tester) async {
+  testWidgets('week view on desktop: an hour grid filling the window', (
+    tester,
+  ) async {
     CalendarEvent? opened;
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      selection: week,
+      events: [_workshop, _training],
+      onOpen: (event) => opened = event,
+    );
+
+    expect(find.byType(WeekGrid), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(tester.getSize(find.byType(WeekGrid)).width, greaterThan(1300));
+    expect(tester.getBottomLeft(find.byType(WeekGrid)).dy, greaterThan(850));
+    // Hours down the side, 8 AM to 9 PM labelled.
+    expect(find.text('8:00 AM'), findsOneWidget);
+    expect(find.text('9:00 PM'), findsOneWidget);
+    // Placed by start, sized by length: the 2-hour workshop at 7 PM is five
+    // hours below the training at 2 PM, which lasts its one default hour.
+    Rect card(String title) => tester.getRect(
+      find
+          .ancestor(of: find.text(title), matching: find.byType(Positioned))
+          .first,
+    );
+    final training = card('New member training');
+    final workshop = card('Essential oils for sleep');
+    final hour = training.height + 2;
+    expect(workshop.top - training.top, moreOrLessEquals(5 * hour));
+    expect(workshop.height, moreOrLessEquals(2 * hour - 2));
+
+    await tester.tap(find.text('Essential oils for sleep'));
+    expect(opened, _workshop);
+  });
+
+  testWidgets('week grid: overlapping events side by side, a short one on '
+      'one line, an early one stretches the hours', (tester) async {
+    DateTime at(int hour, int minute) => DateTime(2026, 10, 8, hour, minute);
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      selection: week,
+      events: [
+        CalendarEvent(
+          id: 'a',
+          title: 'Product evening',
+          startsAt: at(19, 0),
+          endsAt: at(20, 0),
+        ),
+        CalendarEvent(
+          id: 'b',
+          title: 'Call Sophie',
+          startsAt: at(19, 30),
+          endsAt: at(20, 30),
+        ),
+        CalendarEvent(
+          id: 'c',
+          title: 'Team check-in',
+          startsAt: at(14, 0),
+          endsAt: at(14, 30),
+        ),
+        CalendarEvent(id: 'd', title: 'Early run', startsAt: at(6, 30)),
+      ],
+    );
+
+    final a = tester.getRect(find.text('Product evening'));
+    final b = tester.getRect(find.text('Call Sophie'));
+    expect(b.left, greaterThan(a.right));
+    expect(find.text('2:00 PM · Team check-in'), findsOneWidget);
+    expect(find.text('6:00 AM'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets("week grid: today's column has the now line", (tester) async {
+    final primary = AppTheme.light.colorScheme.primary;
+    Finder line() => find.byWidgetPredicate(
+      (widget) => widget is ColoredBox && widget.color == primary,
+    );
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      selection: week,
+    );
+    expect(line(), findsNothing);
+
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      selection: week,
+      now: DateTime(2026, 10, 7, 12, 30),
+    );
+    expect(line(), findsOneWidget);
+  });
+
+  testWidgets('week grid: a day opens its popover', (tester) async {
     DateTime? selected;
     await _pump(
       tester,
@@ -297,21 +400,14 @@ void main() {
       desktop: true,
       selection: week,
       events: [_workshop],
-      onOpen: (event) => opened = event,
       onSelect: (day) => selected = day,
     );
 
-    expect(find.byType(WeekColumns), findsOneWidget);
-    expect(find.byType(FloatingActionButton), findsNothing);
-    // The columns take the width beside the sidebar's place.
-    expect(tester.getSize(find.byType(WeekColumns)).width, greaterThan(1000));
-    // And run to the bottom of the window, as in the Figma.
-    expect(tester.getBottomLeft(find.byType(WeekColumns)).dy, greaterThan(800));
-
-    await tester.tap(find.text('Essential oils for sleep'));
-    expect(opened, _workshop);
-    await tester.tap(find.text('10'));
+    await tester.tap(find.bySemanticsLabel(RegExp('^Saturday, October 10')));
+    await tester.pumpAndSettle();
     expect(selected, DateTime(2026, 10, 10));
+    expect(find.text('SATURDAY, OCTOBER 10'), findsOneWidget);
+    expect(find.text('Nothing planned'), findsOneWidget);
   });
 
   testWidgets("the selected day's events, earliest first, open on tap", (
@@ -381,10 +477,105 @@ void main() {
     );
   });
 
-  testWidgets('desktop: a wide window caps the month', (tester) async {
-    await _pump(tester, size: const Size(2400, 900), pane: const Text('pane'));
+  testWidgets('desktop: the month fills the window, its events in the days', (
+    tester,
+  ) async {
+    CalendarEvent? opened;
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      events: [_workshop, _training],
+      onOpen: (event) => opened = event,
+    );
 
-    expect(tester.getSize(find.byType(MonthGrid)).width, lessThan(840));
+    expect(find.byType(DesktopMonth), findsOneWidget);
+    expect(find.byType(MonthGrid), findsNothing);
+    expect(tester.getSize(find.byType(DesktopMonth)).width, greaterThan(1300));
+    expect(
+      tester.getBottomLeft(find.byType(DesktopMonth)).dy,
+      greaterThan(850),
+    );
+    // One header row: the switch beside the title.
+    expect(
+      tester.getCenter(find.text('Month')).dy,
+      moreOrLessEquals(
+        tester.getCenter(find.text('October 2026')).dy,
+        epsilon: 2,
+      ),
+    );
+    expect(find.byType(MonthEventChip), findsNWidgets(2));
+    expect(find.text('7:00 PM'), findsOneWidget);
+
+    await tester.tap(find.text('Essential oils for sleep'));
+    expect(opened, _workshop);
+  });
+
+  testWidgets('desktop month: what does not fit says how many more', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      events: [
+        for (var hour = 9; hour < 15; hour++)
+          CalendarEvent(
+            id: 'e$hour',
+            title: 'Call $hour',
+            startsAt: DateTime(2026, 10, 15, hour),
+          ),
+      ],
+    );
+
+    final shown = tester.widgetList(find.byType(MonthEventChip)).length;
+    expect(shown, inInclusiveRange(1, 5));
+    expect(find.text('+${6 - shown} more'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('desktop month: a day opens its popover; Escape, Add and an '
+      'event close it', (tester) async {
+    DateTime? selected;
+    DateTime? added;
+    CalendarEvent? opened;
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      events: [_workshop, _training],
+      onSelect: (day) => selected = day,
+      onAdd: (day) => added = day,
+      onOpen: (event) => opened = event,
+    );
+
+    await tester.tap(find.text('8'));
+    await tester.pumpAndSettle();
+    expect(selected, DateTime(2026, 10, 8));
+    // Under the day: its heading, its events as rows.
+    expect(
+      tester.getTopLeft(find.text('THURSDAY, OCTOBER 8')).dy,
+      greaterThan(tester.getBottomLeft(find.text('8')).dy),
+    );
+    expect(find.byType(EventRow), findsNWidgets(2));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byType(EventRow), findsNothing);
+
+    await tester.tap(find.text('8'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    expect(added, DateTime(2026, 10, 8));
+    expect(find.byType(EventRow), findsNothing);
+
+    await tester.tap(find.text('8'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(EventRow).first);
+    await tester.pumpAndSettle();
+    expect(opened, _training);
+    expect(find.byType(EventRow), findsNothing);
   });
 
   testWidgets('the ink of a day centres on its number', (tester) async {
@@ -659,8 +850,8 @@ void main() {
     expect(events.calls.where((call) => call == 'list()').length, loads + 1);
   });
 
-  testWidgets('in the app, desktop: week view has no day pane until an event '
-      'opens', (tester) async {
+  testWidgets('in the app, desktop: no day pane; an event opens beside the '
+      'calendar, a day closes it', (tester) async {
     final events = FakeEventRepository();
     final container = await pumpLoomia(
       tester,
@@ -681,8 +872,8 @@ void main() {
     await tester.tap(find.text('Week'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(CalendarDayPane), findsNothing);
-    expect(find.byType(WeekColumns), findsOneWidget);
+    expect(find.byType(WeekGrid), findsOneWidget);
+    expect(find.byType(EventPane), findsNothing);
 
     await tester.tap(find.text('Workshop this week'));
     await tester.pumpAndSettle();
@@ -690,16 +881,24 @@ void main() {
       router.routerDelegate.currentConfiguration.uri.path,
       Routes.eventLocation('w1'),
     );
-    expect(find.byType(WeekColumns), findsOneWidget);
+    expect(find.byType(WeekGrid), findsOneWidget);
+    expect(find.byType(EventPane), findsOneWidget);
 
-    // A day gives the width back to the week.
-    await tester.tap(find.text('${now.day}').first);
+    // A day gives the width back to the week, and opens its popover.
+    await tester.tap(
+      find
+          .bySemanticsLabel(
+            RegExp('^${DateFormat.MMMMEEEEd('en').format(now)}'),
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     expect(
       router.routerDelegate.currentConfiguration.uri.path,
       Routes.calendar,
     );
-    expect(find.byType(CalendarDayPane), findsNothing);
+    expect(find.byType(EventPane), findsNothing);
+    expect(find.byType(EventRow), findsOneWidget);
   });
 
   testWidgets('in the app: pulling down reloads the events', (tester) async {
