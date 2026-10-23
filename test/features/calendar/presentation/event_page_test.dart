@@ -7,8 +7,8 @@ import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
+import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
-import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
@@ -503,7 +503,7 @@ void main() {
     await tester.tap(find.text('Workshop'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(MonthGrid), findsOneWidget);
+    expect(find.byType(DesktopMonth), findsOneWidget);
     expect(find.byType(EventView), findsOneWidget);
     expect(find.byType(BackButton), findsNothing);
   });

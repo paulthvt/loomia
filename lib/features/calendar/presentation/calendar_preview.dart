@@ -1,6 +1,5 @@
 import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
@@ -22,23 +21,7 @@ Widget calendarMobileLight() => _app(AppTheme.light, _calendar());
 Widget calendarMobileDark() => _app(AppTheme.dark, _calendar());
 
 @Preview(group: 'Calendar', name: 'Desktop — light', size: Size(1440, 900))
-Widget calendarDesktopLight() => _app(
-  AppTheme.light,
-  _calendar(
-    pane: ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        DaySection(
-          events: AsyncData(_events),
-          day: _selected,
-          onOpen: (_) {},
-          onAdd: (_) {},
-          onRetry: () {},
-        ),
-      ],
-    ),
-  ),
-);
+Widget calendarDesktopLight() => _app(AppTheme.light, _calendar(desktop: true));
 
 @Preview(group: 'Calendar', name: 'Week — light', size: Size(390, 844))
 Widget calendarWeekLight() =>
@@ -245,21 +228,21 @@ final _workshopSteps = [
 ];
 
 Widget _calendar({
-  Widget? pane,
   bool desktop = false,
   CalendarMode mode = CalendarMode.month,
 }) => CalendarView(
   events: AsyncData(_events),
   selection: (mode: mode, month: DateTime(2026, 10), day: _selected),
   today: _today,
+  // The desktop week's now line, mid-morning.
+  now: DateTime(2026, 10, 7, 11, 15),
   onSelect: (_) {},
   onShift: (_) {},
   onToday: () {},
   onOpen: (_) {},
   onAdd: (_) {},
   onRetry: () {},
-  desktop: desktop || pane != null,
-  pane: pane,
+  desktop: desktop,
 );
 
 Widget _app(ThemeData theme, Widget home) {
