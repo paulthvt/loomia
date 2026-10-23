@@ -700,6 +700,32 @@ void main() {
     );
   });
 
+  testWidgets('in the app: a swipe that starts between two rows still turns', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(390, 844));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    final month = container.read(calendarSelectionProvider).month;
+    Offset at(String day) => tester.getCenter(
+      find.descendant(of: find.byType(MonthGrid), matching: find.text(day)),
+    );
+
+    // Halfway down from the 9th to the 16th: below one day's circle, above
+    // the next one's.
+    await tester.flingFrom(
+      Offset.lerp(at('9'), at('16'), 0.5)!,
+      const Offset(-150, 0),
+      1500,
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(calendarSelectionProvider).month,
+      DateTime(month.year, month.month + 1),
+    );
+  });
+
   testWidgets('in the app: a short, unhurried swipe still turns', (
     tester,
   ) async {

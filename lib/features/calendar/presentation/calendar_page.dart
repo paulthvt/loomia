@@ -696,6 +696,10 @@ class _SwipePagerState extends State<_SwipePager>
       child: widget.builder(delta),
     );
     return RawGestureDetector(
+      // The whole page swipes, the gaps between days too: only the days'
+      // own squares hit, so a swipe started between two rows or between
+      // the weekday names and the first row would be lost (#369).
+      behavior: HitTestBehavior.opaque,
       gestures: {
         _SidewaysDrag: GestureRecognizerFactoryWithHandlers<_SidewaysDrag>(
           _SidewaysDrag.new,
