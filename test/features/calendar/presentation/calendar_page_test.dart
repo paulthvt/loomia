@@ -763,10 +763,71 @@ void main() {
     );
   });
 
-  testWidgets('in the app: a vertical drag on the month scrolls the page', (
-    tester,
-  ) async {
-    final container = await pumpLoomia(tester, size: const Size(390, 600));
+  testWidgets('in the app: a swipe that starts going down still turns, and '
+      'pulls nothing', (tester) async {
+    final events = FakeEventRepository();
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      events: events,
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    final month = container.read(calendarSelectionProvider).month;
+    final loads = events.calls.where((call) => call == 'list()').length;
+
+    // A curved thumb: 24 px down before 6 px sideways, then sideways.
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(MonthGrid)),
+    );
+    for (var i = 0; i < 3; i++) {
+      await gesture.moveBy(const Offset(-2, 8));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    for (var i = 0; i < 10; i++) {
+      await gesture.moveBy(const Offset(-25, 2));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(
+      container.read(calendarSelectionProvider).month,
+      DateTime(month.year, month.month + 1),
+    );
+    expect(events.calls.where((call) => call == 'list()').length, loads);
+  });
+
+  testWidgets('in the app: the month stays put; the list below scrolls and '
+      'pulls to refresh', (tester) async {
+    final events = FakeEventRepository();
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      events: events,
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    final month = container.read(calendarSelectionProvider).month;
+    final grids = find.byType(MonthGrid);
+    final top = tester.getTopLeft(grids).dy;
+    final loads = events.calls.where((call) => call == 'list()').length;
+
+    await tester.drag(grids, const Offset(6, 300));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(grids).dy, top);
+    expect(container.read(calendarSelectionProvider).month, month);
+    expect(events.calls.where((call) => call == 'list()').length, loads);
+
+    await tester.fling(find.byType(DaySection), const Offset(0, 300), 1000);
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(grids).dy, top);
+    expect(events.calls.where((call) => call == 'list()').length, loads + 1);
+  });
+
+  testWidgets('in the app, on its side: a vertical drag on the month scrolls '
+      'the page', (tester) async {
+    final container = await pumpLoomia(tester, size: const Size(844, 390));
     container.read(routerProvider).go(Routes.calendar);
     await tester.pumpAndSettle();
     final month = container.read(calendarSelectionProvider).month;
