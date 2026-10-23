@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2026.10.4](https://github.com/paulthvt/loomia/compare/v2026.10.3...v2026.10.4) (2026-10-23)
+
+### ✨ Features
+
+- **calendar:** full-width month and hour-grid week on desktop (#367) ([75f80b3](https://github.com/paulthvt/loomia/commit/75f80b3059670322c740bab06aee96288272459d))
+
+### 🐛 Bug Fixes
+
+- **calendar:** hold the month still on mobile, scroll the list (#370) ([35aae9a](https://github.com/paulthvt/loomia/commit/35aae9afe4ffa0a84115cb6d2cd50e220d82803d))
+- **calendar:** contain the month picker and let it scroll (#365) ([c79132d](https://github.com/paulthvt/loomia/commit/c79132dcf6549283c0b9ce2fc3a584d5f35e9595))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#371) ([6716a69](https://github.com/paulthvt/loomia/commit/6716a69b0359d479887bc53f36084f52b35137e7))
+
 ## [v2026.10.3](https://github.com/paulthvt/loomia/compare/v2026.10.2...v2026.10.3) (2026-10-20)
 
 ### ✨ Features
