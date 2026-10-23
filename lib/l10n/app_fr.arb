@@ -715,5 +715,26 @@
   "eventScopeRuleChanged": "Une nouvelle récurrence s’applique à cet événement et aux suivants.",
   "@eventScopeRuleChanged": {
     "description": "Note under the choices of eventScopeChangeTitle when the repeat, its end or the date changed: eventScopeThis is then disabled."
+  },
+  "calendarMoreEvents": "+{count} de plus",
+  "@calendarMoreEvents": {
+    "description": "Under the events shown in a day of the desktop Calendar's month, when the rest don't fit: how many more there are. Clicking the day lists them all.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarShortEvent": "{time} · {title}",
+  "@calendarShortEvent": {
+    "description": "A short event on the desktop Calendar's week grid, on one line: its start time, then its title, e.g. '14:00 · Team check-in'.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
   }
 }
