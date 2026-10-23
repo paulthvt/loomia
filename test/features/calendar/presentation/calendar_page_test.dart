@@ -640,6 +640,50 @@ void main() {
     );
   });
 
+  testWidgets('in the app, desktop: the month picker stays narrow', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(1440, 900));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(DateFormat.yMMMM('en').format(today())));
+    await tester.pumpAndSettle();
+
+    final card = find
+        .descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(Material),
+        )
+        .first;
+    expect(tester.getSize(card).width, lessThan(400));
+  });
+
+  testWidgets('in the app, phone on its side: the month picker fits', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(844, 390));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(DateFormat.yMMMM('en').format(today())));
+    await tester.pumpAndSettle();
+
+    // No overflow; the months scroll and the last row is still reachable.
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(
+      find.text('Dec'),
+      50,
+      scrollable: find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.tap(find.text('Dec'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
   testWidgets('in the app, desktop: a button reloads the events', (
     tester,
   ) async {
