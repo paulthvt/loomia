@@ -14,7 +14,7 @@ dependencies:
   # Push for the daily summary (#268): the FCM token and taps on a push.
   # firebase_core is what it needs to start; no Firebase Auth or Firestore.
   # The OS renders the push itself, so no local-notifications package.
-  firebase_core: ^4.15.0
+  firebase_core: ^5.0.0
   firebase_messaging: ^16.7.0
   flutter:
     sdk: flutter
