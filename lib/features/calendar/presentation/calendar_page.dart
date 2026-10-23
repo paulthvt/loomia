@@ -329,47 +329,82 @@ class CalendarView extends StatelessWidget {
         child: const Icon(Icons.add_rounded),
       ),
       body: SafeArea(
-        child: _refreshable(
-          ListView(
-            // Pull to refresh works on a short list too.
-            physics: const AlwaysScrollableScrollPhysics(),
-            // The bottom inset keeps the last row clear of the add button.
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.sm,
-              AppSpacing.md,
-              AppSpacing.xxxl + AppSpacing.lg,
-            ),
-            children: [
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final top = [
               header,
               const SizedBox(height: AppSpacing.sm),
               switcher,
               const SizedBox(height: AppSpacing.md),
               pager,
-              const Divider(height: AppSpacing.xl),
-              if (week)
-                WeekList(
-                  events: events,
-                  days: days,
-                  selected: selection.day,
-                  today: today,
-                  onOpen: onOpen,
-                  onRetry: onRetry,
-                )
-              else
-                DaySection(
-                  events: events,
-                  day: selection.day,
-                  onOpen: onOpen,
-                  onAdd: onAdd,
-                  onRetry: onRetry,
+            ];
+            final below = week
+                ? WeekList(
+                    events: events,
+                    days: days,
+                    selected: selection.day,
+                    today: today,
+                    onOpen: onOpen,
+                    onRetry: onRetry,
+                  )
+                : DaySection(
+                    events: events,
+                    day: selection.day,
+                    onOpen: onOpen,
+                    onAdd: onAdd,
+                    onRetry: onRetry,
+                  );
+            const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
+            // The bottom inset keeps the last row clear of the add button.
+            const bottom = AppSpacing.xxxl + AppSpacing.lg;
+            Widget scrolling(EdgeInsets padding, List<Widget> children) =>
+                _refreshable(
+                  ListView(
+                    // Pull to refresh works on a short list too.
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: padding,
+                    children: children,
+                  ),
+                );
+            // On its side the phone has no room to hold the calendar still:
+            // everything scrolls, and a curved swipe can still miss.
+            if (box.maxHeight < _pinnedMinHeight) {
+              return scrolling(
+                sides.copyWith(top: AppSpacing.sm, bottom: bottom),
+                [...top, const Divider(height: AppSpacing.xl), below],
+              );
+            }
+            // Held still, the month or the strip has no vertical drag to
+            // lose a swipe to (#369); only the list below scrolls and pulls.
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: sides.copyWith(top: AppSpacing.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: top,
+                  ),
                 ),
-            ],
-          ),
+                const Padding(
+                  padding: sides,
+                  child: Divider(height: AppSpacing.xl),
+                ),
+                Expanded(
+                  child: scrolling(sides.copyWith(bottom: bottom), [below]),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
+
+  /// Below this height (a phone on its side) the calendar scrolls with the
+  /// list instead of staying put above it: a six-week month, the header and
+  /// the switch take about 420 px. ponytail: a fixed cut, not a measure.
+  static const double _pinnedMinHeight = 560;
 
   /// Desktop (#366): one header row, then the month or the week filling
   /// the window; an open event's pane beside it.
@@ -661,6 +696,10 @@ class _SwipePagerState extends State<_SwipePager>
       child: widget.builder(delta),
     );
     return RawGestureDetector(
+      // The whole page swipes, the gaps between days too: only the days'
+      // own squares hit, so a swipe started between two rows or between
+      // the weekday names and the first row would be lost (#369).
+      behavior: HitTestBehavior.opaque,
       gestures: {
         _SidewaysDrag: GestureRecognizerFactoryWithHandlers<_SidewaysDrag>(
           _SidewaysDrag.new,
