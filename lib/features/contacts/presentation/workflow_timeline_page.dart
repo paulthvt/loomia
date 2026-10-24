@@ -18,6 +18,7 @@ import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/undo_tick.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
@@ -47,6 +48,13 @@ class _WorkflowTimelinePageState extends ConsumerState<WorkflowTimelinePage> {
     if (_busy) return;
     setState(() => _busy = true);
     await writePeople(context, ref, write);
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _tick(Person person, OnStep step) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await tickStep(context, ref, person, step);
     if (mounted) setState(() => _busy = false);
   }
 
@@ -168,12 +176,7 @@ class _WorkflowTimelinePageState extends ConsumerState<WorkflowTimelinePage> {
                   (true, _, final OnStep on) => IconButton(
                     onPressed: _busy
                         ? null
-                        : () => unawaited(
-                            _run(
-                              (people) =>
-                                  people.completeStep(person, on, today()),
-                            ),
-                          ),
+                        : () => unawaited(_tick(person, on)),
                     tooltip: l10n.nextStepMarkDone(step.label),
                     icon: const Icon(Icons.check_rounded),
                   ),

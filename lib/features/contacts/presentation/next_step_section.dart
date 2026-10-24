@@ -25,6 +25,7 @@ import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/contacts/presentation/reminder_sheet.dart';
+import 'package:loomia/features/contacts/presentation/undo_tick.dart';
 import 'package:loomia/features/contacts/presentation/whats_next_sheet.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -57,12 +58,15 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
   Future<void> _tickReminder(Reminder reminder) async {
     if (!_busyReminders.add(reminder.id)) return;
     setState(() {});
-    await writePeople(
-      context,
-      ref,
-      (people) => people.completeReminder(widget.person, reminder, today()),
-    );
+    await tickReminder(context, ref, widget.person, reminder);
     if (mounted) setState(() => _busyReminders.remove(reminder.id));
+  }
+
+  Future<void> _tickStep(OnStep step) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await tickStep(context, ref, widget.person, step);
+    if (mounted) setState(() => _busy = false);
   }
 
   Future<void> _run(
@@ -121,9 +125,7 @@ class _NextStepSectionState extends ConsumerState<NextStepSection> {
             ),
       today: today(),
       busy: _busy,
-      onTick: (step) => unawaited(
-        _run((people) => people.completeStep(person, step, today())),
-      ),
+      onTick: (step) => unawaited(_tickStep(step)),
       events: events,
       // Until the types load, Plan has nothing to plan.
       onPlan: types == null

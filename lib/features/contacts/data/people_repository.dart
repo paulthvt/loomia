@@ -264,6 +264,87 @@ class PeopleRepository {
     ),
   );
 
+  /// Takes back the tick of [stepId] on [on] (#372): the step, its due day
+  /// ([lastTick], as before the tick), the entry, and an LRP the tick
+  /// started. [updatedAt] is the person's as the tick returned it; any
+  /// change since is refused with [UndoStale].
+  Future<Person> undoStep(
+    String personId,
+    String stepId,
+    DateTime on,
+    DateTime lastTick,
+    String updatedAt,
+  ) => _undo(() async {
+    final row = await _client
+        .rpc<Object?>(
+          'undo_step',
+          params: {
+            'p_person': personId,
+            'p_step': stepId,
+            'p_on': dayColumn(on),
+            'p_last_tick': dayColumn(lastTick),
+            'p_updated_at': updatedAt,
+          },
+        )
+        .select(_columns)
+        .single();
+    return personFromRow(row);
+  });
+
+  /// Brings back [reminder], ticked on [on] for [personId], with its entry
+  /// gone. Returns nothing, as [completeReminder]: the caller reads again.
+  Future<void> undoReminder(
+    String personId,
+    Reminder reminder,
+    DateTime on,
+    String updatedAt,
+  ) => _undo(
+    () => _client.rpc<Object?>(
+      'undo_reminder',
+      params: {
+        'p_reminder': reminder.id,
+        'p_person': personId,
+        'p_text': reminder.text,
+        'p_due_on': dayColumn(reminder.dueOn),
+        'p_created_at': reminder.createdAt.toIso8601String(),
+        'p_on': dayColumn(on),
+        'p_updated_at': updatedAt,
+      },
+    ),
+  );
+
+  /// The renewal on [renewal] unchecked again, back to [previous].
+  Future<Person> undoLoyaltyCheck(
+    String personId,
+    DateTime renewal,
+    DateTime? previous,
+    String updatedAt,
+  ) => _undo(() async {
+    final row = await _client
+        .rpc<Object?>(
+          'undo_loyalty_check',
+          params: {
+            'p_person': personId,
+            'p_renewal': dayColumn(renewal),
+            'p_previous': previous == null ? null : dayColumn(previous),
+            'p_updated_at': updatedAt,
+          },
+        )
+        .select(_columns)
+        .single();
+    return personFromRow(row);
+  });
+
+  /// The undo functions refuse with P0002 when the person changed since.
+  Future<T> _undo<T>(Future<T> Function() call) => guardPeople(() async {
+    try {
+      return await call();
+    } on PostgrestException catch (e) {
+      if (e.code == 'P0002') throw const UndoStale();
+      rethrow;
+    }
+  });
+
   Future<Person> _write(String id, Map<String, dynamic> values) =>
       guardPeople(() async {
         final row = await _client
@@ -314,6 +395,8 @@ PeopleFailure peopleFailureFrom(Object error) => switch (error) {
 Future<T> guardPeople<T>(Future<T> Function() call) async {
   try {
     return await call();
+  } on UndoStale {
+    rethrow;
   } catch (error, stack) {
     final failure = peopleFailureFrom(error);
     switch (error) {
@@ -383,6 +466,7 @@ Person personFromRow(Map<String, dynamic> row) {
     stuckOn: _text(row['stuck_on']),
     stageSince: DateTime.parse(row['stage_since'] as String),
     createdAt: DateTime.parse(row['created_at'] as String),
+    updatedAt: row['updated_at'] as String?,
     place: switch ((row['workflow_id'], row['at_position'], row['last_tick'])) {
       (final String id, final num at, final String tick) => (
         workflowId: id,

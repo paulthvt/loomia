@@ -64,9 +64,10 @@ Future<bool> writePeople(
     );
     return true;
   } on PeopleFailure catch (failure) {
-    messenger.showSnackBar(
-      SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
-    );
+    // In place of an Undo still up (#372): the failure is the news.
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(peopleFailureCopy(l10n, failure))));
     return false;
   }
 }

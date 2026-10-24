@@ -32,6 +32,7 @@ import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/contacts/presentation/next_step_section.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/undo_tick.dart';
 import 'package:loomia/features/contacts/presentation/whats_next_sheet.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/presentation/goal_line.dart';
@@ -109,34 +110,58 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           .notifier,
     );
     final l10n = AppLocalizations.of(context);
+    final owner = ref.read(accountProvider)?.email;
     final model =
         ref.read(accountProvider)?.businessModel ?? BusinessModel.other;
+    final day = today();
+    Person? after;
     try {
-      final ticked = await writePeople(
-        context,
-        ref,
-        (people) => switch (due) {
-          DueStep(:final person, :final step) => people.completeStep(
-            person,
-            step,
-            today(),
-          ),
-          DueReminder(:final person, :final reminder) =>
-            people.completeReminder(person, reminder, today()),
+      final ticked = await writePeople(context, ref, (people) async {
+        switch (due) {
+          case DueStep(:final person, :final step):
+            after = await people.completeStep(person, step, day);
+          case DueReminder(:final person, :final reminder):
+            await people.completeReminder(person, reminder, day);
           // Its row has buttons instead of the ring: see _invite.
-          DueFollowUp() => throw StateError('a follow-up has no ring'),
-          DueNext() => throw StateError('what comes next has no ring'),
-          DueLoyalty(:final person, :final renewal) => people.checkLoyalty(
-            person,
-            renewal,
-            today(),
-            loyaltyRenewsText(l10n, model, person, renewal),
-          ),
-        },
-      );
+          case DueFollowUp():
+            throw StateError('a follow-up has no ring');
+          case DueNext():
+            throw StateError('what comes next has no ring');
+          case DueLoyalty(:final person, :final renewal):
+            after = await people.checkLoyalty(
+              person,
+              renewal,
+              day,
+              loyaltyRenewsText(l10n, model, person, renewal),
+            );
+        }
+      });
       // The book dropped the row in this same microtask: the bar moves in
       // the frame the row starts to leave.
-      if (ticked && mounted) done.add();
+      if (!ticked || !mounted) return;
+      done.add();
+      final (message, undo) = switch (due) {
+        DueStep(:final person, :final step) => (
+          l10n.tickDoneFor(person.name, step.step.label),
+          (PeopleController people) =>
+              people.undoStep(person, after!, step, day),
+        ),
+        DueReminder(:final person, :final reminder) => (
+          l10n.tickDoneFor(person.name, reminder.text),
+          (PeopleController people) =>
+              people.undoReminder(person, reminder, day),
+        ),
+        DueLoyalty(:final person, :final renewal) => (
+          l10n.tickDoneLoyalty(person.name),
+          (PeopleController people) =>
+              people.undoLoyaltyCheck(person, after!, renewal),
+        ),
+        DueFollowUp() || DueNext() => throw StateError('not a tick'),
+      };
+      offerUndo(context, message, (container) async {
+        await undo(container.read(peopleProvider(owner).notifier));
+        container.invalidate(doneTodayProvider);
+      });
     } finally {
       if (mounted) setState(() => _busy.remove(key));
     }
@@ -207,10 +232,23 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     try {
       await events.tick(due.event.id, due.step.id, today());
     } on PeopleFailure catch (failure) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
-      );
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+        );
+      return;
     }
+    if (!mounted) return;
+    final owner = ref.read(accountProvider)?.email;
+    // No history entry, not in the done count: the untick is all there is.
+    offerUndo(
+      context,
+      l10n.tickDone(due.step.label),
+      (container) => container
+          .read(eventsProvider(owner).notifier)
+          .untick(due.event.id, due.step.id),
+    );
   }
 
   /// The people, and this month's goals with them: a failed goals load has

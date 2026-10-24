@@ -299,7 +299,9 @@ class FakePeopleRepository implements PeopleRepository {
     DateTime on,
   ) async {
     await _record('completeStep($personId, $stepId)');
-    final before = _served(store[personId]!);
+    final raw = store[personId]!;
+    final entries = activities?.store.length ?? 0;
+    final before = _served(raw);
     // The database refuses anything but the current step (a stale tick).
     if (before.currentStepId != stepId) throw PeopleFailure.unknown;
     final place = before.place!;
@@ -335,6 +337,7 @@ class FakePeopleRepository implements PeopleRepository {
       ),
     );
     if (starts) _addLoyaltyEntry(personId, ActivityKind.loyaltyStart, on);
+    _snapshot(moved, raw, entries);
     return withLastContact(moved, before.lastContactOn);
   }
 
@@ -443,6 +446,7 @@ class FakePeopleRepository implements PeopleRepository {
     final before = store[personId]!;
     if (before.loyaltySince == null) throw PeopleFailure.unknown;
     if (before.loyaltyCheckedFor == renewal) return _served(before);
+    final entries = activities?.store.length ?? 0;
     activities?.store.add(
       Activity(
         id: 'a-reminder-${_next++}',
@@ -453,12 +457,14 @@ class FakePeopleRepository implements PeopleRepository {
         createdAt: DateTime.utc(2026, 10, 8, 12),
       ),
     );
-    return _with(
+    final checked = _with(
       before,
       place: before.place,
       pausedAt: before.pausedAt,
       loyaltyCheckedFor: () => renewal,
     );
+    _snapshot(checked, before, entries);
+    return checked;
   }
 
   void _addLoyaltyEntry(String personId, ActivityKind kind, DateTime on) =>
@@ -598,8 +604,69 @@ class FakePeopleRepository implements PeopleRepository {
           ? before.loyaltyCheckedFor
           : loyaltyCheckedFor(),
       tagIds: before.tagIds,
+      // Every write moves updated_at, as the trigger does.
+      updatedAt: 'v${_next++}',
     );
     store[person.id] = person;
     return _served(person);
+  }
+
+  /// updated_at after a step tick or LRP check → the person before it and
+  /// how many entries there were, for the undo.
+  final Map<String, (Person, int)> _ticks = {};
+
+  void _snapshot(Person after, Person before, int entries) =>
+      _ticks[after.updatedAt!] = (before, entries);
+
+  Person _undoTo(String personId, String updatedAt) {
+    final snapshot = _ticks.remove(updatedAt);
+    if (snapshot == null || store[personId]?.updatedAt != updatedAt) {
+      throw const UndoStale();
+    }
+    final (before, entries) = snapshot;
+    activities?.store.length = entries;
+    store[personId] = before;
+    return _served(before);
+  }
+
+  @override
+  Future<Person> undoStep(
+    String personId,
+    String stepId,
+    DateTime on,
+    DateTime lastTick,
+    String updatedAt,
+  ) async {
+    await _record('undoStep($personId, $stepId)');
+    return _undoTo(personId, updatedAt);
+  }
+
+  @override
+  Future<Person> undoLoyaltyCheck(
+    String personId,
+    DateTime renewal,
+    DateTime? previous,
+    String updatedAt,
+  ) async {
+    await _record('undoLoyaltyCheck($personId)');
+    return _undoTo(personId, updatedAt);
+  }
+
+  /// As `undo_reminder`: back with its id, its entry gone.
+  @override
+  Future<void> undoReminder(
+    String personId,
+    Reminder reminder,
+    DateTime on,
+    String updatedAt,
+  ) async {
+    await _record('undoReminder(${reminder.id})');
+    final open = reminders[personId] ??= [];
+    if ((store[personId]?.updatedAt ?? '') != updatedAt ||
+        open.any((other) => other.id == reminder.id)) {
+      throw const UndoStale();
+    }
+    open.add(reminder);
+    activities?.store.removeWhere((entry) => entry.id == 'a-${reminder.id}');
   }
 }

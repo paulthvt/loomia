@@ -56,6 +56,7 @@ class Person {
     this.loyaltyDay,
     this.loyaltyCheckedFor,
     this.tagIds = const {},
+    this.updatedAt,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? stageSince,
        assert(
@@ -170,6 +171,12 @@ class Person {
   /// next load, so readers resolve ids through the account's tags.
   final Set<String> tagIds;
 
+  /// `updated_at` exactly as the server sent it, microseconds included: an
+  /// undo hands it back to prove nothing changed since the tick (#372). Kept
+  /// as text because a web `DateTime` drops the microseconds. Null when not
+  /// read from the server.
+  final String? updatedAt;
+
   Person withStatus(ProspectStatus? status) =>
       _copy(prospectStatus: status, reminders: reminders, tagIds: tagIds);
 
@@ -227,6 +234,7 @@ class Person {
     loyaltyDay: loyaltyDay,
     loyaltyCheckedFor: loyaltyCheckedFor,
     tagIds: tagIds,
+    updatedAt: updatedAt,
   );
 }
 
