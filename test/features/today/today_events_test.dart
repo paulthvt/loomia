@@ -276,4 +276,31 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('in the app: Undo on an event step unticks it (#372)', (
+    tester,
+  ) async {
+    final events = FakeEventRepository();
+    final now = DateTime.now();
+    events.store.add(
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: DateTime(now.year, now.month, now.day + 1, 19),
+        eventWorkflowId: 'workshop',
+      ),
+    );
+    await pumpLoomia(tester, size: const Size(390, 1400), events: events);
+    final ring = find.byTooltip('Mark "Remind everyone it\'s tomorrow" done');
+
+    await tester.tap(ring);
+    await tester.pumpAndSettle();
+    expect(ring, findsNothing);
+    expect(find.text("Done: Remind everyone it's tomorrow"), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(events.calls, contains('untick(e1:remind)'));
+    expect(ring, findsOneWidget);
+  });
 }

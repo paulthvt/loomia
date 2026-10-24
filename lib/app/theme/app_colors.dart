@@ -45,6 +45,8 @@ abstract final class AppColors {
     scrim: Color(0xFF201B16),
     inverseSurface: Color(0xFF201B16),
     onInverseSurface: Color(0xFFFBFAF8),
+    // The snackbar's Undo (#372): 8.4:1 on inverseSurface.
+    inversePrimary: Color(0xFFE0AB7B),
   );
 
   static const dark = ColorScheme(
@@ -75,6 +77,8 @@ abstract final class AppColors {
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFFF1EEEC),
     onInverseSurface: Color(0xFF201B16),
+    // 5.9:1 on inverseSurface; primary itself is 4.3:1, under AA.
+    inversePrimary: Color(0xFF8A4A0F),
   );
 }
 

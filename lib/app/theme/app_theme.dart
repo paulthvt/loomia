@@ -233,6 +233,7 @@ abstract final class AppTheme {
           color: scheme.onInverseSurface,
         ),
         behavior: SnackBarBehavior.floating,
+        actionTextColor: scheme.inversePrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.md),
         ),

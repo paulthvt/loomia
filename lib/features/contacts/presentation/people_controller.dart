@@ -147,14 +147,39 @@ class PeopleController extends AsyncNotifier<List<Person>> {
       _replace(await _repository.setLoyaltyDay(person.id, day));
 
   /// Ticks the LRP renewal on [renewal] from Today; [text] is the entry.
-  Future<void> checkLoyalty(
+  /// Returns them as checked: their `updatedAt` is the undo's (#372).
+  Future<Person> checkLoyalty(
     Person person,
     DateTime renewal,
     DateTime today,
     String text,
   ) async {
-    _replace(await _repository.checkLoyalty(person.id, renewal, today, text));
+    final checked = await _repository.checkLoyalty(
+      person.id,
+      renewal,
+      today,
+      text,
+    );
+    _replace(checked);
     if (ref.mounted) ref.invalidate(historyProvider(person.id));
+    return checked;
+  }
+
+  /// Takes back [checkLoyalty]: [before] as it was, [after] as it returned.
+  Future<void> undoLoyaltyCheck(
+    Person before,
+    Person after,
+    DateTime renewal,
+  ) async {
+    _replace(
+      await _repository.undoLoyaltyCheck(
+        before.id,
+        renewal,
+        before.loyaltyCheckedFor,
+        after.updatedAt!,
+      ),
+    );
+    if (ref.mounted) ref.invalidate(historyProvider(before.id));
   }
 
   /// Change workflow, for all of [people] in one write; null is "Nothing for
@@ -175,20 +200,47 @@ class PeopleController extends AsyncNotifier<List<Person>> {
   }
 
   /// Ticks [progress]'s step on [today]: a history entry, and the next step.
-  Future<void> completeStep(
+  /// Returns them as moved: their `updatedAt` is the undo's (#372).
+  Future<Person> completeStep(
     Person person,
     OnStep progress,
     DateTime today,
   ) async {
-    _replace(
-      await _repository.completeStep(person.id, progress.step.id, today),
+    final moved = await _repository.completeStep(
+      person.id,
+      progress.step.id,
+      today,
     );
-    if (!ref.mounted) return;
+    _replace(moved);
+    if (!ref.mounted) return moved;
     // The row's step and day are right, but its last contact was read
     // before the step's history entry (the RPC's own snapshot, #222): the
     // book reloads behind for it.
     ref
       ..invalidate(historyProvider(person.id))
+      ..invalidateSelf();
+    return moved;
+  }
+
+  /// Takes back [completeStep]: [before] as it was, [after] as it returned.
+  Future<void> undoStep(
+    Person before,
+    Person after,
+    OnStep progress,
+    DateTime today,
+  ) async {
+    _replace(
+      await _repository.undoStep(
+        before.id,
+        progress.step.id,
+        today,
+        before.place!.lastTick,
+        after.updatedAt!,
+      ),
+    );
+    if (!ref.mounted) return;
+    ref
+      ..invalidate(historyProvider(before.id))
       ..invalidateSelf();
   }
 
@@ -242,6 +294,25 @@ class PeopleController extends AsyncNotifier<List<Person>> {
       person.id,
       (reminders) => [...reminders.where((other) => other.id != reminder.id)],
     );
+    if (!ref.mounted) return;
+    ref
+      ..invalidate(historyProvider(person.id))
+      ..invalidateSelf();
+  }
+
+  /// Takes back [completeReminder]: [person] as it was before the tick.
+  Future<void> undoReminder(
+    Person person,
+    Reminder reminder,
+    DateTime today,
+  ) async {
+    await _repository.undoReminder(
+      person.id,
+      reminder,
+      today,
+      person.updatedAt ?? '',
+    );
+    _changeReminders(person.id, (reminders) => [...reminders, reminder]);
     if (!ref.mounted) return;
     ref
       ..invalidate(historyProvider(person.id))

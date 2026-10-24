@@ -795,6 +795,56 @@ void main() {
     expect(people.calls, contains('completeStep(p1, samples-1)'));
   });
 
+  testWidgets('Undo after ticking the next step brings it back (#372)', (
+    tester,
+  ) async {
+    people.store['p1'] = _marieOn(1);
+    await openMarie(tester);
+    await tester.tap(find.byTooltip(markFirst));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Done for Marie Dupont: Send a first message'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls, contains('undoStep(p1, samples-1)'));
+    expect(find.text('Samples · 1 of 5'), findsOneWidget);
+    expect(activities.store, isEmpty);
+  });
+
+  testWidgets('a reminder ticked on a contact can be undone after leaving '
+      'it', (tester) async {
+    people.store['p1'] = _marieOn(1);
+    people.reminders['p1'] = [
+      (
+        id: 'r1',
+        text: 'Call back about the diffuser',
+        dueOn: today(),
+        createdAt: DateTime.utc(2026),
+      ),
+    ];
+    await openMarie(tester);
+    final tick = find.byTooltip('Mark "Call back about the diffuser" done');
+    await tester.ensureVisible(tick);
+    await tester.pumpAndSettle();
+    await tester.tap(tick);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(ContactPage), findsNothing);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(people.calls, contains('undoReminder(r1)'));
+    await tester.tap(find.text('Marie Dupont'));
+    await tester.pumpAndSettle();
+    expect(find.text('Call back about the diffuser'), findsOneWidget);
+  });
+
   testWidgets('a reminder: added from Next step, then ticked into the '
       'history', (tester) async {
     people.store['p1'] = _marieOn(1);

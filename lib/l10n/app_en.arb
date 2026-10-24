@@ -2949,5 +2949,31 @@
   "tagColorViolet": "Violet",
   "@tagColorViolet": {"description": "Name of a tag colour, read by screen readers on its swatch in the tag form (violet)."},
   "tagsDone": "Done",
-  "@tagsDone": {"description": "Button of the tag sheet that saves the ticked tags. Closing the sheet any other way saves nothing."}
+  "@tagsDone": {"description": "Button of the tag sheet that saves the ticked tags. Closing the sheet any other way saves nothing."},
+  "tickDoneFor": "Done for {name}: {task}",
+  "@tickDoneFor": {
+    "description": "Snackbar after ticking a step or a reminder on someone, shown with an Undo action. name is the person, task the step or reminder text.",
+    "placeholders": {
+      "name": { "type": "String" },
+      "task": { "type": "String" }
+    }
+  },
+  "tickDoneLoyalty": "LRP checked for {name}",
+  "@tickDoneLoyalty": {
+    "description": "Snackbar after checking in about someone's LRP (loyalty order) renewal on Today, shown with an Undo action. name is the person.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "tickDone": "Done: {task}",
+  "@tickDone": {
+    "description": "Snackbar after ticking an event's checklist step on Today, shown with an Undo action. task is the step.",
+    "placeholders": {
+      "task": { "type": "String" }
+    }
+  },
+  "tickUndo": "Undo",
+  "@tickUndo": {"description": "Action of the snackbar shown after a tick: takes the tick back, as if it never happened."},
+  "tickUndoStale": "That changed in the meantime, so it wasn't undone.",
+  "@tickUndoStale": {"description": "Snackbar when Undo is refused because the person was changed since the tick (for example on another device). Nothing was changed."}
 }

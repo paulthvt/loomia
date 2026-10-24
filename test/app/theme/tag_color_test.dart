@@ -8,6 +8,15 @@ double _contrast(Color a, Color b) {
 }
 
 void main() {
+  test("the snackbar's action is AA on the snackbar, both modes (#372)", () {
+    for (final scheme in [AppColors.light, AppColors.dark]) {
+      expect(
+        _contrast(scheme.inversePrimary, scheme.inverseSurface),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
+
   for (final color in TagColor.values) {
     test('${color.name} ink is AA on its container, both modes', () {
       for (final ink in [color.light, color.dark]) {

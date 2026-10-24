@@ -75,6 +75,7 @@ Person withServerFields(
     loyaltyDay: person.loyaltyDay,
     loyaltyCheckedFor: person.loyaltyCheckedFor,
     tagIds: person.tagIds,
+    updatedAt: person.updatedAt,
   );
 }
 
@@ -117,6 +118,7 @@ Person withLastContact(Person person, DateTime? day) => Person(
   loyaltyDay: person.loyaltyDay,
   loyaltyCheckedFor: person.loyaltyCheckedFor,
   reminders: person.reminders,
+  updatedAt: person.updatedAt,
 );
 
 /// Where ticking [stepId] leads: the next step's position; past the last,
