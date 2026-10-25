@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/features/tasks/data/task_repository.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 
 void main() {
@@ -87,38 +88,38 @@ void main() {
       expect(result.map((t) => t.id), ['2', '3', '4', '1']);
     });
 
-    test('compares calendar days only (UTC+14)', () {
-      // User at UTC+14 looks at 2026-10-25
-      final today = DateTime(2026, 10, 25);
-      final task = Task(
-        id: '1',
-        title: 'Task',
-        note: null,
-        dueOn: DateTime(2026, 10, 25), // parsed from '2026-10-25'
-        doneOn: null,
-        createdAt: DateTime(2026, 10, 25),
-      );
+    test('row parsing yields local midnights', () {
+      final task = taskFromRow({
+        'id': '1',
+        'title': 'Task',
+        'note': 'Note',
+        'due_on': '2026-10-25',
+        'done_on': '2026-10-25',
+        'created_at': '2026-10-25T10:30:00Z',
+      });
 
-      final result = todayTasks([task], today);
-
-      expect(result, [task]);
+      expect(task.dueOn, DateTime(2026, 10, 25));
+      expect(task.dueOn.isUtc, false);
+      expect(task.doneOn, DateTime(2026, 10, 25));
+      expect(task.doneOn!.isUtc, false);
     });
 
-    test('compares calendar days only (UTC-10)', () {
-      // User at UTC-10 looks at 2026-10-25
-      final today = DateTime(2026, 10, 25);
+    test('compares calendar days only, not timestamps', () {
       final task = Task(
         id: '1',
         title: 'Task',
         note: null,
-        dueOn: DateTime(2026, 10, 25), // parsed from '2026-10-25'
+        dueOn: DateTime(2026, 10, 25),
         doneOn: null,
         createdAt: DateTime(2026, 10, 25),
       );
 
-      final result = todayTasks([task], today);
-
-      expect(result, [task]);
+      // Same day, start of day
+      expect(todayTasks([task], DateTime(2026, 10, 25)), [task]);
+      // Same day, end of day
+      expect(todayTasks([task], DateTime(2026, 10, 25, 23, 59)), [task]);
+      // Day before, end of day
+      expect(todayTasks([task], DateTime(2026, 10, 24, 23, 59)), isEmpty);
     });
 
     test('excludes task due day before today', () {
