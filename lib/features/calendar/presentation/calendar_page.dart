@@ -61,13 +61,20 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   final Set<String> _busy = {};
 
   /// A task's ring: an open one is done today, with Undo, and stays on its
-  /// day crossed out; a done one opens again, with no snackbar.
+  /// day crossed out; a done one opens again, with no snackbar. On desktop
+  /// the ring only lives in the day popover, whose barrier would catch the
+  /// click on Undo: no Undo there, the ring unticks in one tap.
   Future<void> _toggleTask(Task task) async {
     final key = task.key;
     if (!_busy.add(key)) return;
     setState(() {});
     try {
-      await toggleTask(context, ref, task);
+      await toggleTask(
+        context,
+        ref,
+        task,
+        withUndo: !context.screenSize.isDesktop,
+      );
     } finally {
       if (mounted) setState(() => _busy.remove(key));
     }
@@ -103,6 +110,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final saved = await showEventForm(context, day: day);
     if (saved != null && context.mounted) {
       ref.read(calendarSelectionProvider.notifier).select(saved.day);
+    }
+  }
+
+  /// Adds or edits a task; the calendar then shows the day it is due.
+  Future<void> _task(DateTime day, {Task? editing}) async {
+    final saved = await showTask(context, day: day, editing: editing);
+    if (saved != null && mounted) {
+      ref.read(calendarSelectionProvider.notifier).select(saved.dueOn);
     }
   }
 
@@ -159,8 +174,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       onOpen: (event) => openEvent(context, event.id),
       onAdd: (day) => unawaited(_add(context, ref, day)),
       onToggleTask: (task) => unawaited(_toggleTask(task)),
-      onOpenTask: (task) =>
-          unawaited(showTask(context, day: task.dueOn, editing: task)),
+      onAddTask: (day) => unawaited(_task(day)),
+      onOpenTask: (task) => unawaited(_task(task.dueOn, editing: task)),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => _refresh(context, ref),
       desktop: desktop,
@@ -193,6 +208,7 @@ class CalendarView extends StatelessWidget {
     required this.onToday,
     required this.onOpen,
     required this.onAdd,
+    required this.onAddTask,
     required this.onRetry,
     required this.tasks,
     required this.onToggleTask,
@@ -236,6 +252,9 @@ class CalendarView extends StatelessWidget {
   /// Adds an event on the given day. On mobile and tablet, the add button
   /// and the day's Add first ask Event or Task; Task opens the task sheet.
   final ValueChanged<DateTime> onAdd;
+
+  /// Opens the task sheet for a new task on the given day.
+  final ValueChanged<DateTime> onAddTask;
   final VoidCallback onRetry;
 
   /// A task's ring: ticks an open one, unticks a done one.
@@ -345,7 +364,6 @@ class CalendarView extends StatelessWidget {
     );
     final counts = eventsPerDay(events.value ?? const []);
     final taskCounts = openTasksPerDay(tasks);
-    void addTask(DateTime day) => unawaited(showTask(context, day: day));
     final pager = week
         ? _SwipePager(
             anchor: days.first,
@@ -390,7 +408,7 @@ class CalendarView extends StatelessWidget {
               button,
               day: selection.day,
               onEvent: onAdd,
-              onTask: addTask,
+              onTask: onAddTask,
             ),
           ),
           tooltip: l10n.calendarAdd,
@@ -429,7 +447,7 @@ class CalendarView extends StatelessWidget {
                     onToggleTask: onToggleTask,
                     onOpenTask: onOpenTask,
                     onAdd: onAdd,
-                    onAddTask: addTask,
+                    onAddTask: onAddTask,
                     onRetry: onRetry,
                   );
             const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
@@ -495,7 +513,6 @@ class CalendarView extends StatelessWidget {
   ) {
     final l10n = AppLocalizations.of(context);
     final list = events.value ?? const <CalendarEvent>[];
-    void addTask(DateTime day) => unawaited(showTask(context, day: day));
     void openDay(DateTime day, Rect anchor) {
       onSelect(day);
       unawaited(
@@ -522,7 +539,7 @@ class CalendarView extends StatelessWidget {
                 onToggleTask: view.onToggleTask,
                 onOpenTask: (task) => closing(view.onOpenTask, task),
                 onAdd: (day) => closing(view.onAdd, day),
-                onAddTask: (day) => closing(addTask, day),
+                onAddTask: (day) => closing(view.onAddTask, day),
                 onRetry: view.onRetry,
               ),
             );

@@ -15,12 +15,12 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Create or edit a task: a sheet on mobile, a dialog elsewhere. Closes once
-/// saved or deleted.
-Future<void> showTask(
+/// saved or deleted. Returns the saved task; null when cancelled or deleted.
+Future<Task?> showTask(
   BuildContext context, {
   required DateTime day,
   Task? editing,
-}) => LoomiaDialog.show<void>(
+}) => LoomiaDialog.show<Task>(
   context,
   (_) => _TaskForm(day: day, editing: editing),
 );
@@ -54,7 +54,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
   }
 
   Future<void> _write(
-    Future<void> Function(TasksController tasks) write,
+    Future<Task?> Function(TasksController tasks) write,
   ) async {
     final tasks = ref.read(
       tasksProvider(ref.read(accountProvider)?.email).notifier,
@@ -64,8 +64,8 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
       _failure = null;
     });
     try {
-      await write(tasks);
-      if (mounted) Navigator.pop(context);
+      final saved = await write(tasks);
+      if (mounted) Navigator.pop(context, saved);
     } on PeopleFailure catch (failure) {
       if (mounted) {
         setState(() {
@@ -99,7 +99,10 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
       action: l10n.historyDeleteConfirm,
     );
     if (confirmed) {
-      await _write((tasks) => tasks.remove(editing.id));
+      await _write((tasks) async {
+        await tasks.remove(editing.id);
+        return null;
+      });
     }
   }
 

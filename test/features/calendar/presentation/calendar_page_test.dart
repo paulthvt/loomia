@@ -84,6 +84,7 @@ Future<void> _pump(
         onToday: onToday ?? () {},
         onOpen: onOpen ?? (_) {},
         onAdd: onAdd ?? (_) {},
+        onAddTask: (_) {},
         onRetry: () {},
         tasks: const [],
         onToggleTask: (_) {},

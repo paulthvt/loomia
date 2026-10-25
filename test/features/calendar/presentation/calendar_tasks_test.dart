@@ -54,6 +54,7 @@ Future<FakeTaskRepository> _pump(
   List<Task> tasks = const [],
   CalendarMode mode = CalendarMode.month,
   ValueChanged<DateTime>? onAdd,
+  ValueChanged<DateTime>? onAddTask,
   void Function(Task task)? onToggleTask,
   void Function(Task task)? onOpenTask,
   bool desktop = false,
@@ -88,6 +89,7 @@ Future<FakeTaskRepository> _pump(
           onToday: () {},
           onOpen: (_) {},
           onAdd: onAdd ?? (_) {},
+          onAddTask: onAddTask ?? (_) {},
           onToggleTask: onToggleTask ?? (_) {},
           onOpenTask: onOpenTask ?? (_) {},
           onRetry: () {},
@@ -250,7 +252,8 @@ void main() {
   ]) {
     testWidgets('$name asks Event or Task', (tester) async {
       final added = <DateTime>[];
-      await _pump(tester, onAdd: added.add);
+      final addedTasks = <DateTime>[];
+      await _pump(tester, onAdd: added.add, onAddTask: addedTasks.add);
 
       await tester.tap(entry.first);
       await tester.pumpAndSettle();
@@ -264,8 +267,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Task'));
       await tester.pumpAndSettle();
-      expect(find.text('New task'), findsOneWidget);
-      expect(find.text('Thursday, October 8'), findsWidgets);
+      expect(addedTasks, [_day]);
     });
   }
 
@@ -364,7 +366,8 @@ void main() {
     });
 
     testWidgets("the popover's Add asks Event or Task", (tester) async {
-      await _pump(tester, desktop: true);
+      final addedTasks = <DateTime>[];
+      await _pump(tester, desktop: true, onAddTask: addedTasks.add);
 
       await tester.tap(find.text('8'));
       await tester.pumpAndSettle();
@@ -373,7 +376,7 @@ void main() {
       await tester.tap(find.text('Task'));
       await tester.pumpAndSettle();
 
-      expect(find.text('New task'), findsOneWidget);
+      expect(addedTasks, [_day]);
       expect(find.byType(TaskRow), findsNothing);
     });
 
@@ -501,6 +504,56 @@ void main() {
         tester.widget<Text>(row).style?.decoration,
         TextDecoration.lineThrough,
       );
+      semantics.dispose();
+    });
+
+    testWidgets('a task saved on another day selects that day', (tester) async {
+      await pumpCalendar(tester);
+
+      await tester.tap(find.byTooltip('Add'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Task'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).first, 'Call back');
+      await tester.tap(find.text('Tomorrow'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      final tomorrow = DateTime(today().year, today().month, today().day + 1);
+      expect(tasks.calls, contains('add(Call back, ${_iso(tomorrow)})'));
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(CalendarView)),
+      );
+      expect(container.read(calendarSelectionProvider).day, tomorrow);
+    });
+
+    testWidgets('on desktop, the popover ticks with no Undo, and unticks', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      tasks.store['t1'] = _task('t1', on: today());
+      final container = await pumpLoomia(
+        tester,
+        size: const Size(1440, 900),
+        tasks: tasks,
+      );
+      container.read(routerProvider).go(Routes.calendar);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.bySemanticsLabel(RegExp(r'no events, one task$')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Mark "Task t1" done'));
+      await tester.pumpAndSettle();
+
+      expect(tasks.calls, contains('setDone(t1, ${_iso(today())})'));
+      expect(find.byType(SnackBar), findsNothing);
+
+      await tester.tap(find.byTooltip('Mark "Task t1" not done'));
+      await tester.pumpAndSettle();
+
+      expect(tasks.calls, contains('setDone(t1, null)'));
+      expect(find.byType(TaskRow), findsOneWidget);
       semantics.dispose();
     });
 

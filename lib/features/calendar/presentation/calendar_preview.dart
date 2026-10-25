@@ -280,6 +280,7 @@ Widget _calendar({
   onToday: () {},
   onOpen: (_) {},
   onAdd: (_) {},
+  onAddTask: (_) {},
   onToggleTask: (_) {},
   onOpenTask: (_) {},
   onRetry: () {},

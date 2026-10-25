@@ -9,10 +9,15 @@ import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// A task's ring: an open task is done today, with Undo; a done one opens
-/// again, with no snackbar. A failure says so in a SnackBar. The caller
-/// keeps the ring busy meanwhile.
-Future<void> toggleTask(BuildContext context, WidgetRef ref, Task task) async {
+/// A task's ring: an open task is done today, with Undo unless [withUndo]
+/// is false; a done one opens again, with no snackbar. A failure says so in
+/// a SnackBar. The caller keeps the ring busy meanwhile.
+Future<void> toggleTask(
+  BuildContext context,
+  WidgetRef ref,
+  Task task, {
+  bool withUndo = true,
+}) async {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
   final owner = ref.read(accountProvider)?.email;
@@ -20,7 +25,7 @@ Future<void> toggleTask(BuildContext context, WidgetRef ref, Task task) async {
     await ref
         .read(tasksProvider(owner).notifier)
         .setDone(task, task.done ? null : today());
-    if (!context.mounted || task.done) return;
+    if (!context.mounted || task.done || !withUndo) return;
     offerUndo(
       context,
       l10n.tickDone(task.title),
