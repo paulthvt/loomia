@@ -311,15 +311,19 @@ class CalendarView extends StatelessWidget {
     );
 
     if (desktop) {
-      return _desktop(context, days, firstDay, [
-        titleButton(theme.textTheme.headlineSmall),
-        modeSwitch,
-        const SizedBox(width: AppSpacing.sm),
-        todayButton,
-        previous,
-        next,
-        ?accountAction,
-      ]);
+      return _Latest(
+        view: this,
+        builder: (context, latest) =>
+            _desktop(context, latest, days, firstDay, [
+              titleButton(theme.textTheme.headlineSmall),
+              modeSwitch,
+              const SizedBox(width: AppSpacing.sm),
+              todayButton,
+              previous,
+              next,
+              ?accountAction,
+            ]),
+      );
     }
 
     final header = Row(
@@ -484,12 +488,14 @@ class CalendarView extends StatelessWidget {
   /// the window; an open event's pane beside it.
   Widget _desktop(
     BuildContext context,
+    ValueNotifier<CalendarView> latest,
     List<DateTime> days,
     int firstDay,
     List<Widget> header,
   ) {
     final l10n = AppLocalizations.of(context);
     final list = events.value ?? const <CalendarEvent>[];
+    void addTask(DateTime day) => unawaited(showTask(context, day: day));
     void openDay(DateTime day, Rect anchor) {
       onSelect(day);
       unawaited(
@@ -497,19 +503,30 @@ class CalendarView extends StatelessWidget {
           context,
           anchor: anchor,
           label: l10n.calendarDayTitle(day),
-          builder: (popover) => DaySection(
-            events: events,
-            day: day,
-            onOpen: (event) {
+          builder: (popover) {
+            void closing<T>(void Function(T) then, T value) {
               Navigator.pop(popover);
-              onOpen(event);
-            },
-            onAdd: (day) {
-              Navigator.pop(popover);
-              onAdd(day);
-            },
-            onRetry: onRetry,
-          ),
+              then(value);
+            }
+
+            // The popover is a route of its own: it reads the view's latest
+            // build, so a ticked task crosses out in place.
+            return ValueListenableBuilder(
+              valueListenable: latest,
+              builder: (_, view, _) => DaySection(
+                events: view.events,
+                tasks: view.tasks,
+                busy: view.busy,
+                day: day,
+                onOpen: (event) => closing(view.onOpen, event),
+                onToggleTask: view.onToggleTask,
+                onOpenTask: (task) => closing(view.onOpenTask, task),
+                onAdd: (day) => closing(view.onAdd, day),
+                onAddTask: (day) => closing(addTask, day),
+                onRetry: view.onRetry,
+              ),
+            );
+          },
         ),
       );
     }
@@ -541,6 +558,8 @@ class CalendarView extends StatelessWidget {
                               today: today,
                               now: now,
                               onOpen: onOpen,
+                              tasks: tasks,
+                              onOpenTask: onOpenTask,
                               onDay: openDay,
                             )
                           : DesktopMonth(
@@ -550,6 +569,8 @@ class CalendarView extends StatelessWidget {
                               selected: selection.day,
                               today: today,
                               onOpen: onOpen,
+                              tasks: tasks,
+                              onOpenTask: onOpenTask,
                               onDay: openDay,
                             ),
                     ),
@@ -581,6 +602,46 @@ class CalendarView extends StatelessWidget {
         ? list
         : RefreshIndicator(onRefresh: refresh, child: list);
   }
+}
+
+/// Hands each new [view] to what [builder] opens over it, through `latest`:
+/// a day's popover is a route of its own, out of reach of the view's
+/// rebuilds.
+class _Latest extends StatefulWidget {
+  const _Latest({required this.view, required this.builder});
+
+  final CalendarView view;
+  final Widget Function(
+    BuildContext context,
+    ValueNotifier<CalendarView> latest,
+  )
+  builder;
+
+  @override
+  State<_Latest> createState() => _LatestState();
+}
+
+class _LatestState extends State<_Latest> {
+  late final ValueNotifier<CalendarView> _latest = ValueNotifier(widget.view);
+
+  @override
+  void didUpdateWidget(_Latest old) {
+    super.didUpdateWidget(old);
+    // After the frame: rebuilding the popover, another route, mid-build
+    // is not allowed.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _latest.value = widget.view;
+    });
+  }
+
+  @override
+  void dispose() {
+    _latest.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _latest);
 }
 
 /// The Calendar's title, a button that opens its picker: the month, or the

@@ -576,6 +576,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
+    // Add asks Event or Task first, as on mobile.
+    await tester.tap(find.text('Event'));
+    await tester.pumpAndSettle();
     expect(added, DateTime(2026, 10, 8));
     expect(find.byType(EventRow), findsNothing);
 
