@@ -377,7 +377,8 @@ void main() {
     ) async {
       final peopleRepo = FakePeopleRepository([_person('Anna')]);
       final taskRepo = FakeTaskRepository();
-      taskRepo.failWith = PeopleFailure.network;
+      // Not network: offline has its own copy, whatever the section.
+      taskRepo.failWith = PeopleFailure.unknown;
 
       await pumpLoomia(
         tester,
@@ -393,6 +394,8 @@ void main() {
 
       // Tasks section shows LoadFailed
       expect(find.text('TASKS'), findsOneWidget);
+      expect(find.text("Couldn't load your tasks."), findsOneWidget);
+      expect(find.text("Couldn't load today."), findsNothing);
       expect(
         find.descendant(
           of: find.byType(LoadFailed),

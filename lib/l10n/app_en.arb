@@ -389,6 +389,10 @@
   "@todayLoadFailed": {
     "description": "Heading in place of Today when the contacts or the workflows could not be loaded. Above loadFailedBody and a Try again button."
   },
+  "todayTasksLoadFailed": "Couldn't load your tasks.",
+  "@todayTasksLoadFailed": {
+    "description": "Heading in place of the Tasks section's rows on Today when the tasks could not be loaded; the rest of Today stays. Above loadFailedBody and a Try again button."
+  },
   "actionMarkAsDone": "Mark as done",
   "@actionMarkAsDone": {
     "description": "Default label of the button that clears a suggested follow-up from the list."

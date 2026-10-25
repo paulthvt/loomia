@@ -876,7 +876,7 @@ class _TodayViewState extends State<TodayView> {
           SectionHeader(title: l10n.todaySectionTasks),
           LoadFailed(
             offline: error == PeopleFailure.network,
-            title: l10n.todayLoadFailed,
+            title: l10n.todayTasksLoadFailed,
             onRetry: widget.onRetry,
           ),
         ],
