@@ -499,7 +499,7 @@ class MonthTaskChip extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: _titleStyle(context)?.copyWith(
-                      color: done ? scheme.onSurfaceVariant : scheme.onSurface,
+                      color: done ? colors.textMuted : scheme.onSurface,
                       decoration: done ? TextDecoration.lineThrough : null,
                     ),
                   ),
