@@ -707,8 +707,16 @@ class _TodayViewState extends State<TodayView> {
       _ => const <Task>[],
     };
     final tasksBlock = _tasks(l10n, tasks, day);
+    final loading = [
+      ...goalWidgets,
+      ...eventsBlock,
+      const Center(child: CircularProgressIndicator()),
+    ];
 
     final listed = switch (widget.due) {
+      // Tasks still on their way: no "up to date", no people-only headline.
+      AsyncData() when !widget.tasks.hasValue && !widget.tasks.hasError =>
+        loading,
       AsyncData(:final value)
           when value.isEmpty && tasks.isEmpty && (widget.done ?? 0) > 0 =>
         [
@@ -747,11 +755,7 @@ class _TodayViewState extends State<TodayView> {
           onRetry: widget.onRetry,
         ),
       ],
-      _ => [
-        ...goalWidgets,
-        ...eventsBlock,
-        const Center(child: CircularProgressIndicator()),
-      ],
+      _ => loading,
     };
 
     final nudge = widget.nudge;

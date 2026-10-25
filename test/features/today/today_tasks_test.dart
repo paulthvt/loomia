@@ -223,6 +223,32 @@ void main() {
       expect(find.text('Add a task'), findsOneWidget);
     });
 
+    testWidgets('no up to date while the tasks load', (tester) async {
+      await pumpView(tester, due: const [], tasks: const AsyncLoading());
+
+      expect(find.text('You are up to date'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await pumpView(
+        tester,
+        due: const [],
+        tasks: AsyncData([
+          _task(id: 't1', title: 'Order flyers', dueOn: _today),
+          _task(id: 't2', title: 'Call supplier', dueOn: _today),
+        ]),
+      );
+
+      expect(find.text('2 tasks today'), findsOneWidget);
+      expect(find.text('You are up to date'), findsNothing);
+    });
+
+    testWidgets('no people-only headline while the tasks load', (tester) async {
+      await pumpView(tester, due: [_due('Anna')], tasks: const AsyncLoading());
+
+      expect(find.text('One person is worth a message today'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
     testWidgets('all done keeps the Tasks section', (tester) async {
       await pumpView(
         tester,
