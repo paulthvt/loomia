@@ -14,6 +14,7 @@ import 'package:loomia/features/goals/data/goals_repository.dart';
 import 'package:loomia/features/notifications/data/notifications_repository.dart';
 import 'package:loomia/features/notifications/data/push.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
+import 'package:loomia/features/tasks/data/task_repository.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:material_ui/material_ui.dart';
@@ -29,6 +30,7 @@ import '../features/contacts/fake_tag_repository.dart';
 import '../features/goals/fake_goals_repository.dart';
 import '../features/notifications/fake_notifications_repository.dart';
 import '../features/notifications/fake_push.dart';
+import '../features/tasks/fake_task_repository.dart';
 import '../features/workflows/fake_event_workflow_repository.dart';
 import '../features/workflows/fake_workflow_repository.dart';
 
@@ -47,6 +49,7 @@ Future<ProviderContainer> pumpLoomia(
   FakeEventWorkflowRepository? eventWorkflows,
   FakeGoalsRepository? goals,
   FakeEventRepository? events,
+  FakeTaskRepository? tasks,
   FakePhoneContactsRepository? phoneContacts,
   FakeAuthRepository? auth,
   FakePhotoRepository? photos,
@@ -88,6 +91,7 @@ Future<ProviderContainer> pumpLoomia(
         eventRepositoryProvider.overrideWithValue(
           events ?? FakeEventRepository(),
         ),
+        taskRepositoryProvider.overrideWithValue(tasks ?? FakeTaskRepository()),
         phoneContactsRepositoryProvider.overrideWithValue(
           phoneContacts ?? FakePhoneContactsRepository(),
         ),

@@ -7,6 +7,7 @@ import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
+import 'package:loomia/features/tasks/data/task_repository.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -16,6 +17,7 @@ import 'package:material_ui/material_ui.dart';
 import '../auth/fake_auth_repository.dart';
 import '../contacts/fake_activity_repository.dart';
 import '../contacts/fake_people_repository.dart';
+import '../tasks/fake_task_repository.dart';
 import '../workflows/fake_event_workflow_repository.dart';
 import '../workflows/fake_workflow_repository.dart';
 import 'fake_event_repository.dart';
@@ -50,6 +52,7 @@ Future<void> pumpCalendarHarness(
       overrides: [
         authRepositoryProvider.overrideWithValue(auth),
         eventRepositoryProvider.overrideWithValue(events),
+        taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
         eventWorkflowRepositoryProvider.overrideWithValue(eventWorkflowsRepo),
         workflowRepositoryProvider.overrideWithValue(workflows),
         peopleRepositoryProvider.overrideWithValue(people),

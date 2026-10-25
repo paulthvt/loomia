@@ -8,6 +8,7 @@ import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/week_grid.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -42,6 +43,15 @@ double _textHeight(
   return height;
 }
 
+/// What a screen reader says for a day: its events, and its open tasks if
+/// any, as the mobile month's.
+String _daySemantics(BuildContext context, DateTime day, int events, int open) {
+  final l10n = AppLocalizations.of(context);
+  return open > 0
+      ? l10n.calendarDaySemanticsTasks(day, events, open)
+      : l10n.calendarDaySemantics(day, events);
+}
+
 /// One line of [style] at the device's text scale.
 double _lineHeight(BuildContext context, TextStyle style) =>
     MediaQuery.textScalerOf(context).scale(style.fontSize ?? 14) *
@@ -69,7 +79,8 @@ class _Board extends StatelessWidget {
 }
 
 /// Desktop month (Figma "Month B"): the weeks fill the card, ruled, each day
-/// listing its events. A day opens its popover; an event opens itself.
+/// listing its tasks, then its events. A day opens its popover; an event
+/// or a task opens itself.
 class DesktopMonth extends StatelessWidget {
   const DesktopMonth({
     required this.month,
@@ -79,6 +90,8 @@ class DesktopMonth extends StatelessWidget {
     required this.today,
     required this.onOpen,
     required this.onDay,
+    this.tasks = const [],
+    this.onOpenTask,
     super.key,
   });
 
@@ -88,9 +101,13 @@ class DesktopMonth extends StatelessWidget {
   /// Whole weeks, as `monthDays`.
   final List<DateTime> days;
   final List<CalendarEvent> events;
+
+  /// Every task; each shows on its due day, done ones struck through.
+  final List<Task> tasks;
   final DateTime selected;
   final DateTime today;
   final void Function(CalendarEvent event) onOpen;
+  final void Function(Task task)? onOpenTask;
   final OpenDay onDay;
 
   @override
@@ -141,7 +158,9 @@ class DesktopMonth extends StatelessWidget {
                         selected: day == selected,
                         today: day == today,
                         events: byDay[day] ?? const [],
+                        tasks: tasksOn(tasks, day),
                         onOpen: onOpen,
+                        onOpenTask: onOpenTask,
                         onDay: onDay,
                       ),
                     ),
@@ -155,7 +174,7 @@ class DesktopMonth extends StatelessWidget {
 }
 
 /// A day of [DesktopMonth]: its number (a filled badge today), then as many
-/// of its events as fit, then "+N more". Tinted when selected, sunken when
+/// of its tasks and events as fit, tasks first, then "+N more". Tinted when selected, sunken when
 /// it belongs to the month before or after.
 class _MonthCell extends StatelessWidget {
   const _MonthCell({
@@ -165,7 +184,9 @@ class _MonthCell extends StatelessWidget {
     required this.selected,
     required this.today,
     required this.events,
+    required this.tasks,
     required this.onOpen,
+    required this.onOpenTask,
     required this.onDay,
   });
 
@@ -180,7 +201,11 @@ class _MonthCell extends StatelessWidget {
   final bool selected;
   final bool today;
   final List<CalendarEvent> events;
+
+  /// The day's tasks, open first.
+  final List<Task> tasks;
   final void Function(CalendarEvent event) onOpen;
+  final void Function(Task task)? onOpenTask;
   final OpenDay onDay;
 
   @override
@@ -189,6 +214,18 @@ class _MonthCell extends StatelessWidget {
     final scheme = theme.colorScheme;
     final colors = LoomiaColors.of(context);
     final l10n = AppLocalizations.of(context);
+    final chips = <(double Function(double width), Widget)>[
+      for (final task in tasks)
+        (
+          (width) => MonthTaskChip.heightFor(context, task, width),
+          MonthTaskChip(task: task, onTap: () => onOpenTask?.call(task)),
+        ),
+      for (final event in events)
+        (
+          (width) => MonthEventChip.heightFor(context, event, width),
+          MonthEventChip(event: event, onTap: () => onOpen(event)),
+        ),
+    ];
     final rule = BorderSide(color: colors.borderSubtle);
     final more = theme.textTheme.labelSmall?.copyWith(
       color: colors.primaryText,
@@ -216,7 +253,12 @@ class _MonthCell extends StatelessWidget {
           container: true,
           button: true,
           selected: selected,
-          label: l10n.calendarDaySemantics(day, events.length),
+          label: _daySemantics(
+            context,
+            day,
+            events.length,
+            tasks.where((task) => !task.done).length,
+          ),
           child: InkWell(
             onTap: () => onDay(day, _globalRect(context)),
             child: Padding(
@@ -245,13 +287,8 @@ class _MonthCell extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, box) {
                         final heights = [
-                          for (final event in events)
-                            MonthEventChip.heightFor(
-                                  context,
-                                  event,
-                                  box.maxWidth,
-                                ) +
-                                _gap,
+                          for (final (height, _) in chips)
+                            height(box.maxWidth) + _gap,
                         ];
                         final shown = chipsThatFit(
                           heights,
@@ -268,16 +305,12 @@ class _MonthCell extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               spacing: _gap,
                               children: [
-                                for (final event in events.take(shown))
-                                  MonthEventChip(
-                                    event: event,
-                                    onTap: () => onOpen(event),
-                                  ),
-                                if (shown < events.length)
+                                for (final (_, chip) in chips.take(shown)) chip,
+                                if (shown < chips.length)
                                   ExcludeSemantics(
                                     child: Text(
                                       l10n.calendarMoreEvents(
-                                        events.length - shown,
+                                        chips.length - shown,
                                       ),
                                       style: more,
                                     ),
@@ -403,9 +436,87 @@ class MonthEventChip extends StatelessWidget {
   }
 }
 
+/// A task inside a desktop month day or the desktop week's strip, sized and
+/// set as [MonthEventChip]: a hollow ring (the mobile month's hollow dot),
+/// its title on one line. Done: struck through and muted.
+class MonthTaskChip extends StatelessWidget {
+  const MonthTaskChip({required this.task, required this.onTap, super.key});
+
+  static const double _ring = 6;
+  static const double _stroke = 1.5;
+  static const double _vertical = MonthEventChip._vertical;
+
+  final Task task;
+  final VoidCallback onTap;
+
+  static TextStyle? _titleStyle(BuildContext context) =>
+      MonthEventChip._titleStyle(context);
+
+  /// The height a chip for [task] takes at [width]: one line.
+  static double heightFor(BuildContext context, Task task, double width) =>
+      2 * _vertical +
+      _textHeight(
+        context,
+        task.title,
+        _titleStyle(context),
+        width - _ring - AppSpacing.sm - AppSpacing.xs,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
+    final done = task.done;
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: _vertical,
+              bottom: _vertical,
+              end: AppSpacing.xs,
+            ),
+            child: Row(
+              spacing: AppSpacing.sm,
+              children: [
+                Container(
+                  width: _ring,
+                  height: _ring,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: done ? colors.textMuted : scheme.primary,
+                      width: _stroke,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    task.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _titleStyle(context)?.copyWith(
+                      color: done ? colors.textMuted : scheme.onSurface,
+                      decoration: done ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Desktop week (Figma "Week B"): the 7 days on an hour grid, events placed
 /// at their start and as tall as they last, overlapping ones side by side.
-/// The selected column is tinted, today's has a line at [now].
+/// The selected column is tinted, today's has a line at [now]. A week with
+/// tasks has a strip under the headings: each day's, as in the month.
 class WeekGrid extends StatelessWidget {
   const WeekGrid({
     required this.days,
@@ -414,6 +525,8 @@ class WeekGrid extends StatelessWidget {
     required this.today,
     required this.onOpen,
     required this.onDay,
+    this.tasks = const [],
+    this.onOpenTask,
     this.now,
     super.key,
   });
@@ -424,9 +537,16 @@ class WeekGrid extends StatelessWidget {
   /// Below this an hour gets, the grid scrolls instead of shrinking.
   static const double _minHour = 40;
 
+  /// The most of the window the task strip takes; past it, it scrolls.
+  static const double _maxStrip = 1 / 3;
+
   /// The week's 7 days, as `weekDays`.
   final List<DateTime> days;
   final List<CalendarEvent> events;
+
+  /// Every task; each shows on its due day, done ones struck through.
+  final List<Task> tasks;
+  final void Function(Task task)? onOpenTask;
   final DateTime selected;
   final DateTime today;
 
@@ -442,6 +562,7 @@ class WeekGrid extends StatelessWidget {
       for (final event in events)
         if (days.contains(event.day)) event,
     ];
+    final weekTasks = [for (final day in days) tasksOn(tasks, day)];
     final range = hourRange(week);
     final hours = range.last - range.first;
     final hourStyle = Theme.of(context).textTheme.labelSmall
@@ -455,19 +576,54 @@ class WeekGrid extends StatelessWidget {
             child: Row(
               children: [
                 const SizedBox(width: _gutter),
-                for (final day in days)
+                for (final (index, day) in days.indexed)
                   Expanded(
                     child: _ColumnHeader(
                       day: day,
                       selected: day == selected,
                       today: day == today,
                       count: eventsOn(week, day).length,
+                      open: weekTasks[index].where((t) => !t.done).length,
                       onDay: onDay,
                     ),
                   ),
               ],
             ),
           ),
+          if (weekTasks.any((day) => day.isNotEmpty))
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * _maxStrip,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(width: _gutter),
+                    for (final day in weekTasks)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            spacing: _MonthCell._gap,
+                            children: [
+                              for (final task in day)
+                                MonthTaskChip(
+                                  task: task,
+                                  onTap: () => onOpenTask?.call(task),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           Expanded(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -544,6 +700,7 @@ class _ColumnHeader extends StatelessWidget {
     required this.selected,
     required this.today,
     required this.count,
+    required this.open,
     required this.onDay,
   });
 
@@ -554,6 +711,9 @@ class _ColumnHeader extends StatelessWidget {
   final bool selected;
   final bool today;
   final int count;
+
+  /// Open tasks due that day.
+  final int open;
   final OpenDay onDay;
 
   @override
@@ -565,7 +725,7 @@ class _ColumnHeader extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: AppLocalizations.of(context).calendarDaySemantics(day, count),
+      label: _daySemantics(context, day, count, open),
       excludeSemantics: true,
       child: InkWell(
         onTap: () => onDay(day, _globalRect(context)),

@@ -9,6 +9,8 @@ import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
+import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -45,7 +47,7 @@ Widget? eventsNotLoaded(
 }
 
 /// Mobile and tablet week view, under the strip: each day's heading, then
-/// its events or "Nothing planned". Selecting another day of the same week
+/// its tasks then its events, or "Nothing planned". Selecting another day of the same week
 /// scrolls its heading into view.
 class WeekList extends StatefulWidget {
   const WeekList({
@@ -55,10 +57,15 @@ class WeekList extends StatefulWidget {
     required this.today,
     required this.onOpen,
     required this.onRetry,
+    required this.tasks,
+    required this.onToggleTask,
+    required this.onOpenTask,
+    this.busy = const {},
     super.key,
   });
 
   final AsyncValue<List<CalendarEvent>> events;
+  final List<Task> tasks;
 
   /// The week's 7 days, as `weekDays`.
   final List<DateTime> days;
@@ -66,6 +73,11 @@ class WeekList extends StatefulWidget {
   final DateTime today;
   final void Function(CalendarEvent event) onOpen;
   final VoidCallback onRetry;
+  final void Function(Task task) onToggleTask;
+  final void Function(Task task) onOpenTask;
+
+  /// [Task.key]s whose write is in flight.
+  final Set<String> busy;
 
   @override
   State<WeekList> createState() => _WeekListState();
@@ -116,10 +128,17 @@ class _WeekListState extends State<WeekList> {
                 selected: day == widget.selected,
                 today: day == widget.today,
               ),
-              ...switch (eventsOn(list, day)) {
-                [] => [Text(l10n.calendarNothingPlanned, style: muted)],
-                final onDay => [
-                  for (final event in onDay)
+              ...switch ((tasksOn(widget.tasks, day), eventsOn(list, day))) {
+                ([], []) => [Text(l10n.calendarNothingPlanned, style: muted)],
+                (final tasks, final events) => [
+                  for (final task in tasks)
+                    TaskRow(
+                      task: task,
+                      busy: widget.busy.contains(task.key),
+                      onOpen: () => widget.onOpenTask(task),
+                      onToggle: () => widget.onToggleTask(task),
+                    ),
+                  for (final event in events)
                     EventRow(event: event, onTap: () => widget.onOpen(event)),
                 ],
               },

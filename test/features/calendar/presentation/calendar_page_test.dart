@@ -84,7 +84,11 @@ Future<void> _pump(
         onToday: onToday ?? () {},
         onOpen: onOpen ?? (_) {},
         onAdd: onAdd ?? (_) {},
+        onAddTask: (_) {},
         onRetry: () {},
+        tasks: const [],
+        onToggleTask: (_) {},
+        onOpenTask: (_) {},
         onMode: onMode,
         onPickTitle: onPickTitle,
         desktop: desktop ?? pane != null,
@@ -452,7 +456,13 @@ void main() {
 
     expect(find.text('Nothing planned'), findsOneWidget);
     await tester.tap(find.text('Add'));
-    await tester.tap(find.byTooltip('New event'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Event'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Add'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Event'));
+    await tester.pumpAndSettle();
 
     expect(added, [DateTime(2026, 10, 9), DateTime(2026, 10, 9)]);
   });
@@ -566,6 +576,9 @@ void main() {
     await tester.tap(find.text('8'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    // Add asks Event or Task first, as on mobile.
+    await tester.tap(find.text('Event'));
     await tester.pumpAndSettle();
     expect(added, DateTime(2026, 10, 8));
     expect(find.byType(EventRow), findsNothing);
@@ -1065,7 +1078,9 @@ void main() {
     container.read(routerProvider).go(Routes.calendar);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('New event'));
+    await tester.tap(find.byTooltip('Add'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Event'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.descendant(

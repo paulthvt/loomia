@@ -7,6 +7,7 @@ import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/notifications/presentation/nudge_card.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/domain/today_events.dart';
@@ -26,18 +27,32 @@ import 'package:material_ui/material_ui.dart';
 /// desktop six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
-Widget todayMobileLight() =>
-    _app(AppTheme.light, _book, goals: _goals, done: 2, checkIns: _catchUp);
+Widget todayMobileLight() => _app(
+  AppTheme.light,
+  _book,
+  tasks: _tasks,
+  goals: _goals,
+  done: 2,
+  checkIns: _catchUp,
+);
 
 @Preview(group: 'Today', name: 'Mobile — dark', size: Size(390, 844))
-Widget todayMobileDark() => _app(AppTheme.dark, _book, goals: _goals, done: 2);
+Widget todayMobileDark() =>
+    _app(AppTheme.dark, _book, tasks: _tasks, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Desktop — light', size: Size(1440, 900))
-Widget todayDesktopLight() =>
-    _app(AppTheme.light, _book, goals: _goals, done: 2, checkIns: _catchUp);
+Widget todayDesktopLight() => _app(
+  AppTheme.light,
+  _book,
+  tasks: _tasks,
+  goals: _goals,
+  done: 2,
+  checkIns: _catchUp,
+);
 
 @Preview(group: 'Today', name: 'Desktop — dark', size: Size(1440, 900))
-Widget todayDesktopDark() => _app(AppTheme.dark, _book, goals: _goals, done: 2);
+Widget todayDesktopDark() =>
+    _app(AppTheme.dark, _book, tasks: _tasks, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Empty — light', size: Size(390, 844))
 Widget todayEmptyLight() => _app(AppTheme.light, const [], done: 0);
@@ -354,9 +369,29 @@ final _events = (
   ],
 );
 
+final _tasks = [
+  Task(
+    id: 't1',
+    title: 'Order new samples',
+    note: 'Essential oils collection',
+    dueOn: DateTime(2026, 9, 29),
+    doneOn: null,
+    createdAt: DateTime.utc(2026, 9, 20),
+  ),
+  Task(
+    id: 't2',
+    title: 'Call supplier',
+    note: null,
+    dueOn: DateTime(2026, 9, 27),
+    doneOn: null,
+    createdAt: DateTime.utc(2026, 9, 18),
+  ),
+];
+
 Widget _app(
   ThemeData theme,
   List<Due> due, {
+  List<Task> tasks = const [],
   GoalsMonth? goals,
   TodayEvents events = noTodayEvents,
   DateTime? now,
@@ -373,10 +408,12 @@ Widget _app(
     theme: theme,
     home: TodayView(
       due: AsyncData(due),
+      tasks: AsyncData(tasks),
       done: done,
       now: now ?? _now,
       firstName: 'Pauline',
       onTick: (_) {},
+      onTickTask: (_) {},
       onGoing: (_) {},
       onFollowedUp: (_) {},
       onRemoveInvite: (_) {},
@@ -384,6 +421,8 @@ Widget _app(
       onLater: (_) {},
       onNext: (_) {},
       onOpen: (_) {},
+      onOpenTask: (_) {},
+      onAddTask: () {},
       onRetry: () {},
       onRefresh: () async {},
       goals: goals,

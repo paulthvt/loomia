@@ -9,12 +9,13 @@ import 'package:material_ui/material_ui.dart';
 
 /// The unit of Today — a suggestion, not a task (`docs/design/components.md` #12).
 ///
-/// [reason] is required on purpose: it is what makes the item an offer instead of
-/// a demand (design principle #4).
+/// [reason] explains why the item is shown. Usually required (it makes the item
+/// an offer instead of a demand, design principle #4); nullable only when the
+/// context is already clear (e.g., a task the user created themselves).
 class ActionItem extends StatelessWidget {
   const ActionItem({
     required this.name,
-    required this.reason,
+    this.reason,
     this.photoPath,
     this.title,
     this.icon,
@@ -25,12 +26,14 @@ class ActionItem extends StatelessWidget {
     this.onResolve,
     this.resolveLabel,
     this.resolved = false,
+    this.done = false,
+    this.maxLines,
     this.actions,
     super.key,
   });
 
   final String name;
-  final String reason;
+  final String? reason;
 
   /// The person's photo's Storage path; null shows initials.
   final String? photoPath;
@@ -63,6 +66,14 @@ class ActionItem extends StatelessWidget {
 
   /// The tick is in flight: the ring stays filled and takes no second tap.
   final bool resolved;
+
+  /// Already resolved, and it stays on screen: the title struck through and
+  /// muted, the ring filled; [onResolve] still takes a tap, to undo it.
+  final bool done;
+
+  /// Cuts the title and the reason, each, after this many lines with "…".
+  /// Null lets them run.
+  final int? maxLines;
 
   /// Buttons under the text, for an item resolved more than one way
   /// (Going, Followed up, Remove); replaces the ring.
@@ -127,14 +138,32 @@ class ActionItem extends StatelessWidget {
                           Flexible(
                             child: Text(
                               title ?? name,
-                              style: theme.textTheme.titleMedium,
+                              maxLines: maxLines,
+                              overflow: maxLines == null
+                                  ? null
+                                  : TextOverflow.ellipsis,
+                              style: done
+                                  ? theme.textTheme.titleMedium?.copyWith(
+                                      color: colors.textMuted,
+                                      decoration: TextDecoration.lineThrough,
+                                    )
+                                  : theme.textTheme.titleMedium,
                             ),
                           ),
                           ?tag,
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(reason, style: theme.textTheme.bodySmall),
+                      if (reason case final text?) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          text,
+                          maxLines: maxLines,
+                          overflow: maxLines == null
+                              ? null
+                              : TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
                       if (detail case final meta?) ...[
                         const SizedBox(height: AppSpacing.xs),
                         Text(
@@ -166,7 +195,7 @@ class ActionItem extends StatelessWidget {
                   Center(
                     child: IconButton(
                       onPressed: resolved ? null : onResolve,
-                      isSelected: resolved,
+                      isSelected: resolved || done,
                       tooltip: label,
                       style: AppTheme.resolveRing(context),
                       icon: const Icon(Icons.check_rounded),

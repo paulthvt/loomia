@@ -61,6 +61,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: TodayView(
           due: AsyncData(due),
+          tasks: const AsyncData([]),
           done: done,
           now: _now,
           firstName: 'Pauline',

@@ -290,9 +290,17 @@
       "day": { "type": "DateTime", "format": "E" }
     }
   },
-  "todaySectionPriority": "Priority",
-  "@todaySectionPriority": {
+  "todaySectionPeople": "People",
+  "@todaySectionPeople": {
     "description": "Section heading above the people worth a message today."
+  },
+  "todaySectionTasks": "Tasks",
+  "@todaySectionTasks": {
+    "description": "Section heading above the tasks due today."
+  },
+  "todayAddTask": "Add a task",
+  "@todayAddTask": {
+    "description": "Action label in the Tasks section header to create a new task."
   },
   "todaySectionThisMonth": "This month",
   "@todaySectionThisMonth": {
@@ -339,6 +347,21 @@
       "count": { "type": "int" }
     }
   },
+  "todayHeadlineTasks": "{count, plural, =1{One task today} other{{count} tasks today}}",
+  "@todayHeadlineTasks": {
+    "description": "The Today hero sentence when there are only tasks, no people due.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "todayHeadlineBoth": "{people, plural, =1{One person} other{{people} people}} and {tasks, plural, =1{one task} other{{tasks} tasks}} today",
+  "@todayHeadlineBoth": {
+    "description": "The Today hero sentence when there are both people and tasks due.",
+    "placeholders": {
+      "people": { "type": "int" },
+      "tasks": { "type": "int" }
+    }
+  },
   "todayDone": "{done} of {total} done",
   "@todayDone": {
     "description": "The Today hero's caption under its progress bar: steps and reminders ticked today out of today's whole list (done plus still waiting). Never a target, a score or a percentage.",
@@ -365,6 +388,10 @@
   "todayLoadFailed": "Couldn't load today.",
   "@todayLoadFailed": {
     "description": "Heading in place of Today when the contacts or the workflows could not be loaded. Above loadFailedBody and a Try again button."
+  },
+  "todayTasksLoadFailed": "Couldn't load your tasks.",
+  "@todayTasksLoadFailed": {
+    "description": "Heading in place of the Tasks section's rows on Today when the tasks could not be loaded; the rest of Today stays. Above loadFailedBody and a Try again button."
   },
   "actionMarkAsDone": "Mark as done",
   "@actionMarkAsDone": {
@@ -1224,6 +1251,30 @@
   "reminderPickDay": "Pick a day",
   "@reminderPickDay": {
     "description": "Chip that opens a calendar to choose the reminder's day; selected when the day is none of the other chips'."
+  },
+  "taskNewTitle": "New task",
+  "@taskNewTitle": {
+    "description": "Title of the sheet where the user creates a task."
+  },
+  "taskEditTitle": "Edit task",
+  "@taskEditTitle": {
+    "description": "Title of the sheet where the user edits an existing task."
+  },
+  "taskTitle": "What",
+  "@taskTitle": {
+    "description": "Label of the task title field: what the user needs to do."
+  },
+  "taskTitleRequired": "Say what to do",
+  "@taskTitleRequired": {
+    "description": "Error under an empty task title field."
+  },
+  "taskNote": "Note (optional)",
+  "@taskNote": {
+    "description": "Label of the task note field: additional details about the task."
+  },
+  "taskDeleteConfirm": "Delete this task?",
+  "@taskDeleteConfirm": {
+    "description": "Confirmation prompt when deleting a task."
   },
   "nextStepTitle": "Next step",
   "@nextStepTitle": {
@@ -2301,7 +2352,7 @@
   },
   "calendarNewEvent": "New event",
   "@calendarNewEvent": {
-    "description": "Title of the form that adds an event to the calendar (a workshop, a training), and tooltip of the Calendar's add button."
+    "description": "Title of the form that adds an event to the calendar (a workshop, a training)."
   },
   "eventEdit": "Edit event",
   "@eventEdit": {
@@ -2476,7 +2527,7 @@
   },
   "calendarAdd": "Add",
   "@calendarAdd": {
-    "description": "Action beside the selected day's heading on the Calendar screen: adds an event on that day."
+    "description": "Action beside the selected day's heading on the Calendar screen, and tooltip of the Calendar's add button: opens a menu to add an event or a task on that day."
   },
   "calendarMoreEvents": "+{count} more",
   "@calendarMoreEvents": {
@@ -2495,7 +2546,7 @@
   },
   "calendarNothingPlanned": "Nothing planned",
   "@calendarNothingPlanned": {
-    "description": "Shown under the selected day on the Calendar screen when it has no event."
+    "description": "Shown under the selected day on the Calendar screen when it has no event and no task."
   },
   "calendarDaySemantics": "{day}, {count, plural, =0{nothing planned} =1{one event} other{{count} events}}",
   "@calendarDaySemantics": {
@@ -2504,6 +2555,23 @@
       "day": { "type": "DateTime", "format": "MMMMEEEEd" },
       "count": { "type": "int" }
     }
+  },
+  "calendarDaySemanticsTasks": "{day}, {events, plural, =0{no events} =1{one event} other{{events} events}}, {tasks, plural, =1{one task} other{{tasks} tasks}}",
+  "@calendarDaySemanticsTasks": {
+    "description": "What a screen reader says for a day in the Calendar's month grid or week strip that has open tasks: the date, how many events, then how many open tasks.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "events": { "type": "int" },
+      "tasks": { "type": "int" }
+    }
+  },
+  "calendarAddEvent": "Event",
+  "@calendarAddEvent": {
+    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
+  },
+  "calendarAddTask": "Task",
+  "@calendarAddTask": {
+    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds a task (something to do, with a due day) on the selected day."
   },
   "calendarLoadFailed": "Couldn't load your calendar.",
   "@calendarLoadFailed": {

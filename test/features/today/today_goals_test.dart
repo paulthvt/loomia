@@ -87,6 +87,7 @@ void main() {
           due: AsyncData(
             due ?? [_due('Anna', DateTime(now.year, now.month, now.day))],
           ),
+          tasks: const AsyncData([]),
           now: now,
           firstName: 'Pauline',
           done: done,
@@ -170,7 +171,7 @@ void main() {
       size: const Size(1440, 900),
     );
 
-    final priority = tester.getTopLeft(find.text('PRIORITY')).dx;
+    final priority = tester.getTopLeft(find.text('PEOPLE')).dx;
     expect(
       tester
           .getTopLeft(
@@ -235,7 +236,7 @@ void main() {
 
     expect(find.text('1,800 PV to go · 1 day left'), findsNothing);
     expect(find.text('Own volume'), findsOneWidget);
-    final priority = tester.getTopLeft(find.text('PRIORITY')).dx;
+    final priority = tester.getTopLeft(find.text('PEOPLE')).dx;
     expect(
       tester.getTopLeft(find.text('Own volume')).dx,
       greaterThan(priority + 600),
