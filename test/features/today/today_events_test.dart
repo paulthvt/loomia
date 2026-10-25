@@ -122,7 +122,7 @@ void main() {
     );
 
     final eventsHeader = find.text('EVENTS');
-    final priorityHeader = find.text('PRIORITY');
+    final priorityHeader = find.text('PEOPLE');
     expect(eventsHeader, findsOneWidget);
     expect(priorityHeader, findsOneWidget);
     expect(

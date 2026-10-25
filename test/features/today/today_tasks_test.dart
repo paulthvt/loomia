@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
@@ -104,8 +106,8 @@ void main() {
       await pumpView(tester, due: [_due('Anna')], tasks: AsyncData(tasks));
       await tester.pumpAndSettle();
 
-      final peopleFinder = find.text('People');
-      final tasksFinder = find.text('Tasks');
+      final peopleFinder = find.text('PEOPLE');
+      final tasksFinder = find.text('TASKS');
       expect(peopleFinder, findsOneWidget);
       expect(tasksFinder, findsOneWidget);
 
@@ -121,7 +123,7 @@ void main() {
       await pumpView(tester, due: [_due('Anna')], tasks: const AsyncData([]));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tasks'), findsOneWidget);
+      expect(find.text('TASKS'), findsOneWidget);
       expect(find.text('Add a task'), findsOneWidget);
     });
 
@@ -136,7 +138,7 @@ void main() {
       await pumpView(tester, due: const [], tasks: AsyncData(tasks));
       await tester.pumpAndSettle();
 
-      expect(find.text('2 days ago'), findsOneWidget);
+      expect(find.text('2 days late'), findsOneWidget);
     });
   });
 
@@ -218,6 +220,22 @@ void main() {
       );
 
       expect(find.text('You are up to date'), findsOneWidget);
+      expect(find.text('Add a task'), findsOneWidget);
+    });
+
+    testWidgets('all done keeps the Tasks section', (tester) async {
+      await pumpView(
+        tester,
+        due: const [],
+        tasks: AsyncData([
+          _task(id: 't1', title: 'Order flyers', dueOn: _today, doneOn: _today),
+        ]),
+        done: 1,
+      );
+
+      expect(find.text('1 of 1 done'), findsOneWidget);
+      expect(find.text('Order flyers'), findsNothing);
+      expect(find.text('Add a task'), findsOneWidget);
     });
 
     testWidgets('not up to date with tasks', (tester) async {
@@ -259,6 +277,8 @@ void main() {
       expect(find.text('Order flyers'), findsNothing);
       expect(find.text('Done: Order flyers'), findsOneWidget);
       expect(find.text('Undo'), findsOneWidget);
+      // Counted once, from the task list: Anna is still due.
+      expect(find.text('1 of 2 done'), findsOneWidget);
     });
 
     testWidgets('Undo brings it back', (tester) async {
@@ -290,17 +310,19 @@ void main() {
         dueOn: _today,
       );
       await pumpPage(tester);
+      taskRepo.gate = Completer<void>();
 
       final button = find.byTooltip('Mark "Order flyers" done');
       await tester.tap(button);
-      await tester.tap(button);
+      await tester.pump();
+      await tester.tap(button, warnIfMissed: false);
+      await tester.pump();
+      taskRepo.gate!.complete();
+      taskRepo.gate = null;
       await tester.pumpAndSettle();
 
       final setDoneCalls = taskRepo.calls
-          .where(
-            (call) =>
-                call.startsWith('setDone') && call.contains(_today.toString()),
-          )
+          .where((call) => call.startsWith('setDone'))
           .length;
       expect(setDoneCalls, 1);
     });
@@ -367,10 +389,10 @@ void main() {
 
       // People section should work
       expect(find.text('Anna'), findsOneWidget);
-      expect(find.text('People'), findsOneWidget);
+      expect(find.text('PEOPLE'), findsOneWidget);
 
       // Tasks section shows LoadFailed
-      expect(find.text('Tasks'), findsOneWidget);
+      expect(find.text('TASKS'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(LoadFailed),

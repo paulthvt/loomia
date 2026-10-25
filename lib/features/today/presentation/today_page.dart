@@ -104,27 +104,24 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     ref.invalidate(doneTodayProvider);
   }
 
+  /// A task's ring: done today, with Undo. Not in the history, so not in
+  /// [doneTodayProvider]: the hero counts it from the task list.
   Future<void> _tickTask(Task task) async {
     final key = task.key;
     if (!_busy.add(key)) return;
     setState(() {});
-    final done = ref.read(
-      doneTodayProvider((owner: ref.read(accountProvider)?.email, day: today()))
-          .notifier,
-    );
     final l10n = AppLocalizations.of(context);
-    final owner = ref.read(accountProvider)?.email;
-    final day = today();
-    final tasks = ref.read(tasksProvider(owner).notifier);
     final messenger = ScaffoldMessenger.of(context);
+    final owner = ref.read(accountProvider)?.email;
     try {
-      await tasks.setDone(task, day);
+      await ref.read(tasksProvider(owner).notifier).setDone(task, today());
       if (!mounted) return;
-      done.add();
-      offerUndo(context, l10n.tickDone(task.title), (container) async {
-        await container.read(tasksProvider(owner).notifier).setDone(task, null);
-        container.invalidate(doneTodayProvider);
-      });
+      offerUndo(
+        context,
+        l10n.tickDone(task.title),
+        (container) =>
+            container.read(tasksProvider(owner).notifier).setDone(task, null),
+      );
     } on PeopleFailure catch (failure) {
       messenger.showSnackBar(
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
@@ -309,6 +306,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final eventWorkflows = ref.watch(eventWorkflowsProvider(owner));
 
     final now = DateTime.now();
+    final day = today();
     final events = switch ((calendarEvents.value, eventWorkflows.value)) {
       (final list?, final flows) => todayEvents(list, flows ?? const [], now),
       _ => noTodayEvents,
@@ -336,27 +334,23 @@ class _TodayPageState extends ConsumerState<TodayPage> {
         ),
         _ => const AsyncLoading(),
       },
-      tasks: tasks,
+      // `.value` survives a failed refresh here too.
+      tasks: switch (tasks.value) {
+        final list? => AsyncData(list),
+        _ => tasks,
+      },
       now: now,
-      done: () {
-        final doneToday = ref
-            .watch(doneTodayProvider((owner: owner, day: today())))
-            .value;
-        if (doneToday == null) return null;
-        final day = today();
-        final tasksDoneToday =
-            tasks.value
-                ?.where(
-                  (t) =>
-                      t.doneOn != null &&
-                      t.doneOn!.year == day.year &&
-                      t.doneOn!.month == day.month &&
-                      t.doneOn!.day == day.day,
-                )
-                .length ??
-            0;
-        return doneToday + tasksDoneToday;
-      }(),
+      // Steps and reminders from the history, tasks from their list.
+      done: switch (ref
+          .watch(doneTodayProvider((owner: owner, day: day)))
+          .value) {
+        final ticked? =>
+          ticked +
+              (tasks.value ?? const <Task>[])
+                  .where((task) => task.doneOn == day)
+                  .length,
+        null => null,
+      },
       firstName: account?.firstName ?? '',
       // With a sidebar, Settings is its account block instead.
       accountAction: context.screenSize.usesSideNavigation
@@ -553,8 +547,8 @@ class TodayView extends StatefulWidget {
   final AsyncValue<List<Due>> due;
   final AsyncValue<List<Task>> tasks;
 
-  /// Steps and reminders ticked today; null while unknown or failed, and
-  /// then the hero has no bar.
+  /// Steps, reminders and tasks ticked today; null while unknown or
+  /// failed, and then the hero has no bar.
   final int? done;
 
   /// The device clock: the date, the greeting, and which steps are late.
@@ -627,7 +621,7 @@ class TodayView extends StatefulWidget {
   /// Join: opens the link.
   final void Function(Uri link)? onJoin;
 
-  /// The daily summary's offer, below Priority, until it is answered.
+  /// The daily summary's offer, below People and Tasks, until it is answered.
   final Widget? nudge;
 
   @override
@@ -646,7 +640,7 @@ class _TodayViewState extends State<TodayView> {
   bool? _catchUpOpen;
 
   /// Catch up unfolded: as last tapped, else only when nothing is due, so
-  /// Priority keeps the screen (#342).
+  /// the day's list keeps the screen (#342).
   bool get _catchUpShown =>
       _catchUpOpen ??
       switch (widget.due) {
@@ -720,60 +714,58 @@ class _TodayViewState extends State<TodayView> {
       ],
     ];
 
-    final duePeople = switch (widget.due) {
-      AsyncData(:final value) => value,
-      _ => null,
-    };
-    final dueTasks = switch (widget.tasks) {
+    // Until they load, or when they fail, no task counts.
+    final tasks = switch (widget.tasks) {
       AsyncData(:final value) => todayTasks(value, day),
-      _ => null,
+      _ => const <Task>[],
     };
+    final tasksBlock = _tasks(l10n, tasks, day);
 
-    final listed = () {
-      // Both loaded successfully
-      if (duePeople != null && dueTasks != null) {
-        if (duePeople.isEmpty && dueTasks.isEmpty) {
-          if ((widget.done ?? 0) > 0) {
-            return _allDone(
-              l10n,
-              widget.done!,
-              desktop,
-              goalLine,
-              ritualCard,
-              eventsBlock,
-            );
-          }
-          return [...goalWidgets, ...eventsBlock, const _UpToDate()];
-        }
-        return _due(l10n, duePeople, desktop, goalWidgets, eventsBlock);
-      }
-      // People loaded, tasks still loading/failed - show people
-      if (duePeople != null && duePeople.isNotEmpty) {
-        return _due(l10n, duePeople, desktop, goalWidgets, eventsBlock);
-      }
-      // Tasks loaded, people still loading/failed - show tasks
-      if (dueTasks != null && dueTasks.isNotEmpty) {
-        return _due(l10n, const <Due>[], desktop, goalWidgets, eventsBlock);
-      }
-      // Check for errors
-      if (widget.due case AsyncError(:final error)) {
-        return [
-          ...goalWidgets,
-          ...eventsBlock,
-          LoadFailed(
-            offline: error == PeopleFailure.network,
-            title: l10n.todayLoadFailed,
-            onRetry: widget.onRetry,
+    final listed = switch (widget.due) {
+      AsyncData(:final value)
+          when value.isEmpty && tasks.isEmpty && (widget.done ?? 0) > 0 =>
+        [
+          ..._allDone(
+            l10n,
+            widget.done!,
+            desktop,
+            goalLine,
+            ritualCard,
+            eventsBlock,
           ),
-        ];
-      }
-      // Loading
-      return [
+          ...tasksBlock,
+        ],
+      AsyncData(:final value) when value.isEmpty && tasks.isEmpty => [
+        ...goalWidgets,
+        ...eventsBlock,
+        const _UpToDate(),
+        SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+        ...tasksBlock,
+      ],
+      AsyncData(:final value) => _due(
+        l10n,
+        value,
+        tasks,
+        desktop,
+        goalWidgets,
+        eventsBlock,
+        tasksBlock,
+      ),
+      AsyncError(:final error) => [
+        ...goalWidgets,
+        ...eventsBlock,
+        LoadFailed(
+          offline: error == PeopleFailure.network,
+          title: l10n.todayLoadFailed,
+          onRetry: widget.onRetry,
+        ),
+      ],
+      _ => [
         ...goalWidgets,
         ...eventsBlock,
         const Center(child: CircularProgressIndicator()),
-      ];
-    }();
+      ],
+    };
 
     final nudge = widget.nudge;
     final content = [
@@ -846,66 +838,50 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
-  List<Widget> _tasksSection(
-    AppLocalizations l10n,
-    List<Task>? tasks,
-    DateTime day,
-  ) {
-    // tasks is null when not loaded yet or failed to load
-    if (tasks == null) {
-      // Check if it's an error
-      if (widget.tasks case AsyncError(:final error)) {
-        return [
+  /// The Tasks header, with Add a task, and today's open tasks under it; a
+  /// failed load in their place. Nothing while they load.
+  List<Widget> _tasks(AppLocalizations l10n, List<Task> tasks, DateTime day) =>
+      switch (widget.tasks) {
+        AsyncData() => [
+          SectionHeader(
+            title: l10n.todaySectionTasks,
+            actionLabel: l10n.todayAddTask,
+            onAction: widget.onAddTask,
+          ),
+          for (final (index, task) in tasks.indexed)
+            SlideSwap(
+              key: ValueKey(task.key),
+              padding: EdgeInsets.only(top: index > 0 ? AppSpacing.ms : 0),
+              child: ActionItem(
+                name: task.title,
+                reason: task.note,
+                icon: Icons.assignment_outlined,
+                chip: task.dueOn.isBefore(day)
+                    ? DateChip(dueLabel(l10n, task.dueOn, day))
+                    : null,
+                onOpen: switch (widget.onOpenTask) {
+                  final open? => () => open(task),
+                  null => null,
+                },
+                onResolve: switch (widget.onTickTask) {
+                  final tick? => () => tick(task),
+                  null => null,
+                },
+                resolved: widget.busy.contains(task.key),
+                resolveLabel: l10n.nextStepMarkDone(task.title),
+              ),
+            ),
+        ],
+        AsyncError(:final error) => [
           SectionHeader(title: l10n.todaySectionTasks),
           LoadFailed(
             offline: error == PeopleFailure.network,
             title: l10n.todayLoadFailed,
             onRetry: widget.onRetry,
           ),
-        ];
-      }
-      // Still loading, don't show the section yet
-      return const [];
-    }
-    // tasks loaded successfully
-    return [
-      SectionHeader(
-        title: l10n.todaySectionTasks,
-        actionLabel: l10n.todayAddTask,
-        onAction: widget.onAddTask,
-      ),
-      if (tasks.isNotEmpty)
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final task in tasks) ...[
-              SlideSwap(
-                key: ValueKey(task.key),
-                padding: const EdgeInsets.only(top: AppSpacing.ms),
-                child: _taskRow(l10n, task, day),
-              ),
-            ],
-          ],
-        ),
-    ];
-  }
-
-  Widget _taskRow(AppLocalizations l10n, Task task, DateTime day) {
-    final late = task.dueOn.isBefore(day);
-    return ActionItem(
-      key: ValueKey(task.key),
-      name: task.title,
-      reason: task.note,
-      icon: Icons.assignment_outlined,
-      chip: late ? DateChip(dueLabel(l10n, task.dueOn, day)) : null,
-      onOpen: widget.onOpenTask == null ? null : () => widget.onOpenTask!(task),
-      onResolve: widget.onTickTask == null
-          ? null
-          : () => widget.onTickTask!(task),
-      resolved: widget.busy.contains(task.key),
-      resolveLabel: l10n.nextStepMarkDone(task.title),
-    );
-  }
+        ],
+        _ => const [],
+      };
 
   /// Everything on today's list was ticked: the hero stays, full, and the
   /// up-to-date line sits under it (under the goal line on a phone, above the
@@ -946,36 +922,30 @@ class _TodayViewState extends State<TodayView> {
   List<Widget> _due(
     AppLocalizations l10n,
     List<Due> due,
+    List<Task> tasks,
     bool desktop,
     List<Widget> goalWidgets,
     List<Widget> eventsBlock,
+    List<Widget> tasksBlock,
   ) {
     final shown = _expanded ? due : due.take(desktop ? 6 : 5).toList();
     final now = widget.now;
     final day = DateTime(now.year, now.month, now.day);
     final done = widget.done;
-    final tasks = switch (widget.tasks) {
-      AsyncData(:final value) => todayTasks(value, day),
-      _ => null,
-    };
-    final peopleCount = {for (final row in due) row.person.id}.length;
-    final taskCount = tasks?.length ?? 0;
-    final headline = switch ((peopleCount, taskCount)) {
-      (0, final count) when count > 0 => l10n.todayHeadlineTasks(count),
-      (final people, final count) when count > 0 => l10n.todayHeadlineBoth(
-        people,
-        count,
-      ),
-      (final count, _) => l10n.todayHeadline(count),
-    };
-    final total = done == null ? null : done + due.length + taskCount;
+    // People, not rows: a step and a reminder are one person to message.
+    final people = {for (final row in due) row.person.id}.length;
     return [
       TodayHero(
         eyebrow: l10n.todayTitle,
-        headline: headline,
-        progress: done == null || total == null
+        headline: switch ((people, tasks.length)) {
+          (_, 0) => l10n.todayHeadline(people),
+          (0, final count) => l10n.todayHeadlineTasks(count),
+          (_, final count) => l10n.todayHeadlineBoth(people, count),
+        },
+        // Rows, not people: each tick moves the bar.
+        progress: done == null
             ? null
-            : (done: done, total: total),
+            : (done: done, total: done + due.length + tasks.length),
       ),
       ...goalWidgets,
       SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
@@ -998,7 +968,7 @@ class _TodayViewState extends State<TodayView> {
         ],
         SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
       ],
-      ..._tasksSection(l10n, tasks, day),
+      ...tasksBlock,
     ];
   }
 

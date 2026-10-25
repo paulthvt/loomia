@@ -27,18 +27,32 @@ import 'package:material_ui/material_ui.dart';
 /// desktop six.
 /// Nothing in the app imports this file.
 @Preview(group: 'Today', name: 'Mobile — light', size: Size(390, 844))
-Widget todayMobileLight() =>
-    _app(AppTheme.light, _book, goals: _goals, done: 2, checkIns: _catchUp);
+Widget todayMobileLight() => _app(
+  AppTheme.light,
+  _book,
+  tasks: _tasks,
+  goals: _goals,
+  done: 2,
+  checkIns: _catchUp,
+);
 
 @Preview(group: 'Today', name: 'Mobile — dark', size: Size(390, 844))
-Widget todayMobileDark() => _app(AppTheme.dark, _book, goals: _goals, done: 2);
+Widget todayMobileDark() =>
+    _app(AppTheme.dark, _book, tasks: _tasks, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Desktop — light', size: Size(1440, 900))
-Widget todayDesktopLight() =>
-    _app(AppTheme.light, _book, goals: _goals, done: 2, checkIns: _catchUp);
+Widget todayDesktopLight() => _app(
+  AppTheme.light,
+  _book,
+  tasks: _tasks,
+  goals: _goals,
+  done: 2,
+  checkIns: _catchUp,
+);
 
 @Preview(group: 'Today', name: 'Desktop — dark', size: Size(1440, 900))
-Widget todayDesktopDark() => _app(AppTheme.dark, _book, goals: _goals, done: 2);
+Widget todayDesktopDark() =>
+    _app(AppTheme.dark, _book, tasks: _tasks, goals: _goals, done: 2);
 
 @Preview(group: 'Today', name: 'Empty — light', size: Size(390, 844))
 Widget todayEmptyLight() => _app(AppTheme.light, const [], done: 0);
@@ -377,7 +391,7 @@ final _tasks = [
 Widget _app(
   ThemeData theme,
   List<Due> due, {
-  List<Task>? tasks,
+  List<Task> tasks = const [],
   GoalsMonth? goals,
   TodayEvents events = noTodayEvents,
   DateTime? now,
@@ -394,7 +408,7 @@ Widget _app(
     theme: theme,
     home: TodayView(
       due: AsyncData(due),
-      tasks: AsyncData(tasks ?? _tasks),
+      tasks: AsyncData(tasks),
       done: done,
       now: now ?? _now,
       firstName: 'Pauline',
