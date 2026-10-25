@@ -27,6 +27,7 @@ class ActionItem extends StatelessWidget {
     this.resolveLabel,
     this.resolved = false,
     this.done = false,
+    this.maxLines,
     this.actions,
     super.key,
   });
@@ -69,6 +70,10 @@ class ActionItem extends StatelessWidget {
   /// Already resolved, and it stays on screen: the title struck through and
   /// muted, the ring filled; [onResolve] still takes a tap, to undo it.
   final bool done;
+
+  /// Cuts the title and the reason, each, after this many lines with "…".
+  /// Null lets them run.
+  final int? maxLines;
 
   /// Buttons under the text, for an item resolved more than one way
   /// (Going, Followed up, Remove); replaces the ring.
@@ -133,6 +138,10 @@ class ActionItem extends StatelessWidget {
                           Flexible(
                             child: Text(
                               title ?? name,
+                              maxLines: maxLines,
+                              overflow: maxLines == null
+                                  ? null
+                                  : TextOverflow.ellipsis,
                               style: done
                                   ? theme.textTheme.titleMedium?.copyWith(
                                       color: colors.textMuted,
@@ -146,7 +155,14 @@ class ActionItem extends StatelessWidget {
                       ),
                       if (reason case final text?) ...[
                         const SizedBox(height: AppSpacing.xs),
-                        Text(text, style: theme.textTheme.bodySmall),
+                        Text(
+                          text,
+                          maxLines: maxLines,
+                          overflow: maxLines == null
+                              ? null
+                              : TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall,
+                        ),
                       ],
                       if (detail case final meta?) ...[
                         const SizedBox(height: AppSpacing.xs),

@@ -180,6 +180,24 @@ void main() {
     expect(find.text('Nothing planned'), findsNothing);
   });
 
+  testWidgets('a long title and note are cut at two lines', (tester) async {
+    final long = Task(
+      id: 'long',
+      title: 'Order ' * 50,
+      note: 'n' * 300,
+      dueOn: _day,
+      doneOn: null,
+      createdAt: DateTime(2026, 10, 1),
+    );
+    await _pump(tester, tasks: [long]);
+
+    for (final text in [long.title, long.note!]) {
+      final widget = tester.widget<Text>(find.text(text));
+      expect(widget.maxLines, 2);
+      expect(widget.overflow, TextOverflow.ellipsis);
+    }
+  });
+
   testWidgets('a day with only a task is not "Nothing planned"', (
     tester,
   ) async {

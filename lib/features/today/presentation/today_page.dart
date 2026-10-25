@@ -47,6 +47,7 @@ import 'package:loomia/features/notifications/presentation/nudge_card.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
+import 'package:loomia/features/tasks/presentation/toggle_task.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/features/today/domain/due.dart';
@@ -110,22 +111,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final key = task.key;
     if (!_busy.add(key)) return;
     setState(() {});
-    final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final owner = ref.read(accountProvider)?.email;
     try {
-      await ref.read(tasksProvider(owner).notifier).setDone(task, today());
-      if (!mounted) return;
-      offerUndo(
-        context,
-        l10n.tickDone(task.title),
-        (container) =>
-            container.read(tasksProvider(owner).notifier).setDone(task, null),
-      );
-    } on PeopleFailure catch (failure) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
-      );
+      await toggleTask(context, ref, task);
     } finally {
       if (mounted) setState(() => _busy.remove(key));
     }
@@ -856,6 +843,7 @@ class _TodayViewState extends State<TodayView> {
                 name: task.title,
                 reason: task.note,
                 icon: Icons.assignment_outlined,
+                maxLines: 2,
                 chip: task.dueOn.isBefore(day)
                     ? DateChip(dueLabel(l10n, task.dueOn, day))
                     : null,

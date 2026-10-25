@@ -22,12 +22,11 @@ import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/calendar/presentation/week_view.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
-import 'package:loomia/features/contacts/presentation/people_copy.dart';
-import 'package:loomia/features/contacts/presentation/undo_tick.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
+import 'package:loomia/features/tasks/presentation/toggle_task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -67,24 +66,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final key = task.key;
     if (!_busy.add(key)) return;
     setState(() {});
-    final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final owner = ref.read(accountProvider)?.email;
     try {
-      await ref
-          .read(tasksProvider(owner).notifier)
-          .setDone(task, task.done ? null : today());
-      if (!mounted || task.done) return;
-      offerUndo(
-        context,
-        l10n.tickDone(task.title),
-        (container) =>
-            container.read(tasksProvider(owner).notifier).setDone(task, null),
-      );
-    } on PeopleFailure catch (failure) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
-      );
+      await toggleTask(context, ref, task);
     } finally {
       if (mounted) setState(() => _busy.remove(key));
     }

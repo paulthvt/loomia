@@ -32,6 +32,7 @@ class TaskRow extends StatelessWidget {
       onResolve: onToggle,
       resolved: busy,
       done: task.done,
+      maxLines: 2,
       resolveLabel: task.done
           ? l10n.eventStepUntick(task.title)
           : l10n.nextStepMarkDone(task.title),
