@@ -87,6 +87,7 @@ void main() {
           due: AsyncData(
             due ?? [_due('Anna', DateTime(now.year, now.month, now.day))],
           ),
+          tasks: const AsyncData([]),
           now: now,
           firstName: 'Pauline',
           done: done,

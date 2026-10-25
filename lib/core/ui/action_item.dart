@@ -9,12 +9,13 @@ import 'package:material_ui/material_ui.dart';
 
 /// The unit of Today — a suggestion, not a task (`docs/design/components.md` #12).
 ///
-/// [reason] is required on purpose: it is what makes the item an offer instead of
-/// a demand (design principle #4).
+/// [reason] explains why the item is shown. Usually required (it makes the item
+/// an offer instead of a demand, design principle #4); nullable only when the
+/// context is already clear (e.g., a task the user created themselves).
 class ActionItem extends StatelessWidget {
   const ActionItem({
     required this.name,
-    required this.reason,
+    this.reason,
     this.photoPath,
     this.title,
     this.icon,
@@ -30,7 +31,7 @@ class ActionItem extends StatelessWidget {
   });
 
   final String name;
-  final String reason;
+  final String? reason;
 
   /// The person's photo's Storage path; null shows initials.
   final String? photoPath;
@@ -133,8 +134,10 @@ class ActionItem extends StatelessWidget {
                           ?tag,
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(reason, style: theme.textTheme.bodySmall),
+                      if (reason case final text?) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(text, style: theme.textTheme.bodySmall),
+                      ],
                       if (detail case final meta?) ...[
                         const SizedBox(height: AppSpacing.xs),
                         Text(

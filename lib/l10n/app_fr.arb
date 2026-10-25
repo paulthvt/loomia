@@ -62,7 +62,6 @@
   "todayFollowUp": "Relance {name} pour {event} · {day}",
   "todayRemoveInvite": "Retirer",
   "todayStepFor": "{event} · {day}",
-  "todaySectionPriority": "Priorité",
   "todaySectionThisMonth": "Ce mois-ci",
   "todaySectionRecent": "Tu as parlé à",
   "todayEmptyTitle": "Tu es à jour",

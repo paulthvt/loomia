@@ -290,9 +290,17 @@
       "day": { "type": "DateTime", "format": "E" }
     }
   },
-  "todaySectionPriority": "Priority",
-  "@todaySectionPriority": {
+  "todaySectionPeople": "People",
+  "@todaySectionPeople": {
     "description": "Section heading above the people worth a message today."
+  },
+  "todaySectionTasks": "Tasks",
+  "@todaySectionTasks": {
+    "description": "Section heading above the tasks due today."
+  },
+  "todayAddTask": "Add a task",
+  "@todayAddTask": {
+    "description": "Action label in the Tasks section header to create a new task."
   },
   "todaySectionThisMonth": "This month",
   "@todaySectionThisMonth": {
@@ -337,6 +345,21 @@
     "description": "The sentence in the Today hero: a sentence, not a number, so it never reads as a quota. count is everyone due today or late, including rows not shown yet.",
     "placeholders": {
       "count": { "type": "int" }
+    }
+  },
+  "todayHeadlineTasks": "{count, plural, =1{One task today} other{{count} tasks today}}",
+  "@todayHeadlineTasks": {
+    "description": "The Today hero sentence when there are only tasks, no people due.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "todayHeadlineBoth": "{people, plural, =1{One person} other{{people} people}} and {tasks, plural, =1{one task} other{{tasks} tasks}} today",
+  "@todayHeadlineBoth": {
+    "description": "The Today hero sentence when there are both people and tasks due.",
+    "placeholders": {
+      "people": { "type": "int" },
+      "tasks": { "type": "int" }
     }
   },
   "todayDone": "{done} of {total} done",

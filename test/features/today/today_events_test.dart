@@ -71,6 +71,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: TodayView(
           due: due,
+          tasks: const AsyncData([]),
           now: now,
           firstName: 'Pauline',
           onTick: (_) {},
