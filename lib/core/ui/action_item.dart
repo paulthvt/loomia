@@ -26,6 +26,7 @@ class ActionItem extends StatelessWidget {
     this.onResolve,
     this.resolveLabel,
     this.resolved = false,
+    this.done = false,
     this.actions,
     super.key,
   });
@@ -64,6 +65,10 @@ class ActionItem extends StatelessWidget {
 
   /// The tick is in flight: the ring stays filled and takes no second tap.
   final bool resolved;
+
+  /// Already resolved, and it stays on screen: the title struck through and
+  /// muted, the ring filled; [onResolve] still takes a tap, to undo it.
+  final bool done;
 
   /// Buttons under the text, for an item resolved more than one way
   /// (Going, Followed up, Remove); replaces the ring.
@@ -128,7 +133,12 @@ class ActionItem extends StatelessWidget {
                           Flexible(
                             child: Text(
                               title ?? name,
-                              style: theme.textTheme.titleMedium,
+                              style: done
+                                  ? theme.textTheme.titleMedium?.copyWith(
+                                      color: colors.textMuted,
+                                      decoration: TextDecoration.lineThrough,
+                                    )
+                                  : theme.textTheme.titleMedium,
                             ),
                           ),
                           ?tag,
@@ -169,7 +179,7 @@ class ActionItem extends StatelessWidget {
                   Center(
                     child: IconButton(
                       onPressed: resolved ? null : onResolve,
-                      isSelected: resolved,
+                      isSelected: resolved || done,
                       tooltip: label,
                       style: AppTheme.resolveRing(context),
                       icon: const Icon(Icons.check_rounded),

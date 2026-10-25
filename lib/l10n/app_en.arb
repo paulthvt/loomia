@@ -2352,7 +2352,7 @@
   },
   "calendarNewEvent": "New event",
   "@calendarNewEvent": {
-    "description": "Title of the form that adds an event to the calendar (a workshop, a training), and tooltip of the Calendar's add button."
+    "description": "Title of the form that adds an event to the calendar (a workshop, a training)."
   },
   "eventEdit": "Edit event",
   "@eventEdit": {
@@ -2527,7 +2527,7 @@
   },
   "calendarAdd": "Add",
   "@calendarAdd": {
-    "description": "Action beside the selected day's heading on the Calendar screen: adds an event on that day."
+    "description": "Action beside the selected day's heading on the Calendar screen, and tooltip of the Calendar's add button: opens a menu to add an event or a task on that day."
   },
   "calendarMoreEvents": "+{count} more",
   "@calendarMoreEvents": {
@@ -2546,7 +2546,7 @@
   },
   "calendarNothingPlanned": "Nothing planned",
   "@calendarNothingPlanned": {
-    "description": "Shown under the selected day on the Calendar screen when it has no event."
+    "description": "Shown under the selected day on the Calendar screen when it has no event and no task."
   },
   "calendarDaySemantics": "{day}, {count, plural, =0{nothing planned} =1{one event} other{{count} events}}",
   "@calendarDaySemantics": {
@@ -2555,6 +2555,23 @@
       "day": { "type": "DateTime", "format": "MMMMEEEEd" },
       "count": { "type": "int" }
     }
+  },
+  "calendarDaySemanticsTasks": "{day}, {events, plural, =0{no events} =1{one event} other{{events} events}}, {tasks, plural, =1{one task} other{{tasks} tasks}}",
+  "@calendarDaySemanticsTasks": {
+    "description": "What a screen reader says for a day in the Calendar's month grid or week strip that has open tasks: the date, how many events, then how many open tasks.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "events": { "type": "int" },
+      "tasks": { "type": "int" }
+    }
+  },
+  "calendarAddEvent": "Event",
+  "@calendarAddEvent": {
+    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
+  },
+  "calendarAddTask": "Task",
+  "@calendarAddTask": {
+    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds a task (something to do, with a due day) on the selected day."
   },
   "calendarLoadFailed": "Couldn't load your calendar.",
   "@calendarLoadFailed": {

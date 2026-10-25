@@ -22,6 +22,12 @@ import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/calendar/presentation/week_view.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
+import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/contacts/presentation/undo_tick.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
+import 'package:loomia/features/tasks/presentation/task_row.dart';
+import 'package:loomia/features/tasks/presentation/task_sheet.dart';
+import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -38,14 +44,51 @@ void openEvent(BuildContext context, String id) {
 
 /// The Calendar destination. On desktop it also holds [pane]: an open
 /// event, beside the month or week ([eventOpen]); a day opens in a popover.
-class CalendarPage extends ConsumerWidget {
+class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({this.pane, this.eventOpen = false, super.key});
 
   final Widget? pane;
   final bool eventOpen;
 
+  @override
+  ConsumerState<CalendarPage> createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends ConsumerState<CalendarPage> {
   /// How far the title's pickers reach, either side of today.
   static const int _pickYears = 10;
+
+  /// Tasks ([Task.key]) whose write is in flight: their ring takes no tap.
+  final Set<String> _busy = {};
+
+  /// A task's ring: an open one is done today, with Undo, and stays on its
+  /// day crossed out; a done one opens again, with no snackbar.
+  Future<void> _toggleTask(Task task) async {
+    final key = task.key;
+    if (!_busy.add(key)) return;
+    setState(() {});
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final owner = ref.read(accountProvider)?.email;
+    try {
+      await ref
+          .read(tasksProvider(owner).notifier)
+          .setDone(task, task.done ? null : today());
+      if (!mounted || task.done) return;
+      offerUndo(
+        context,
+        l10n.tickDone(task.title),
+        (container) =>
+            container.read(tasksProvider(owner).notifier).setDone(task, null),
+      );
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+    } finally {
+      if (mounted) setState(() => _busy.remove(key));
+    }
+  }
 
   Future<void> _pickTitle(BuildContext context, WidgetRef ref) async {
     final selection = ref.read(calendarSelectionProvider);
@@ -80,8 +123,9 @@ class CalendarPage extends ConsumerWidget {
     }
   }
 
-  /// Reloads the events, and the book their people come from, while the
-  /// month stays on screen. A failure says so in a SnackBar.
+  /// Reloads the events, the book their people come from, and the tasks,
+  /// while the month stays on screen. An events failure says so in a
+  /// SnackBar; a tasks one only leaves their rows out.
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
     final owner = ref.read(accountProvider)?.email;
     final messenger = ScaffoldMessenger.of(context);
@@ -89,6 +133,7 @@ class CalendarPage extends ConsumerWidget {
     final provider = eventsProvider(owner);
     ref
       ..invalidate(peopleProvider(owner))
+      ..invalidate(tasksProvider(owner))
       ..invalidate(provider);
     try {
       await ref.read(provider.future);
@@ -100,14 +145,20 @@ class CalendarPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = eventsProvider(ref.watch(accountProvider)?.email);
+  Widget build(BuildContext context) {
+    final owner = ref.watch(accountProvider)?.email;
+    final provider = eventsProvider(owner);
+    final pane = widget.pane;
+    final eventOpen = widget.eventOpen;
     final selector = ref.read(calendarSelectionProvider.notifier);
     final selection = ref.watch(calendarSelectionProvider);
     final desktop = context.screenSize.isDesktop;
     final firstDay = MaterialLocalizations.of(context).firstDayOfWeekIndex;
     return CalendarView(
       events: ref.watch(provider),
+      // A failed load leaves the tasks out, the events stay.
+      tasks: ref.watch(tasksProvider(owner)).value ?? const [],
+      busy: _busy,
       selection: selection,
       today: today(),
       // ponytail: read on build, as Today; the line moves on the next
@@ -124,6 +175,9 @@ class CalendarPage extends ConsumerWidget {
       onPickTitle: () => unawaited(_pickTitle(context, ref)),
       onOpen: (event) => openEvent(context, event.id),
       onAdd: (day) => unawaited(_add(context, ref, day)),
+      onToggleTask: (task) => unawaited(_toggleTask(task)),
+      onOpenTask: (task) =>
+          unawaited(showTask(context, day: task.dueOn, editing: task)),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => _refresh(context, ref),
       desktop: desktop,
@@ -157,6 +211,10 @@ class CalendarView extends StatelessWidget {
     required this.onOpen,
     required this.onAdd,
     required this.onRetry,
+    required this.tasks,
+    required this.onToggleTask,
+    required this.onOpenTask,
+    this.busy = const {},
     this.onMode,
     this.onPickTitle,
     this.onRefresh,
@@ -171,6 +229,12 @@ class CalendarView extends StatelessWidget {
   static const double _paneWidth = 440;
 
   final AsyncValue<List<CalendarEvent>> events;
+
+  /// Every task, open and done; each shows on its due day.
+  final List<Task> tasks;
+
+  /// [Task.key]s whose write is in flight.
+  final Set<String> busy;
   final CalendarSelection selection;
 
   /// The device's today, local midnight.
@@ -186,9 +250,14 @@ class CalendarView extends StatelessWidget {
   final VoidCallback onToday;
   final void Function(CalendarEvent event) onOpen;
 
-  /// Adds an event on the given day.
+  /// Adds an event on the given day. On mobile and tablet, the add button
+  /// and the day's Add first ask Event or Task; Task opens the task sheet.
   final ValueChanged<DateTime> onAdd;
   final VoidCallback onRetry;
+
+  /// A task's ring: ticks an open one, unticks a done one.
+  final void Function(Task task) onToggleTask;
+  final void Function(Task task) onOpenTask;
 
   /// Month or week. None in previews.
   final ValueChanged<CalendarMode>? onMode;
@@ -288,6 +357,8 @@ class CalendarView extends StatelessWidget {
       ],
     );
     final counts = eventsPerDay(events.value ?? const []);
+    final taskCounts = openTasksPerDay(tasks);
+    void addTask(DateTime day) => unawaited(showTask(context, day: day));
     final pager = week
         ? _SwipePager(
             anchor: days.first,
@@ -304,6 +375,7 @@ class CalendarView extends StatelessWidget {
               selected: selection.day,
               today: today,
               counts: counts,
+              taskCounts: taskCounts,
               onSelect: onSelect,
             ),
           )
@@ -318,15 +390,25 @@ class CalendarView extends StatelessWidget {
               selected: selection.day,
               today: today,
               counts: counts,
+              taskCounts: taskCounts,
               onSelect: onSelect,
             ),
           );
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => onAdd(selection.day),
-        tooltip: l10n.calendarNewEvent,
-        child: const Icon(Icons.add_rounded),
+      floatingActionButton: Builder(
+        builder: (button) => FloatingActionButton(
+          onPressed: () => unawaited(
+            chooseAdd(
+              button,
+              day: selection.day,
+              onEvent: onAdd,
+              onTask: addTask,
+            ),
+          ),
+          tooltip: l10n.calendarAdd,
+          child: const Icon(Icons.add_rounded),
+        ),
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -341,17 +423,26 @@ class CalendarView extends StatelessWidget {
             final below = week
                 ? WeekList(
                     events: events,
+                    tasks: tasks,
+                    busy: busy,
                     days: days,
                     selected: selection.day,
                     today: today,
                     onOpen: onOpen,
+                    onToggleTask: onToggleTask,
+                    onOpenTask: onOpenTask,
                     onRetry: onRetry,
                   )
                 : DaySection(
                     events: events,
+                    tasks: tasks,
+                    busy: busy,
                     day: selection.day,
                     onOpen: onOpen,
+                    onToggleTask: onToggleTask,
+                    onOpenTask: onOpenTask,
                     onAdd: onAdd,
+                    onAddTask: addTask,
                     onRetry: onRetry,
                   );
             const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
@@ -750,8 +841,8 @@ class _SwipePagerState extends State<_SwipePager>
   }
 }
 
-/// The selected day: its heading with Add, then its events, or what is
-/// wrong with loading them.
+/// The selected day: its heading with Add, then its tasks and its events,
+/// or what is wrong with loading the events.
 class DaySection extends StatelessWidget {
   const DaySection({
     required this.events,
@@ -759,13 +850,31 @@ class DaySection extends StatelessWidget {
     required this.onOpen,
     required this.onAdd,
     required this.onRetry,
+    this.tasks = const [],
+    this.busy = const {},
+    this.onToggleTask,
+    this.onOpenTask,
+    this.onAddTask,
     super.key,
   });
 
   final AsyncValue<List<CalendarEvent>> events;
+
+  /// Every task; those due on [day] show above its events.
+  final List<Task> tasks;
+
+  /// [Task.key]s whose write is in flight.
+  final Set<String> busy;
   final DateTime day;
   final void Function(CalendarEvent event) onOpen;
+  final void Function(Task task)? onToggleTask;
+  final void Function(Task task)? onOpenTask;
+
+  /// Adds an event on the day.
   final ValueChanged<DateTime> onAdd;
+
+  /// Adds a task on the day. With it, Add asks Event or Task first.
+  final ValueChanged<DateTime>? onAddTask;
   final VoidCallback onRetry;
 
   @override
@@ -778,7 +887,17 @@ class DaySection extends StatelessWidget {
     if (list == null) {
       body = [?eventsNotLoaded(context, events, onRetry)];
     } else {
-      final onDay = eventsOn(list, day);
+      final onDay = <Widget>[
+        for (final task in tasksOn(tasks, day))
+          TaskRow(
+            task: task,
+            busy: busy.contains(task.key),
+            onOpen: () => onOpenTask?.call(task),
+            onToggle: () => onToggleTask?.call(task),
+          ),
+        for (final event in eventsOn(list, day))
+          EventRow(event: event, onTap: () => onOpen(event)),
+      ];
       body = onDay.isEmpty
           ? [
               Text(
@@ -789,9 +908,9 @@ class DaySection extends StatelessWidget {
               ),
             ]
           : [
-              for (final (index, event) in onDay.indexed) ...[
+              for (final (index, row) in onDay.indexed) ...[
                 if (index > 0) const SizedBox(height: AppSpacing.ms),
-                EventRow(event: event, onTap: () => onOpen(event)),
+                row,
               ],
             ];
     }
@@ -799,14 +918,55 @@ class DaySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          title: l10n.calendarDayTitle(day),
-          actionLabel: l10n.calendarAdd,
-          onAction: () => onAdd(day),
+        Builder(
+          builder: (header) => SectionHeader(
+            title: l10n.calendarDayTitle(day),
+            actionLabel: l10n.calendarAdd,
+            onAction: switch (onAddTask) {
+              final onTask? => () => unawaited(
+                chooseAdd(header, day: day, onEvent: onAdd, onTask: onTask),
+              ),
+              null => () => onAdd(day),
+            },
+          ),
         ),
         const SizedBox(height: AppSpacing.ms),
         ...body,
       ],
     );
   }
+}
+
+/// The Calendar's add (the button, a day's Add): a menu at [anchor]'s end
+/// that asks Event or Task, then runs [onEvent] or [onTask] for [day].
+Future<void> chooseAdd(
+  BuildContext anchor, {
+  required DateTime day,
+  required ValueChanged<DateTime> onEvent,
+  required ValueChanged<DateTime> onTask,
+}) async {
+  final l10n = AppLocalizations.of(anchor);
+  final box = anchor.findRenderObject()! as RenderBox;
+  final overlay = Overlay.of(anchor).context.findRenderObject()! as RenderBox;
+  final rect = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
+  // From the end of the anchor, so the menu sits over its button and the
+  // screen's edge pushes it back in. ponytail: LTR only, both locales are.
+  final at = Rect.fromLTWH(rect.right, rect.top, 0, rect.height);
+  Widget item(IconData icon, String label) =>
+      Row(spacing: AppSpacing.ms, children: [Icon(icon), Text(label)]);
+  final choice = await showMenu<ValueChanged<DateTime>>(
+    context: anchor,
+    position: RelativeRect.fromRect(at, Offset.zero & overlay.size),
+    items: [
+      PopupMenuItem(
+        value: onEvent,
+        child: item(Icons.event_outlined, l10n.calendarAddEvent),
+      ),
+      PopupMenuItem(
+        value: onTask,
+        child: item(Icons.assignment_outlined, l10n.calendarAddTask),
+      ),
+    ],
+  );
+  choice?.call(day);
 }

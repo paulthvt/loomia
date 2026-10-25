@@ -6,6 +6,7 @@ import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -214,6 +215,43 @@ final _events = [
   ),
 ];
 
+/// An open and a done task on the 8th, above its events; one alone on the
+/// 10th (a hollow dot); one on the 21st, after its two events' dots.
+final _tasks = [
+  Task(
+    id: 't1',
+    title: 'Order flyers',
+    note: 'For the workshop',
+    dueOn: _selected,
+    doneOn: null,
+    createdAt: DateTime(2026, 10, 1),
+  ),
+  Task(
+    id: 't2',
+    title: 'Print the price list',
+    note: null,
+    dueOn: _selected,
+    doneOn: _today,
+    createdAt: DateTime(2026, 10, 2),
+  ),
+  Task(
+    id: 't3',
+    title: 'Restock samples',
+    note: null,
+    dueOn: DateTime(2026, 10, 10),
+    doneOn: null,
+    createdAt: DateTime(2026, 10, 3),
+  ),
+  Task(
+    id: 't4',
+    title: 'Call the venue',
+    note: null,
+    dueOn: DateTime(2026, 10, 21),
+    doneOn: null,
+    createdAt: DateTime(2026, 10, 4),
+  ),
+];
+
 final _workshopSteps = [
   const EventWorkflowStep(
     id: 'remind',
@@ -232,6 +270,7 @@ Widget _calendar({
   CalendarMode mode = CalendarMode.month,
 }) => CalendarView(
   events: AsyncData(_events),
+  tasks: _tasks,
   selection: (mode: mode, month: DateTime(2026, 10), day: _selected),
   today: _today,
   // The desktop week's now line, mid-morning.
@@ -241,6 +280,8 @@ Widget _calendar({
   onToday: () {},
   onOpen: (_) {},
   onAdd: (_) {},
+  onToggleTask: (_) {},
+  onOpenTask: (_) {},
   onRetry: () {},
   desktop: desktop,
 );

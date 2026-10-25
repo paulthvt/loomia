@@ -6,8 +6,8 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// A month as whole weeks (spec §3): the locale's first weekday first, the
-/// neighbouring months' days dimmed, up to three dots for a day's events, a
-/// ring on today, the selected day filled. Any day can be tapped, one of a
+/// neighbouring months' days dimmed, up to three dots for a day's events and
+/// open tasks, a ring on today, the selected day filled. Any day can be tapped, one of a
 /// neighbouring month too.
 class MonthGrid extends StatelessWidget {
   const MonthGrid({
@@ -16,6 +16,7 @@ class MonthGrid extends StatelessWidget {
     required this.today,
     required this.counts,
     required this.onSelect,
+    this.taskCounts = const {},
     super.key,
   });
 
@@ -26,6 +27,9 @@ class MonthGrid extends StatelessWidget {
 
   /// Events per local day; a day without any is absent.
   final Map<DateTime, int> counts;
+
+  /// Open tasks per local day, as `openTasksPerDay`.
+  final Map<DateTime, int> taskCounts;
   final ValueChanged<DateTime> onSelect;
 
   @override
@@ -38,6 +42,7 @@ class MonthGrid extends StatelessWidget {
     selected: selected,
     today: today,
     counts: counts,
+    taskCounts: taskCounts,
     onSelect: onSelect,
   );
 }
@@ -51,6 +56,7 @@ class WeekStrip extends StatelessWidget {
     required this.today,
     required this.counts,
     required this.onSelect,
+    this.taskCounts = const {},
     super.key,
   });
 
@@ -59,6 +65,7 @@ class WeekStrip extends StatelessWidget {
   final DateTime selected;
   final DateTime today;
   final Map<DateTime, int> counts;
+  final Map<DateTime, int> taskCounts;
   final ValueChanged<DateTime> onSelect;
 
   @override
@@ -68,6 +75,7 @@ class WeekStrip extends StatelessWidget {
     selected: selected,
     today: today,
     counts: counts,
+    taskCounts: taskCounts,
     onSelect: onSelect,
   );
 }
@@ -80,6 +88,7 @@ class _DayRows extends StatelessWidget {
     required this.selected,
     required this.today,
     required this.counts,
+    required this.taskCounts,
     required this.onSelect,
   });
 
@@ -88,6 +97,7 @@ class _DayRows extends StatelessWidget {
   final DateTime selected;
   final DateTime today;
   final Map<DateTime, int> counts;
+  final Map<DateTime, int> taskCounts;
   final ValueChanged<DateTime> onSelect;
 
   @override
@@ -128,6 +138,7 @@ class _DayRows extends StatelessWidget {
                     today: day == today,
                     past: day.isBefore(today),
                     count: counts[day] ?? 0,
+                    taskCount: taskCounts[day] ?? 0,
                     onTap: () => onSelect(day),
                   ),
                 ),
@@ -140,7 +151,7 @@ class _DayRows extends StatelessWidget {
 
 /// A day of the month grid, the week strip and the desktop week's column
 /// headings: its number in a circle (filled when selected, ringed today),
-/// up to three dots for its events.
+/// up to three dots: its events', then hollow ones for its open tasks.
 class DayCell extends StatelessWidget {
   const DayCell({
     required this.day,
@@ -150,6 +161,7 @@ class DayCell extends StatelessWidget {
     required this.past,
     required this.count,
     required this.onTap,
+    this.taskCount = 0,
     super.key,
   });
 
@@ -164,6 +176,9 @@ class DayCell extends StatelessWidget {
   final bool today;
   final bool past;
   final int count;
+
+  /// Open tasks due that day.
+  final int taskCount;
   final VoidCallback onTap;
 
   @override
@@ -178,6 +193,10 @@ class DayCell extends StatelessWidget {
         : inMonth
         ? scheme.onSurface
         : colors.textDisabled;
+    final dot = past ? colors.textMuted : scheme.primary;
+    final events = count.clamp(0, _maxDots);
+    final tasks = taskCount.clamp(0, _maxDots - events);
+    final l10n = AppLocalizations.of(context);
     final number = selected || today
         ? theme.textTheme.labelLarge
         : theme.textTheme.bodyLarge;
@@ -185,7 +204,9 @@ class DayCell extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: AppLocalizations.of(context).calendarDaySemantics(day, count),
+      label: taskCount > 0
+          ? l10n.calendarDaySemanticsTasks(day, count, taskCount)
+          : l10n.calendarDaySemantics(day, count),
       excludeSemantics: true,
       // The ink only on the number, so hover and splash centre on it; the
       // square is the minimum tap size, and has the number's spacing.
@@ -225,13 +246,24 @@ class DayCell extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 spacing: AppSpacing.xs,
                 children: [
-                  for (var i = 0; i < count.clamp(0, _maxDots); i++)
+                  for (var i = 0; i < events; i++)
                     Container(
                       width: _dot,
                       height: _dot,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: past ? colors.textMuted : scheme.primary,
+                        color: dot,
+                      ),
+                    ),
+                  // Hollow, so a day with only tasks reads apart from one
+                  // with an event.
+                  for (var i = 0; i < tasks; i++)
+                    Container(
+                      width: _dot,
+                      height: _dot,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: dot, width: _ring),
                       ),
                     ),
                 ],
