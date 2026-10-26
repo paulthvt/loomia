@@ -1276,6 +1276,44 @@
   "@taskDeleteConfirm": {
     "description": "Confirmation prompt when deleting a task."
   },
+  "taskAddTime": "Add a time",
+  "@taskAddTime": {
+    "description": "Chip under a task's day (#377): gives the task a time, and a push at that time."
+  },
+  "taskRemoveTime": "Remove the time",
+  "@taskRemoveTime": {
+    "description": "Tooltip and screen reader label of the ✕ on a task's time chip: the task goes back to any time that day, with no push."
+  },
+  "taskNotificationsOff": "Notifications are off on this phone.",
+  "@taskNotificationsOff": {
+    "description": "Under a task's time when the phone doesn't allow Loomia's pushes: the time is kept, but no push will come. Followed by taskNotificationsSettings."
+  },
+  "taskNotificationsSettings": "Settings",
+  "@taskNotificationsSettings": {
+    "description": "Link after taskNotificationsOff: opens Settings, Notifications."
+  },
+  "taskPostponeWas": "It was due at {time}. Put it off:",
+  "@taskPostponeWas": {
+    "description": "Top of a task's sheet when its time has passed (usually opened from its push), above taskPostpone15 and taskPostponeHour.",
+    "placeholders": {
+      "time": { "type": "String", "example": "2:00 PM" }
+    }
+  },
+  "taskPostponeNear": "Due at {time}. Put it off:",
+  "@taskPostponeNear": {
+    "description": "Top of a task's sheet when its time is less than 15 minutes away, above taskPostpone15 and taskPostponeHour.",
+    "placeholders": {
+      "time": { "type": "String", "example": "2:00 PM" }
+    }
+  },
+  "taskPostpone15": "In 15 min",
+  "@taskPostpone15": {
+    "description": "Button: moves the task's time to 15 minutes from now, saves and closes. Its push comes again then."
+  },
+  "taskPostponeHour": "In 1 hour",
+  "@taskPostponeHour": {
+    "description": "Button: moves the task's time to an hour from now, saves and closes. Its push comes again then."
+  },
   "taskScopeChangeTitle": "Change a repeating task",
   "@taskScopeChangeTitle": {
     "description": "Title of the dialog asked before saving a repeating task whose day changed: does the new day move only this task (postpone) or the schedule too."
@@ -2982,6 +3020,39 @@
     "description": "The daily summary push on the lock screen, the same sentence as the Today hero. count is the people with a follow-up due today or late, never 0. No names: it shows on a locked phone. The phone renders it, so tool/push_strings.dart copies it into the native strings files.",
     "placeholders": {
       "count": { "type": "int" }
+    }
+  },
+  "pushSummaryTasks": "{count, plural, =1{One task today} other{{count} tasks today}}",
+  "@pushSummaryTasks": {
+    "description": "The daily summary push when only tasks are due (#377), as todayHeadlineTasks. count is never 0. The phone renders it (tool/push_strings.dart).",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "pushSummaryBothOneOne": "One person and one task today",
+  "@pushSummaryBothOneOne": {
+    "description": "The daily summary push with 1 person and 1 task due, as todayHeadlineBoth. One key per plural form, as the phone's strings hold one plural per key."
+  },
+  "pushSummaryBothOneOther": "One person and {tasks} tasks today",
+  "@pushSummaryBothOneOther": {
+    "description": "The daily summary push with 1 person and several tasks due, as todayHeadlineBoth.",
+    "placeholders": {
+      "tasks": { "type": "String", "example": "3" }
+    }
+  },
+  "pushSummaryBothOtherOne": "{people} people and one task today",
+  "@pushSummaryBothOtherOne": {
+    "description": "The daily summary push with several people and 1 task due, as todayHeadlineBoth.",
+    "placeholders": {
+      "people": { "type": "String", "example": "3" }
+    }
+  },
+  "pushSummaryBothOtherOther": "{people} people and {tasks} tasks today",
+  "@pushSummaryBothOtherOther": {
+    "description": "The daily summary push with several people and several tasks due, as todayHeadlineBoth.",
+    "placeholders": {
+      "people": { "type": "String", "example": "3" },
+      "tasks": { "type": "String", "example": "2" }
     }
   },
   "settingsSectionNotifications": "Notifications",

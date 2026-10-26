@@ -18,9 +18,10 @@ class FakePush implements Push {
   final registered = <String>[];
   var asked = 0;
   var forgotten = 0;
-  final _opened = StreamController<void>.broadcast();
+  final _opened = StreamController<Map<String, Object?>>.broadcast();
 
-  void tap() => _opened.add(null);
+  /// A push tapped, carrying [data] as FCM does.
+  void tap([Map<String, Object?> data = const {}]) => _opened.add(data);
 
   @override
   Future<bool> get available async => isAvailable;
@@ -40,7 +41,7 @@ class FakePush implements Push {
   Future<void> register(String locale) async => registered.add(locale);
 
   @override
-  Stream<void> get opened => _opened.stream;
+  Stream<Map<String, Object?>> get opened => _opened.stream;
 
   @override
   Future<void> forget() async => forgotten++;

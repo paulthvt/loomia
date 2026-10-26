@@ -313,8 +313,8 @@ select results_eq(
 );
 select is(
   (select schedule from cron.job where jobname = 'send-daily-summary'),
-  '*/15 * * * *',
-  'scheduled every 15 minutes'
+  '* * * * *',
+  'scheduled every minute (#377: a task''s push within one)'
 );
 
 set local role authenticated;

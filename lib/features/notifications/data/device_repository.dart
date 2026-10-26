@@ -6,7 +6,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// The kinds of push this build has strings for (`notification_kind`): the
 /// sender sends no other kind to this phone (#148). A new kind ships its
 /// strings first, then is added here.
-const pushKinds = ['daily_summary', 'month_ritual'];
+const pushKinds = [
+  'daily_summary',
+  'month_ritual',
+  // #377: a task's time, and the summary's task counts.
+  'task_alert',
+  'daily_summary_tasks',
+];
 
 /// Where this phone's pushes go. Throws `PeopleFailure` only.
 class DeviceRepository {

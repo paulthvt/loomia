@@ -380,6 +380,58 @@ void main() {
       expect(find.byType(TaskRow), findsNothing);
     });
 
+    testWidgets(
+      'a timed task goes on the hour grid, the strip keeps the rest',
+      (tester) async {
+        final timed = Task(
+          id: 'call',
+          title: 'Call the supplier',
+          note: null,
+          dueOn: _day,
+          doneOn: null,
+          createdAt: DateTime(2026, 10, 1),
+          dueTime: (hour: 14, minute: 0),
+        );
+        await _pump(
+          tester,
+          desktop: true,
+          mode: CalendarMode.week,
+          tasks: [timed, _task('t1')],
+        );
+
+        final chips = tester
+            .widgetList<MonthTaskChip>(find.byType(MonthTaskChip))
+            .toList();
+        expect(chips.map((c) => (c.task.id, c.showTime)), [
+          ('t1', true),
+          ('call', false),
+        ]);
+        // On the grid: below the strip, and titled only.
+        expect(find.text('Call the supplier'), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.text('Call the supplier')).dy,
+          greaterThan(tester.getBottomLeft(find.text('Task t1')).dy),
+        );
+      },
+    );
+
+    testWidgets('the month chip of a timed task starts with its time', (
+      tester,
+    ) async {
+      final timed = Task(
+        id: 'call',
+        title: 'Call the supplier',
+        note: null,
+        dueOn: _day,
+        doneOn: null,
+        createdAt: DateTime(2026, 10, 1),
+        dueTime: (hour: 14, minute: 0),
+      );
+      await _pump(tester, desktop: true, tasks: [timed]);
+
+      expect(find.text('2:00 PM · Call the supplier'), findsOneWidget);
+    });
+
     testWidgets('the week grid has a strip of tasks under the headers', (
       tester,
     ) async {

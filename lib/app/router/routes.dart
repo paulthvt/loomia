@@ -3,6 +3,12 @@ abstract final class Routes {
   static const String today = '/';
   static const String todayName = 'today';
 
+  /// Today's query parameter: the task whose sheet opens, from its push
+  /// (#377).
+  static const String todayTaskParam = 'task';
+  static String todayTask(String id) =>
+      Uri(path: today, queryParameters: {todayTaskParam: id}).toString();
+
   static const String contacts = '/contacts';
   static const String contactsName = 'contacts';
 

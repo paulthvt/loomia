@@ -53,6 +53,14 @@ class NotificationSettingsController
       // Logged by guardPeople.
     }
   }
+
+  /// A first task with a time (#377): its push needs a zone, which lives on
+  /// this row. Creates it, every push off, when there is none; an existing
+  /// row is left alone. Throws `PeopleFailure`.
+  Future<void> ensureFor(String zone) async {
+    if (await future != null) return;
+    await save(NotificationSettings(timeZone: zone));
+  }
 }
 
 /// The device's IANA zone; null when it can't be read.

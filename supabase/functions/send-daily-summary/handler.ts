@@ -4,12 +4,24 @@ import {
   type RitualClaim,
   ritualMessage,
   summaryMessage,
+  type TaskClaim,
+  taskMessage,
 } from './message.ts'
 
 /** notification_kind; a device only gets the kinds its app lists. */
-export type Kind = 'daily_summary' | 'month_ritual'
+export type Kind =
+  | 'daily_summary'
+  | 'month_ritual'
+  | 'task_alert'
+  // Not a push: an app whose summary strings count tasks (#377).
+  | 'daily_summary_tasks'
 
-export type Claim = { owner_id: string; local_date: string; people: number }
+export type Claim = {
+  owner_id: string
+  local_date: string
+  people: number
+  tasks: number
+}
 export type Device = {
   owner_id: string
   token: string
@@ -23,7 +35,8 @@ export type Job<C extends { owner_id: string }> = {
   claim(): Promise<C[]>
   /** Hands the claim back for the next run. */
   release(claim: C): Promise<void>
-  message(claim: C, device: Device): Message
+  /** Null: nothing this phone can show, so it gets nothing. */
+  message(claim: C, device: Device): Message | null
 }
 
 export type Deps = {
@@ -48,7 +61,26 @@ export const summaryJob = (
   kind: 'daily_summary',
   claim,
   release: (c) => release(c.owner_id, c.local_date),
-  message: (c, d) => summaryMessage(d.token, d.locale, c.people),
+  message: (c, d) =>
+    summaryMessage(
+      d.token,
+      d.locale,
+      c.people,
+      c.tasks,
+      d.push_kinds.includes('daily_summary_tasks'),
+    ),
+})
+
+/** A task's time (#377): claim_task_alerts, per task and time. */
+export const taskJob = (
+  claim: () => Promise<TaskClaim[]>,
+  release: (task: string, at: string) => Promise<void>,
+): Job<TaskClaim> => ({
+  kind: 'task_alert',
+  claim,
+  // Its own time: a task moved since has a newer claim, left alone.
+  release: (c) => release(c.task_id, c.alerted_for),
+  message: (c, d) => taskMessage(d.token, c),
 })
 
 /** The month-end push (#148): claim_month_rituals, per half (#354). */
@@ -97,9 +129,13 @@ export async function handle<C extends { owner_id: string }>(
     const outcomes = await Promise.all(
       devices
         .filter((d) => d.owner_id === claim.owner_id)
-        .map(async (d) => {
+        .flatMap((d) => {
+          const message = job.message(claim, d)
+          return message ? [{ d, message }] : []
+        })
+        .map(async ({ d, message }) => {
           const o = await deps
-            .send(job.message(claim, d))
+            .send(message)
             .catch((): Outcome => 'retry')
           if (o === 'drop') dead.push(d.token)
           return o

@@ -215,9 +215,9 @@ final _events = [
   ),
 ];
 
-/// An open (repeating, #376) and a done task on the 8th, above its events;
-/// one alone on the 10th (a hollow dot); one on the 21st, after its two
-/// events' dots.
+/// An open (repeating, #376) and a done task on the 8th, above its events,
+/// and one at 14:00 (#377); one alone on the 10th (a hollow dot); one on the
+/// 21st, after its two events' dots.
 final _tasks = [
   Task(
     id: 't1',
@@ -257,6 +257,16 @@ final _tasks = [
     dueOn: DateTime(2026, 10, 21),
     doneOn: null,
     createdAt: DateTime(2026, 10, 4),
+  ),
+  // A time (#377): its chip in the lists, its block on the desktop week.
+  Task(
+    id: 't5',
+    title: 'Call the supplier',
+    note: 'Ask about the 10 ml bottles',
+    dueOn: _selected,
+    doneOn: null,
+    createdAt: DateTime(2026, 10, 5),
+    dueTime: (hour: 14, minute: 0),
   ),
 ];
 

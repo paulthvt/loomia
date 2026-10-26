@@ -64,7 +64,11 @@ import 'package:material_ui/material_ui.dart';
 
 /// The home. Everything else in the product is support (design principle #1).
 class TodayPage extends ConsumerStatefulWidget {
-  const TodayPage({super.key});
+  const TodayPage({this.openTask, super.key});
+
+  /// A task id from a tapped push (#377): its sheet opens once the tasks
+  /// have loaded, if it is still open.
+  final String? openTask;
 
   @override
   ConsumerState<TodayPage> createState() => _TodayPageState();
@@ -74,6 +78,28 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   /// Rows ([Due.key]) whose tick is in flight: their ring stays filled and
   /// takes no tap, so a second tap can't tick the next step too.
   final Set<String> _busy = {};
+
+  /// The [TodayPage.openTask] already handled, so a rebuild doesn't open it
+  /// twice.
+  String? _opened;
+
+  /// Opens [TodayPage.openTask]'s sheet when [tasks] holds it, then drops
+  /// the parameter from the address.
+  void _openFromPush(List<Task>? tasks) {
+    final id = widget.openTask;
+    // Cleared from the address: the same task's next push opens it again.
+    if (id == null) _opened = null;
+    if (id == null || id == _opened || tasks == null) return;
+    _opened = id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.go(Routes.today);
+      final task = tasks.where((t) => t.id == id && !t.done).firstOrNull;
+      if (task != null) {
+        unawaited(showTask(context, day: today(), editing: task));
+      }
+    });
+  }
 
   /// The time picked on the summary card; null shows the default, 19:00.
   TimeOfDay? _nudgeTime;
@@ -289,6 +315,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     final people = ref.watch(book);
     final workflows = ref.watch(lists);
     final tasks = ref.watch(tasksProvider(owner));
+    _openFromPush(tasks.value);
 
     final calendarEvents = ref.watch(eventsProvider(owner));
     final eventWorkflows = ref.watch(eventWorkflowsProvider(owner));
@@ -852,7 +879,7 @@ class _TodayViewState extends State<TodayView> {
                 maxLines: 2,
                 chip: task.dueOn.isBefore(day)
                     ? DateChip(dueLabel(l10n, task.dueOn, day))
-                    : null,
+                    : timeChip(context, task),
                 onOpen: switch (widget.onOpenTask) {
                   final open? => () => open(task),
                   null => null,

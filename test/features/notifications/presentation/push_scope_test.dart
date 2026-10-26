@@ -1,13 +1,17 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:loomia/features/notifications/domain/notification_settings.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../../auth/fake_auth_repository.dart';
+import '../../tasks/fake_task_repository.dart';
 import '../fake_notifications_repository.dart';
 import '../fake_push.dart';
 
@@ -56,6 +60,76 @@ void main() {
           .path,
       Routes.today,
     );
+  });
+
+  group("a task's push (#377)", () {
+    Task call({DateTime? doneOn}) => Task(
+      id: 't1',
+      title: 'Call the supplier',
+      note: null,
+      dueOn: today(),
+      doneOn: doneOn,
+      createdAt: DateTime(2026, 10, 1),
+      dueTime: (hour: 14, minute: 0),
+    );
+    String where(ProviderContainer container) => container
+        .read(routerProvider)
+        .routerDelegate
+        .currentConfiguration
+        .uri
+        .toString();
+
+    testWidgets('opens its sheet on Today, then clears the address', (
+      tester,
+    ) async {
+      final push = FakePush();
+      final tasks = FakeTaskRepository([call()]);
+      final container = await pumpLoomia(
+        tester,
+        size: phone,
+        push: push,
+        tasks: tasks,
+      );
+      container.read(routerProvider).go(Routes.goals);
+      await tester.pumpAndSettle();
+
+      push.tap({'type': 'task', 'task': 't1'});
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit task'), findsOneWidget);
+      expect(where(container), Routes.today);
+    });
+
+    testWidgets('a task gone or done: just Today', (tester) async {
+      final push = FakePush();
+      final tasks = FakeTaskRepository([call(doneOn: today())]);
+      final container = await pumpLoomia(
+        tester,
+        size: phone,
+        push: push,
+        tasks: tasks,
+      );
+
+      push.tap({'type': 'task', 'task': 't1'});
+      await tester.pumpAndSettle();
+      push.tap({'type': 'task', 'task': 'gone'});
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit task'), findsNothing);
+      expect(where(container), Routes.today);
+    });
+
+    testWidgets('the summary still opens Today', (tester) async {
+      final push = FakePush();
+      final container = await pumpLoomia(tester, size: phone, push: push);
+      container.read(routerProvider).go(Routes.goals);
+      await tester.pumpAndSettle();
+
+      push.tap({'type': 'daily_summary'});
+      await tester.pumpAndSettle();
+
+      expect(where(container), Routes.today);
+    });
   });
 
   testWidgets('the summary follows the phone to another time zone', (

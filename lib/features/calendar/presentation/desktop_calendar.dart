@@ -440,7 +440,12 @@ class MonthEventChip extends StatelessWidget {
 /// set as [MonthEventChip]: a hollow ring (the mobile month's hollow dot),
 /// its title on one line. Done: struck through and muted.
 class MonthTaskChip extends StatelessWidget {
-  const MonthTaskChip({required this.task, required this.onTap, super.key});
+  const MonthTaskChip({
+    required this.task,
+    required this.onTap,
+    this.showTime = true,
+    super.key,
+  });
 
   static const double _ring = 6;
   static const double _stroke = 1.5;
@@ -449,15 +454,29 @@ class MonthTaskChip extends StatelessWidget {
   final Task task;
   final VoidCallback onTap;
 
+  /// Before the title of a timed task (#377): "14:00 · Call the supplier".
+  /// Off on the week's hour grid, where the block's place says it.
+  final bool showTime;
+
   static TextStyle? _titleStyle(BuildContext context) =>
       MonthEventChip._titleStyle(context);
+
+  static String _label(BuildContext context, Task task, bool showTime) =>
+      switch (task.dueTime) {
+        final time? when showTime =>
+          AppLocalizations.of(context).calendarShortEvent(
+            timeLabel(context, DateTime(2000, 1, 1, time.hour, time.minute)),
+            task.title,
+          ),
+        _ => task.title,
+      };
 
   /// The height a chip for [task] takes at [width]: one line.
   static double heightFor(BuildContext context, Task task, double width) =>
       2 * _vertical +
       _textHeight(
         context,
-        task.title,
+        _label(context, task, true),
         _titleStyle(context),
         width - _ring - AppSpacing.sm - AppSpacing.xs,
       );
@@ -495,7 +514,7 @@ class MonthTaskChip extends StatelessWidget {
                 ),
                 Expanded(
                   child: Text(
-                    task.title,
+                    _label(context, task, showTime),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: _titleStyle(context)?.copyWith(
@@ -563,7 +582,17 @@ class WeekGrid extends StatelessWidget {
         if (days.contains(event.day)) event,
     ];
     final weekTasks = [for (final day in days) tasksOn(tasks, day)];
-    final range = hourRange(week);
+    // A timed task goes on the hour grid (#377); the strip keeps the rest.
+    final untimed = [
+      for (final day in weekTasks) [...day.where((t) => t.dueTime == null)],
+    ];
+    final timed = [
+      for (final day in weekTasks) [...day.where((t) => t.dueTime != null)],
+    ];
+    final range = hourRange(week, [
+      for (final day in timed)
+        for (final task in day) taskSpan(task.dueTime!),
+    ]);
     final hours = range.last - range.first;
     final hourStyle = Theme.of(context).textTheme.labelSmall
         ?.copyWith(color: colors.textMuted);
@@ -590,7 +619,7 @@ class WeekGrid extends StatelessWidget {
               ],
             ),
           ),
-          if (weekTasks.any((day) => day.isNotEmpty))
+          if (untimed.any((day) => day.isNotEmpty))
             ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.sizeOf(context).height * _maxStrip,
@@ -601,7 +630,7 @@ class WeekGrid extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(width: _gutter),
-                    for (final day in weekTasks)
+                    for (final day in untimed)
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -664,11 +693,13 @@ class WeekGrid extends StatelessWidget {
                               ),
                             ),
                           ),
-                          for (final day in days)
+                          for (final (index, day) in days.indexed)
                             Expanded(
                               child: _DayColumn(
                                 day: day,
                                 events: eventsOn(week, day),
+                                tasks: timed[index],
+                                onOpenTask: onOpenTask,
                                 firstHour: range.first,
                                 hours: hours,
                                 hour: hour,
@@ -773,6 +804,8 @@ class _DayColumn extends StatelessWidget {
   const _DayColumn({
     required this.day,
     required this.events,
+    required this.tasks,
+    required this.onOpenTask,
     required this.firstHour,
     required this.hours,
     required this.hour,
@@ -789,6 +822,10 @@ class _DayColumn extends StatelessWidget {
 
   final DateTime day;
   final List<CalendarEvent> events;
+
+  /// The day's timed tasks (#377), each a [taskBlock] at its time.
+  final List<Task> tasks;
+  final void Function(Task task)? onOpenTask;
   final int firstHour;
   final int hours;
 
@@ -800,6 +837,15 @@ class _DayColumn extends StatelessWidget {
   final OpenDay onDay;
 
   double _y(int minute) => (minute - firstHour * 60) / 60 * hour;
+
+  static Span _span(Object item) => switch (item) {
+    final CalendarEvent event => (
+      start: startMinute(event),
+      end: endMinute(event),
+    ),
+    final Task task => taskSpan(task.dueTime!),
+    _ => (start: 0, end: 0),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -840,21 +886,30 @@ class _DayColumn extends StatelessWidget {
                       height: 1,
                       child: ColoredBox(color: rule),
                     ),
-                  for (final item in dayLanes(events))
+                  for (final item in placeInLanes<Object>([
+                    ...events,
+                    ...tasks,
+                  ], _span))
                     Positioned(
-                      top: _y(startMinute(item.event)) + 1,
+                      top: _y(_span(item.item).start) + 1,
                       height: math.max(
-                        _y(endMinute(item.event)) -
-                            _y(startMinute(item.event)) -
+                        _y(_span(item.item).end) -
+                            _y(_span(item.item).start) -
                             2,
                         minCard,
                       ),
                       left: _inset + item.lane * width / item.lanes,
                       width: width / item.lanes - (item.lanes > 1 ? 2 : 0),
-                      child: _WeekCard(
-                        event: item.event,
-                        onTap: () => onOpen(item.event),
-                      ),
+                      child: switch (item.item) {
+                        final Task task => _WeekTask(
+                          task: task,
+                          onTap: () => onOpenTask?.call(task),
+                        ),
+                        final event as CalendarEvent => _WeekCard(
+                          event: event,
+                          onTap: () => onOpen(event),
+                        ),
+                      },
                     ),
                   if (showNow) ...[
                     Positioned(
@@ -889,6 +944,31 @@ class _DayColumn extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A timed task on the desktop week's hour grid (#377): a card like
+/// [_WeekCard] around a [MonthTaskChip], its title only.
+class _WeekTask extends StatelessWidget {
+  const _WeekTask({required this.task, required this.onTap});
+
+  final Task task;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: LoomiaColors.of(context).surfaceDefault,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadii.sm),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Padding(
+      padding: const EdgeInsetsDirectional.only(start: AppSpacing.sm),
+      child: Align(
+        alignment: AlignmentDirectional.topStart,
+        child: MonthTaskChip(task: task, onTap: onTap, showTime: false),
+      ),
+    ),
+  );
 }
 
 /// A desktop week card: time and title, a start bar while upcoming; done,

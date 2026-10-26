@@ -301,4 +301,101 @@ void main() {
 
     expect(task.key, 'task:abc-123');
   });
+
+  group('a time (#377)', () {
+    Task at(
+      String id,
+      DateTime day, {
+      TaskTime? time,
+      int created = 0,
+      DateTime? doneOn,
+    }) => Task(
+      id: id,
+      title: id,
+      note: null,
+      dueOn: day,
+      doneOn: doneOn,
+      createdAt: DateTime(2026, 10, 1, created),
+      dueTime: time,
+    );
+    final today = DateTime(2026, 10, 27);
+
+    test('Today: late first, then no time by creation, then by time', () {
+      final tasks = [
+        at('call 14:00', today, time: (hour: 14, minute: 0)),
+        at('order flyers', today, created: 2),
+        at('call 9:30', today, time: (hour: 9, minute: 30)),
+        at('late', DateTime(2026, 10, 23), time: (hour: 18, minute: 0)),
+        at('restock', today, created: 1),
+      ];
+      expect(todayTasks(tasks, today).map((t) => t.id), [
+        'late',
+        'restock',
+        'order flyers',
+        'call 9:30',
+        'call 14:00',
+      ]);
+    });
+
+    test('a day in the Calendar: the same order, done ones last', () {
+      final tasks = [
+        at('call 14:00', today, time: (hour: 14, minute: 0)),
+        at('done', today, doneOn: today),
+        at('order flyers', today),
+      ];
+      expect(tasksOn(tasks, today).map((t) => t.id), [
+        'order flyers',
+        'call 14:00',
+        'done',
+      ]);
+    });
+
+    test('postponed rounds up to the minute and moves the day at midnight', () {
+      expect(
+        postponed(
+          DateTime(2026, 10, 27, 14, 0, 40),
+          const Duration(minutes: 15),
+        ),
+        (day: DateTime(2026, 10, 27), time: (hour: 14, minute: 16)),
+      );
+      expect(
+        postponed(DateTime(2026, 10, 27, 14, 5), const Duration(hours: 1)),
+        (day: DateTime(2026, 10, 27), time: (hour: 15, minute: 5)),
+      );
+      expect(
+        postponed(DateTime(2026, 10, 27, 23, 50), const Duration(minutes: 15)),
+        (day: DateTime(2026, 10, 28), time: (hour: 0, minute: 5)),
+      );
+      expect(
+        postponed(DateTime(2026, 10, 27, 23, 30), const Duration(hours: 1)),
+        (day: DateTime(2026, 10, 28), time: (hour: 0, minute: 30)),
+      );
+    });
+
+    test('due_time round-trips as Postgres time', () {
+      expect(timeFromColumn('14:00:00'), (hour: 14, minute: 0));
+      expect(timeFromColumn('09:05:00'), (hour: 9, minute: 5));
+      expect(timeFromColumn(null), isNull);
+      expect(timeColumn((hour: 9, minute: 5)), '09:05');
+      expect(timeColumn(null), isNull);
+    });
+
+    test('alertNear: open and timed, past or under 15 minutes away', () {
+      final task = at('call', today, time: (hour: 14, minute: 0));
+      expect(alertNear(task, DateTime(2026, 10, 27, 13, 44)), isFalse);
+      expect(alertNear(task, DateTime(2026, 10, 27, 13, 46)), isTrue);
+      expect(alertNear(task, DateTime(2026, 10, 27, 16)), isTrue);
+      expect(
+        alertNear(at('untimed', today), DateTime(2026, 10, 27, 16)),
+        isFalse,
+      );
+      expect(
+        alertNear(
+          at('done', today, time: (hour: 14, minute: 0), doneOn: today),
+          DateTime(2026, 10, 27, 16),
+        ),
+        isFalse,
+      );
+    });
+  });
 }
