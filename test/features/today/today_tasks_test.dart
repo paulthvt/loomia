@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/load_failed.dart';
+import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
@@ -327,6 +328,43 @@ void main() {
           .toList();
       expect(setDoneCalls, hasLength(2));
       expect(setDoneCalls.last, 'setDone(t1, null)');
+    });
+
+    testWidgets('a repeating task: icon, tick makes the next, Undo takes it', (
+      tester,
+    ) async {
+      final day = today();
+      taskRepo.store['t1'] = Task(
+        id: 't1',
+        title: 'Restock lavender',
+        note: null,
+        dueOn: day,
+        doneOn: null,
+        createdAt: DateTime.utc(2026, 10, 1),
+        repeat: (
+          every: 1,
+          unit: RepeatUnit.month,
+          from: day,
+          until: null,
+          scheduledOn: day,
+        ),
+      );
+      await pumpPage(tester);
+      expect(find.byIcon(Icons.repeat_rounded), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Mark "Restock lavender" done'));
+      await tester.pumpAndSettle();
+
+      expect(taskRepo.calls, contains(startsWith('complete(t1,')));
+      expect(find.text('Restock lavender'), findsNothing);
+      expect(taskRepo.store, hasLength(2));
+
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+
+      expect(taskRepo.calls, contains('undo(t1)'));
+      expect(taskRepo.store.keys, ['t1']);
+      expect(find.text('Restock lavender'), findsOneWidget);
     });
 
     testWidgets('two quick taps write once', (tester) async {

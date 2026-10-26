@@ -377,6 +377,14 @@ final _tasks = [
     dueOn: DateTime(2026, 9, 29),
     doneOn: null,
     createdAt: DateTime.utc(2026, 9, 20),
+    // Comes back every month (#376): the repeat icon after the title.
+    repeat: (
+      every: 1,
+      unit: RepeatUnit.month,
+      from: DateTime(2026, 8, 29),
+      until: null,
+      scheduledOn: DateTime(2026, 9, 29),
+    ),
   ),
   Task(
     id: 't2',

@@ -8,6 +8,7 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/tasks/data/task_repository.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/features/workflows/domain/progress.dart' show addDays;
@@ -162,6 +163,7 @@ void main() {
       title: 'Review contract',
       note: 'Check clause 3',
       dueOn: DateTime(2026, 11, 5),
+      repeat: null,
     ));
     await _pumpHarness(
       tester,
@@ -181,6 +183,7 @@ void main() {
       title: 'Old title',
       note: 'Old note',
       dueOn: DateTime(2026, 11, 5),
+      repeat: null,
     ));
     await _pumpHarness(
       tester,
@@ -191,6 +194,7 @@ void main() {
 
     await tester.enterText(whatField, 'New title');
     await tester.enterText(noteField, 'New note');
+    await tester.ensureVisible(find.text('Tomorrow'));
     await tester.tap(find.text('Tomorrow'));
     await tester.pumpAndSettle();
     await save(tester);
@@ -209,6 +213,7 @@ void main() {
       title: 'Old task',
       note: null,
       dueOn: DateTime(2026, 11, 5),
+      repeat: null,
     ));
     await _pumpHarness(
       tester,
@@ -247,6 +252,242 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('New task'), findsOneWidget);
+  });
+
+  group('repeat (#376)', () {
+    final repeatSwitch = find.widgetWithText(SwitchListTile, 'Repeat');
+    final everyField = find.descendant(
+      of: find.widgetWithText(LabeledField, 'Repeats every'),
+      matching: find.byType(TextFormField),
+    );
+
+    Future<void> turnOn(WidgetTester tester) async {
+      await tester.ensureVisible(repeatSwitch);
+      await tester.tap(repeatSwitch);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> pickUnit(WidgetTester tester, String unit) async {
+      await tester.ensureVisible(
+        find.byType(DropdownButtonFormField<RepeatUnit>),
+      );
+      await tester.tap(find.byType(DropdownButtonFormField<RepeatUnit>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(unit).last);
+      await tester.pumpAndSettle();
+    }
+
+    Future<Task> lavender() => tasks.add((
+      title: 'Restock lavender',
+      note: null,
+      dueOn: DateTime(2026, 11, 3),
+      repeat: (
+        every: 1,
+        unit: RepeatUnit.month,
+        from: DateTime(2026, 10, 3),
+        until: null,
+        scheduledOn: DateTime(2026, 11, 3),
+      ),
+    ));
+
+    testWidgets('off by default; on shows every 1 week, the line and Never', (
+      tester,
+    ) async {
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) => showTask(context, day: DateTime(2026, 10, 30)),
+      );
+      expect(tester.widget<SwitchListTile>(repeatSwitch).value, isFalse);
+      expect(find.text('Repeats every'), findsNothing);
+
+      await turnOn(tester);
+
+      expect(find.text('Repeats every'), findsOneWidget);
+      expect(tester.widget<TextFormField>(everyField).controller!.text, '1');
+      expect(find.text('Every week on Friday'), findsOneWidget);
+      expect(
+        tester
+            .widget<RadioGroup<bool>>(find.byType(RadioGroup<bool>))
+            .groupValue,
+        isFalse,
+      );
+    });
+
+    testWidgets('the number and unit change the line', (tester) async {
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) => showTask(context, day: DateTime(2026, 10, 3)),
+      );
+      await turnOn(tester);
+      await tester.enterText(everyField, '3');
+      await pickUnit(tester, 'month');
+
+      expect(find.text('months'), findsOneWidget);
+      expect(find.text('Every 3 months on the 3rd'), findsOneWidget);
+    });
+
+    testWidgets('0 is refused and nothing is saved', (tester) async {
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) => showTask(context, day: DateTime(2026, 10, 30)),
+      );
+      await tester.enterText(whatField, 'Restock');
+      await turnOn(tester);
+      await tester.enterText(everyField, '0');
+      await save(tester);
+
+      expect(find.text('From 1 to 99'), findsOneWidget);
+      expect(tasks.calls.where((c) => c.startsWith('add')), isEmpty);
+    });
+
+    testWidgets('a new repeating task counts from its day', (tester) async {
+      final day = DateTime(2026, 11, 3);
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) => showTask(context, day: day),
+      );
+      await tester.enterText(whatField, 'Restock lavender');
+      await turnOn(tester);
+      await pickUnit(tester, 'month');
+      await save(tester);
+
+      final saved = tasks.store.values.single.repeat!;
+      expect(saved.every, 1);
+      expect(saved.unit, RepeatUnit.month);
+      expect(saved.from, day);
+      expect(saved.scheduledOn, day);
+      expect(saved.until, isNull);
+    });
+
+    testWidgets('Ends On picks a date', (tester) async {
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) => showTask(context, day: DateTime(2026, 11, 3)),
+      );
+      await tester.enterText(whatField, 'Restock lavender');
+      await turnOn(tester);
+      await tester.ensureVisible(find.text('On'));
+      await tester.tap(find.text('On'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('20'));
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dec 20, 2026'), findsOneWidget);
+      await save(tester);
+      expect(tasks.store.values.single.repeat!.until, DateTime(2026, 12, 20));
+    });
+
+    testWidgets('moving the day, This task: postponed, schedule kept', (
+      tester,
+    ) async {
+      final task = await lavender();
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+      await tester.ensureVisible(find.text('Tomorrow'));
+      await tester.tap(find.text('Tomorrow'));
+      await tester.pumpAndSettle();
+      await save(tester);
+
+      expect(find.text('Change a repeating task'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Save').last);
+      await tester.pumpAndSettle();
+
+      final saved = tasks.store[task.id]!;
+      expect(saved.dueOn, addDays(today(), 1));
+      expect(saved.repeat!.from, DateTime(2026, 10, 3));
+      expect(saved.repeat!.scheduledOn, DateTime(2026, 11, 3));
+    });
+
+    testWidgets('moving the day, following: the schedule moves', (
+      tester,
+    ) async {
+      final task = await lavender();
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+      await tester.ensureVisible(find.text('Tomorrow'));
+      await tester.tap(find.text('Tomorrow'));
+      await tester.pumpAndSettle();
+      await save(tester);
+      await tester.tap(find.text('This and following tasks'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Save').last);
+      await tester.pumpAndSettle();
+
+      final tomorrow = addDays(today(), 1);
+      final saved = tasks.store[task.id]!;
+      expect(saved.dueOn, tomorrow);
+      expect(saved.repeat!.from, tomorrow);
+      expect(saved.repeat!.scheduledOn, tomorrow);
+    });
+
+    testWidgets('changing only the rule asks nothing', (tester) async {
+      final task = await lavender();
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+      await tester.ensureVisible(everyField);
+      await tester.enterText(everyField, '2');
+      await save(tester);
+
+      expect(find.text('Change a repeating task'), findsNothing);
+      final saved = tasks.store[task.id]!.repeat!;
+      expect(saved.every, 2);
+      expect(saved.from, DateTime(2026, 11, 3));
+      expect(saved.scheduledOn, DateTime(2026, 11, 3));
+    });
+
+    testWidgets('turning repeat off saves a plain task', (tester) async {
+      final task = await lavender();
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+      await turnOn(tester); // a tap flips it off
+      await save(tester);
+
+      expect(tasks.store[task.id]!.repeat, isNull);
+    });
+
+    testWidgets('delete asks this or following', (tester) async {
+      final task = await lavender();
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+      await tester.tap(find.text('Delete').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete a repeating task'), findsOneWidget);
+      expect(find.text('Delete this task?'), findsNothing);
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tasks.calls,
+        contains('deleteRepeating(${task.id}, following: false)'),
+      );
+      expect(tasks.store.values.single.dueOn, DateTime(2026, 12, 3));
+    });
   });
 }
 

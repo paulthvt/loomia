@@ -215,8 +215,9 @@ final _events = [
   ),
 ];
 
-/// An open and a done task on the 8th, above its events; one alone on the
-/// 10th (a hollow dot); one on the 21st, after its two events' dots.
+/// An open (repeating, #376) and a done task on the 8th, above its events;
+/// one alone on the 10th (a hollow dot); one on the 21st, after its two
+/// events' dots.
 final _tasks = [
   Task(
     id: 't1',
@@ -225,6 +226,13 @@ final _tasks = [
     dueOn: _selected,
     doneOn: null,
     createdAt: DateTime(2026, 10, 1),
+    repeat: (
+      every: 1,
+      unit: RepeatUnit.month,
+      from: _selected,
+      until: null,
+      scheduledOn: _selected,
+    ),
   ),
   Task(
     id: 't2',

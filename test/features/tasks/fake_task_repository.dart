@@ -48,6 +48,7 @@ class FakeTaskRepository implements TaskRepository {
       dueOn: draft.dueOn,
       doneOn: null,
       createdAt: DateTime.now(),
+      repeat: draft.repeat,
     );
     return store[task.id] = task;
   }
@@ -63,6 +64,7 @@ class FakeTaskRepository implements TaskRepository {
       dueOn: draft.dueOn,
       doneOn: old.doneOn,
       createdAt: old.createdAt,
+      repeat: draft.repeat,
     );
     return store[id] = updated;
   }
@@ -79,9 +81,85 @@ class FakeTaskRepository implements TaskRepository {
       dueOn: task.dueOn,
       doneOn: on,
       createdAt: task.createdAt,
+      repeat: task.repeat,
     );
     return store[id] = updated;
   }
+
+  /// The task each repeating tick made, by the ticked task's id.
+  final Map<String, String> nextOf = {};
+
+  @override
+  Future<void> complete(String id, DateTime on) async {
+    await _record('complete($id, ${_day(on)})');
+    final task = store[id];
+    if (task == null || task.done) return;
+    store[id] = _with(task, doneOn: on);
+    final next = _following(task);
+    if (next != null) nextOf[id] = next.id;
+  }
+
+  @override
+  Future<void> undo(String id) async {
+    await _record('undo($id)');
+    final task = store[id];
+    if (task == null) return;
+    store[id] = _with(task, doneOn: null);
+    final next = nextOf.remove(id);
+    if (next != null) store.remove(next);
+  }
+
+  @override
+  Future<void> deleteRepeating(
+    String id, {
+    required DateTime on,
+    required bool following,
+  }) async {
+    await _record('deleteRepeating($id, following: $following)');
+    final task = store.remove(id);
+    if (task != null && !following) _following(task);
+  }
+
+  /// The next task of [task]'s rule, naively one step after its scheduled
+  /// day (no month-end clamp: the server does the real maths).
+  Task? _following(Task task) {
+    final repeat = task.repeat;
+    if (repeat == null) return null;
+    final s = repeat.scheduledOn;
+    final n = repeat.every;
+    final day = switch (repeat.unit) {
+      RepeatUnit.day => DateTime(s.year, s.month, s.day + n),
+      RepeatUnit.week => DateTime(s.year, s.month, s.day + 7 * n),
+      RepeatUnit.month => DateTime(s.year, s.month + n, s.day),
+      RepeatUnit.year => DateTime(s.year + n, s.month, s.day),
+    };
+    final next = Task(
+      id: 'next-${_next++}',
+      title: task.title,
+      note: task.note,
+      dueOn: day,
+      doneOn: null,
+      createdAt: DateTime.now(),
+      repeat: (
+        every: n,
+        unit: repeat.unit,
+        from: repeat.from,
+        until: repeat.until,
+        scheduledOn: day,
+      ),
+    );
+    return store[next.id] = next;
+  }
+
+  Task _with(Task task, {required DateTime? doneOn}) => Task(
+    id: task.id,
+    title: task.title,
+    note: task.note,
+    dueOn: task.dueOn,
+    doneOn: doneOn,
+    createdAt: task.createdAt,
+    repeat: task.repeat,
+  );
 
   @override
   Future<void> delete(String id) async {

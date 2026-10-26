@@ -45,6 +45,7 @@ import 'package:loomia/features/notifications/presentation/notification_settings
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/notifications/presentation/nudge_card.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
+import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/features/tasks/presentation/toggle_task.dart';
@@ -847,6 +848,7 @@ class _TodayViewState extends State<TodayView> {
                 name: task.title,
                 reason: task.note,
                 icon: Icons.assignment_outlined,
+                tag: repeatIcon(context, task),
                 maxLines: 2,
                 chip: task.dueOn.isBefore(day)
                     ? DateChip(dueLabel(l10n, task.dueOn, day))

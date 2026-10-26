@@ -9,21 +9,28 @@ enum EventScope { one, following }
 /// "This event" or "This and following events", before a change on an
 /// occurrence: Save, Add people and Remove ([delete] false), or Delete,
 /// confirmed here with no second dialog. [ruleChanged]: a new repeat only
-/// reaches the following ones, so "This event" is off. Null when cancelled.
+/// reaches the following ones, so "This event" is off. [task]: worded for
+/// a repeating task (#376) instead. Null when cancelled.
 Future<EventScope?> pickScope(
   BuildContext context, {
   bool delete = false,
   bool ruleChanged = false,
+  bool task = false,
 }) => LoomiaDialog.show<EventScope>(
   context,
-  (_) => _ScopeDialog(delete: delete, ruleChanged: ruleChanged),
+  (_) => _ScopeDialog(delete: delete, ruleChanged: ruleChanged, task: task),
 );
 
 class _ScopeDialog extends StatefulWidget {
-  const _ScopeDialog({this.delete = false, this.ruleChanged = false});
+  const _ScopeDialog({
+    this.delete = false,
+    this.ruleChanged = false,
+    this.task = false,
+  });
 
   final bool delete;
   final bool ruleChanged;
+  final bool task;
 
   @override
   State<_ScopeDialog> createState() => _ScopeDialogState();
@@ -40,9 +47,12 @@ class _ScopeDialogState extends State<_ScopeDialog> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return LoomiaDialog(
-      title: widget.delete
-          ? l10n.eventScopeDeleteTitle
-          : l10n.eventScopeChangeTitle,
+      title: switch ((widget.task, widget.delete)) {
+        (false, false) => l10n.eventScopeChangeTitle,
+        (false, true) => l10n.eventScopeDeleteTitle,
+        (true, false) => l10n.taskScopeChangeTitle,
+        (true, true) => l10n.taskScopeDeleteTitle,
+      },
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -77,19 +87,27 @@ class _ScopeDialogState extends State<_ScopeDialog> {
                   value: EventScope.one,
                   enabled: !widget.ruleChanged,
                   contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.eventScopeThis),
+                  title: Text(
+                    widget.task ? l10n.taskScopeThis : l10n.eventScopeThis,
+                  ),
                 ),
                 RadioListTile<EventScope>(
                   value: EventScope.following,
                   contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.eventScopeFollowing),
+                  title: Text(
+                    widget.task
+                        ? l10n.taskScopeFollowing
+                        : l10n.eventScopeFollowing,
+                  ),
                 ),
               ],
             ),
           ),
           if (widget.ruleChanged)
             Text(
-              l10n.eventScopeRuleChanged,
+              widget.task
+                  ? l10n.taskScopeRuleChanged
+                  : l10n.eventScopeRuleChanged,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: LoomiaColors.of(context).textMuted,
               ),
