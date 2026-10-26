@@ -22,6 +22,7 @@ void main() {
       title: 'Buy milk',
       note: null,
       dueOn: DateTime(2026, 10, 25),
+      repeat: null,
     ));
 
     final tasks = container.read(tasksProvider('p@example.com')).value!;
@@ -119,6 +120,7 @@ void main() {
         title: 'New task',
         note: null,
         dueOn: DateTime(2026, 10, 26),
+        repeat: null,
       )),
       throwsA(PeopleFailure.network),
     );
@@ -126,5 +128,81 @@ void main() {
     final tasks = container.read(tasksProvider('p@example.com')).value!;
     expect(tasks, hasLength(1));
     expect(tasks.first.id, '1');
+  });
+
+  group('repeating', () {
+    final lavender = Task(
+      id: 'l',
+      title: 'Restock lavender',
+      note: null,
+      dueOn: DateTime(2026, 11, 5),
+      doneOn: null,
+      createdAt: DateTime(2026, 10, 3),
+      repeat: (
+        every: 1,
+        unit: RepeatUnit.month,
+        from: DateTime(2026, 10, 3),
+        until: null,
+        scheduledOn: DateTime(2026, 11, 3),
+      ),
+    );
+
+    Future<(FakeTaskRepository, TasksController, List<Task> Function())>
+    openTasks() async {
+      final repo = FakeTaskRepository([lavender]);
+      final container = ProviderContainer(
+        overrides: [taskRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+      await container.read(tasksProvider('p@example.com').future);
+      return (
+        repo,
+        container.read(tasksProvider('p@example.com').notifier),
+        () => container.read(tasksProvider('p@example.com')).value!,
+      );
+    }
+
+    test('a tick goes through complete and shows the next one', () async {
+      final (repo, controller, tasks) = await openTasks();
+
+      await controller.setDone(lavender, DateTime(2026, 11, 5));
+
+      expect(repo.calls, contains('complete(l, 2026-11-05)'));
+      expect(repo.calls, isNot(contains(startsWith('setDone'))));
+      expect(repo.calls.last, 'list');
+      final next = tasks().where((t) => !t.done).single;
+      expect(next.dueOn, DateTime(2026, 12, 3));
+      expect(tasks().singleWhere((t) => t.id == 'l').done, isTrue);
+    });
+
+    test('undo goes through undo and the next one goes', () async {
+      final (repo, controller, tasks) = await openTasks();
+      await controller.setDone(lavender, DateTime(2026, 11, 5));
+
+      await controller.setDone(lavender, null);
+
+      expect(repo.calls, contains('undo(l)'));
+      expect(tasks().single.id, 'l');
+      expect(tasks().single.done, isFalse);
+    });
+
+    test('delete alone makes the next one; following does not', () async {
+      final (repo, controller, tasks) = await openTasks();
+
+      await controller.removeRepeating(
+        lavender,
+        on: DateTime(2026, 11, 1),
+        following: false,
+      );
+      expect(repo.calls, contains('deleteRepeating(l, following: false)'));
+      expect(tasks().single.dueOn, DateTime(2026, 12, 3));
+
+      await controller.removeRepeating(
+        tasks().single,
+        on: DateTime(2026, 11, 1),
+        following: true,
+      );
+      expect(tasks(), isEmpty);
+    });
   });
 }

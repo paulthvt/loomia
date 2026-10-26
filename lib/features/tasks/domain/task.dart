@@ -1,3 +1,17 @@
+/// How often a repeating task comes back (#376).
+enum RepeatUnit { day, week, month, year }
+
+/// A task's repeat: every [every] [unit]s counted from [from], until [until]
+/// (null: never). [scheduledOn] is the day the schedule gave this task;
+/// the task's `dueOn` differs from it once postponed. All local midnight.
+typedef TaskRepeat = ({
+  int every,
+  RepeatUnit unit,
+  DateTime from,
+  DateTime? until,
+  DateTime scheduledOn,
+});
+
 /// A task with a due date, open or done.
 class Task {
   const Task({
@@ -7,6 +21,7 @@ class Task {
     required this.dueOn,
     required this.doneOn,
     required this.createdAt,
+    this.repeat,
   });
 
   final String id;
@@ -22,12 +37,24 @@ class Task {
   /// Creation timestamp.
   final DateTime createdAt;
 
+  /// Null when it doesn't repeat. A done task keeps the rule it was ticked
+  /// with; only an open one comes back.
+  final TaskRepeat? repeat;
+
   bool get done => doneOn != null;
+
+  /// Open and repeating: ticking it makes the next one.
+  bool get repeats => repeat != null && !done;
 
   String get key => 'task:$id';
 }
 
-typedef TaskDraft = ({String title, String? note, DateTime dueOn});
+typedef TaskDraft = ({
+  String title,
+  String? note,
+  DateTime dueOn,
+  TaskRepeat? repeat,
+});
 
 /// Open tasks due on or before [today], oldest `dueOn` first, then
 /// `createdAt`.

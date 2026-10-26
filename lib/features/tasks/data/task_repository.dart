@@ -12,7 +12,9 @@ class TaskRepository {
   final SupabaseClient _client;
 
   static const String _table = 'task';
-  static const String _columns = 'id, title, note, due_on, done_on, created_at';
+  static const String _columns =
+      'id, title, note, due_on, done_on, created_at, '
+      'repeat_every, repeat_unit, repeat_from, repeat_until, scheduled_on';
 
   Future<List<Task>> list() => guardPeople(() async {
     final rows = await _client.from(_table).select(_columns);
@@ -22,11 +24,7 @@ class TaskRepository {
   Future<Task> add(TaskDraft draft) => guardPeople(() async {
     final row = await _client
         .from(_table)
-        .insert({
-          'title': draft.title.trim(),
-          'note': draft.note?.trim(),
-          'due_on': dayColumn(draft.dueOn),
-        })
+        .insert(_draftColumns(draft))
         .select(_columns)
         .single();
     return taskFromRow(row);
@@ -35,11 +33,7 @@ class TaskRepository {
   Future<Task> update(String id, TaskDraft draft) => guardPeople(() async {
     final row = await _client
         .from(_table)
-        .update({
-          'title': draft.title.trim(),
-          'note': draft.note?.trim(),
-          'due_on': dayColumn(draft.dueOn),
-        })
+        .update(_draftColumns(draft))
         .eq('id', id)
         .select(_columns)
         .single();
@@ -61,7 +55,60 @@ class TaskRepository {
   Future<void> delete(String id) => guardPeople(() async {
     await _client.from(_table).delete().eq('id', id);
   });
+
+  /// Ticks a repeating task on [on] and makes the next one on its schedule
+  /// (#376). A task already done or gone elsewhere is left as it is: the
+  /// caller reloads either way.
+  Future<void> complete(String id, DateTime on) =>
+      _call('complete_task', {'p_id': id, 'p_on': dayColumn(on)});
+
+  /// Reopens [id] and deletes the task its tick made, unless that one was
+  /// ticked or edited since; then [id] comes back without its rule.
+  Future<void> undo(String id) => _call('undo_task', {'p_id': id});
+
+  /// Deletes a repeating task. Alone ([following] false), the next one is
+  /// made first, as of [on]; with [following], the repeat ends.
+  Future<void> deleteRepeating(
+    String id, {
+    required DateTime on,
+    required bool following,
+  }) => _call('delete_task', {
+    'p_id': id,
+    'p_on': dayColumn(on),
+    'p_following': following,
+  });
+
+  /// The task functions raise P0002 for a task gone or already in that
+  /// state: nothing to do.
+  Future<void> _call(String function, Map<String, Object?> params) =>
+      guardPeople(() async {
+        try {
+          await _client.rpc<void>(function, params: params);
+        } on PostgrestException catch (e) {
+          if (e.code != 'P0002') rethrow;
+        }
+      });
 }
+
+Map<String, Object?> _draftColumns(TaskDraft draft) {
+  final repeat = draft.repeat;
+  return {
+    'title': draft.title.trim(),
+    'note': draft.note?.trim(),
+    'due_on': dayColumn(draft.dueOn),
+    'repeat_every': repeat?.every,
+    'repeat_unit': repeat?.unit.name,
+    'repeat_from': repeat == null ? null : dayColumn(repeat.from),
+    'repeat_until': switch (repeat?.until) {
+      final until? => dayColumn(until),
+      null => null,
+    },
+    'scheduled_on': repeat == null ? null : dayColumn(repeat.scheduledOn),
+  };
+}
+
+DateTime? _day(Object? column) =>
+    column == null ? null : DateTime.parse(column as String);
 
 Task taskFromRow(Map<String, dynamic> row) => Task(
   id: row['id'] as String,
@@ -72,6 +119,16 @@ Task taskFromRow(Map<String, dynamic> row) => Task(
       ? null
       : DateTime.parse(row['done_on'] as String),
   createdAt: DateTime.parse(row['created_at'] as String),
+  repeat: switch (row['repeat_every']) {
+    final int every => (
+      every: every,
+      unit: RepeatUnit.values.byName(row['repeat_unit'] as String),
+      from: _day(row['repeat_from'])!,
+      until: _day(row['repeat_until']),
+      scheduledOn: _day(row['scheduled_on'])!,
+    ),
+    _ => null,
+  },
 );
 
 final taskRepositoryProvider = Provider<TaskRepository>(

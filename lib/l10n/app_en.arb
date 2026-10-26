@@ -1276,6 +1276,116 @@
   "@taskDeleteConfirm": {
     "description": "Confirmation prompt when deleting a task."
   },
+  "taskScopeChangeTitle": "Change a repeating task",
+  "@taskScopeChangeTitle": {
+    "description": "Title of the dialog asked before saving a repeating task whose day changed: does the new day move only this task (postpone) or the schedule too."
+  },
+  "taskScopeDeleteTitle": "Delete a repeating task",
+  "@taskScopeDeleteTitle": {
+    "description": "Title of the dialog asked before deleting a repeating task. Its Delete button confirms, with no second dialog."
+  },
+  "taskScopeThis": "This task",
+  "@taskScopeThis": {
+    "description": "Choice in the taskScopeChangeTitle / taskScopeDeleteTitle dialogs: only this task changes; the next one still comes on its usual day. Selected by default."
+  },
+  "taskScopeFollowing": "This and following tasks",
+  "@taskScopeFollowing": {
+    "description": "Choice in the taskScopeChangeTitle / taskScopeDeleteTitle dialogs: the schedule moves to the new day, or (delete) the task stops repeating."
+  },
+  "taskScopeRuleChanged": "A new repeat applies to this and the following tasks.",
+  "@taskScopeRuleChanged": {
+    "description": "Note under the choices of taskScopeChangeTitle when the repeat changed too: taskScopeThis is then disabled."
+  },
+  "taskRepeat": "Repeat",
+  "@taskRepeat": {
+    "description": "Switch in the task form: the task comes back on a schedule once ticked."
+  },
+  "taskRepeatsEvery": "Repeats every",
+  "@taskRepeatsEvery": {
+    "description": "Label before the number and unit fields of a repeating task, as in 'Repeats every [2] [weeks]'."
+  },
+  "taskRepeatEveryInvalid": "From 1 to 99",
+  "@taskRepeatEveryInvalid": {
+    "description": "Error under the number of 'Repeats every' when it is not a whole number from 1 to 99."
+  },
+  "taskRepeatUnitDay": "{count, plural, =1{day} other{days}}",
+  "@taskRepeatUnitDay": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "taskRepeatUnitWeek": "{count, plural, =1{week} other{weeks}}",
+  "@taskRepeatUnitWeek": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "taskRepeatUnitMonth": "{count, plural, =1{month} other{months}}",
+  "@taskRepeatUnitMonth": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "taskRepeatUnitYear": "{count, plural, =1{year} other{years}}",
+  "@taskRepeatUnitYear": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "taskRepeatLineDay": "{count, plural, =1{Every day} other{Every {count} days}}",
+  "@taskRepeatLineDay": {
+    "description": "What a task's repeat means, under the repeat fields and as the repeat icon's label.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "taskRepeatLineWeek": "{count, plural, =1{Every week on {weekday}} other{Every {count} weeks on {weekday}}}",
+  "@taskRepeatLineWeek": {
+    "description": "What a task's repeat means, e.g. 'Every 2 weeks on Thursday'.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "weekday": { "type": "String", "example": "Thursday" }
+    }
+  },
+  "taskRepeatLineMonth": "{count, plural, =1{Every month on the {day}} other{Every {count} months on the {day}}}",
+  "@taskRepeatLineMonth": {
+    "description": "What a task's repeat means, e.g. 'Every month on the 3rd'. {day} is taskRepeatDayOfMonth.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "day": { "type": "String", "example": "3rd" }
+    }
+  },
+  "taskRepeatDayOfMonth": "{day, select, 1{1st} 2{2nd} 3{3rd} 21{21st} 22{22nd} 23{23rd} 31{31st} other{{day}th}}",
+  "@taskRepeatDayOfMonth": {
+    "description": "A day of the month as an ordinal, inside taskRepeatLineMonth. {day} is 1 to 31.",
+    "placeholders": { "day": { "type": "String", "example": "3" } }
+  },
+  "taskRepeatLineYear": "{count, plural, =1{Every year on {date}} other{Every {count} years on {date}}}",
+  "@taskRepeatLineYear": {
+    "description": "What a task's repeat means, e.g. 'Every year on March 3'.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "date": { "type": "String", "example": "March 3" }
+    }
+  },
+  "taskRepeatUntil": "{line}, until {date}",
+  "@taskRepeatUntil": {
+    "description": "A task's repeat line when it ends on a date, e.g. 'Every month on the 3rd, until Jun 3, 2027'.",
+    "placeholders": {
+      "line": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "taskRepeatEnds": "Ends",
+  "@taskRepeatEnds": {
+    "description": "Heading of the choice of when a repeating task stops: taskRepeatNever or taskRepeatOn a date."
+  },
+  "taskRepeatNever": "Never",
+  "@taskRepeatNever": {
+    "description": "Choice under taskRepeatEnds: the task repeats until the repeat is turned off. Selected by default."
+  },
+  "taskRepeatOn": "On",
+  "@taskRepeatOn": {
+    "description": "Choice under taskRepeatEnds, followed by a date: no task comes after it."
+  },
+  "taskRepeatPickDay": "Pick a day",
+  "@taskRepeatPickDay": {
+    "description": "Placeholder of the end date of a repeating task, before one is picked."
+  },
   "nextStepTitle": "Next step",
   "@nextStepTitle": {
     "description": "Header of the card on a contact that shows the next thing to do with them in their workflow. Shown uppercased."

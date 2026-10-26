@@ -478,6 +478,54 @@ void main() {
       );
     });
 
+    testWidgets('a repeating task: the icon, then ticked crossed out', (
+      tester,
+    ) async {
+      final day = today();
+      tasks.store['t1'] = Task(
+        id: 't1',
+        title: 'Restock lavender',
+        note: null,
+        dueOn: day,
+        doneOn: null,
+        createdAt: DateTime(2026, 10, 1),
+        repeat: (
+          every: 1,
+          unit: RepeatUnit.month,
+          from: day,
+          until: null,
+          scheduledOn: day,
+        ),
+      );
+      await pumpCalendar(tester);
+      expect(find.byIcon(Icons.repeat_rounded), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Mark "Restock lavender" done'));
+      await tester.pumpAndSettle();
+
+      expect(tasks.calls, contains('complete(t1, ${_iso(day)})'));
+      expect(find.text('Done: Restock lavender'), findsOneWidget);
+      // The ticked one stays crossed out, without the icon.
+      expect(
+        tester.widget<Text>(find.text('Restock lavender')).style?.decoration,
+        TextDecoration.lineThrough,
+      );
+      expect(find.byIcon(Icons.repeat_rounded), findsNothing);
+      // Its next one is a month on, with the rule.
+      final next = tasks.store.values.singleWhere((t) => !t.done);
+      expect(next.dueOn, DateTime(day.year, day.month + 1, day.day));
+      expect(next.repeat, isNotNull);
+
+      await tester.tap(find.byTooltip('Mark "Restock lavender" not done'));
+      await tester.pumpAndSettle();
+      expect(tasks.calls, contains('undo(t1)'));
+      expect(
+        tasks.store.values.where((t) => t.title == 'Restock lavender'),
+        hasLength(1),
+      );
+      expect(find.byIcon(Icons.repeat_rounded), findsOneWidget);
+    });
+
     testWidgets('on desktop, the popover crosses a ticked task out', (
       tester,
     ) async {

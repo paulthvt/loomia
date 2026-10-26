@@ -42,7 +42,18 @@ class TasksController extends AsyncNotifier<List<Task>> {
   /// Marks [task] done on [on], or reopens it when [on] is null. When the
   /// task was deleted behind the controller's back, removes it from the state,
   /// no throw. Throws `PeopleFailure`, and then the task stays.
+  ///
+  /// A repeating task goes through the server's functions, which add or
+  /// delete its next one, then the list is read again.
   Future<void> setDone(Task task, DateTime? on) async {
+    if (task.repeat != null) {
+      final repository = ref.read(taskRepositoryProvider);
+      await (on == null
+          ? repository.undo(task.id)
+          : repository.complete(task.id, on));
+      await _reload();
+      return;
+    }
     final updated = await ref.read(taskRepositoryProvider).setDone(task.id, on);
     if (!ref.mounted) return;
     if (updated == null) {
@@ -53,6 +64,25 @@ class TasksController extends AsyncNotifier<List<Task>> {
     } else {
       _put(updated);
     }
+  }
+
+  /// Deletes a repeating [task]: alone, the next one is made as of [on];
+  /// with [following], the repeat ends. Throws `PeopleFailure`.
+  Future<void> removeRepeating(
+    Task task, {
+    required DateTime on,
+    required bool following,
+  }) async {
+    await ref
+        .read(taskRepositoryProvider)
+        .deleteRepeating(task.id, on: on, following: following);
+    await _reload();
+  }
+
+  Future<void> _reload() async {
+    if (!ref.mounted) return;
+    final tasks = await ref.read(taskRepositoryProvider).list();
+    if (ref.mounted) state = AsyncData(tasks);
   }
 
   /// Throws `PeopleFailure`, and then the task stays.
