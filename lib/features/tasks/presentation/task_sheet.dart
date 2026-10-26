@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/form_error.dart';
@@ -14,6 +16,8 @@ import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/contacts/presentation/reminder_sheet.dart';
+import 'package:loomia/features/notifications/data/push.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
@@ -52,6 +56,60 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
   late DateTime _day = widget.editing?.dueOn ?? widget.day;
   bool _saving = false;
   PeopleFailure? _failure;
+
+  // A time (#377): its push needs this phone's permission. Null allowed:
+  // not asked yet, or no push here (the web).
+  late TaskTime? _time = widget.editing?.dueTime;
+  bool? _allowed;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_time != null) unawaited(_checkAllowed());
+  }
+
+  Future<void> _checkAllowed() async {
+    final allowed = await ref.read(pushProvider).allowed();
+    if (mounted) setState(() => _allowed = allowed);
+  }
+
+  Future<void> _pickTime() async {
+    final now = DateTime.now();
+    final initial = switch (_time) {
+      final time? => TimeOfDay(hour: time.hour, minute: time.minute),
+      // The next full hour.
+      null => TimeOfDay(hour: (now.hour + 1) % 24, minute: 0),
+    };
+    final picked = await pickTime(context, initial: initial);
+    if (picked == null || !mounted) return;
+    setState(() => _time = (hour: picked.hour, minute: picked.minute));
+    unawaited(_checkAllowed());
+  }
+
+  /// In 15 min, In 1 hour: saves the task's new day and time and closes.
+  /// A repeating task is put off alone: its schedule stays.
+  Future<void> _postpone(Duration by) async {
+    final editing = widget.editing!;
+    final later = postponed(DateTime.now(), by);
+    await _write(
+      (tasks) => tasks.save(editing.id, (
+        title: editing.title,
+        note: editing.note,
+        dueOn: later.day,
+        dueTime: later.time,
+        repeat: editing.repeat,
+      )),
+    );
+  }
+
+  /// The first time on a task: the push needs a zone and the phone's yes.
+  Future<void> _armPushes() async {
+    final owner = ref.read(accountProvider)?.email;
+    final zone = await ref.read(deviceTimeZoneProvider.future) ?? 'UTC';
+    await ref
+        .read(notificationSettingsProvider(owner).notifier)
+        .ensureFor(zone);
+  }
 
   // The repeat fields (#376). A done task keeps its rule unseen: no fields.
   late final TaskRepeat? _old = widget.editing?.repeat;
@@ -134,11 +192,23 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
     final note = noteText.isEmpty ? null : noteText;
     final repeat = await _repeatToSave();
     if (repeat == null || !mounted) return;
-    final draft = (title: title, note: note, dueOn: _day, repeat: repeat.$1);
-    await _write(
-      (tasks) =>
-          editing == null ? tasks.add(draft) : tasks.save(editing.id, draft),
+    final draft = (
+      title: title,
+      note: note,
+      dueOn: _day,
+      dueTime: _time,
+      repeat: repeat.$1,
     );
+    final arms = _time != null && editing?.dueTime == null;
+    await _write((tasks) async {
+      if (arms) await _armPushes();
+      final saved = await (editing == null
+          ? tasks.add(draft)
+          : tasks.save(editing.id, draft));
+      // The OS prompt, once the task is safe; no answer is a failure.
+      if (arms && _allowed != true) await ref.read(pushProvider).ask();
+      return saved;
+    });
   }
 
   Future<void> _delete() async {
@@ -286,6 +356,103 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
         RepeatUnit.year => l10n.taskRepeatUnitYear(count),
       };
 
+  /// Add a time, or the time with ✕ (#377); the notifications-off line
+  /// under it when this phone refuses pushes.
+  Widget _timeField(AppLocalizations l10n) {
+    final time = _time;
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.xs,
+      children: [
+        if (time == null)
+          ActionChip(
+            avatar: const Icon(Icons.schedule_rounded),
+            label: Text(l10n.taskAddTime),
+            onPressed: _saving ? null : () => unawaited(_pickTime()),
+          )
+        else
+          InputChip(
+            avatar: const Icon(Icons.schedule_rounded),
+            label: Text(_formatTime(time)),
+            onPressed: _saving ? null : () => unawaited(_pickTime()),
+            onDeleted: _saving ? null : () => setState(() => _time = null),
+            deleteButtonTooltipMessage: l10n.taskRemoveTime,
+          ),
+        if (time != null && _allowed == false)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                l10n.taskNotificationsOff,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: LoomiaColors.of(context).textMuted,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  final router = GoRouter.of(context);
+                  Navigator.pop(context);
+                  router.push(Routes.settingsNotifications);
+                },
+                child: Text(l10n.taskNotificationsSettings),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  /// "It was due at 14:00", or "Due at 14:00" when it's near, then In 15 min
+  /// and In 1 hour.
+  Widget _postponeRow(AppLocalizations l10n, Task task) {
+    final time = _formatTime(task.dueTime!);
+    final due = DateTime(
+      task.dueOn.year,
+      task.dueOn.month,
+      task.dueOn.day,
+      task.dueTime!.hour,
+      task.dueTime!.minute,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.sm,
+      children: [
+        Text(
+          DateTime.now().isBefore(due)
+              ? l10n.taskPostponeNear(time)
+              : l10n.taskPostponeWas(time),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        // Two lines when one doesn't hold both (a phone, French).
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            FilledButton.tonal(
+              onPressed: _saving
+                  ? null
+                  : () => unawaited(_postpone(const Duration(minutes: 15))),
+              child: Text(l10n.taskPostpone15),
+            ),
+            FilledButton.tonal(
+              onPressed: _saving
+                  ? null
+                  : () => unawaited(_postpone(const Duration(hours: 1))),
+              child: Text(l10n.taskPostponeHour),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _formatTime(TaskTime time) =>
+      MaterialLocalizations.of(context).formatTimeOfDay(
+        TimeOfDay(hour: time.hour, minute: time.minute),
+        alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+      );
+
   /// Ends On: picks a day not before the task's. Cancelled leaves it as is.
   Future<void> _pickUntil() async {
     final day = await pickDay(
@@ -334,6 +501,8 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
           spacing: AppSpacing.ms,
           children: [
             if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
+            if (editing != null && alertNear(editing, DateTime.now()))
+              _postponeRow(l10n, editing),
             LabeledField(
               label: l10n.taskTitle,
               child: TextFormField(
@@ -356,6 +525,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                 }
               }),
             ),
+            _timeField(l10n),
             if (_showsRepeat) ..._repeatFields(l10n),
             LabeledField(
               label: l10n.taskNote,

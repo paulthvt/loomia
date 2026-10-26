@@ -6,11 +6,12 @@ import {
   handle,
   ritualJob,
   summaryJob,
+  taskJob,
 } from './handler.ts'
-import type { RitualClaim } from './message.ts'
+import type { RitualClaim, TaskClaim } from './message.ts'
 
-// The daily summary (#269) and the month-end push (#148), called by pg_cron
-// every 15 minutes with the `cron` named secret key
+// The daily summary (#269), the month-end push (#148) and task times (#377),
+// called by pg_cron every minute with the `cron` named secret key
 // (supabase/migrations/*_daily_summary_cron.sql). Postgres decides who is due
 // and claims them; this sends. Logs carry counts only, never a token or a
 // name.
@@ -54,7 +55,10 @@ export default {
       const summary = await run(
         'summary',
         summaryJob(
-          async () => check(await db.rpc('claim_daily_summaries')) as Claim[],
+          async () =>
+            check(
+              await db.rpc('claim_daily_summaries_with_tasks'),
+            ) as Claim[],
           async (owner, date) => {
             check(
               await db.rpc('release_daily_summary', {
@@ -81,10 +85,21 @@ export default {
           },
         ),
       )
-      const result = { summary, ritual }
+      const task = await run(
+        'task',
+        taskJob(
+          async () => check(await db.rpc('claim_task_alerts')) as TaskClaim[],
+          async (id, at) => {
+            check(
+              await db.rpc('release_task_alert', { p_task: id, p_for: at }),
+            )
+          },
+        ),
+      )
+      const result = { summary, ritual, task }
       console.log('send-daily-summary', result)
       return Response.json(result, {
-        status: summary && ritual ? 200 : 500,
+        status: summary && ritual && task ? 200 : 500,
       })
     } catch (error) {
       console.error('send-daily-summary failed', error)

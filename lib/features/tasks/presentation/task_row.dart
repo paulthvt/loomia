@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -31,6 +32,7 @@ class TaskRow extends StatelessWidget {
       tag: repeatIcon(context, task),
       reason: task.note,
       icon: Icons.assignment_outlined,
+      chip: timeChip(context, task),
       onOpen: onOpen,
       onResolve: onToggle,
       resolved: busy,
@@ -42,6 +44,15 @@ class TaskRow extends StatelessWidget {
     );
   }
 }
+
+/// A timed task's time, in the row's chip (#377): "14:00", in the locale's
+/// format. Null without a time.
+Widget? timeChip(BuildContext context, Task task) => switch (task.dueTime) {
+  final time? => DateChip(
+    timeLabel(context, DateTime(2000, 1, 1, time.hour, time.minute)),
+  ),
+  null => null,
+};
 
 /// After the title of an open repeating task: it comes back once ticked.
 /// Null for a plain or done one (a done task keeps its rule unseen).

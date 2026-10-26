@@ -22,6 +22,7 @@ class Task {
     required this.doneOn,
     required this.createdAt,
     this.repeat,
+    this.dueTime,
   });
 
   final String id;
@@ -41,6 +42,10 @@ class Task {
   /// with; only an open one comes back.
   final TaskRepeat? repeat;
 
+  /// The time it is due at, a wall clock in the user's settings zone
+  /// (#377); null: any time that day. A push goes at that time.
+  final TaskTime? dueTime;
+
   bool get done => doneOn != null;
 
   /// Open and repeating: ticking it makes the next one.
@@ -53,28 +58,68 @@ typedef TaskDraft = ({
   String title,
   String? note,
   DateTime dueOn,
+  TaskTime? dueTime,
   TaskRepeat? repeat,
 });
 
-/// Open tasks due on or before [today], oldest `dueOn` first, then
-/// `createdAt`.
-List<Task> todayTasks(List<Task> tasks, DateTime today) {
-  final result = tasks.where((t) => !t.done && !_after(t.dueOn, today)).toList()
-    ..sort((a, b) {
-      final cmp = a.dueOn.compareTo(b.dueOn);
-      return cmp != 0 ? cmp : a.createdAt.compareTo(b.createdAt);
+/// A wall-clock time of day, 24 h.
+typedef TaskTime = ({int hour, int minute});
+
+/// Open tasks due on or before [today]: oldest `dueOn` first; within a day,
+/// those without a time ("any time"), then the timed ones by time (#377);
+/// then `createdAt`.
+List<Task> todayTasks(List<Task> tasks, DateTime today) =>
+    tasks.where((t) => !t.done && !_after(t.dueOn, today)).toList()
+      ..sort(_byDayThenTime);
+
+/// Every task due on [day], open first, then as [todayTasks].
+List<Task> tasksOn(List<Task> tasks, DateTime day) =>
+    tasks.where((t) => _sameDay(t.dueOn, day)).toList()..sort((a, b) {
+      if (a.done != b.done) return a.done ? 1 : -1;
+      return _byDayThenTime(a, b);
     });
-  return result;
+
+int _byDayThenTime(Task a, Task b) {
+  final day = a.dueOn.compareTo(b.dueOn);
+  if (day != 0) return day;
+  final time = _minute(a.dueTime).compareTo(_minute(b.dueTime));
+  return time != 0 ? time : a.createdAt.compareTo(b.createdAt);
 }
 
-/// Every task due on [day], open first, then creation order.
-List<Task> tasksOn(List<Task> tasks, DateTime day) {
-  final result = tasks.where((t) => _sameDay(t.dueOn, day)).toList()
-    ..sort((a, b) {
-      if (a.done != b.done) return a.done ? 1 : -1;
-      return a.createdAt.compareTo(b.createdAt);
-    });
-  return result;
+/// No time sorts before 00:00.
+int _minute(TaskTime? time) => time == null ? -1 : time.hour * 60 + time.minute;
+
+/// Put off from [now] by [by], up to the next whole minute: the day and time
+/// to save (#377). Past midnight, the next day.
+({DateTime day, TaskTime time}) postponed(DateTime now, Duration by) {
+  final later = now.add(by);
+  final whole = DateTime(
+    later.year,
+    later.month,
+    later.day,
+    later.hour,
+    later.minute,
+  );
+  final at = whole == later ? whole : whole.add(const Duration(minutes: 1));
+  return (
+    day: DateTime(at.year, at.month, at.day),
+    time: (hour: at.hour, minute: at.minute),
+  );
+}
+
+/// An open task whose time has passed or is under 15 minutes away: the
+/// sheet offers to put it off.
+bool alertNear(Task task, DateTime now) {
+  final time = task.dueTime;
+  if (task.done || time == null) return false;
+  final at = DateTime(
+    task.dueOn.year,
+    task.dueOn.month,
+    task.dueOn.day,
+    time.hour,
+    time.minute,
+  );
+  return now.isAfter(at.subtract(const Duration(minutes: 15)));
 }
 
 /// Open tasks grouped by due day.

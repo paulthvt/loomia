@@ -6,10 +6,11 @@ import {
   type Deps,
   type Device,
   handle,
-  type Kind,
   type Job,
+  type Kind,
   ritualJob,
   summaryJob,
+  taskJob,
 } from './handler.ts'
 import {
   monthName,
@@ -17,10 +18,12 @@ import {
   outcome,
   ritualMessage,
   summaryMessage,
+  type TaskClaim,
+  taskMessage,
 } from './message.ts'
 
 Deno.test('the message is a loc key per language and count, no text', () => {
-  const one = summaryMessage('t', 'fr', 1).message
+  const one = summaryMessage('t', 'fr', 1)!.message
   eq(one.android.notification, {
     body_loc_key: 'push_summary_body_one_fr',
     body_loc_args: ['1'],
@@ -31,7 +34,7 @@ Deno.test('the message is a loc key per language and count, no text', () => {
   })
   eq(one.data, { type: 'daily_summary' })
   eq(
-    summaryMessage('t', 'en', 3).message.android.notification.body_loc_key,
+    summaryMessage('t', 'en', 3)!.message.android.notification.body_loc_key,
     'push_summary_body_other_en',
   )
   ok(!JSON.stringify(one).match(/"(title|body)"/))
@@ -142,10 +145,10 @@ const phone = (owner_id: string, token: string, locale = 'en'): Device => ({
 Deno.test('a run drops dead tokens and hands back what can be retried', async () => {
   const { deps, job, calls } = fakes(
     [
-      { owner_id: 'A', local_date: '2026-10-12', people: 3 },
-      { owner_id: 'B', local_date: '2026-10-12', people: 1 },
-      { owner_id: 'C', local_date: '2026-10-12', people: 2 },
-      { owner_id: 'D', local_date: '2026-10-12', people: 2 },
+      { owner_id: 'A', local_date: '2026-10-12', people: 3, tasks: 0 },
+      { owner_id: 'B', local_date: '2026-10-12', people: 1, tasks: 0 },
+      { owner_id: 'C', local_date: '2026-10-12', people: 2, tasks: 0 },
+      { owner_id: 'D', local_date: '2026-10-12', people: 2, tasks: 0 },
     ],
     [
       phone('A', 'a1'),
@@ -169,7 +172,10 @@ Deno.test('a run drops dead tokens and hands back what can be retried', async ()
 Deno.test('an app without the kind is not sent it, and the claim is kept', async () => {
   const { deps } = fakes(
     [],
-    [{ ...phone('A', 'old'), push_kinds: ['daily_summary'] }, phone('B', 'new')],
+    [
+      { ...phone('A', 'old'), push_kinds: ['daily_summary'] },
+      phone('B', 'new'),
+    ],
     { old: 'retry', new: 'sent' },
   )
   const sent: string[] = []
@@ -228,7 +234,7 @@ Deno.test('nothing claimed, nothing asked', async () => {
 
 Deno.test('devices unreadable: every day goes back', async () => {
   const { deps, job, calls } = fakes(
-    [{ owner_id: 'A', local_date: '2026-10-12', people: 1 }],
+    [{ owner_id: 'A', local_date: '2026-10-12', people: 1, tasks: 0 }],
     [],
     {},
   )
@@ -270,7 +276,11 @@ Deno.test('the sender signs a JWT, reuses its token, and posts the message', asy
 
   eq(await send({ message: { token: 't' } }), 'sent')
   eq(await send({ message: { token: 't' } }), 'sent')
-  eq(requests.filter((r) => r.url.includes('oauth2')).length, 1, 'token cached')
+  eq(
+    requests.filter((r) => r.url.includes('oauth2')).length,
+    1,
+    'token cached',
+  )
 
   const jwt = new URLSearchParams(String(requests[0].init.body)).get(
     'assertion',
@@ -300,4 +310,114 @@ Deno.test('the sender signs a JWT, reuses its token, and posts the message', asy
     (requests[1].init.headers as Record<string, string>).authorization,
     'Bearer at',
   )
+})
+
+// #377: the summary counts tasks for an app that has the strings.
+Deno.test('the summary picks its sentence from people, tasks and the app', () => {
+  const key = (people: number, tasks: number, withTasks = true) =>
+    summaryMessage('t', 'en', people, tasks, withTasks)?.message.android
+      .notification
+  eq(key(3, 0), {
+    body_loc_key: 'push_summary_body_other_en',
+    body_loc_args: ['3'],
+  })
+  eq(key(0, 1), {
+    body_loc_key: 'push_summary_tasks_one_en',
+    body_loc_args: ['1'],
+  })
+  eq(key(0, 4), {
+    body_loc_key: 'push_summary_tasks_other_en',
+    body_loc_args: ['4'],
+  })
+  eq(key(1, 1), {
+    body_loc_key: 'push_summary_both_one_one_en',
+    body_loc_args: [],
+  })
+  eq(key(1, 2), {
+    body_loc_key: 'push_summary_both_one_other_en',
+    body_loc_args: ['2'],
+  })
+  eq(key(3, 1), {
+    body_loc_key: 'push_summary_both_other_one_en',
+    body_loc_args: ['3'],
+  })
+  eq(key(3, 2), {
+    body_loc_key: 'push_summary_both_other_other_en',
+    body_loc_args: ['3', '2'],
+  })
+  // An older app: people only, and nothing when only tasks are due.
+  eq(key(3, 2, false)?.body_loc_key, 'push_summary_body_other_en')
+  eq(key(0, 2, false), undefined)
+})
+
+const call: TaskClaim = {
+  owner_id: 'A',
+  task_id: 'task-1',
+  title: 'Call the supplier',
+  note: 'Ask about the 10 ml bottles',
+  alerted_for: '2026-10-27T14:00:00',
+}
+
+Deno.test('a task push is her own words, and opens the task', () => {
+  eq(taskMessage('t', call).message, {
+    token: 't',
+    data: { type: 'task', task: 'task-1' },
+    notification: {
+      title: 'Call the supplier',
+      body: 'Ask about the 10 ml bottles',
+    },
+  })
+  eq(taskMessage('t', { ...call, note: null }).message.notification, {
+    title: 'Call the supplier',
+  })
+})
+
+Deno.test('task pushes: only to apps that list them; a retry hands back that time', async () => {
+  const released: string[] = []
+  const sent: string[] = []
+  const job = taskJob(
+    () => Promise.resolve([call]),
+    (task, at) => {
+      released.push(`${task} ${at}`)
+      return Promise.resolve()
+    },
+  )
+  const deps: Deps = {
+    devicesOf: () =>
+      Promise.resolve([
+        { owner_id: 'A', token: 'old', locale: 'en', push_kinds: both },
+        {
+          owner_id: 'A',
+          token: 'new',
+          locale: 'en',
+          push_kinds: [...both, 'task_alert'],
+        },
+      ]),
+    drop: () => Promise.resolve(),
+    send: (m) => {
+      sent.push(m.message.token)
+      return Promise.resolve('retry')
+    },
+  }
+  const result = await handle(deps, job)
+  eq(sent, ['new'])
+  eq(released, ['task-1 2026-10-27T14:00:00'])
+  eq(result.released, 1)
+})
+
+Deno.test('an old app with only tasks due gets no summary, and the day is kept', async () => {
+  const { deps, job, calls } = fakes(
+    [{ owner_id: 'A', local_date: '2026-10-12', people: 0, tasks: 2 }],
+    [phone('A', 'old')],
+    {},
+  )
+  let sends = 0
+  deps.send = () => {
+    sends++
+    return Promise.resolve('sent')
+  }
+  const result = await handle(deps, job)
+  eq(sends, 0)
+  eq(calls.release, [])
+  eq(result.sent, 0)
 })

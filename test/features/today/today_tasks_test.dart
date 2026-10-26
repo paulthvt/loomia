@@ -141,6 +141,35 @@ void main() {
 
       expect(find.text('2 days late'), findsOneWidget);
     });
+
+    testWidgets('late first, then no time, then by time, the time in a chip', (
+      tester,
+    ) async {
+      final tasks = [
+        Task(
+          id: 'call',
+          title: 'Call the supplier',
+          note: null,
+          dueOn: _today,
+          doneOn: null,
+          createdAt: DateTime.utc(2026, 10, 1),
+          dueTime: (hour: 14, minute: 0),
+        ),
+        _task(id: 'flyers', title: 'Order flyers', dueOn: _today),
+        _task(
+          id: 'late',
+          title: 'Print price list',
+          dueOn: DateTime(2026, 10, 18),
+        ),
+      ];
+      await pumpView(tester, due: const [], tasks: AsyncData(tasks));
+      await tester.pumpAndSettle();
+
+      double y(String text) => tester.getTopLeft(find.text(text)).dy;
+      expect(y('Print price list'), lessThan(y('Order flyers')));
+      expect(y('Order flyers'), lessThan(y('Call the supplier')));
+      expect(find.text('2:00 PM'), findsOneWidget);
+    });
   });
 
   group('TodayView headlines', () {

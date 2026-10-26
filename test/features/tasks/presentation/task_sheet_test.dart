@@ -7,6 +7,10 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/notifications/data/notifications_repository.dart';
+import 'package:loomia/features/notifications/data/push.dart';
+import 'package:loomia/features/notifications/domain/notification_settings.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/tasks/data/task_repository.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_sheet.dart';
@@ -17,6 +21,8 @@ import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../auth/fake_auth_repository.dart';
+import '../../notifications/fake_notifications_repository.dart';
+import '../../notifications/fake_push.dart';
 import '../fake_task_repository.dart';
 
 const _account = Account(firstName: 'Pauline', email: 'p@example.com');
@@ -31,6 +37,8 @@ Future<void> _pumpHarness(
   WidgetTester tester, {
   required FakeTaskRepository tasks,
   required Future<void> Function(BuildContext context) open,
+  FakePush? push,
+  FakeNotificationsRepository? notifications,
 }) async {
   final auth = FakeAuthRepository()
     ..session = true
@@ -41,6 +49,11 @@ Future<void> _pumpHarness(
       overrides: [
         authRepositoryProvider.overrideWithValue(auth),
         taskRepositoryProvider.overrideWithValue(tasks),
+        pushProvider.overrideWithValue(push ?? FakePush()),
+        notificationsRepositoryProvider.overrideWithValue(
+          notifications ?? FakeNotificationsRepository(),
+        ),
+        deviceTimeZoneProvider.overrideWith((ref) async => 'Europe/Paris'),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -163,6 +176,7 @@ void main() {
       title: 'Review contract',
       note: 'Check clause 3',
       dueOn: DateTime(2026, 11, 5),
+      dueTime: null,
       repeat: null,
     ));
     await _pumpHarness(
@@ -183,6 +197,7 @@ void main() {
       title: 'Old title',
       note: 'Old note',
       dueOn: DateTime(2026, 11, 5),
+      dueTime: null,
       repeat: null,
     ));
     await _pumpHarness(
@@ -213,6 +228,7 @@ void main() {
       title: 'Old task',
       note: null,
       dueOn: DateTime(2026, 11, 5),
+      dueTime: null,
       repeat: null,
     ));
     await _pumpHarness(
@@ -281,6 +297,7 @@ void main() {
       title: 'Restock lavender',
       note: null,
       dueOn: DateTime(2026, 11, 3),
+      dueTime: null,
       repeat: (
         every: 1,
         unit: RepeatUnit.month,
@@ -487,6 +504,151 @@ void main() {
         contains('deleteRepeating(${task.id}, following: false)'),
       );
       expect(tasks.store.values.single.dueOn, DateTime(2026, 12, 3));
+    });
+  });
+
+  group('a time (#377)', () {
+    Future<Task> timed(DateTime at) => tasks.add((
+      title: 'Call the supplier',
+      note: 'Ask about the 10 ml bottles',
+      dueOn: DateTime(at.year, at.month, at.day),
+      dueTime: (hour: at.hour, minute: at.minute),
+      repeat: null,
+    ));
+
+    Future<void> pickFirstTime(WidgetTester tester) async {
+      await tester.ensureVisible(find.text('Add a time'));
+      await tester.tap(find.text('Add a time'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Add a time sets it; ✕ takes it off', (tester) async {
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) => showTask(context, day: DateTime(2026, 11, 1)),
+      );
+      expect(find.byType(InputChip), findsNothing);
+
+      await pickFirstTime(tester);
+
+      expect(find.byType(InputChip), findsOneWidget);
+      expect(find.text('Add a time'), findsNothing);
+      await tester.tap(find.byTooltip('Remove the time'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add a time'), findsOneWidget);
+    });
+
+    testWidgets('a first time saves it, makes the settings row and asks', (
+      tester,
+    ) async {
+      final push = FakePush();
+      final notifications = FakeNotificationsRepository();
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        push: push,
+        notifications: notifications,
+        open: (context) => showTask(context, day: DateTime(2026, 11, 1)),
+      );
+      await tester.enterText(whatField, 'Call the supplier');
+      await pickFirstTime(tester);
+      await save(tester);
+
+      final saved = tasks.store.values.single;
+      expect(saved.dueTime, isNotNull);
+      expect(notifications.saved, [
+        const NotificationSettings(timeZone: 'Europe/Paris'),
+      ]);
+      expect(push.asked, 1);
+    });
+
+    testWidgets('a task that had a time asks nothing again', (tester) async {
+      final push = FakePush(isAllowed: true);
+      final notifications = FakeNotificationsRepository();
+      final task = await timed(DateTime.now().add(const Duration(days: 2)));
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        push: push,
+        notifications: notifications,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+      await tester.enterText(noteField, 'Bring the catalogue');
+      await save(tester);
+
+      expect(tasks.store[task.id]!.dueTime, task.dueTime);
+      expect(notifications.saved, isEmpty);
+      expect(push.asked, 0);
+    });
+
+    testWidgets('notifications off: the line, linking to Settings', (
+      tester,
+    ) async {
+      final task = await timed(DateTime.now().add(const Duration(days: 2)));
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        push: FakePush(),
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+
+      expect(find.text('Notifications are off on this phone.'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Settings'), findsOneWidget);
+    });
+
+    testWidgets('allowed, or no push here: no line', (tester) async {
+      final task = await timed(DateTime.now().add(const Duration(days: 2)));
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        push: FakePush(isAvailable: false),
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+
+      expect(find.text('Notifications are off on this phone.'), findsNothing);
+    });
+
+    testWidgets('far from its time: no postpone', (tester) async {
+      final task = await timed(DateTime.now().add(const Duration(days: 2)));
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+
+      expect(find.text('In 15 min'), findsNothing);
+    });
+
+    testWidgets('past its time: In 15 min saves it then, and closes', (
+      tester,
+    ) async {
+      final task = await timed(
+        DateTime.now().subtract(const Duration(hours: 1)),
+      );
+      await _pumpHarness(
+        tester,
+        tasks: tasks,
+        open: (context) =>
+            showTask(context, day: DateTime(2026, 11, 1), editing: task),
+      );
+      expect(find.textContaining('It was due at'), findsOneWidget);
+
+      final before = postponed(DateTime.now(), const Duration(minutes: 15));
+      await tester.tap(find.text('In 15 min'));
+      await tester.pumpAndSettle();
+      final after = postponed(DateTime.now(), const Duration(minutes: 15));
+
+      final saved = tasks.store[task.id]!;
+      expect([before.time, after.time], contains(saved.dueTime));
+      expect([before.day, after.day], contains(saved.dueOn));
+      expect(find.text('Edit task'), findsNothing);
     });
   });
 }

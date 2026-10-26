@@ -57,7 +57,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.today,
             name: Routes.todayName,
-            builder: (context, state) => const TodayPage(),
+            builder: (context, state) => TodayPage(
+              openTask: state.uri.queryParameters[Routes.todayTaskParam],
+            ),
           ),
           // On desktop the list stays built around a pane that swaps with the
           // selection; elsewhere the list and a person are separate screens.

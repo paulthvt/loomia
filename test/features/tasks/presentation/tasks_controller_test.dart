@@ -22,6 +22,7 @@ void main() {
       title: 'Buy milk',
       note: null,
       dueOn: DateTime(2026, 10, 25),
+      dueTime: null,
       repeat: null,
     ));
 
@@ -120,6 +121,7 @@ void main() {
         title: 'New task',
         note: null,
         dueOn: DateTime(2026, 10, 26),
+        dueTime: null,
         repeat: null,
       )),
       throwsA(PeopleFailure.network),

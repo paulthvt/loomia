@@ -87,4 +87,29 @@ void main() {
       expect(chipsThatFit([20], 16, 10), 0);
     });
   });
+
+  group('timed tasks (#377)', () {
+    test('a task is half an hour, cut at midnight', () {
+      expect(taskSpan((hour: 14, minute: 0)), (start: 840, end: 870));
+      expect(taskSpan((hour: 23, minute: 45)), (start: 1425, end: 1440));
+    });
+
+    test('a task and an event at 14:00 split the column', () {
+      final laned = placeInLanes<Object>(
+        [_at('event', 14, 0), 'task'],
+        (item) => switch (item) {
+          final CalendarEvent e => (start: startMinute(e), end: endMinute(e)),
+          _ => taskSpan((hour: 14, minute: 0)),
+        },
+      );
+      expect(laned.map((l) => (l.lane, l.lanes)), [(0, 2), (1, 2)]);
+    });
+
+    test('a task at 7:00 stretches the hours', () {
+      expect(hourRange([], [taskSpan((hour: 7, minute: 0))]), (
+        first: 7,
+        last: 22,
+      ));
+    });
+  });
 }

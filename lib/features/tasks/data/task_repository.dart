@@ -14,7 +14,8 @@ class TaskRepository {
   static const String _table = 'task';
   static const String _columns =
       'id, title, note, due_on, done_on, created_at, '
-      'repeat_every, repeat_unit, repeat_from, repeat_until, scheduled_on';
+      'repeat_every, repeat_unit, repeat_from, repeat_until, scheduled_on, '
+      'due_time';
 
   Future<List<Task>> list() => guardPeople(() async {
     final rows = await _client.from(_table).select(_columns);
@@ -104,6 +105,7 @@ Map<String, Object?> _draftColumns(TaskDraft draft) {
       null => null,
     },
     'scheduled_on': repeat == null ? null : dayColumn(repeat.scheduledOn),
+    'due_time': timeColumn(draft.dueTime),
   };
 }
 
@@ -129,7 +131,21 @@ Task taskFromRow(Map<String, dynamic> row) => Task(
     ),
     _ => null,
   },
+  dueTime: timeFromColumn(row['due_time'] as String?),
 );
+
+/// Postgres `time` ("14:00:00") as a [TaskTime]; null stays null.
+TaskTime? timeFromColumn(String? column) {
+  if (column == null) return null;
+  final parts = column.split(':');
+  return (hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+}
+
+/// A [TaskTime] as Postgres `time`.
+String? timeColumn(TaskTime? time) => time == null
+    ? null
+    : '${time.hour.toString().padLeft(2, '0')}:'
+          '${time.minute.toString().padLeft(2, '0')}';
 
 final taskRepositoryProvider = Provider<TaskRepository>(
   (ref) => TaskRepository(ref.watch(supabaseClientProvider)),

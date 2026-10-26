@@ -23,16 +23,20 @@ class PushScope extends ConsumerStatefulWidget {
 }
 
 class _PushScopeState extends ConsumerState<PushScope> {
-  StreamSubscription<void>? _opened;
+  StreamSubscription<Map<String, Object?>>? _opened;
   String? _locale;
 
   @override
   void initState() {
     super.initState();
-    _opened = ref
-        .read(pushProvider)
-        .opened
-        .listen((_) => mounted ? context.go(Routes.today) : null);
+    _opened = ref.read(pushProvider).opened.listen((data) {
+      if (!mounted) return;
+      // A task's push opens its sheet (#377); every other one, Today.
+      context.go(switch (data) {
+        {'type': 'task', 'task': final String id} => Routes.todayTask(id),
+        _ => Routes.today,
+      });
+    });
     unawaited(_onLaunch());
   }
 

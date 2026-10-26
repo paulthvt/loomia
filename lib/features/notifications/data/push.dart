@@ -85,14 +85,14 @@ class Push {
     }
   }
 
-  /// One event per push tapped: the one that launched the app, then each
-  /// one tapped while it runs.
-  Stream<void> get opened async* {
+  /// One event per push tapped, with its `data`: the one that launched the
+  /// app, then each one tapped while it runs.
+  Stream<Map<String, Object?>> get opened async* {
     if (!await _start()) return;
-    if (await FirebaseMessaging.instance.getInitialMessage() != null) {
-      yield null;
+    if (await FirebaseMessaging.instance.getInitialMessage() case final m?) {
+      yield m.data;
     }
-    yield* FirebaseMessaging.onMessageOpenedApp.map((_) {});
+    yield* FirebaseMessaging.onMessageOpenedApp.map((m) => m.data);
   }
 
   /// After sign-out: the token dies, so pushes for that account stop here

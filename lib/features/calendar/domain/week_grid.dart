@@ -27,43 +27,82 @@ int endMinute(CalendarEvent event) {
 }
 
 /// The whole hours the week grid shows: [firstShownHour] to [lastShownHour],
-/// stretched so every one of [events] fits.
-({int first, int last}) hourRange(Iterable<CalendarEvent> events) {
+/// stretched so every one of [events], and every span in [more] (timed
+/// tasks, #377), fits.
+({int first, int last}) hourRange(
+  Iterable<CalendarEvent> events, [
+  Iterable<Span> more = const [],
+]) {
   var first = firstShownHour;
   var last = lastShownHour;
-  for (final event in events) {
-    first = math.min(first, startMinute(event) ~/ 60);
-    last = math.max(last, (endMinute(event) + 59) ~/ 60);
+  for (final span in [
+    for (final event in events)
+      (start: startMinute(event), end: endMinute(event)),
+    ...more,
+  ]) {
+    first = math.min(first, span.start ~/ 60);
+    last = math.max(last, (span.end + 59) ~/ 60);
   }
   return (first: first, last: math.min(last, Duration.hoursPerDay));
+}
+
+/// Minutes from local midnight: where something starts and ends on a day.
+typedef Span = ({int start, int end});
+
+/// How long a timed task's block is on the week's hour grid (#377): the
+/// shortest that holds a title.
+const Duration taskBlock = Duration(minutes: 30);
+
+/// A timed task's place on its day, [taskBlock] long, cut at midnight.
+Span taskSpan(({int hour, int minute}) time) {
+  final start = time.hour * 60 + time.minute;
+  return (
+    start: start,
+    end: math.min(start + taskBlock.inMinutes, Duration.minutesPerDay),
+  );
 }
 
 /// An event's place across its column: [lane] of [lanes] side by side.
 typedef Laned = ({CalendarEvent event, int lane, int lanes});
 
-/// One day's [events] side by side where they overlap: each run of events
-/// that overlap one another, directly or through a third, splits the column
-/// into as many lanes as it needs at once; an event takes the first lane
-/// free at its start. One that ends as another starts doesn't overlap it.
-List<Laned> dayLanes(List<CalendarEvent> events) {
-  final placed = <Laned>[];
-  var run = <({CalendarEvent event, int lane})>[];
+/// One day's [events] side by side where they overlap: [placeInLanes].
+List<Laned> dayLanes(List<CalendarEvent> events) => [
+  for (final item in placeInLanes(
+    byStart(events),
+    (event) => (start: startMinute(event), end: endMinute(event)),
+  ))
+    (event: item.item, lane: item.lane, lanes: item.lanes),
+];
+
+/// [items] side by side where they overlap: each run of items that overlap
+/// one another, directly or through a third, splits the column into as
+/// many lanes as it needs at once; an item takes the first lane free at its
+/// start. One that ends as another starts doesn't overlap it. Events and
+/// timed tasks share it (#377). Equal starts keep [items]' order.
+List<({T item, int lane, int lanes})> placeInLanes<T>(
+  List<T> items,
+  Span Function(T item) span,
+) {
+  final placed = <({T item, int lane, int lanes})>[];
+  var run = <({T item, int lane})>[];
   var laneEnds = <int>[];
   var runEnd = 0;
 
   void close() {
     final lanes = laneEnds.length;
     placed.addAll([
-      for (final item in run)
-        (event: item.event, lane: item.lane, lanes: lanes),
+      for (final entry in run)
+        (item: entry.item, lane: entry.lane, lanes: lanes),
     ]);
     run = [];
     laneEnds = [];
   }
 
-  for (final event in byStart(events)) {
-    final start = startMinute(event);
-    final end = math.max(endMinute(event), start + 1);
+  final sorted = [...items]
+    ..sort((a, b) => span(a).start.compareTo(span(b).start));
+  for (final item in sorted) {
+    final start = span(item).start;
+    final end = math.max(span(item).end, start + 1);
     if (run.isNotEmpty && start >= runEnd) close();
     var lane = laneEnds.indexWhere((laneEnd) => laneEnd <= start);
     if (lane < 0) {
@@ -72,7 +111,7 @@ List<Laned> dayLanes(List<CalendarEvent> events) {
     } else {
       laneEnds[lane] = end;
     }
-    run.add((event: event, lane: lane));
+    run.add((item: item, lane: lane));
     runEnd = run.length == 1 ? end : math.max(runEnd, end);
   }
   if (run.isNotEmpty) close();
