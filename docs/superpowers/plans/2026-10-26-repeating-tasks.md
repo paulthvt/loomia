@@ -173,10 +173,10 @@ Figma: section "Repeating tasks — #376" (node 442:13872).
 - [x] Today and task-sheet previews: "Restock lavender" repeating monthly
   on the 3rd beside "Order flyers", as in the Figma frames.
 - [x] `dart format .`, `flutter analyze` (No issues found!), `flutter test`.
-- [ ] Commit, push `feature/376-repeating-tasks` (separate commands, literal
+- [x] Commit, push `feature/376-repeating-tasks` (separate commands, literal
   branch), PR with `Closes #376` and the Database section (`supabase db
   push` needed, before or with the release, safe for the released app).
-- [ ] Regenerate goldens through CI, check them against the Figma frames,
+- [x] Regenerate goldens through CI, check them against the Figma frames,
   commit them.
 
 ## Changed while implementing
