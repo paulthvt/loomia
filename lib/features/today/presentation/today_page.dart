@@ -11,6 +11,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
@@ -268,6 +269,9 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   }
 
   Future<void> _tickStep(DueEventStep due) async {
+    final key = stepKey(due);
+    if (!_busy.add(key)) return;
+    setState(() {});
     final events = ref.read(
       eventsProvider(ref.read(accountProvider)?.email).notifier,
     );
@@ -282,6 +286,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
         );
       return;
+    } finally {
+      if (mounted) setState(() => _busy.remove(key));
     }
     if (!mounted) return;
     final owner = ref.read(accountProvider)?.email;
@@ -721,12 +727,24 @@ class _TodayViewState extends State<TodayView> {
       onMarkDone: widget.onMarkDone ?? (_) {},
       onTick: widget.onTickStep ?? (_) {},
       onJoin: widget.onJoin ?? (_) {},
+      busySteps: widget.busy,
     );
+    // As a whole: the last row out takes its header with it, fading, so its
+    // check is still seen.
     final eventsBlock = [
-      if (eventItems.isNotEmpty) ...[
-        ...eventItems,
-        SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
-      ],
+      FadeSwap(
+        duration: AppMotion.slow,
+        child: eventItems.isEmpty
+            ? const SizedBox.shrink(key: ValueKey('no-events'))
+            : Column(
+                key: const ValueKey('events'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ...eventItems,
+                  SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+                ],
+              ),
+      ),
     ];
 
     // Until they load, or when they fail, no task counts.
@@ -741,55 +759,82 @@ class _TodayViewState extends State<TodayView> {
       const Center(child: CircularProgressIndicator()),
     ];
 
-    final listed = switch (widget.due) {
+    final (branch, rows) = switch (widget.due) {
       // Tasks still on their way: no "up to date", no people-only headline.
-      AsyncData() when !widget.tasks.hasValue && !widget.tasks.hasError =>
+      AsyncData() when !widget.tasks.hasValue && !widget.tasks.hasError => (
+        'loading',
         loading,
+      ),
       AsyncData(:final value)
           when value.isEmpty && tasks.isEmpty && (widget.done ?? 0) > 0 =>
+        (
+          'done',
+          [
+            ..._allDone(
+              l10n,
+              widget.done!,
+              desktop,
+              goalLine,
+              ritualCard,
+              eventsBlock,
+            ),
+            ...tasksBlock,
+          ],
+        ),
+      AsyncData(:final value) when value.isEmpty && tasks.isEmpty => (
+        'up-to-date',
         [
-          ..._allDone(
-            l10n,
-            widget.done!,
-            desktop,
-            goalLine,
-            ritualCard,
-            eventsBlock,
-          ),
+          ...goalWidgets,
+          ...eventsBlock,
+          const _UpToDate(),
+          SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
           ...tasksBlock,
         ],
-      AsyncData(:final value) when value.isEmpty && tasks.isEmpty => [
-        ...goalWidgets,
-        ...eventsBlock,
-        const _UpToDate(),
-        SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
-        ...tasksBlock,
-      ],
-      AsyncData(:final value) => _due(
-        l10n,
-        value,
-        tasks,
-        desktop,
-        goalWidgets,
-        eventsBlock,
-        tasksBlock,
       ),
-      AsyncError(:final error) => [
-        ...goalWidgets,
-        ...eventsBlock,
-        LoadFailed(
-          offline: error == PeopleFailure.network,
-          title: l10n.todayLoadFailed,
-          onRetry: widget.onRetry,
-        ),
-      ],
-      _ => loading,
+      AsyncData(:final value) => (
+        'due',
+        _due(l10n, value, tasks, desktop, goalWidgets, eventsBlock, tasksBlock),
+      ),
+      AsyncError(:final error) => (
+        'error',
+        [
+          ...goalWidgets,
+          ...eventsBlock,
+          LoadFailed(
+            offline: error == PeopleFailure.network,
+            title: l10n.todayLoadFailed,
+            onRetry: widget.onRetry,
+          ),
+        ],
+      ),
+      _ => ('loading', loading),
     };
+    // The last row ticked away: the done state is under it as its list fades,
+    // and the row's check finishes drawing on the way out.
+    final listed = [
+      FadeSwap(
+        duration: AppMotion.slow,
+        child: Column(
+          key: ValueKey(branch),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: rows,
+        ),
+      ),
+    ];
 
     final nudge = widget.nudge;
     final content = [
       ...listed,
-      if (nudge != null) ...[const SizedBox(height: AppSpacing.lg), nudge],
+      FadeSwap(
+        duration: AppMotion.quick,
+        child: nudge == null
+            ? const SizedBox.shrink(key: ValueKey('no-nudge'))
+            : Padding(
+                key: const ValueKey('nudge'),
+                padding: const EdgeInsets.only(top: AppSpacing.lg),
+                child: nudge,
+              ),
+      ),
     ];
 
     return Scaffold(

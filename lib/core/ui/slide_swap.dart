@@ -27,69 +27,26 @@ class SlideSwap extends StatefulWidget {
   State<SlideSwap> createState() => _SlideSwapState();
 }
 
-class _SlideSwapState extends State<SlideSwap> {
+class _SlideSwapState extends State<SlideSwap> with HoldsForTick {
   static const _gone = Key('slide-swap-gone');
 
-  /// What the switcher shows: [SlideSwap.child], or the card being held.
-  late Widget? _shown = widget.child;
-
-  /// The ring drawing inside the shown card, if any.
-  AnimationController? _ring;
-  Timer? _hold;
-
-  Key? _keyOf(Widget? child) => child == null ? _gone : child.key;
+  @override
+  Key? keyOf(Widget? child) => child == null ? _gone : child.key;
 
   @override
-  void didUpdateWidget(SlideSwap old) {
-    super.didUpdateWidget(old);
-    _hold?.cancel();
-    _hold = null;
-    final next = widget.child;
-    if (_keyOf(next) == _keyOf(_shown)) {
-      // Same card (an Undo during the hold, a rebuild): no change of card.
-      _shown = next;
-      return;
-    }
-    final ring = _ring;
-    final wait = ring == null || ring.status != AnimationStatus.forward
-        ? Duration.zero
-        : ring.duration! * (1 - ring.value);
-    if (wait == Duration.zero) {
-      _swap();
-      return;
-    }
-    _hold = Timer(wait, () {
-      if (mounted) setState(_swap);
-    });
-  }
-
-  void _swap() {
-    _shown = widget.child;
-    _ring = null;
-  }
-
-  @override
-  void dispose() {
-    _hold?.cancel();
-    super.dispose();
-  }
+  Widget? get incoming => widget.child;
 
   @override
   Widget build(BuildContext context) {
-    final shown = _shown;
+    final shown = this.shown;
     final current = shown ?? const SizedBox.shrink(key: _gone);
     // Slow, not medium: at 240ms people missed that the card had changed.
     final duration = context.motion(AppMotion.slow);
     final reduce = context.reduceMotion;
     // Outside the size: the leaving card stays visible while the slot closes,
     // and the incoming one never crosses a neighbouring column.
-    return TickHold._(
-      // An outer slot (a whole state swapping) waits for the same ring.
-      attach: (ring) {
-        _ring = ring;
-        TickHold.maybeOf(context)?.attach(ring);
-      },
-      child: ClipRect(
+    return holdFor(
+      ClipRect(
         child: AnimatedPadding(
           duration: duration,
           curve: AppMotion.standard,
@@ -137,8 +94,69 @@ class _SlideSwapState extends State<SlideSwap> {
   }
 }
 
-/// How a `TickRing` tells the [SlideSwap] around it that it is drawing, so
-/// the slot holds its card until the check is whole.
+/// A slot that swaps one child for another, and lets a `TickRing` inside
+/// finish drawing its check first: [shown] is what to draw, [incoming] once
+/// the check is whole. Wrap what [build] returns in [holdFor].
+mixin HoldsForTick<T extends StatefulWidget> on State<T> {
+  /// The child the widget was given.
+  Widget? get incoming;
+
+  /// What tells two children apart; a change of key is a swap.
+  Key? keyOf(Widget? child);
+
+  /// What to draw: [incoming], or the child being held.
+  late Widget? shown = incoming;
+
+  AnimationController? _ring;
+  Timer? _hold;
+
+  @override
+  void didUpdateWidget(T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _hold?.cancel();
+    _hold = null;
+    final next = incoming;
+    if (keyOf(next) == keyOf(shown)) {
+      // Same child (an Undo during the hold, a rebuild): no swap.
+      shown = next;
+      return;
+    }
+    final ring = _ring;
+    final wait = ring == null || ring.status != AnimationStatus.forward
+        ? Duration.zero
+        : ring.duration! * (1 - ring.value);
+    if (wait == Duration.zero) {
+      _swap();
+      return;
+    }
+    _hold = Timer(wait, () {
+      if (mounted) setState(_swap);
+    });
+  }
+
+  void _swap() {
+    shown = incoming;
+    _ring = null;
+  }
+
+  @override
+  void dispose() {
+    _hold?.cancel();
+    super.dispose();
+  }
+
+  Widget holdFor(Widget child) => TickHold._(
+    // An outer slot (a whole section swapping) waits for the same ring.
+    attach: (ring) {
+      _ring = ring;
+      TickHold.maybeOf(context)?.attach(ring);
+    },
+    child: child,
+  );
+}
+
+/// How a `TickRing` tells the slots around it that it is drawing, so they
+/// hold their child until the check is whole.
 class TickHold extends InheritedWidget {
   const TickHold._({required this.attach, required super.child});
 

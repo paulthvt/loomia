@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 
@@ -20,6 +22,9 @@ class FakeEventRepository implements EventRepository {
 
   /// Thrown by calls started while set. Use a `PeopleFailure`.
   Object? failWith;
+
+  /// A [tick] started while set waits on it.
+  Completer<void>? gate;
 
   var _next = 0;
 
@@ -459,6 +464,7 @@ class FakeEventRepository implements EventRepository {
   @override
   Future<void> tick(String eventId, String stepId, DateTime on) async {
     _record('tick($eventId:$stepId)');
+    if (gate case final wait?) await wait.future;
     final index = store.indexWhere((event) => event.id == eventId);
     final event = store[index];
     _with(

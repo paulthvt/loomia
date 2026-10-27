@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -813,6 +814,44 @@ void main() {
     expect(people.calls, contains('undoStep(p1, samples-1)'));
     expect(find.text('Samples · 1 of 5'), findsOneWidget);
     expect(activities.store, isEmpty);
+  });
+
+  testWidgets('a ticked reminder draws its check, then slides out (#384)', (
+    tester,
+  ) async {
+    people.store['p1'] = _marieOn(1);
+    people.reminders['p1'] = [
+      (
+        id: 'r1',
+        text: 'Call back about the diffuser',
+        dueOn: today(),
+        createdAt: DateTime.utc(2026),
+      ),
+    ];
+    await openMarie(tester);
+    final tick = find.byTooltip('Mark "Call back about the diffuser" done');
+    await tester.ensureVisible(tick);
+    await tester.pumpAndSettle();
+    final reminder = find.text('Call back about the diffuser').first;
+    final x = tester.getTopLeft(reminder).dx;
+
+    people.gate = Completer<void>();
+    await tester.tap(tick);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    people.gate!.complete();
+    people.gate = null;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    // Still there, check drawing: nothing has moved yet.
+    expect(tester.getTopLeft(reminder).dx, x);
+
+    await tester.pump(AppMotion.medium);
+    await tester.pump(AppMotion.slow ~/ 2);
+    expect(tester.getTopLeft(reminder).dx, lessThan(x));
+    await tester.pumpAndSettle();
+    // Left: only its history entry has the text.
+    expect(find.text('Call back about the diffuser'), findsOneWidget);
   });
 
   testWidgets('a reminder ticked on a contact can be undone after leaving '
