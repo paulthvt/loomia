@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/slide_swap.dart';
+import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:material_ui/material_ui.dart';
 
 Widget _card(String label) =>
@@ -52,5 +53,96 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Step 1'), findsNothing);
     expect(tester.getSize(find.byType(SlideSwap)).height, 0);
+  });
+
+  group('a ticked row waits for its check', () {
+    Widget row(String label, {required bool ticked}) => SizedBox(
+      key: ValueKey(label),
+      height: 80,
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          TickRing(selected: ticked, tooltip: 'Tick $label'),
+        ],
+      ),
+    );
+
+    Future<void> slot(WidgetTester tester, Widget? child) => tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: 300,
+              child: SlideSwap(key: const ValueKey('slot'), child: child),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    double x(WidgetTester tester) => tester.getTopLeft(find.text('Step 1')).dx;
+
+    testWidgets('removed at once: held until the check is drawn, then '
+        'slides', (tester) async {
+      await slot(tester, row('Step 1', ticked: false));
+      final start = x(tester);
+      await slot(tester, row('Step 1', ticked: true));
+      await slot(tester, null);
+      await tester.pump(AppMotion.medium + const Duration(milliseconds: 200));
+      expect(x(tester), start);
+      await tester.pump(AppMotion.slow - const Duration(milliseconds: 200));
+      await tester.pump(AppMotion.slow ~/ 2);
+      expect(x(tester), lessThan(start));
+      await tester.pumpAndSettle();
+      expect(find.text('Step 1'), findsNothing);
+    });
+
+    testWidgets('a save slower than the draw and its beat adds no wait', (
+      tester,
+    ) async {
+      await slot(tester, row('Step 1', ticked: false));
+      final start = x(tester);
+      await slot(tester, row('Step 1', ticked: true));
+      await tester.pump(const Duration(milliseconds: 700));
+      await slot(tester, null);
+      await tester.pump(AppMotion.slow ~/ 2);
+      expect(x(tester), lessThan(start));
+    });
+
+    testWidgets('removed with no tick: leaves at once', (tester) async {
+      await slot(tester, row('Step 1', ticked: false));
+      final start = x(tester);
+      await slot(tester, null);
+      await tester.pump(AppMotion.slow ~/ 2);
+      expect(x(tester), lessThan(start));
+    });
+
+    testWidgets('a new key in place waits the same way', (tester) async {
+      await slot(tester, row('Step 1', ticked: false));
+      await slot(tester, row('Step 1', ticked: true));
+      await slot(tester, row('Step 2', ticked: false));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('Step 2'), findsNothing);
+      await tester.pumpAndSettle();
+      expect(find.text('Step 1'), findsNothing);
+      expect(find.text('Step 2'), findsOneWidget);
+    });
+
+    testWidgets('Undo during the hold: the row stays, no slide', (
+      tester,
+    ) async {
+      await slot(tester, row('Step 1', ticked: false));
+      final start = x(tester);
+      await slot(tester, row('Step 1', ticked: true));
+      await slot(tester, null);
+      await tester.pump(const Duration(milliseconds: 100));
+      await slot(tester, row('Step 1', ticked: false));
+      await tester.pump(AppMotion.slow ~/ 2);
+      expect(x(tester), start);
+      await tester.pumpAndSettle();
+      expect(find.text('Step 1'), findsOneWidget);
+    });
   });
 }

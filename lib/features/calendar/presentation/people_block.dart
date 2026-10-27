@@ -1,4 +1,3 @@
-import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
@@ -57,17 +56,15 @@ class _PeopleBlockState extends State<PeopleBlock> {
               : l10n.todayCatchUpHide,
           onAction: widget.foldable ? _toggle : null,
         ),
-        if (folded)
-          PeopleSummary(
+        FoldBody(
+          folded: folded,
+          summary: PeopleSummary(
             names: [for (final run in people) run.first.person.name],
             label: l10n.calendarPeopleSummary(people.length),
             onTap: _toggle,
-          )
-        else
-          for (final (index, run) in people.indexed) ...[
-            if (index > 0) const SizedBox(height: AppSpacing.ms),
-            _row(l10n, run),
-          ],
+          ),
+          rows: [for (final run in people) _row(l10n, run)],
+        ),
       ],
     );
   }

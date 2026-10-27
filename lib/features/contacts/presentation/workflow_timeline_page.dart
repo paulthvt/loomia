@@ -6,6 +6,7 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/empty_state.dart';
@@ -235,13 +236,15 @@ class TimelineStep extends StatelessWidget {
       color: visible ? colors.borderSubtle : null,
     );
 
-    return Container(
-      decoration: current
-          ? BoxDecoration(
-              color: colors.primaryMuted,
-              borderRadius: BorderRadius.circular(AppRadii.lg),
-            )
-          : null,
+    return AnimatedContainer(
+      duration: context.motion(AppMotion.quick),
+      curve: AppMotion.standard,
+      decoration: BoxDecoration(
+        color: current
+            ? colors.primaryMuted
+            : colors.primaryMuted.withValues(alpha: 0),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.ms),
       child: IntrinsicHeight(
         child: Row(

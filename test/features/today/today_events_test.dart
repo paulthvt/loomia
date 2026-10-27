@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -276,6 +279,56 @@ void main() {
       find.text('Couldn\'t save. Check your connection and try again.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('in the app: a ticked step draws its check, then slides out '
+      '(#384)', (tester) async {
+    final events = FakeEventRepository();
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1, 19);
+    events.store.addAll([
+      CalendarEvent(
+        id: 'e1',
+        title: 'Workshop',
+        startsAt: tomorrow,
+        eventWorkflowId: 'workshop',
+      ),
+      CalendarEvent(
+        id: 'e2',
+        title: 'Second workshop',
+        startsAt: tomorrow,
+        eventWorkflowId: 'workshop',
+      ),
+    ]);
+    await pumpLoomia(tester, size: const Size(390, 1400), events: events);
+    final ring = find
+        .byTooltip('Mark "Remind everyone it\'s tomorrow" done')
+        .first;
+    final title = find.text("Remind everyone it's tomorrow").first;
+    final start = tester.getTopLeft(title).dx;
+
+    events.gate = Completer<void>();
+    await tester.tap(ring);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    final painter = find.descendant(
+      of: find.byType(TickRing),
+      matching: find.byWidgetPredicate(
+        (widget) => widget is CustomPaint && widget.painter is CheckPainter,
+      ),
+    );
+    expect(painter, findsOneWidget);
+
+    events.gate!.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.getTopLeft(title).dx, start);
+
+    await tester.pump(AppMotion.medium + AppMotion.slow);
+    await tester.pump(AppMotion.slow ~/ 2);
+    expect(tester.getTopLeft(title).dx, lessThan(start));
+    await tester.pumpAndSettle();
+    expect(find.text("Remind everyone it's tomorrow"), findsOneWidget);
   });
 
   testWidgets('in the app: Undo on an event step unticks it (#372)', (

@@ -1,9 +1,9 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
-import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
+import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -193,12 +193,10 @@ class ActionItem extends StatelessWidget {
                 if (onResolve != null && actions == null) ...[
                   const SizedBox(width: AppSpacing.sm),
                   Center(
-                    child: IconButton(
+                    child: TickRing(
                       onPressed: resolved ? null : onResolve,
-                      isSelected: resolved || done,
+                      selected: resolved || done,
                       tooltip: label,
-                      style: AppTheme.resolveRing(context),
-                      icon: const Icon(Icons.check_rounded),
                     ),
                   ),
                 ],

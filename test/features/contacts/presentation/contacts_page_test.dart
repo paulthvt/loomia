@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -437,6 +438,9 @@ void main() {
       ..gate = Completer<void>();
     await tester.tap(find.text('Try again'));
     await tester.pump();
+    // The error fades out over the spinner (#384).
+    await tester.pump(AppMotion.quick);
+    await tester.pump(AppMotion.quick);
 
     expect(find.text("You're offline."), findsNothing);
     expect(
@@ -449,6 +453,57 @@ void main() {
     activities.gate!.complete();
     await tester.pumpAndSettle();
     expect(find.text('Nothing logged yet.'), findsOneWidget);
+  });
+
+  testWidgets('a logged entry grows in once the sheet has closed, a deleted '
+      'one folds away (#384)', (tester) async {
+    activities.store.add(_note('a1', 'Ordered the cream', 10));
+    await openMarie(tester);
+    double grown(String text) => tester
+        .widget<SizeTransition>(
+          find
+              .ancestor(
+                of: find.text(text),
+                matching: find.byType(SizeTransition),
+              )
+              .first,
+        )
+        .sizeFactor
+        .value;
+
+    await reveal(tester, find.text('Ordered the cream'));
+    await tester.tap(find.byTooltip('More'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Log something'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.widgetWithText(LabeledField, 'What happened'),
+        matching: find.byType(TextFormField),
+      ),
+      'Met at the market',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    // The sheet is still closing: the entry waits, folded.
+    expect(grown('Met at the market'), 0);
+    await tester.pump(AppMotion.slow);
+    await tester.pump(AppMotion.medium ~/ 2);
+    expect(grown('Met at the market'), inExclusiveRange(0, 1));
+    await tester.pumpAndSettle();
+    expect(grown('Met at the market'), 1);
+
+    await reveal(tester, find.text('Ordered the cream'));
+    await tester.longPress(find.text('Ordered the cream'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pump();
+    await tester.pump(AppMotion.slow);
+    await tester.pump(AppMotion.medium ~/ 2);
+    expect(grown('Ordered the cream'), inExclusiveRange(0, 1));
+    await tester.pumpAndSettle();
+    expect(find.text('Ordered the cream'), findsNothing);
   });
 
   testWidgets('long-press deletes an entry once confirmed', (tester) async {
@@ -813,6 +868,44 @@ void main() {
     expect(people.calls, contains('undoStep(p1, samples-1)'));
     expect(find.text('Samples · 1 of 5'), findsOneWidget);
     expect(activities.store, isEmpty);
+  });
+
+  testWidgets('a ticked reminder draws its check, then slides out (#384)', (
+    tester,
+  ) async {
+    people.store['p1'] = _marieOn(1);
+    people.reminders['p1'] = [
+      (
+        id: 'r1',
+        text: 'Call back about the diffuser',
+        dueOn: today(),
+        createdAt: DateTime.utc(2026),
+      ),
+    ];
+    await openMarie(tester);
+    final tick = find.byTooltip('Mark "Call back about the diffuser" done');
+    await tester.ensureVisible(tick);
+    await tester.pumpAndSettle();
+    final reminder = find.text('Call back about the diffuser').first;
+    final x = tester.getTopLeft(reminder).dx;
+
+    people.gate = Completer<void>();
+    await tester.tap(tick);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    people.gate!.complete();
+    people.gate = null;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    // Still there, check drawing: nothing has moved yet.
+    expect(tester.getTopLeft(reminder).dx, x);
+
+    await tester.pump(AppMotion.medium + AppMotion.slow);
+    await tester.pump(AppMotion.slow ~/ 2);
+    expect(tester.getTopLeft(reminder).dx, lessThan(x));
+    await tester.pumpAndSettle();
+    // Left: only its history entry has the text.
+    expect(find.text('Call back about the diffuser'), findsOneWidget);
   });
 
   testWidgets('a reminder ticked on a contact can be undone after leaving '

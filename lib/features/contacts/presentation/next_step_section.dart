@@ -7,6 +7,7 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/slide_swap.dart';
@@ -267,10 +268,15 @@ class NextStepCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(title: header),
-        for (final reminder in reminders.take(before)) ...[
-          _reminder(l10n, reminder),
-          const SizedBox(height: AppSpacing.ms),
-        ],
+        AnimatedRows(
+          spacing: AppSpacing.ms,
+          gap: RowGap.below,
+          slideOut: true,
+          children: [
+            for (final reminder in reminders.take(before))
+              _reminder(l10n, reminder),
+          ],
+        ),
         // A new state (the last step ticked: Done) slides in whole; a new
         // step slides in just its card, in `_step`.
         SlideSwap(
@@ -360,10 +366,15 @@ class NextStepCard extends StatelessWidget {
                   },
           ),
         ),
-        for (final reminder in reminders.skip(before)) ...[
-          const SizedBox(height: AppSpacing.ms),
-          _reminder(l10n, reminder),
-        ],
+        AnimatedRows(
+          spacing: AppSpacing.ms,
+          gap: RowGap.above,
+          slideOut: true,
+          children: [
+            for (final reminder in reminders.skip(before))
+              _reminder(l10n, reminder),
+          ],
+        ),
         if (onAddReminder case final add?)
           Align(
             alignment: AlignmentDirectional.centerStart,

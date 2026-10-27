@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -160,7 +162,7 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
     final sideNavigation = context.screenSize.usesSideNavigation;
     final pane = widget.pane;
 
-    final Widget body;
+    Widget body;
     if (list != null) {
       body = ContactList(
         people: list,
@@ -190,6 +192,20 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
     } else {
       body = const Center(child: CircularProgressIndicator());
     }
+    // The spinner fades into the list, or the error.
+    body = FadeSwap(
+      duration: AppMotion.quick,
+      child: KeyedSubtree(
+        key: ValueKey(
+          list != null
+              ? 'list'
+              : people.hasError
+              ? 'error'
+              : 'loading',
+        ),
+        child: body,
+      ),
+    );
 
     return Scaffold(
       body: SafeArea(

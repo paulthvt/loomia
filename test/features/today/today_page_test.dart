@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -187,6 +188,10 @@ void main() {
 
     await tester.tap(find.byTooltip(_markFirst).last);
     await tester.pump();
+    // First its check is drawn and held (#384).
+    await tester.pump(AppMotion.medium + AppMotion.slow ~/ 2);
+    expect(tester.getTopLeft(find.text('Anna')).dx, left);
+    await tester.pump(AppMotion.slow ~/ 2);
     await tester.pump(const Duration(milliseconds: 120));
 
     expect(tester.getTopLeft(find.text('Anna')).dx, lessThan(left));

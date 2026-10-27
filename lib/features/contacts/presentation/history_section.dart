@@ -2,8 +2,11 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/activity_item.dart';
+import 'package:loomia/core/ui/animated_rows.dart';
+import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -87,59 +90,109 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
           actionLabel: l10n.historyAdd,
           onAction: widget.onAdd,
         ),
-        if (entries == null)
-          // A retry keeps the error while it loads: the spinner wins.
-          history.hasError && !history.isLoading
-              ? Row(
-                  children: [
-                    Expanded(
-                      child: muted(
-                        history.error == PeopleFailure.network
-                            ? l10n.offlineInline
-                            : l10n.historyLoadError,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => ref.invalidate(provider),
-                      child: Text(l10n.contactsRetry),
-                    ),
-                  ],
-                )
-              : const Padding(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-        else if (entries.isEmpty)
-          muted(l10n.historyEmpty)
-        else ...[
-          for (final (index, activity) in shown!.indexed)
-            _Entry(
-              activity: activity,
-              today: today,
-              model: model,
-              last: index == shown.length - 1,
-              // A loyalty entry follows the person's LRP: changed from the
-              // LRP line, never here.
-              onTap:
-                  activity.kind.isLoyalty ||
-                      (activity.kind == ActivityKind.stage &&
-                          activity != latestStage)
-                  ? null
-                  : () => _edit(activity),
-              onDelete:
-                  activity.kind == ActivityKind.stage || activity.kind.isLoyalty
-                  ? null
-                  : () => _delete(activity),
+        // Loading, failed, empty or the list: one fades into the next.
+        FadeSwap(
+          duration: AppMotion.quick,
+          child: KeyedSubtree(
+            key: ValueKey(switch (entries) {
+              null when history.hasError && !history.isLoading => 'error',
+              null => 'loading',
+              [] => 'empty',
+              _ => 'list',
+            }),
+            child: _body(
+              context,
+              history,
+              entries,
+              shown,
+              latestStage,
+              today,
+              model,
+              muted,
             ),
-          if (!_expanded && entries.length > _preview)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton(
-                onPressed: () => setState(() => _expanded = true),
-                child: Text(l10n.historySeeAll(entries.length)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _body(
+    BuildContext context,
+    AsyncValue<List<Activity>> history,
+    List<Activity>? entries,
+    List<Activity>? shown,
+    Activity? latestStage,
+    DateTime today,
+    BusinessModel model,
+    Widget Function(String text) muted,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final provider = historyProvider(widget.person.id);
+    if (entries == null) {
+      // A retry keeps the error while it loads: the spinner wins.
+      return history.hasError && !history.isLoading
+          ? Row(
+              children: [
+                Expanded(
+                  child: muted(
+                    history.error == PeopleFailure.network
+                        ? l10n.offlineInline
+                        : l10n.historyLoadError,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => ref.invalidate(provider),
+                  child: Text(l10n.contactsRetry),
+                ),
+              ],
+            )
+          : const Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: Center(child: CircularProgressIndicator()),
+            );
+    }
+    if (entries.isEmpty) return muted(l10n.historyEmpty);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // After the sheet or dialog that changed it has closed, so the
+        // entry is seen arriving or leaving. Keyed by See all: the rest
+        // appear at once, as a new list.
+        AnimatedRows(
+          key: ValueKey(_expanded),
+          delay: context.motion(AppMotion.slow),
+          children: [
+            for (final (index, activity) in shown!.indexed)
+              _Entry(
+                key: ValueKey(activity.id),
+                activity: activity,
+                today: today,
+                model: model,
+                last: index == shown.length - 1,
+                // A loyalty entry follows the person's LRP: changed from
+                // the LRP line, never here.
+                onTap:
+                    activity.kind.isLoyalty ||
+                        (activity.kind == ActivityKind.stage &&
+                            activity != latestStage)
+                    ? null
+                    : () => _edit(activity),
+                onDelete:
+                    activity.kind == ActivityKind.stage ||
+                        activity.kind.isLoyalty
+                    ? null
+                    : () => _delete(activity),
               ),
+          ],
+        ),
+        if (!_expanded && entries.length > _preview)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              onPressed: () => setState(() => _expanded = true),
+              child: Text(l10n.historySeeAll(entries.length)),
             ),
-        ],
+          ),
       ],
     );
   }
@@ -156,6 +209,7 @@ class _Entry extends StatelessWidget {
     required this.last,
     required this.onTap,
     required this.onDelete,
+    super.key,
   });
 
   final Activity activity;
