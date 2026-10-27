@@ -66,7 +66,11 @@ class _TickRingState extends State<TickRing>
         animation: _controller,
         builder: (context, _) {
           final value = _controller.value;
-          if (value == 0) return const Icon(Icons.check_rounded);
+          // At rest, empty or ticked, the glyph itself: what the design
+          // draws. The painter only exists while the check is being drawn.
+          if (value == 0 || value == 1) {
+            return const Icon(Icons.check_rounded);
+          }
           final icon = IconTheme.of(context);
           final size = icon.size ?? 18;
           final painted = CustomPaint(

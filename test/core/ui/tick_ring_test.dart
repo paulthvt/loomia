@@ -46,8 +46,13 @@ void main() {
     await tester.pump(AppMotion.medium ~/ 2);
     expect(_painter(tester)!.progress, inExclusiveRange(0, 1));
     await tester.pump(AppMotion.medium ~/ 2);
-    expect(_painter(tester)!.progress, 1);
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    // Whole: the glyph again, as the design draws it.
+    expect(_painter(tester), isNull);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(
+      tester.widget<IconButton>(find.byType(IconButton)).isSelected,
+      isTrue,
+    );
   });
 
   testWidgets('no longer selected: it un-draws in 120ms', (tester) async {
@@ -62,9 +67,10 @@ void main() {
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
   });
 
-  testWidgets('built selected: drawn at once', (tester) async {
+  testWidgets('built selected: the ticked glyph at once', (tester) async {
     await tester.pumpWidget(_ring(selected: true));
-    expect(_painter(tester)!.progress, 1);
+    expect(_painter(tester), isNull);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
   });
 
   testWidgets('reduce motion: the whole check fades in over 120ms', (
@@ -82,17 +88,8 @@ void main() {
     );
     expect(fade.opacity, inExclusiveRange(0, 1));
     await tester.pump(AppMotion.fast ~/ 2);
-    expect(
-      tester
-          .widget<Opacity>(
-            find.descendant(
-              of: find.byType(TickRing),
-              matching: find.byType(Opacity),
-            ),
-          )
-          .opacity,
-      1,
-    );
+    expect(_painter(tester), isNull);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
   });
 
   testWidgets('keeps the ring button: tooltip and tap', (tester) async {
