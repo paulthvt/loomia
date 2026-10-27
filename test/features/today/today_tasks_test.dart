@@ -337,6 +337,36 @@ void main() {
       expect(find.text('1 of 2 done'), findsOneWidget);
     });
 
+    testWidgets('a ticked task among others stays while its check is drawn '
+        'and held, then slides out (#384)', (tester) async {
+      taskRepo.store['t1'] = _task(
+        id: 't1',
+        title: 'Order flyers',
+        dueOn: _today,
+      );
+      taskRepo.store['t2'] = _task(
+        id: 't2',
+        title: 'Print labels',
+        dueOn: _today,
+      );
+      await pumpPage(tester);
+      final row = find.text('Order flyers');
+      final x = tester.getTopLeft(row).dx;
+
+      await tester.tap(find.byTooltip('Mark "Order flyers" done'));
+      await tester.pump();
+      await tester.pump(AppMotion.medium + AppMotion.slow ~/ 2);
+      // Drawn and held: not moved, not gone.
+      expect(tester.getTopLeft(row).dx, x);
+
+      await tester.pump(AppMotion.slow ~/ 2);
+      await tester.pump(AppMotion.slow ~/ 2);
+      expect(tester.getTopLeft(row).dx, lessThan(x));
+      await tester.pumpAndSettle();
+      expect(row, findsNothing);
+      expect(find.text('Print labels'), findsOneWidget);
+    });
+
     testWidgets('Undo brings it back', (tester) async {
       taskRepo.store['t1'] = _task(
         id: 't1',

@@ -90,20 +90,22 @@ void main() {
       final start = x(tester);
       await slot(tester, row('Step 1', ticked: true));
       await slot(tester, null);
-      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(AppMotion.medium + const Duration(milliseconds: 200));
       expect(x(tester), start);
-      await tester.pump(const Duration(milliseconds: 40));
+      await tester.pump(AppMotion.slow - const Duration(milliseconds: 200));
       await tester.pump(AppMotion.slow ~/ 2);
       expect(x(tester), lessThan(start));
       await tester.pumpAndSettle();
       expect(find.text('Step 1'), findsNothing);
     });
 
-    testWidgets('a save slower than the draw adds no wait', (tester) async {
+    testWidgets('a save slower than the draw and its beat adds no wait', (
+      tester,
+    ) async {
       await slot(tester, row('Step 1', ticked: false));
       final start = x(tester);
       await slot(tester, row('Step 1', ticked: true));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 700));
       await slot(tester, null);
       await tester.pump(AppMotion.slow ~/ 2);
       expect(x(tester), lessThan(start));

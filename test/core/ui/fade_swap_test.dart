@@ -100,9 +100,9 @@ void main() {
         ),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(AppMotion.medium + const Duration(milliseconds: 200));
     expect(find.text('All done'), findsNothing);
-    await tester.pump(const Duration(milliseconds: 40));
+    await tester.pump(AppMotion.slow - const Duration(milliseconds: 200));
     await tester.pump();
     expect(find.text('All done'), findsOneWidget);
   });

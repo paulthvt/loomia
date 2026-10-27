@@ -900,7 +900,7 @@ void main() {
     // Still there, check drawing: nothing has moved yet.
     expect(tester.getTopLeft(reminder).dx, x);
 
-    await tester.pump(AppMotion.medium);
+    await tester.pump(AppMotion.medium + AppMotion.slow);
     await tester.pump(AppMotion.slow ~/ 2);
     expect(tester.getTopLeft(reminder).dx, lessThan(x));
     await tester.pumpAndSettle();

@@ -108,10 +108,12 @@ class _AnimatedRowsState extends State<AnimatedRows> {
     setState(() => _rows.removeWhere((row) => row.child.key == key));
   }
 
-  /// How long a gone sliding row stays in the tree: its whole exit.
+  /// How long a gone sliding row stays in the tree: its check's draw and
+  /// beat (the longest hold), then its slide.
   Duration _lingers() =>
       widget.delay +
       context.motion(AppMotion.medium) +
+      context.motion(AppMotion.slow) +
       context.motion(AppMotion.slow);
 
   @override

@@ -45,7 +45,7 @@ void main() {
     await tester.pumpWidget(_ring(selected: true));
     await tester.pump(AppMotion.medium ~/ 2);
     expect(_painter(tester)!.progress, inExclusiveRange(0, 1));
-    await tester.pump(AppMotion.medium ~/ 2);
+    await tester.pump(AppMotion.medium ~/ 2 + const Duration(milliseconds: 1));
     // Whole: the glyph again, as the design draws it.
     expect(_painter(tester), isNull);
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);

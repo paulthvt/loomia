@@ -10,6 +10,7 @@ import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/load_failed.dart';
@@ -912,31 +913,36 @@ class _TodayViewState extends State<TodayView> {
             actionLabel: l10n.todayAddTask,
             onAction: widget.onAddTask,
           ),
-          for (final (index, task) in tasks.indexed)
-            SlideSwap(
-              key: ValueKey(task.key),
-              padding: EdgeInsets.only(top: index > 0 ? AppSpacing.ms : 0),
-              child: ActionItem(
-                name: task.title,
-                reason: task.note,
-                icon: Icons.assignment_outlined,
-                tag: repeatIcon(context, task),
-                maxLines: 2,
-                chip: task.dueOn.isBefore(day)
-                    ? DateChip(dueLabel(l10n, task.dueOn, day))
-                    : timeChip(context, task),
-                onOpen: switch (widget.onOpenTask) {
-                  final open? => () => open(task),
-                  null => null,
-                },
-                onResolve: switch (widget.onTickTask) {
-                  final tick? => () => tick(task),
-                  null => null,
-                },
-                resolved: widget.busy.contains(task.key),
-                resolveLabel: l10n.nextStepMarkDone(task.title),
-              ),
-            ),
+          // Slots that outlive their task, so a ticked one waits for its
+          // check and slides out instead of vanishing.
+          AnimatedRows(
+            spacing: AppSpacing.ms,
+            slideOut: true,
+            children: [
+              for (final task in tasks)
+                ActionItem(
+                  key: ValueKey(task.key),
+                  name: task.title,
+                  reason: task.note,
+                  icon: Icons.assignment_outlined,
+                  tag: repeatIcon(context, task),
+                  maxLines: 2,
+                  chip: task.dueOn.isBefore(day)
+                      ? DateChip(dueLabel(l10n, task.dueOn, day))
+                      : timeChip(context, task),
+                  onOpen: switch (widget.onOpenTask) {
+                    final open? => () => open(task),
+                    null => null,
+                  },
+                  onResolve: switch (widget.onTickTask) {
+                    final tick? => () => tick(task),
+                    null => null,
+                  },
+                  resolved: widget.busy.contains(task.key),
+                  resolveLabel: l10n.nextStepMarkDone(task.title),
+                ),
+            ],
+          ),
         ],
         AsyncError(:final error) => [
           SectionHeader(title: l10n.todaySectionTasks),

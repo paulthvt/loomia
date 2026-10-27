@@ -324,7 +324,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     expect(tester.getTopLeft(title).dx, start);
 
-    await tester.pump(AppMotion.medium);
+    await tester.pump(AppMotion.medium + AppMotion.slow);
     await tester.pump(AppMotion.slow ~/ 2);
     expect(tester.getTopLeft(title).dx, lessThan(start));
     await tester.pumpAndSettle();
