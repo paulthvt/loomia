@@ -14,15 +14,15 @@
     <string name="push_summary_body_other_en">%1$s people are worth a message today</string>
     <string name="push_summary_body_other_fr">%1$s personnes méritent un message aujourd’hui</string>
     <string name="push_summary_both_one_one_en">One person and one task today</string>
-    <string name="push_summary_both_one_one_fr">One person and one task today</string>
+    <string name="push_summary_both_one_one_fr">Une personne et une tâche aujourd’hui</string>
     <string name="push_summary_both_one_other_en">One person and %1$s tasks today</string>
-    <string name="push_summary_both_one_other_fr">One person and %1$s tasks today</string>
+    <string name="push_summary_both_one_other_fr">Une personne et %1$s tâches aujourd’hui</string>
     <string name="push_summary_both_other_one_en">%1$s people and one task today</string>
-    <string name="push_summary_both_other_one_fr">%1$s people and one task today</string>
+    <string name="push_summary_both_other_one_fr">%1$s personnes et une tâche aujourd’hui</string>
     <string name="push_summary_both_other_other_en">%1$s people and %2$s tasks today</string>
-    <string name="push_summary_both_other_other_fr">%1$s people and %2$s tasks today</string>
+    <string name="push_summary_both_other_other_fr">%1$s personnes et %2$s tâches aujourd’hui</string>
     <string name="push_summary_tasks_one_en">One task today</string>
-    <string name="push_summary_tasks_one_fr">One task today</string>
+    <string name="push_summary_tasks_one_fr">Une tâche aujourd’hui</string>
     <string name="push_summary_tasks_other_en">%1$s tasks today</string>
-    <string name="push_summary_tasks_other_fr">%1$s tasks today</string>
+    <string name="push_summary_tasks_other_fr">%1$s tâches aujourd’hui</string>
 </resources>
