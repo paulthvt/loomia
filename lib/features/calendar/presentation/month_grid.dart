@@ -296,7 +296,11 @@ class DayCell extends StatelessWidget {
                       key: const ValueKey('people-marker'),
                       width: _marker,
                       height: _markerThickness,
-                      color: colors.textMuted,
+                      // Round ends: Figma's 1 px radius on a 2 px line.
+                      decoration: BoxDecoration(
+                        color: colors.textMuted,
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                      ),
                     ),
                   )
                 : null,

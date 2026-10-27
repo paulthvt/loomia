@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -131,6 +132,12 @@ void main() {
       expect(_marker(_day), findsOneWidget);
       expect(_marker(DateTime(2026, 10, 6)), findsNothing);
       expect(_marker(DateTime(2026, 10, 9)), findsNothing);
+      // Round ends, as in the Figma.
+      final marker = tester.widget<Container>(_marker(_day));
+      expect(
+        (marker.decoration! as BoxDecoration).borderRadius,
+        BorderRadius.circular(AppRadii.pill),
+      );
     });
 
     testWidgets('beside three dots, and the day keeps its height', (
