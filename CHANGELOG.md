@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2026.10.5](https://github.com/paulthvt/loomia/compare/v2026.10.4...v2026.10.5) (2026-10-27)
+
+### ✨ Features
+
+- **ui:** draw the tick and animate list changes (#385) ([3ad9fc1](https://github.com/paulthvt/loomia/commit/3ad9fc119fc40a99ad7550a8e6372d2e8b1f9723))
+- **calendar:** show the people due on each day (#383) ([6f5a6b6](https://github.com/paulthvt/loomia/commit/6f5a6b6b168c16604e653b4e8ac4ae24723c377e))
+- **tasks:** a time on a task, with a push at that time (#382) ([267d9f1](https://github.com/paulthvt/loomia/commit/267d9f16070c1e43395877dc81dae6e5ec88e62d))
+- **tasks:** repeating tasks (#381) ([9a6b30d](https://github.com/paulthvt/loomia/commit/9a6b30d8755f8d79c2f3a769e4bd34b0162eabad))
+- **tasks:** tasks on Today and in the Calendar (#380) ([8fe9668](https://github.com/paulthvt/loomia/commit/8fe96683c71a890c346ef87cd95d43868d89898d))
+- **today:** undo a tick (#373) ([59b7492](https://github.com/paulthvt/loomia/commit/59b74922fc91ac19e329284eb6b95d252bc480ed))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#379) ([66c4ffd](https://github.com/paulthvt/loomia/commit/66c4ffddeb0e2a03aa56062bf3970441b9102f42))
+
 ## [v2026.10.4](https://github.com/paulthvt/loomia/compare/v2026.10.3...v2026.10.4) (2026-10-23)
 
 ### ✨ Features
