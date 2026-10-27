@@ -16,6 +16,7 @@ import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
+import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
@@ -443,15 +444,13 @@ class EventView extends StatelessWidget {
                   stepDue(event, step),
                 ),
               ),
-              trailing: IconButton(
+              trailing: TickRing(
                 onPressed: () =>
                     onTick(step, !event.stepsDone.containsKey(step.id)),
-                isSelected: event.stepsDone.containsKey(step.id),
+                selected: event.stepsDone.containsKey(step.id),
                 tooltip: event.stepsDone.containsKey(step.id)
                     ? l10n.eventStepUntick(step.label)
                     : l10n.eventStepTick(step.label),
-                style: AppTheme.resolveRing(context),
-                icon: const Icon(Icons.check_rounded),
               ),
             ),
         ],
