@@ -131,24 +131,74 @@ List<Due> dueToday(
             if (byId[attendee.personId] case final person?)
               DueFollowUp(person, event, attendee),
   ];
-  due.sort((a, b) {
-    final byDay = a.day.compareTo(b.day);
-    if (byDay != 0) return byDay;
-    final byName = searchKey(a.person.name).compareTo(searchKey(b.person.name));
-    if (byName != 0) return byName;
-    final byPerson = a.person.id.compareTo(b.person.id);
-    if (byPerson != 0) return byPerson;
-    final byKind = _rank(a).compareTo(_rank(b));
-    if (byKind != 0) return byKind;
-    return switch ((a, b)) {
-      (DueReminder(reminder: final x), DueReminder(reminder: final y)) =>
-        x.createdAt.compareTo(y.createdAt),
-      (DueFollowUp(event: final x), DueFollowUp(event: final y)) =>
-        x.startsAt.compareTo(y.startsAt),
-      _ => 0,
-    };
-  });
+  due.sort(_compare);
   return due;
+}
+
+/// What is due on exactly [day] (#378), for the Calendar to look ahead: the
+/// rules of [dueToday], but "on [day]" where it says "on or before", and
+/// its LRP check only on the first day Today asks about it. Never
+/// [DueNext], a reaction to a tick. Empty before [today]: the late ones
+/// live on Today.
+List<Due> dueOn(
+  List<Person> people,
+  List<Workflow> workflows,
+  DateTime day,
+  DateTime today, {
+  List<CalendarEvent> events = const [],
+}) {
+  if (day.isBefore(today)) return const [];
+  final byId = {for (final person in people) person.id: person};
+  final due = <Due>[
+    for (final person in people) ...[
+      for (final reminder in person.reminders)
+        if (reminder.dueOn == day) DueReminder(person, reminder),
+      if (loyaltyRenewal(person, day) case final renewal?
+          when DueLoyalty(person, renewal).day == day)
+        DueLoyalty(person, renewal),
+      if (progressOf(person, findWorkflow(workflows, person.place?.workflowId))
+          case final OnStep step when step.due == day)
+        DueStep(person, step),
+    ],
+    for (final event in events)
+      if (!event.day.isBefore(day))
+        for (final attendee in event.attendees)
+          if (attendee.followUpOn == day)
+            if (byId[attendee.personId] case final person?)
+              DueFollowUp(person, event, attendee),
+  ]..sort(_compare);
+  return due;
+}
+
+/// [due], sorted as [dueOn], cut into one run per person: a row each.
+List<List<Due>> byPerson(List<Due> due) {
+  final runs = <List<Due>>[];
+  for (final item in due) {
+    if (runs.isNotEmpty && runs.last.first.person.id == item.person.id) {
+      runs.last.add(item);
+    } else {
+      runs.add([item]);
+    }
+  }
+  return runs;
+}
+
+int _compare(Due a, Due b) {
+  final byDay = a.day.compareTo(b.day);
+  if (byDay != 0) return byDay;
+  final byName = searchKey(a.person.name).compareTo(searchKey(b.person.name));
+  if (byName != 0) return byName;
+  final byPerson = a.person.id.compareTo(b.person.id);
+  if (byPerson != 0) return byPerson;
+  final byKind = _rank(a).compareTo(_rank(b));
+  if (byKind != 0) return byKind;
+  return switch ((a, b)) {
+    (DueReminder(reminder: final x), DueReminder(reminder: final y)) =>
+      x.createdAt.compareTo(y.createdAt),
+    (DueFollowUp(event: final x), DueFollowUp(event: final y)) =>
+      x.startsAt.compareTo(y.startsAt),
+    _ => 0,
+  };
 }
 
 int _rank(Due due) => switch (due) {

@@ -5,10 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/people_block.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -61,11 +65,19 @@ class WeekList extends StatefulWidget {
     required this.onToggleTask,
     required this.onOpenTask,
     this.busy = const {},
+    this.people = const PeopleAhead.none(),
+    this.model = BusinessModel.other,
+    this.onOpenPerson,
     super.key,
   });
 
   final AsyncValue<List<CalendarEvent>> events;
   final List<Task> tasks;
+
+  /// Who is due when (#378): each day's People block, folded.
+  final PeopleAhead people;
+  final BusinessModel model;
+  final void Function(Person person)? onOpenPerson;
 
   /// The week's 7 days, as `weekDays`.
   final List<DateTime> days;
@@ -128,15 +140,28 @@ class _WeekListState extends State<WeekList> {
                 selected: day == widget.selected,
                 today: day == widget.today,
               ),
-              ...switch ((tasksOn(widget.tasks, day), eventsOn(list, day))) {
-                ([], []) => [Text(l10n.calendarNothingPlanned, style: muted)],
-                (final tasks, final events) => [
+              ...switch ((
+                tasksOn(widget.tasks, day),
+                widget.people.on(day),
+                eventsOn(list, day),
+              )) {
+                ([], [], []) => [
+                  Text(l10n.calendarNothingPlanned, style: muted),
+                ],
+                (final tasks, final people, final events) => [
                   for (final task in tasks)
                     TaskRow(
                       task: task,
                       busy: widget.busy.contains(task.key),
                       onOpen: () => widget.onOpenTask(task),
                       onToggle: () => widget.onToggleTask(task),
+                    ),
+                  if (people.isNotEmpty)
+                    PeopleBlock(
+                      key: ValueKey(day),
+                      people: people,
+                      model: widget.model,
+                      onOpen: (person) => widget.onOpenPerson?.call(person),
                     ),
                   for (final event in events)
                     EventRow(event: event, onTap: () => widget.onOpen(event)),

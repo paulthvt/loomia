@@ -6,8 +6,10 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/domain/week_grid.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -41,15 +43,6 @@ double _textHeight(
   final height = painter.height;
   painter.dispose();
   return height;
-}
-
-/// What a screen reader says for a day: its events, and its open tasks if
-/// any, as the mobile month's.
-String _daySemantics(BuildContext context, DateTime day, int events, int open) {
-  final l10n = AppLocalizations.of(context);
-  return open > 0
-      ? l10n.calendarDaySemanticsTasks(day, events, open)
-      : l10n.calendarDaySemantics(day, events);
 }
 
 /// One line of [style] at the device's text scale.
@@ -92,6 +85,7 @@ class DesktopMonth extends StatelessWidget {
     required this.onDay,
     this.tasks = const [],
     this.onOpenTask,
+    this.people = const PeopleAhead.none(),
     super.key,
   });
 
@@ -104,6 +98,9 @@ class DesktopMonth extends StatelessWidget {
 
   /// Every task; each shows on its due day, done ones struck through.
   final List<Task> tasks;
+
+  /// Who is due when (#378): "N people" at the top of a day.
+  final PeopleAhead people;
   final DateTime selected;
   final DateTime today;
   final void Function(CalendarEvent event) onOpen;
@@ -159,6 +156,7 @@ class DesktopMonth extends StatelessWidget {
                         today: day == today,
                         events: byDay[day] ?? const [],
                         tasks: tasksOn(tasks, day),
+                        people: people.count(day),
                         onOpen: onOpen,
                         onOpenTask: onOpenTask,
                         onDay: onDay,
@@ -188,6 +186,7 @@ class _MonthCell extends StatelessWidget {
     required this.onOpen,
     required this.onOpenTask,
     required this.onDay,
+    this.people = 0,
   });
 
   static const double _badge = 26;
@@ -204,6 +203,9 @@ class _MonthCell extends StatelessWidget {
 
   /// The day's tasks, open first.
   final List<Task> tasks;
+
+  /// People due that day (#378): the first line, counted in "+N more".
+  final int people;
   final void Function(CalendarEvent event) onOpen;
   final void Function(Task task)? onOpenTask;
   final OpenDay onDay;
@@ -215,6 +217,12 @@ class _MonthCell extends StatelessWidget {
     final colors = LoomiaColors.of(context);
     final l10n = AppLocalizations.of(context);
     final chips = <(double Function(double width), Widget)>[
+      if (people > 0)
+        (
+          (width) => CalendarPeopleLine.heightFor(context, people, width),
+          // The day's label says it already.
+          ExcludeSemantics(child: CalendarPeopleLine(count: people)),
+        ),
       for (final task in tasks)
         (
           (width) => MonthTaskChip.heightFor(context, task, width),
@@ -253,11 +261,12 @@ class _MonthCell extends StatelessWidget {
           container: true,
           button: true,
           selected: selected,
-          label: _daySemantics(
-            context,
+          label: daySemantics(
+            l10n,
             day,
             events.length,
             tasks.where((task) => !task.done).length,
+            people,
           ),
           child: InkWell(
             onTap: () => onDay(day, _globalRect(context)),
@@ -436,6 +445,57 @@ class MonthEventChip extends StatelessWidget {
   }
 }
 
+/// "5 people" at the top of a desktop month day or in the desktop week's
+/// strip (#378, Figma "CalendarPeopleLine"): muted, no ring, no bar,
+/// quieter than a task or an event. [onTap] opens the day; in a month cell
+/// the cell takes the tap.
+class CalendarPeopleLine extends StatelessWidget {
+  const CalendarPeopleLine({required this.count, this.onTap, super.key});
+
+  static const double _vertical = 3;
+
+  final int count;
+  final VoidCallback? onTap;
+
+  static TextStyle? _style(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall
+          ?.copyWith(color: LoomiaColors.of(context).textMuted);
+
+  /// The height the line takes at [width].
+  static double heightFor(BuildContext context, int count, double width) =>
+      2 * _vertical +
+      _textHeight(
+        context,
+        AppLocalizations.of(context).calendarPeopleLine(count),
+        _style(context),
+        width - 2 * AppSpacing.xs,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final line = Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: _vertical,
+        horizontal: AppSpacing.xs,
+      ),
+      child: Text(
+        AppLocalizations.of(context).calendarPeopleLine(count),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: _style(context),
+      ),
+    );
+    final tap = onTap;
+    return tap == null
+        ? line
+        : InkWell(
+            onTap: tap,
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+            child: line,
+          );
+  }
+}
+
 /// A task inside a desktop month day or the desktop week's strip, sized and
 /// set as [MonthEventChip]: a hollow ring (the mobile month's hollow dot),
 /// its title on one line. Done: struck through and muted.
@@ -547,6 +607,7 @@ class WeekGrid extends StatelessWidget {
     this.tasks = const [],
     this.onOpenTask,
     this.now,
+    this.people = const PeopleAhead.none(),
     super.key,
   });
 
@@ -571,6 +632,9 @@ class WeekGrid extends StatelessWidget {
 
   /// Where the now line goes; none without it.
   final DateTime? now;
+
+  /// Who is due when (#378): "N people" in the strip, above the tasks.
+  final PeopleAhead people;
   final void Function(CalendarEvent event) onOpen;
   final OpenDay onDay;
 
@@ -589,6 +653,7 @@ class WeekGrid extends StatelessWidget {
     final timed = [
       for (final day in weekTasks) [...day.where((t) => t.dueTime != null)],
     ];
+    final due = [for (final day in days) people.count(day)];
     final range = hourRange(week, [
       for (final day in timed)
         for (final task in day) taskSpan(task.dueTime!),
@@ -613,13 +678,14 @@ class WeekGrid extends StatelessWidget {
                       today: day == today,
                       count: eventsOn(week, day).length,
                       open: weekTasks[index].where((t) => !t.done).length,
+                      people: due[index],
                       onDay: onDay,
                     ),
                   ),
               ],
             ),
           ),
-          if (untimed.any((day) => day.isNotEmpty))
+          if (untimed.any((day) => day.isNotEmpty) || due.any((n) => n > 0))
             ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.sizeOf(context).height * _maxStrip,
@@ -630,7 +696,7 @@ class WeekGrid extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(width: _gutter),
-                    for (final day in untimed)
+                    for (final (index, day) in untimed.indexed)
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -640,6 +706,14 @@ class WeekGrid extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             spacing: _MonthCell._gap,
                             children: [
+                              if (due[index] > 0)
+                                Builder(
+                                  builder: (line) => CalendarPeopleLine(
+                                    count: due[index],
+                                    onTap: () =>
+                                        onDay(days[index], _globalRect(line)),
+                                  ),
+                                ),
                               for (final task in day)
                                 MonthTaskChip(
                                   task: task,
@@ -733,6 +807,7 @@ class _ColumnHeader extends StatelessWidget {
     required this.count,
     required this.open,
     required this.onDay,
+    this.people = 0,
   });
 
   static const double _circle = 36;
@@ -745,6 +820,9 @@ class _ColumnHeader extends StatelessWidget {
 
   /// Open tasks due that day.
   final int open;
+
+  /// People due that day (#378).
+  final int people;
   final OpenDay onDay;
 
   @override
@@ -756,7 +834,13 @@ class _ColumnHeader extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: _daySemantics(context, day, count, open),
+      label: daySemantics(
+        AppLocalizations.of(context),
+        day,
+        count,
+        open,
+        people,
+      ),
       excludeSemantics: true,
       child: InkWell(
         onTap: () => onDay(day, _globalRect(context)),

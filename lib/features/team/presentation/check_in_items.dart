@@ -32,7 +32,7 @@ List<Widget> checkInItems(
       onAction: onToggle,
     ),
     if (collapsed && onToggle != null)
-      _Summary(
+      PeopleSummary(
         names: [for (final checkIn in due) checkIn.person.name],
         label: l10n.todayCatchUpSummary(due.length),
         onTap: onToggle,
@@ -59,12 +59,14 @@ List<Widget> checkInItems(
 ];
 
 /// The folded section: their faces and how many. One button for a screen
-/// reader, so the count is not read twice.
-class _Summary extends StatelessWidget {
-  const _Summary({
+/// reader, so the count is not read twice. Also the Calendar's folded
+/// People block (#378).
+class PeopleSummary extends StatelessWidget {
+  const PeopleSummary({
     required this.names,
     required this.label,
     required this.onTap,
+    super.key,
   });
 
   final List<String> names;

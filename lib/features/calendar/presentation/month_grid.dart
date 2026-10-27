@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
+import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,6 +18,7 @@ class MonthGrid extends StatelessWidget {
     required this.counts,
     required this.onSelect,
     this.taskCounts = const {},
+    this.people = const PeopleAhead.none(),
     super.key,
   });
 
@@ -30,6 +32,9 @@ class MonthGrid extends StatelessWidget {
 
   /// Open tasks per local day, as `openTasksPerDay`.
   final Map<DateTime, int> taskCounts;
+
+  /// Who is due when: the line under a day.
+  final PeopleAhead people;
   final ValueChanged<DateTime> onSelect;
 
   @override
@@ -43,6 +48,7 @@ class MonthGrid extends StatelessWidget {
     today: today,
     counts: counts,
     taskCounts: taskCounts,
+    people: people,
     onSelect: onSelect,
   );
 }
@@ -57,6 +63,7 @@ class WeekStrip extends StatelessWidget {
     required this.counts,
     required this.onSelect,
     this.taskCounts = const {},
+    this.people = const PeopleAhead.none(),
     super.key,
   });
 
@@ -66,6 +73,7 @@ class WeekStrip extends StatelessWidget {
   final DateTime today;
   final Map<DateTime, int> counts;
   final Map<DateTime, int> taskCounts;
+  final PeopleAhead people;
   final ValueChanged<DateTime> onSelect;
 
   @override
@@ -76,6 +84,7 @@ class WeekStrip extends StatelessWidget {
     today: today,
     counts: counts,
     taskCounts: taskCounts,
+    people: people,
     onSelect: onSelect,
   );
 }
@@ -89,6 +98,7 @@ class _DayRows extends StatelessWidget {
     required this.today,
     required this.counts,
     required this.taskCounts,
+    required this.people,
     required this.onSelect,
   });
 
@@ -98,6 +108,7 @@ class _DayRows extends StatelessWidget {
   final DateTime today;
   final Map<DateTime, int> counts;
   final Map<DateTime, int> taskCounts;
+  final PeopleAhead people;
   final ValueChanged<DateTime> onSelect;
 
   @override
@@ -139,6 +150,7 @@ class _DayRows extends StatelessWidget {
                     past: day.isBefore(today),
                     count: counts[day] ?? 0,
                     taskCount: taskCounts[day] ?? 0,
+                    people: people.count(day),
                     onTap: () => onSelect(day),
                   ),
                 ),
@@ -162,6 +174,7 @@ class DayCell extends StatelessWidget {
     required this.count,
     required this.onTap,
     this.taskCount = 0,
+    this.people = 0,
     super.key,
   });
 
@@ -169,6 +182,10 @@ class DayCell extends StatelessWidget {
   static const double _ring = 1.5;
   static const double _dot = 6;
   static const int _maxDots = 3;
+
+  /// The people marker (Figma "PeopleMarker"): 12 × 2, 2 under the dots.
+  static const double _marker = 12;
+  static const double _markerThickness = 2;
 
   final DateTime day;
   final bool inMonth;
@@ -179,6 +196,9 @@ class DayCell extends StatelessWidget {
 
   /// Open tasks due that day.
   final int taskCount;
+
+  /// People due that day (#378): a line under the dots, from today on.
+  final int people;
   final VoidCallback onTap;
 
   @override
@@ -204,74 +224,105 @@ class DayCell extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: taskCount > 0
-          ? l10n.calendarDaySemanticsTasks(day, count, taskCount)
-          : l10n.calendarDaySemantics(day, count),
+      label: daySemantics(l10n, day, count, taskCount, people),
       excludeSemantics: true,
       // The ink only on the number, so hover and splash centre on it; the
       // square is the minimum tap size, and has the number's spacing.
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox.square(
-              dimension: kMinInteractiveDimension,
-              child: InkWell(
-                onTap: onTap,
-                customBorder: const CircleBorder(),
-                child: Center(
-                  child: Container(
-                    width: _circle,
-                    height: _circle,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: selected ? scheme.primary : null,
-                      border: today && !selected
-                          ? Border.all(color: scheme.primary, width: _ring)
-                          : null,
-                    ),
-                    child: Text(
-                      '${day.day}',
-                      style: number?.copyWith(color: ink),
-                    ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox.square(
+            dimension: kMinInteractiveDimension,
+            child: InkWell(
+              onTap: onTap,
+              customBorder: const CircleBorder(),
+              child: Center(
+                child: Container(
+                  width: _circle,
+                  height: _circle,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? scheme.primary : null,
+                    border: today && !selected
+                        ? Border.all(color: scheme.primary, width: _ring)
+                        : null,
+                  ),
+                  child: Text(
+                    '${day.day}',
+                    style: number?.copyWith(color: ink),
                   ),
                 ),
               ),
             ),
-            SizedBox(
-              height: _dot,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                spacing: AppSpacing.xs,
-                children: [
-                  for (var i = 0; i < events; i++)
-                    Container(
-                      width: _dot,
-                      height: _dot,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: dot,
-                      ),
+          ),
+          SizedBox(
+            height: _dot,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: AppSpacing.xs,
+              children: [
+                for (var i = 0; i < events; i++)
+                  Container(
+                    width: _dot,
+                    height: _dot,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: dot,
                     ),
-                  // Hollow, so a day with only tasks reads apart from one
-                  // with an event.
-                  for (var i = 0; i < tasks; i++)
-                    Container(
-                      width: _dot,
-                      height: _dot,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: dot, width: _ring),
-                      ),
+                  ),
+                // Hollow, so a day with only tasks reads apart from one
+                // with an event.
+                for (var i = 0; i < tasks; i++)
+                  Container(
+                    width: _dot,
+                    height: _dot,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: dot, width: _ring),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+          // People due (#378): one quiet line in the space under the
+          // dots, so the cell keeps its height.
+          SizedBox(
+            height: AppSpacing.xs,
+            child: people > 0 && !past
+                ? Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      key: const ValueKey('people-marker'),
+                      width: _marker,
+                      height: _markerThickness,
+                      color: colors.textMuted,
+                    ),
+                  )
+                : null,
+          ),
+        ],
       ),
     );
   }
 }
+
+/// What a screen reader says for a day of the Calendar: its date, its
+/// events, then its open tasks and the people due, when there are any.
+String daySemantics(
+  AppLocalizations l10n,
+  DateTime day,
+  int events,
+  int tasks,
+  int people,
+) => switch ((tasks > 0, people > 0)) {
+  (true, true) => l10n.calendarDaySemanticsTasksPeople(
+    day,
+    events,
+    tasks,
+    people,
+  ),
+  (true, false) => l10n.calendarDaySemanticsTasks(day, events, tasks),
+  (false, true) => l10n.calendarDaySemanticsPeople(day, events, people),
+  (false, false) => l10n.calendarDaySemantics(day, events),
+};

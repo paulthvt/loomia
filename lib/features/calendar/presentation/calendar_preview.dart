@@ -2,6 +2,7 @@ import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
@@ -270,6 +271,41 @@ final _tasks = [
   ),
 ];
 
+/// People due (#378): with Sarah's follow-up, five on the 8th (Léa twice),
+/// Amélie's follow-up on the 9th, two on the 15th.
+final _due = [
+  _remind('d1', 'Camille Roux', [('Call back about the diffuser', _selected)]),
+  _remind('d2', 'Hugo Martin', [('Follow up about the workshop', _selected)]),
+  _remind('d3', 'Léa Fontaine', [
+    ('Book the unboxing call', _selected),
+    ('Send the samples', _selected),
+  ]),
+  _remind('d4', 'Nina Garnier', [('Send a first message', _selected)]),
+  _remind('d5', 'Julie Martin', [
+    ('Ask how the oils went', DateTime(2026, 10, 15)),
+  ]),
+  _remind('d6', 'Paul Girard', [
+    ('Send the catalogue', DateTime(2026, 10, 15)),
+  ]),
+];
+
+Person _remind(String id, String name, List<(String, DateTime)> reminders) =>
+    Person(
+      id: id,
+      name: name,
+      stage: Stage.prospect,
+      stageSince: DateTime(2026, 9),
+      reminders: [
+        for (final (index, (text, on)) in reminders.indexed)
+          (
+            id: '$id-$index',
+            text: text,
+            dueOn: on,
+            createdAt: DateTime(2026, 10, 1, index),
+          ),
+      ],
+    );
+
 final _workshopSteps = [
   const EventWorkflowStep(
     id: 'remind',
@@ -289,6 +325,12 @@ Widget _calendar({
 }) => CalendarView(
   events: AsyncData(_events),
   tasks: _tasks,
+  people: PeopleAhead(
+    people: [..._people, ..._due],
+    workflows: const [],
+    events: _events,
+    today: _today,
+  ),
   selection: (mode: mode, month: DateTime(2026, 10), day: _selected),
   today: _today,
   // The desktop week's now line, mid-morning.

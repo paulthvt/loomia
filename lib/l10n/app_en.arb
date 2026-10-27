@@ -2713,6 +2713,51 @@
       "tasks": { "type": "int" }
     }
   },
+  "calendarDaySemanticsPeople": "{day}, {events, plural, =0{no events} =1{one event} other{{events} events}}, {people, plural, =1{one person} other{{people} people}}",
+  "@calendarDaySemanticsPeople": {
+    "description": "What a screen reader says for a day in the Calendar that has people to follow up but no open tasks: the date, how many events, then how many people.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "events": { "type": "int" },
+      "people": { "type": "int" }
+    }
+  },
+  "calendarDaySemanticsTasksPeople": "{day}, {events, plural, =0{no events} =1{one event} other{{events} events}}, {tasks, plural, =1{one task} other{{tasks} tasks}}, {people, plural, =1{one person} other{{people} people}}",
+  "@calendarDaySemanticsTasksPeople": {
+    "description": "What a screen reader says for a day in the Calendar that has open tasks and people to follow up: the date, how many events, how many open tasks, then how many people.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" },
+      "events": { "type": "int" },
+      "tasks": { "type": "int" },
+      "people": { "type": "int" }
+    }
+  },
+  "calendarPeopleSection": "People",
+  "@calendarPeopleSection": {
+    "description": "Header of the block under a day in the Calendar listing the people to follow up that day (their workflow step, reminders, invitations). Shown in capitals."
+  },
+  "calendarPeopleSummary": "{count, plural, =1{One person to follow up} other{{count} people to follow up}}",
+  "@calendarPeopleSummary": {
+    "description": "The folded People block under a day in the Calendar: how many people are due to be followed up that day. Tapping it shows them.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "calendarPeopleMore": "{reason} · +{count}",
+  "@calendarPeopleMore": {
+    "description": "A person's row in the Calendar's People block when more than one thing is due with them that day: the first one, then how many more.",
+    "placeholders": {
+      "reason": { "type": "String", "example": "Book the unboxing call" },
+      "count": { "type": "int" }
+    }
+  },
+  "calendarPeopleLine": "{count, plural, =1{1 person} other{{count} people}}",
+  "@calendarPeopleLine": {
+    "description": "Quiet line at the top of a day in the desktop Calendar (month cell, week strip): how many people are due to be followed up that day.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "calendarAddEvent": "Event",
   "@calendarAddEvent": {
     "description": "Item of the menu that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
