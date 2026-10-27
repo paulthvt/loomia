@@ -90,12 +90,11 @@ class _AnimatedRowsState extends State<AnimatedRows> {
       next.insert(at, row);
       if (row.alive) {
         row.alive = false;
-        final key = row.child.key!;
-        _drops[key] = Timer(_lingers(), () {
-          if (!mounted) return;
-          setState(() => _rows.removeWhere((each) => each.child.key == key));
-          _drops.remove(key);
-        });
+        // A sliding slot empties itself; prune it once it has closed.
+        if (widget.slideOut) {
+          final key = row.child.key!;
+          _drops[key] = Timer(_lingers(), () => _drop(key));
+        }
       }
     }
     _rows
@@ -103,12 +102,17 @@ class _AnimatedRowsState extends State<AnimatedRows> {
       ..addAll(next);
   }
 
-  /// How long a gone row stays in the tree: its whole exit.
+  void _drop(Key key) {
+    _drops.remove(key)?.cancel();
+    if (!mounted) return;
+    setState(() => _rows.removeWhere((row) => row.child.key == key));
+  }
+
+  /// How long a gone sliding row stays in the tree: its whole exit.
   Duration _lingers() =>
       widget.delay +
-      (widget.slideOut
-          ? context.motion(AppMotion.medium) + context.motion(AppMotion.slow)
-          : context.motion(AppMotion.medium));
+      context.motion(AppMotion.medium) +
+      context.motion(AppMotion.slow);
 
   @override
   void dispose() {
@@ -141,6 +145,7 @@ class _AnimatedRowsState extends State<AnimatedRows> {
                 fresh: row.fresh,
                 delay: widget.delay,
                 padding: padding,
+                onGone: () => _drop(key),
                 child: row.child,
               ),
       );
@@ -158,13 +163,16 @@ class _SlotKey extends ValueKey<Key> {
   const _SlotKey(super.value);
 }
 
-/// One row growing in (fresh) or folding out (not [visible]).
+/// One row growing in (fresh) or folding out (not [visible]), [delay] first.
+/// The delay is the start of the animation itself, not a timer, so a test's
+/// pumpAndSettle and a hot reload see one movement. [onGone] when folded.
 class _Grow extends StatefulWidget {
   const _Grow({
     required this.visible,
     required this.fresh,
     required this.delay,
     required this.padding,
+    required this.onGone,
     required this.child,
     super.key,
   });
@@ -173,6 +181,7 @@ class _Grow extends StatefulWidget {
   final bool fresh;
   final Duration delay;
   final EdgeInsets padding;
+  final VoidCallback onGone;
   final Widget child;
 
   @override
@@ -183,21 +192,33 @@ class _GrowState extends State<_Grow> with SingleTickerProviderStateMixin {
   late final _controller = AnimationController(
     vsync: this,
     value: widget.fresh ? 0 : 1,
-  );
-  late final _curved = CurvedAnimation(
-    parent: _controller,
-    curve: AppMotion.decelerate,
-    // Leaving accelerates: slow at first, in time.
-    reverseCurve: AppMotion.accelerate.flipped,
-  );
-  Timer? _wait;
+  )..addStatusListener(_status);
+  CurvedAnimation? _curved;
+  var _started = false;
+
+  void _status(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed && !widget.visible) {
+      widget.onGone();
+    }
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _controller.duration = context.motion(AppMotion.medium);
-    if (widget.fresh && _controller.value == 0 && _wait == null) {
-      _later(_controller.forward);
+    final move = context.motion(AppMotion.medium);
+    final total = widget.delay + move;
+    final wait = widget.delay.inMicroseconds / total.inMicroseconds;
+    _controller.duration = total;
+    _curved?.dispose();
+    _curved = CurvedAnimation(
+      parent: _controller,
+      curve: Interval(wait, 1, curve: AppMotion.decelerate),
+      // Played backwards: the wait is at the top, and leaving accelerates.
+      reverseCurve: Interval(0, 1 - wait, curve: AppMotion.accelerate.flipped),
+    );
+    if (widget.fresh && !_started) {
+      _started = true;
+      _controller.forward();
     }
   }
 
@@ -205,31 +226,19 @@ class _GrowState extends State<_Grow> with SingleTickerProviderStateMixin {
   void didUpdateWidget(_Grow old) {
     super.didUpdateWidget(old);
     if (widget.visible == old.visible) return;
-    _later(widget.visible ? _controller.forward : _controller.reverse);
-  }
-
-  void _later(TickerFuture Function() run) {
-    _wait?.cancel();
-    if (widget.delay == Duration.zero) {
-      run();
-      return;
-    }
-    _wait = Timer(widget.delay, () {
-      if (mounted) run();
-    });
+    widget.visible ? _controller.forward() : _controller.reverse();
   }
 
   @override
   void dispose() {
-    _wait?.cancel();
-    _curved.dispose();
+    _curved?.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final curved = _curved;
+    final curved = _curved!;
     return SizeTransition(
       sizeFactor: curved,
       alignment: Alignment.topCenter,

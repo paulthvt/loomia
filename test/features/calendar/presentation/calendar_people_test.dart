@@ -11,6 +11,7 @@ import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
+import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -49,6 +50,7 @@ Future<List<String>> _pump(
   bool desktop = false,
   DateTime? selected,
   ValueChanged<DateTime>? onSelect,
+  bool settle = true,
 }) async {
   tester.view
     ..physicalSize = desktop ? const Size(1440, 900) : const Size(390, 1600)
@@ -92,7 +94,7 @@ Future<List<String>> _pump(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) await tester.pumpAndSettle();
   return opened;
 }
 
@@ -222,6 +224,46 @@ void main() {
       await tester.tap(find.text('Hugo Martin'));
 
       expect(opened, ['h']);
+    });
+
+    testWidgets('Show eases the height instead of jumping (#384)', (
+      tester,
+    ) async {
+      await _pump(tester, people: _people);
+      final block = find.byType(FoldBody);
+      final folded = tester.getSize(block).height;
+
+      await tester.tap(find.text('Show'));
+      await tester.pump();
+      await tester.pump(AppMotion.medium ~/ 2);
+      final halfway = tester.getSize(block).height;
+      await tester.pumpAndSettle();
+      final open = tester.getSize(block).height;
+
+      expect(halfway, greaterThan(folded));
+      expect(halfway, lessThan(open));
+    });
+
+    testWidgets('another day fades in under the old one (#384)', (
+      tester,
+    ) async {
+      final people = [
+        ..._people,
+        _person('z', 'Zoé', [_reminder('z', DateTime(2026, 10, 9))]),
+      ];
+      await _pump(tester, people: people);
+      await _pump(
+        tester,
+        people: people,
+        selected: DateTime(2026, 10, 9),
+        settle: false,
+      );
+      await tester.pump(AppMotion.medium ~/ 2);
+      // Both days, the old one fading over the new.
+      expect(find.text('5 people to follow up'), findsOneWidget);
+      expect(find.text('One person to follow up'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('5 people to follow up'), findsNothing);
     });
 
     testWidgets('another day starts folded again', (tester) async {

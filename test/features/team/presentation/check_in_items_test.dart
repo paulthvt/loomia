@@ -44,7 +44,8 @@ String _chip(int days) {
     onCheckIn: (_) {},
   );
   expect(header, isA<SectionHeader>());
-  return ((row as ActionItem).chip! as DateChip).label;
+  final item = (row as FoldBody).rows.single as ActionItem;
+  return (item.chip! as DateChip).label;
 }
 
 void main() {

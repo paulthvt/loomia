@@ -229,10 +229,13 @@ Easing: standard `cubic(0.2, 0, 0, 1)`, decelerate `cubic(0, 0, 0, 1)` for
 entering, accelerate `cubic(0.3, 0, 1, 1)` for leaving.
 
 Rules: no bounce or overshoot; no scale above 1.02; completing an action is a
-check, then the card slides out to the start over 320ms while its slot closes,
-the next step (if any) sliding in from the end at once (no confetti, no counter, no streak — principle
-#5); no looping animation except an indeterminate loader; all of it respects
-"reduce motion" by collapsing to a 120ms opacity change.
+check drawn in the ring (240ms), then the card slides out to the start over
+320ms while its slot closes, the next step (if any) sliding in from the end at
+once (no confetti, no counter, no streak — principle #5); a list animates the
+rows the user added or removed (240ms, once the sheet or dialog that did it
+has closed), and a list that appears for the first time does not; no looping
+animation except an indeterminate loader; all of it respects "reduce motion"
+by collapsing to a 120ms opacity change.
 
 Fluidity comes from every screen using the same four durations and three curves,
 not from springs. If a new interaction does not fit the table below, the
@@ -250,6 +253,10 @@ interaction is wrong before the table is.
 | Inline message appearing | 180ms | decelerate | `TweenAnimationBuilder` over opacity + `Align.heightFactor` |
 | Progress bar value | 240ms | standard | `TweenAnimationBuilder` |
 | Completed card out, next one in | 320ms | decelerate | `SlideSwap` (`lib/core/ui/slide_swap.dart`) |
+| Tick: ring fills, check drawn, then the card's slide | 240ms, then 320ms | decelerate | `TickRing` (`lib/core/ui/tick_ring.dart`); `SlideSwap` and `FadeSwap` wait for its check |
+| Row added to or removed from a list | 240ms | decelerate in, accelerate out | `AnimatedRows` (`lib/core/ui/animated_rows.dart`) |
+| One thing replacing another in place (spinner → content, another day, done state) | 180–320ms | decelerate in, accelerate out | `FadeSwap` (`lib/core/ui/fade_swap.dart`): the new one is there at once, the old fades over it |
+| Show / Hide of a folded section | 240ms | standard | `FoldBody` (`check_in_items.dart`), an `AnimatedSize` |
 | List reorder, tab change | 240ms | standard | `AnimatedSize` / `AnimatedList` |
 | Page transition | platform | platform | a plain `MaterialPage` — the platform's own transition |
 | Sheet, dialog | 320ms | standard | Material defaults from the component themes |

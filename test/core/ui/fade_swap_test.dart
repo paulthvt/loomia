@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
+import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:material_ui/material_ui.dart';
 
 Future<void> _pump(WidgetTester tester, String label, double height) =>
@@ -62,6 +63,48 @@ void main() {
       ),
       findsWidgets,
     );
+  });
+
+  testWidgets('waits for a check being drawn in the old child', (tester) async {
+    Widget ringed({required bool ticked}) => MaterialApp(
+      theme: AppTheme.light,
+      home: Scaffold(
+        body: SizedBox(
+          width: 300,
+          child: FadeSwap(
+            duration: AppMotion.slow,
+            child: Row(
+              key: const ValueKey('due'),
+              children: [
+                const Text('Last row'),
+                TickRing(selected: ticked, tooltip: 'Tick'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpWidget(ringed(ticked: false));
+    await tester.pumpWidget(ringed(ticked: true));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: SizedBox(
+            width: 300,
+            child: FadeSwap(
+              duration: AppMotion.slow,
+              child: Text('All done', key: ValueKey('done')),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('All done'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.pump();
+    expect(find.text('All done'), findsOneWidget);
   });
 
   testWidgets('the same key: nothing moves', (tester) async {

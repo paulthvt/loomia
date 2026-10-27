@@ -3,8 +3,10 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
@@ -359,39 +361,68 @@ class _ContactListState extends State<ContactList> {
               ),
             ],
             const SizedBox(height: AppSpacing.ms),
-            if (shown.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                child: Text(
-                  l10n.contactsNoMatch,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: LoomiaColors.of(context).textMuted),
-                ),
-              )
-            else
-              for (final person in shown)
-                ContactRow(
-                  name: person.name,
-                  photoPath: person.photoPath,
-                  subtitle: contactSubtitle(l10n, person),
-                  titleTrailing: switch (tagsOf(person.tagIds, widget.tags)) {
-                    [] => null,
-                    final tags => TagDots(
-                      tags: [
-                        for (final tag in tags)
-                          (name: tag.name, color: tag.color),
-                      ],
-                    ),
-                  },
-                  trailing: LoomiaChip(label: stageLabel(l10n, person.stage)),
-                  selected: person.id == widget.selectedId,
-                  checked: pickedIds?.contains(person.id),
-                  onTap: pickedIds == null
-                      ? () => widget.onOpen(person)
-                      : () => _toggle(person.id),
-                  onLongPress: () => _toggle(person.id),
-                ),
+            // A filter chip: a new list, faded in. Typing: a new list, at once.
+            // Otherwise a person added or deleted grows in or folds out, once
+            // the sheet or dialog has closed.
+            FadeSwap(
+              duration: AppMotion.quick,
+              child: KeyedSubtree(
+                key: ValueKey((
+                  'filter',
+                  _stage,
+                  _loyalty,
+                  (tagFilter.toList()..sort()).join(','),
+                )),
+                child: shown.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.lg,
+                        ),
+                        child: Text(
+                          l10n.contactsNoMatch,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: LoomiaColors.of(context).textMuted,
+                              ),
+                        ),
+                      )
+                    : AnimatedRows(
+                        key: ValueKey(('rows', _query)),
+                        delay: context.motion(AppMotion.slow),
+                        children: [
+                          for (final person in shown)
+                            ContactRow(
+                              key: ValueKey(person.id),
+                              name: person.name,
+                              photoPath: person.photoPath,
+                              subtitle: contactSubtitle(l10n, person),
+                              titleTrailing: switch (tagsOf(
+                                person.tagIds,
+                                widget.tags,
+                              )) {
+                                [] => null,
+                                final tags => TagDots(
+                                  tags: [
+                                    for (final tag in tags)
+                                      (name: tag.name, color: tag.color),
+                                  ],
+                                ),
+                              },
+                              trailing: LoomiaChip(
+                                label: stageLabel(l10n, person.stage),
+                              ),
+                              selected: person.id == widget.selectedId,
+                              checked: pickedIds?.contains(person.id),
+                              onTap: pickedIds == null
+                                  ? () => widget.onOpen(person)
+                                  : () => _toggle(person.id),
+                              onLongPress: () => _toggle(person.id),
+                            ),
+                        ],
+                      ),
+              ),
+            ),
           ],
         ],
       ),

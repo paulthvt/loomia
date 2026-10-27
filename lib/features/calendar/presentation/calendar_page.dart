@@ -10,6 +10,8 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/ui/animated_rows.dart';
+import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -459,37 +461,45 @@ class CalendarView extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               pager,
             ];
-            final below = week
-                ? WeekList(
-                    events: events,
-                    tasks: tasks,
-                    busy: busy,
-                    days: days,
-                    selected: selection.day,
-                    today: today,
-                    onOpen: onOpen,
-                    onToggleTask: onToggleTask,
-                    onOpenTask: onOpenTask,
-                    onRetry: onRetry,
-                    people: people,
-                    model: model,
-                    onOpenPerson: onOpenPerson,
-                  )
-                : DaySection(
-                    events: events,
-                    tasks: tasks,
-                    busy: busy,
-                    day: selection.day,
-                    onOpen: onOpen,
-                    onToggleTask: onToggleTask,
-                    onOpenTask: onOpenTask,
-                    onAdd: onAdd,
-                    onAddTask: onAddTask,
-                    onRetry: onRetry,
-                    people: people,
-                    model: model,
-                    onOpenPerson: onOpenPerson,
-                  );
+            final below = FadeSwap(
+              duration: AppMotion.medium,
+              // The month's selected day: another day, another list. The
+              // week list holds every day, so picking one doesn't swap it.
+              child: KeyedSubtree(
+                key: ValueKey(week ? 'week' : selection.day),
+                child: week
+                    ? WeekList(
+                        events: events,
+                        tasks: tasks,
+                        busy: busy,
+                        days: days,
+                        selected: selection.day,
+                        today: today,
+                        onOpen: onOpen,
+                        onToggleTask: onToggleTask,
+                        onOpenTask: onOpenTask,
+                        onRetry: onRetry,
+                        people: people,
+                        model: model,
+                        onOpenPerson: onOpenPerson,
+                      )
+                    : DaySection(
+                        events: events,
+                        tasks: tasks,
+                        busy: busy,
+                        day: selection.day,
+                        onOpen: onOpen,
+                        onToggleTask: onToggleTask,
+                        onOpenTask: onOpenTask,
+                        onAdd: onAdd,
+                        onAddTask: onAddTask,
+                        onRetry: onRetry,
+                        people: people,
+                        model: model,
+                        onOpenPerson: onOpenPerson,
+                      ),
+              ),
+            );
             const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
             // The bottom inset keeps the last row clear of the add button.
             const bottom = AppSpacing.xxxl + AppSpacing.lg;
@@ -1010,6 +1020,7 @@ class DaySection extends StatelessWidget {
       final onDay = <Widget>[
         for (final task in tasksOn(tasks, day))
           TaskRow(
+            key: ValueKey('task:${task.id}'),
             task: task,
             busy: busy.contains(task.key),
             onOpen: () => onOpenTask?.call(task),
@@ -1024,7 +1035,11 @@ class DaySection extends StatelessWidget {
             onOpen: (person) => onOpenPerson?.call(person),
           ),
         for (final event in eventsOn(list, day))
-          EventRow(event: event, onTap: () => onOpen(event)),
+          EventRow(
+            key: ValueKey('event:${event.id}'),
+            event: event,
+            onTap: () => onOpen(event),
+          ),
       ];
       body = onDay.isEmpty
           ? [
@@ -1036,10 +1051,14 @@ class DaySection extends StatelessWidget {
               ),
             ]
           : [
-              for (final (index, row) in onDay.indexed) ...[
-                if (index > 0) const SizedBox(height: AppSpacing.ms),
-                row,
-              ],
+              // A task or event added or deleted grows in or folds out once
+              // its sheet has closed; another day is a new list.
+              AnimatedRows(
+                key: ValueKey(('rows', day)),
+                spacing: AppSpacing.ms,
+                delay: context.motion(AppMotion.slow),
+                children: onDay,
+              ),
             ];
     }
 
