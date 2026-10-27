@@ -735,5 +735,443 @@
         "type": "String"
       }
     }
+  },
+  "tickDoneFor": "Terminé pour {name} : {task}",
+  "@tickDoneFor": {
+    "description": "Snackbar after ticking a step or a reminder on someone, shown with an Undo action. name is the person, task the step or reminder text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "tickDoneLoyalty": "LRP vérifié pour {name}",
+  "@tickDoneLoyalty": {
+    "description": "Snackbar after checking in about someone's LRP (loyalty order) renewal on Today, shown with an Undo action. name is the person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tickDone": "Terminé : {task}",
+  "@tickDone": {
+    "description": "Snackbar after ticking an event's checklist step on Today, shown with an Undo action. task is the step.",
+    "placeholders": {
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "tickUndo": "Annuler",
+  "@tickUndo": {
+    "description": "Action of the snackbar shown after a tick: takes the tick back, as if it never happened."
+  },
+  "tickUndoStale": "Ça a changé entre-temps, l’action n’a donc pas été annulée.",
+  "@tickUndoStale": {
+    "description": "Snackbar when Undo is refused because the person was changed since the tick (for example on another device). Nothing was changed."
+  },
+  "todaySectionPeople": "Personnes",
+  "@todaySectionPeople": {
+    "description": "Section heading above the people worth a message today."
+  },
+  "todaySectionTasks": "Tâches",
+  "@todaySectionTasks": {
+    "description": "Section heading above the tasks due today."
+  },
+  "todayAddTask": "Ajouter une tâche",
+  "@todayAddTask": {
+    "description": "Action label in the Tasks section header to create a new task."
+  },
+  "todayHeadlineTasks": "{count, plural, =1{Une tâche aujourd’hui} other{{count} tâches aujourd’hui}}",
+  "@todayHeadlineTasks": {
+    "description": "The Today hero sentence when there are only tasks, no people due.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayHeadlineBoth": "{people, plural, =1{Une personne} other{{people} personnes}} et {tasks, plural, =1{une tâche} other{{tasks} tâches}} aujourd’hui",
+  "@todayHeadlineBoth": {
+    "description": "The Today hero sentence when there are both people and tasks due.",
+    "placeholders": {
+      "people": {
+        "type": "int"
+      },
+      "tasks": {
+        "type": "int"
+      }
+    }
+  },
+  "todayTasksLoadFailed": "Impossible de charger tes tâches.",
+  "@todayTasksLoadFailed": {
+    "description": "Heading in place of the Tasks section's rows on Today when the tasks could not be loaded; the rest of Today stays. Above loadFailedBody and a Try again button."
+  },
+  "taskNewTitle": "Nouvelle tâche",
+  "@taskNewTitle": {
+    "description": "Title of the sheet where the user creates a task."
+  },
+  "taskEditTitle": "Modifier la tâche",
+  "@taskEditTitle": {
+    "description": "Title of the sheet where the user edits an existing task."
+  },
+  "taskTitle": "Quoi",
+  "@taskTitle": {
+    "description": "Label of the task title field: what the user needs to do."
+  },
+  "taskTitleRequired": "Indique ce qu’il faut faire",
+  "@taskTitleRequired": {
+    "description": "Error under an empty task title field."
+  },
+  "taskNote": "Note (facultatif)",
+  "@taskNote": {
+    "description": "Label of the task note field: additional details about the task."
+  },
+  "taskDeleteConfirm": "Supprimer cette tâche ?",
+  "@taskDeleteConfirm": {
+    "description": "Confirmation prompt when deleting a task."
+  },
+  "calendarDaySemanticsTasks": "{day}, {events, plural, =0{aucun événement} =1{un événement} other{{events} événements}}, {tasks, plural, =1{une tâche} other{{tasks} tâches}}",
+  "@calendarDaySemanticsTasks": {
+    "description": "What a screen reader says for a day in the Calendar's month grid or week strip that has open tasks: the date, how many events, then how many open tasks.",
+    "placeholders": {
+      "day": {
+        "type": "DateTime",
+        "format": "MMMMEEEEd"
+      },
+      "events": {
+        "type": "int"
+      },
+      "tasks": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarAddEvent": "Événement",
+  "@calendarAddEvent": {
+    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
+  },
+  "calendarAddTask": "Tâche",
+  "@calendarAddTask": {
+    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds a task (something to do, with a due day) on the selected day."
+  },
+  "taskScopeChangeTitle": "Modifier une tâche récurrente",
+  "@taskScopeChangeTitle": {
+    "description": "Title of the dialog asked before saving a repeating task whose day changed: does the new day move only this task (postpone) or the schedule too."
+  },
+  "taskScopeDeleteTitle": "Supprimer une tâche récurrente",
+  "@taskScopeDeleteTitle": {
+    "description": "Title of the dialog asked before deleting a repeating task. Its Delete button confirms, with no second dialog."
+  },
+  "taskScopeThis": "Cette tâche",
+  "@taskScopeThis": {
+    "description": "Choice in the taskScopeChangeTitle / taskScopeDeleteTitle dialogs: only this task changes; the next one still comes on its usual day. Selected by default."
+  },
+  "taskScopeFollowing": "Cette tâche et les suivantes",
+  "@taskScopeFollowing": {
+    "description": "Choice in the taskScopeChangeTitle / taskScopeDeleteTitle dialogs: the schedule moves to the new day, or (delete) the task stops repeating."
+  },
+  "taskScopeRuleChanged": "La nouvelle récurrence s’applique à cette tâche et aux suivantes.",
+  "@taskScopeRuleChanged": {
+    "description": "Note under the choices of taskScopeChangeTitle when the repeat changed too: taskScopeThis is then disabled."
+  },
+  "taskRepeat": "Répétition",
+  "@taskRepeat": {
+    "description": "Switch in the task form: the task comes back on a schedule once ticked."
+  },
+  "taskRepeatsEvery": "Répéter tous les",
+  "@taskRepeatsEvery": {
+    "description": "Label before the number and unit fields of a repeating task, as in 'Repeats every [2] [weeks]'."
+  },
+  "taskRepeatEveryInvalid": "De 1 à 99",
+  "@taskRepeatEveryInvalid": {
+    "description": "Error under the number of 'Repeats every' when it is not a whole number from 1 to 99."
+  },
+  "taskRepeatUnitDay": "{count, plural, =1{jour} other{jours}}",
+  "@taskRepeatUnitDay": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskRepeatUnitWeek": "{count, plural, =1{semaine} other{semaines}}",
+  "@taskRepeatUnitWeek": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskRepeatUnitMonth": "{count, plural, =1{mois} other{mois}}",
+  "@taskRepeatUnitMonth": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskRepeatUnitYear": "{count, plural, =1{an} other{ans}}",
+  "@taskRepeatUnitYear": {
+    "description": "Unit in the 'Repeats every' menu, after the number.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskRepeatLineDay": "{count, plural, =1{Chaque jour} other{Tous les {count} jours}}",
+  "@taskRepeatLineDay": {
+    "description": "What a task's repeat means, under the repeat fields and as the repeat icon's label.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskRepeatLineWeek": "{count, plural, =1{Chaque semaine le {weekday}} other{Toutes les {count} semaines le {weekday}}}",
+  "@taskRepeatLineWeek": {
+    "description": "What a task's repeat means, e.g. 'Every 2 weeks on Thursday'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "weekday": {
+        "type": "String",
+        "example": "Thursday"
+      }
+    }
+  },
+  "taskRepeatLineMonth": "{count, plural, =1{Chaque mois le {day}} other{Tous les {count} mois le {day}}}",
+  "@taskRepeatLineMonth": {
+    "description": "What a task's repeat means, e.g. 'Every month on the 3rd'. {day} is taskRepeatDayOfMonth.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "day": {
+        "type": "String",
+        "example": "3rd"
+      }
+    }
+  },
+  "taskRepeatDayOfMonth": "{day, select, 1{1er} 2{2} 3{3} 21{21} 22{22} 23{23} 31{31} other{{day}}}",
+  "@taskRepeatDayOfMonth": {
+    "description": "A day of the month as an ordinal, inside taskRepeatLineMonth. {day} is 1 to 31.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "3"
+      }
+    }
+  },
+  "taskRepeatLineYear": "{count, plural, =1{Chaque année le {date}} other{Tous les {count} ans le {date}}}",
+  "@taskRepeatLineYear": {
+    "description": "What a task's repeat means, e.g. 'Every year on March 3'.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String",
+        "example": "March 3"
+      }
+    }
+  },
+  "taskRepeatUntil": "{line}, jusqu’au {date}",
+  "@taskRepeatUntil": {
+    "description": "A task's repeat line when it ends on a date, e.g. 'Every month on the 3rd, until Jun 3, 2027'.",
+    "placeholders": {
+      "line": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "taskRepeatEnds": "Fin",
+  "@taskRepeatEnds": {
+    "description": "Heading of the choice of when a repeating task stops: taskRepeatNever or taskRepeatOn a date."
+  },
+  "taskRepeatNever": "Jamais",
+  "@taskRepeatNever": {
+    "description": "Choice under taskRepeatEnds: the task repeats until the repeat is turned off. Selected by default."
+  },
+  "taskRepeatOn": "Le",
+  "@taskRepeatOn": {
+    "description": "Choice under taskRepeatEnds, followed by a date: no task comes after it."
+  },
+  "taskRepeatPickDay": "Choisis un jour",
+  "@taskRepeatPickDay": {
+    "description": "Placeholder of the end date of a repeating task, before one is picked."
+  },
+  "taskAddTime": "Ajouter une heure",
+  "@taskAddTime": {
+    "description": "Chip under a task's day (#377): gives the task a time, and a push at that time."
+  },
+  "taskRemoveTime": "Supprimer l’heure",
+  "@taskRemoveTime": {
+    "description": "Tooltip and screen reader label of the ✕ on a task's time chip: the task goes back to any time that day, with no push."
+  },
+  "taskNotificationsOff": "Les notifications sont désactivées sur ce téléphone.",
+  "@taskNotificationsOff": {
+    "description": "Under a task's time when the phone doesn't allow Loomia's pushes: the time is kept, but no push will come. Followed by taskNotificationsSettings."
+  },
+  "taskNotificationsSettings": "Paramètres",
+  "@taskNotificationsSettings": {
+    "description": "Link after taskNotificationsOff: opens Settings, Notifications."
+  },
+  "taskPostponeWas": "C’était prévu à {time}. Reporte :",
+  "@taskPostponeWas": {
+    "description": "Top of a task's sheet when its time has passed (usually opened from its push), above taskPostpone15 and taskPostponeHour.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "2:00 PM"
+      }
+    }
+  },
+  "taskPostponeNear": "Prévu à {time}. Reporte :",
+  "@taskPostponeNear": {
+    "description": "Top of a task's sheet when its time is less than 15 minutes away, above taskPostpone15 and taskPostponeHour.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "2:00 PM"
+      }
+    }
+  },
+  "taskPostpone15": "Dans 15 min",
+  "@taskPostpone15": {
+    "description": "Button: moves the task's time to 15 minutes from now, saves and closes. Its push comes again then."
+  },
+  "taskPostponeHour": "Dans 1 heure",
+  "@taskPostponeHour": {
+    "description": "Button: moves the task's time to an hour from now, saves and closes. Its push comes again then."
+  },
+  "pushSummaryTasks": "{count, plural, =1{Une tâche aujourd’hui} other{{count} tâches aujourd’hui}}",
+  "@pushSummaryTasks": {
+    "description": "The daily summary push when only tasks are due (#377), as todayHeadlineTasks. count is never 0. The phone renders it (tool/push_strings.dart).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pushSummaryBothOneOne": "Une personne et une tâche aujourd’hui",
+  "@pushSummaryBothOneOne": {
+    "description": "The daily summary push with 1 person and 1 task due, as todayHeadlineBoth. One key per plural form, as the phone's strings hold one plural per key."
+  },
+  "pushSummaryBothOneOther": "Une personne et {tasks} tâches aujourd’hui",
+  "@pushSummaryBothOneOther": {
+    "description": "The daily summary push with 1 person and several tasks due, as todayHeadlineBoth.",
+    "placeholders": {
+      "tasks": {
+        "type": "String",
+        "example": "3"
+      }
+    }
+  },
+  "pushSummaryBothOtherOne": "{people} personnes et une tâche aujourd’hui",
+  "@pushSummaryBothOtherOne": {
+    "description": "The daily summary push with several people and 1 task due, as todayHeadlineBoth.",
+    "placeholders": {
+      "people": {
+        "type": "String",
+        "example": "3"
+      }
+    }
+  },
+  "pushSummaryBothOtherOther": "{people} personnes et {tasks} tâches aujourd’hui",
+  "@pushSummaryBothOtherOther": {
+    "description": "The daily summary push with several people and several tasks due, as todayHeadlineBoth.",
+    "placeholders": {
+      "people": {
+        "type": "String",
+        "example": "3"
+      },
+      "tasks": {
+        "type": "String",
+        "example": "2"
+      }
+    }
+  },
+  "calendarDaySemanticsPeople": "{day}, {events, plural, =0{aucun événement} =1{un événement} other{{events} événements}}, {people, plural, =1{une personne} other{{people} personnes}}",
+  "@calendarDaySemanticsPeople": {
+    "description": "What a screen reader says for a day in the Calendar that has people to follow up but no open tasks: the date, how many events, then how many people.",
+    "placeholders": {
+      "day": {
+        "type": "DateTime",
+        "format": "MMMMEEEEd"
+      },
+      "events": {
+        "type": "int"
+      },
+      "people": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarDaySemanticsTasksPeople": "{day}, {events, plural, =0{aucun événement} =1{un événement} other{{events} événements}}, {tasks, plural, =1{une tâche} other{{tasks} tâches}}, {people, plural, =1{une personne} other{{people} personnes}}",
+  "@calendarDaySemanticsTasksPeople": {
+    "description": "What a screen reader says for a day in the Calendar that has open tasks and people to follow up: the date, how many events, how many open tasks, then how many people.",
+    "placeholders": {
+      "day": {
+        "type": "DateTime",
+        "format": "MMMMEEEEd"
+      },
+      "events": {
+        "type": "int"
+      },
+      "tasks": {
+        "type": "int"
+      },
+      "people": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPeopleSection": "Personnes",
+  "@calendarPeopleSection": {
+    "description": "Header of the block under a day in the Calendar listing the people to follow up that day (their workflow step, reminders, invitations). Shown in capitals."
+  },
+  "calendarPeopleSummary": "{count, plural, =1{Une personne à relancer} other{{count} personnes à relancer}}",
+  "@calendarPeopleSummary": {
+    "description": "The folded People block under a day in the Calendar: how many people are due to be followed up that day. Tapping it shows them.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPeopleMore": "{reason} · +{count}",
+  "@calendarPeopleMore": {
+    "description": "A person's row in the Calendar's People block when more than one thing is due with them that day: the first one, then how many more.",
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Book the unboxing call"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPeopleLine": "{count, plural, =1{1 personne} other{{count} personnes}}",
+  "@calendarPeopleLine": {
+    "description": "Quiet line at the top of a day in the desktop Calendar (month cell, week strip): how many people are due to be followed up that day.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
