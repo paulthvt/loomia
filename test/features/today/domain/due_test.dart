@@ -273,4 +273,130 @@ void main() {
     expect((due.last as DueLoyalty).renewal, DateTime(2026, 10));
     expect(due.last.day, DateTime(2026, 9, 28));
   });
+
+  group('dueOn', () {
+    final thursday = DateTime(2026, 10, 8);
+    final today = DateTime(2026, 10, 6);
+    List<Due> on(
+      List<Person> people,
+      DateTime day, {
+      List<CalendarEvent> events = const [],
+    }) => dueOn(people, _workflows, day, today, events: events);
+
+    test('a step shows on its day only', () {
+      final anna = _person('a', 'Anna', due: thursday);
+
+      expect(_keys(on([anna], thursday)), ['a']);
+      expect(on([anna], DateTime(2026, 10, 7)), isEmpty);
+      expect(on([anna], DateTime(2026, 10, 9)), isEmpty);
+    });
+
+    test('a paused person: the step goes, the reminder stays', () {
+      final anna = _person(
+        'a',
+        'Anna',
+        due: thursday,
+        pausedAt: DateTime.utc(2026, 10),
+        reminders: [_reminder('r', thursday)],
+      );
+
+      expect(_keys(on([anna], thursday)), ['r']);
+    });
+
+    test('an LRP renewing on the 11th shows on the 8th only, not once '
+        'checked', () {
+      Person julie({DateTime? checked}) => Person(
+        id: 'j',
+        name: 'Julie',
+        stage: Stage.customer,
+        stageSince: DateTime.utc(2026),
+        loyaltySince: DateTime(2026, 8, 1),
+        loyaltyDay: 11,
+        loyaltyCheckedFor: checked,
+      );
+
+      final due = on([julie()], thursday);
+      expect(_keys(due), ['lrp:j']);
+      expect((due.single as DueLoyalty).renewal, DateTime(2026, 10, 11));
+      expect(on([julie()], DateTime(2026, 10, 9)), isEmpty);
+      expect(on([julie(checked: DateTime(2026, 10, 11))], thursday), isEmpty);
+      // Next month's, on its first day.
+      expect(_keys(on([julie()], DateTime(2026, 11, 8))), ['lrp:j']);
+    });
+
+    test('a follow-up on its day, unless its event is before it', () {
+      final anna = _person('a', 'Anna', follows: false);
+      CalendarEvent event(String id, DateTime at) => CalendarEvent(
+        id: id,
+        title: 'Workshop',
+        startsAt: at,
+        attendees: [
+          Attendee(
+            personId: 'a',
+            going: false,
+            invitedOn: DateTime(2026, 10, 5),
+            followUpOn: thursday,
+          ),
+        ],
+      );
+
+      expect(
+        _keys(
+          on(
+            [anna],
+            thursday,
+            events: [event('e1', DateTime(2026, 10, 9, 19))],
+          ),
+        ),
+        ['e1:a'],
+      );
+      expect(
+        on([anna], thursday, events: [event('e2', DateTime(2026, 10, 7, 19))]),
+        isEmpty,
+      );
+    });
+
+    test('never what comes next', () {
+      final sophie = Person(
+        id: 's',
+        name: 'Sophie',
+        stage: Stage.prospect,
+        stageSince: DateTime.utc(2026),
+        place: (workflowId: 'samples', atPosition: 1e9, lastTick: thursday),
+        needsNext: true,
+      );
+
+      expect(on([sophie], thursday), isEmpty);
+    });
+
+    test('a past day is empty; today has no late ones', () {
+      final late = _person('l', 'Late', due: DateTime(2026, 10, 5));
+      final now = _person('n', 'Now', due: today);
+
+      expect(on([late, now], DateTime(2026, 10, 5)), isEmpty);
+      expect(_keys(on([late, now], today)), ['n']);
+    });
+
+    test('byPerson: one run per person, by name', () {
+      final due = on([
+        _person('c', 'Claire', due: thursday),
+        _person(
+          'a',
+          'Anna',
+          due: thursday,
+          reminders: [_reminder('r', thursday)],
+        ),
+      ], thursday);
+
+      expect(
+        [
+          for (final run in byPerson(due)) [for (final item in run) item.key],
+        ],
+        [
+          ['r', 'a'],
+          ['c'],
+        ],
+      );
+    });
+  });
 }

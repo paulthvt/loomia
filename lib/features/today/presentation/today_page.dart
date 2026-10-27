@@ -1059,11 +1059,7 @@ class _TodayViewState extends State<TodayView> {
       key: ValueKey(due.key),
       name: due.person.name,
       photoPath: due.person.photoPath,
-      reason: l10n.todayFollowUp(
-        firstName(due.person),
-        due.event.title,
-        due.event.startsAt.toLocal(),
-      ),
+      reason: dueReason(l10n, widget.model, due),
       tag: LoomiaChip(label: stageLabel(l10n, due.person.stage)),
       chip: due.day.isBefore(day)
           ? DateChip(dueLabel(l10n, due.day, day))
@@ -1091,29 +1087,20 @@ class _TodayViewState extends State<TodayView> {
     if (due is DueFollowUp) return _followUp(l10n, due, day);
     if (due is DueNext) return _whatsNext(l10n, due);
     // A new step or reminder is a new card: it slides in.
-    final (key, reason, detail) = switch (due) {
+    final reason = dueReason(l10n, widget.model, due);
+    final (key, detail) = switch (due) {
       DueStep(:final step, missed: final event?) => (
         step.step.id,
-        step.step.label,
         l10n.nextStepMissed(event.title, event.startsAt.toLocal()),
       ),
       DueStep(:final step) => (
         step.step.id,
-        step.step.label,
         l10n.nextStepProgress(step.workflow.name, step.index, step.total),
       ),
-      DueReminder(:final reminder) => (
-        reminder.id,
-        reminder.text,
-        l10n.todayReminderDetail,
-      ),
+      DueReminder(:final reminder) => (reminder.id, l10n.todayReminderDetail),
       DueFollowUp() => throw StateError('built by _followUp'),
       DueNext() => throw StateError('built by _whatsNext'),
-      DueLoyalty(:final person, :final renewal) => (
-        due.key,
-        loyaltyRenewsText(l10n, widget.model, person, renewal),
-        null,
-      ),
+      DueLoyalty() => (due.key, null),
     };
     return ActionItem(
       key: ValueKey(key),
@@ -1161,6 +1148,26 @@ class _UpToDate extends StatelessWidget {
     );
   }
 }
+
+/// What [due] asks, in plain words: the row's reason on Today and in the
+/// Calendar (#378).
+String dueReason(AppLocalizations l10n, BusinessModel model, Due due) =>
+    switch (due) {
+      DueStep(:final step) => step.step.label,
+      DueReminder(:final reminder) => reminder.text,
+      DueLoyalty(:final person, :final renewal) => loyaltyRenewsText(
+        l10n,
+        model,
+        person,
+        renewal,
+      ),
+      DueFollowUp(:final person, :final event) => l10n.todayFollowUp(
+        firstName(person),
+        event.title,
+        event.startsAt.toLocal(),
+      ),
+      DueNext(:final person) => l10n.nextWhatTitle(firstName(person)),
+    };
 
 /// "Julie's LRP renews Oct 15": the Today row, and the history entry its
 /// tick writes.

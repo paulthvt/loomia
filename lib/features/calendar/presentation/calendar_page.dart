@@ -8,25 +8,31 @@ import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
+import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
+import 'package:loomia/features/calendar/presentation/people_block.dart';
 import 'package:loomia/features/calendar/presentation/week_view.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/presentation/contacts_page.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/features/tasks/presentation/toggle_task.dart';
+import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -152,8 +158,24 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final selection = ref.watch(calendarSelectionProvider);
     final desktop = context.screenSize.isDesktop;
     final firstDay = MaterialLocalizations.of(context).firstDayOfWeekIndex;
+    final events = ref.watch(provider);
+    final people = ref.watch(peopleProvider(owner)).value;
+    final workflows = ref.watch(workflowsProvider(owner)).value;
     return CalendarView(
-      events: ref.watch(provider),
+      events: events,
+      // While people or workflows load, or failed, nobody shows (#378);
+      // events and tasks are unaffected.
+      people: switch ((people, workflows)) {
+        (final everyone?, final all?) => PeopleAhead(
+          people: everyone,
+          workflows: all,
+          events: events.value ?? const [],
+          today: today(),
+        ),
+        _ => const PeopleAhead.none(),
+      },
+      model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
+      onOpenPerson: (person) => openContact(context, person.id),
       // A failed load leaves the tasks out, the events stay.
       tasks: ref.watch(tasksProvider(owner)).value ?? const [],
       busy: _busy,
@@ -221,6 +243,9 @@ class CalendarView extends StatelessWidget {
     this.desktop = false,
     this.pane,
     this.accountAction,
+    this.people = const PeopleAhead.none(),
+    this.model = BusinessModel.other,
+    this.onOpenPerson,
     super.key,
   });
 
@@ -228,6 +253,13 @@ class CalendarView extends StatelessWidget {
   static const double _paneWidth = 440;
 
   final AsyncValue<List<CalendarEvent>> events;
+
+  /// Who is due when (#378): the day's People block, the grid's markers.
+  final PeopleAhead people;
+  final BusinessModel model;
+
+  /// A person's row in the People block: their page.
+  final void Function(Person person)? onOpenPerson;
 
   /// Every task, open and done; each shows on its due day.
   final List<Task> tasks;
@@ -381,6 +413,7 @@ class CalendarView extends StatelessWidget {
               today: today,
               counts: counts,
               taskCounts: taskCounts,
+              people: people,
               onSelect: onSelect,
             ),
           )
@@ -396,6 +429,7 @@ class CalendarView extends StatelessWidget {
               today: today,
               counts: counts,
               taskCounts: taskCounts,
+              people: people,
               onSelect: onSelect,
             ),
           );
@@ -437,6 +471,9 @@ class CalendarView extends StatelessWidget {
                     onToggleTask: onToggleTask,
                     onOpenTask: onOpenTask,
                     onRetry: onRetry,
+                    people: people,
+                    model: model,
+                    onOpenPerson: onOpenPerson,
                   )
                 : DaySection(
                     events: events,
@@ -449,6 +486,9 @@ class CalendarView extends StatelessWidget {
                     onAdd: onAdd,
                     onAddTask: onAddTask,
                     onRetry: onRetry,
+                    people: people,
+                    model: model,
+                    onOpenPerson: onOpenPerson,
                   );
             const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
             // The bottom inset keeps the last row clear of the add button.
@@ -541,6 +581,11 @@ class CalendarView extends StatelessWidget {
                 onAdd: (day) => closing(view.onAdd, day),
                 onAddTask: (day) => closing(view.onAddTask, day),
                 onRetry: view.onRetry,
+                people: view.people,
+                model: view.model,
+                peopleFoldable: false,
+                onOpenPerson: (person) =>
+                    closing((Person p) => view.onOpenPerson?.call(p), person),
               ),
             );
           },
@@ -578,6 +623,7 @@ class CalendarView extends StatelessWidget {
                               tasks: tasks,
                               onOpenTask: onOpenTask,
                               onDay: openDay,
+                              people: people,
                             )
                           : DesktopMonth(
                               month: selection.month,
@@ -589,6 +635,7 @@ class CalendarView extends StatelessWidget {
                               tasks: tasks,
                               onOpenTask: onOpenTask,
                               onDay: openDay,
+                              people: people,
                             ),
                     ),
                   ],
@@ -916,6 +963,10 @@ class DaySection extends StatelessWidget {
     this.onToggleTask,
     this.onOpenTask,
     this.onAddTask,
+    this.people = const PeopleAhead.none(),
+    this.model = BusinessModel.other,
+    this.onOpenPerson,
+    this.peopleFoldable = true,
     super.key,
   });
 
@@ -923,6 +974,14 @@ class DaySection extends StatelessWidget {
 
   /// Every task; those due on [day] show above its events.
   final List<Task> tasks;
+
+  /// Who is due when: [day]'s people show between its tasks and events.
+  final PeopleAhead people;
+  final BusinessModel model;
+  final void Function(Person person)? onOpenPerson;
+
+  /// False in the desktop popover: the people always show.
+  final bool peopleFoldable;
 
   /// [Task.key]s whose write is in flight.
   final Set<String> busy;
@@ -955,6 +1014,14 @@ class DaySection extends StatelessWidget {
             busy: busy.contains(task.key),
             onOpen: () => onOpenTask?.call(task),
             onToggle: () => onToggleTask?.call(task),
+          ),
+        if (people.on(day) case final due when due.isNotEmpty)
+          PeopleBlock(
+            key: ValueKey(day),
+            people: due,
+            model: model,
+            foldable: peopleFoldable,
+            onOpen: (person) => onOpenPerson?.call(person),
           ),
         for (final event in eventsOn(list, day))
           EventRow(event: event, onTap: () => onOpen(event)),
