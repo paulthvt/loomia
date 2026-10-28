@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2026.10.7](https://github.com/paulthvt/loomia/compare/v2026.10.6...v2026.10.7) (2026-10-28)
+
+### 🐛 Bug Fixes
+
+- **layout:** start the desktop layout at 1200 (#404) ([362038d](https://github.com/paulthvt/loomia/commit/362038dd9055ae857bac3aa84c049c6ca9e11fb7))
+
+### 🔄 CI/CD
+
+- **ios:** sign releases with fastlane and ship them to TestFlight (#406) ([68f6ab9](https://github.com/paulthvt/loomia/commit/68f6ab94b18a6c3bff1a4a2a8244f7c6c1778f42))
+- push migrations at merge, guard the released app (#395) ([4a9c20e](https://github.com/paulthvt/loomia/commit/4a9c20ecdd790a317cd8f8850f0a0e6d8ee1da51))
+
+### 🔧 Miscellaneous
+
+- **ios:** sign with the Loomia Apple team (#402) ([4693718](https://github.com/paulthvt/loomia/commit/46937180aec75c9b87efcae91444626974bf308f))
+
 ## [v2026.10.6](https://github.com/paulthvt/loomia/compare/v2026.10.5...v2026.10.6) (2026-10-28)
 
 ### ✨ Features
