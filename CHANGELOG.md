@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2026.10.6](https://github.com/paulthvt/loomia/compare/v2026.10.5...v2026.10.6) (2026-10-28)
+
+### ✨ Features
+
+- **tasks:** a task page to view a task, edit from there (#392) ([35f1b75](https://github.com/paulthvt/loomia/commit/35f1b753c52db9cb1c2783928526ff0cd6f4dafa))
+- **tasks:** a Tasks switch and a bell per timed task (#391) ([07b7957](https://github.com/paulthvt/loomia/commit/07b795705ed0d1440e72497152607b539a05977a))
+
+### 🐛 Bug Fixes
+
+- let Undo time out even with an accessibility service on (#387) ([461c014](https://github.com/paulthvt/loomia/commit/461c014073480c433a78f8b91096632da28ba3ae))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#393) ([b16606b](https://github.com/paulthvt/loomia/commit/b16606b9ec1f45eafddb9e539af8513e21a1dc23))
+
 ## [v2026.10.5](https://github.com/paulthvt/loomia/compare/v2026.10.4...v2026.10.5) (2026-10-27)
 
 ### ✨ Features
