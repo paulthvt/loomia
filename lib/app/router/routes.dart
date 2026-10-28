@@ -36,6 +36,14 @@ abstract final class Routes {
   static String eventLocation(String id) =>
       '$calendar/${Uri.encodeComponent(id)}';
 
+  /// One task (#390), nested under [calendar] like an event. Its parameter
+  /// is `id` too, so the Calendar's desktop shell opens its pane the same way.
+  static const String taskSegment = 'task/:id';
+  static const String taskName = 'task';
+
+  static String taskLocation(String id) =>
+      '$calendar/task/${Uri.encodeComponent(id)}';
+
   /// The old Team tab (before #151). Kept so a saved link lands on Contacts.
   static const String team = '/team';
   static const String teamName = 'team';
