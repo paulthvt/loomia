@@ -23,7 +23,7 @@ person who ticks ten rows in a row on purpose.
 | Rejected: confirm dialog | No. | A dialog on every tick punishes the 99% of deliberate ticks. |
 | Rejected: row stays ticked with Undo in place | No. | Rows lingering for 5 s make a ten-row run feel stuck, and Today's "row leaves, bar moves" is the reward. |
 | Rejected: hold to tick | No. | Undiscoverable, and slower for everyone. |
-| Duration | 5 s, then it goes; swipe to dismiss. With a screen reader on (`MediaQuery.accessibleNavigationOf`), it stays until dismissed: `persist: accessibleNavigation`. | `SnackBar.persist` defaults to on whenever there is an action, so without it Undo would never time out. A screen reader user needs time to reach the action. |
+| Duration | 5 s, then it goes; swipe to dismiss. Always, `persist: false`, screen reader or not (#386). | `SnackBar.persist` defaults to on whenever there is an action, so without it Undo would never time out. It first persisted with `MediaQuery.accessibleNavigationOf` on, for screen readers, but on Android that flag turns on for any accessibility service (a password manager reading the screen), so Undo never closed for those users. A screen reader still announces it. |
 | Message | Per kind, the person first so a cut only shortens the task: step and reminder "Done for {name}: {task}"; LRP renewal "LRP checked for {name}"; event step "Done: {step}". | On a person's row the title is their name and the task is the subtitle. The LRP subtitle ("Claire's LRP renews on the 15th") reads badly after "Done:". An event step's row title is the step itself. |
 | Action colour | Add `inversePrimary` to both schemes: light `#E0AB7B` (8.4:1 on `inverseSurface` `#201B16`), dark `#8A4A0F` (5.9:1 on `#F1EEEC`). | Unset, it falls back to `onPrimary`, white: the same as the message in light mode, invisible in dark mode. `primary` itself is 4.3:1 on the dark inverse surface, below AA. |
 | Desktop width | 480 px, bottom centre of the content area, set on each snackbar when `context.screenSize` is desktop. | A theme width would also apply on mobile, and `SnackBar` refuses `width` together with `margin`. |
@@ -108,8 +108,7 @@ for the released app.
 - Widget, Today: tick a step, a reminder and an LRP renewal, press Undo, the
   row is back and the count back down; tick an event step, Undo, the row is
   back; two ticks then Undo restore only the second; a stale undo shows the
-  stale message; Undo times out after 5 s and persists with
-  `accessibleNavigation`.
+  stale message; Undo times out after 5 s, `accessibleNavigation` on or off.
 - Widget, contact page: tick the next step, Undo, the same step is back; tick
   a reminder, leave the page, Undo still restores it. Workflow timeline: Mark
   done, Undo.
