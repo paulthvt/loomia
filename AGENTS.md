@@ -112,15 +112,18 @@ already-installed packages first.
   migration (docs/architecture.md → Backend). `schema_rls_test.sql` enforces it.
 - Flag a significant architectural decision before making it, briefly.
 - **Migrations must not break the released app.** The hosted database gets
-  `supabase db push` at merge, while phones keep the previous build until
+  `supabase db push` at merge, by the Release workflow's `database` job,
+  while phones keep the previous build until
   they update. Additive changes (new table, nullable or defaulted column,
   new function, a trigger that fills a default) are safe. Dropping or
   renaming a column, changing a function's parameters, or deleting data the
   released app reads takes two releases: ship the new one beside the old,
-  drop the old in a later PR once users have updated. Every PR with a
+  drop the old in a later PR once users have updated. The "Migration guard"
+  check fails on those statements, and on an edited applied migration;
+  only that later PR gets the `breaking-migration` label. Every PR with a
   migration fills the PR template's **Database** section, and the summary
-  to the user says whether `supabase db push` is needed, whether it goes
-  before the app release, and whether it is safe for the released app.
+  to the user says whether it is safe for the released app and whether an
+  Edge Function needs `supabase functions deploy` by hand.
 
 ## graphify
 
