@@ -1173,5 +1173,49 @@
         "type": "int"
       }
     }
+  },
+  "taskAlertOn": "Ne me préviens pas",
+  "@taskAlertOn": {
+    "description": "Tooltip and screen reader label of the bell beside a task's time, while it is on (#389): tapping it turns off the push at that time, keeping the time."
+  },
+  "taskAlertOff": "Préviens-moi à cette heure",
+  "@taskAlertOff": {
+    "description": "Tooltip and screen reader label of the bell beside a task's time, while it is off (#389): tapping it turns on a push at that time."
+  },
+  "taskAlertsOff": "Les notifications de tâches sont désactivées.",
+  "@taskAlertsOff": {
+    "description": "Under a task's time when the Tasks switch in Settings, Notifications is off: no task pushes, whatever the bell. Followed by taskAlertsTurnOn."
+  },
+  "taskAlertsTurnOn": "Active-les dans les paramètres",
+  "@taskAlertsTurnOn": {
+    "description": "Link after taskAlertsOff: opens Settings, Notifications, where the Tasks switch is."
+  },
+  "notificationsTasks": "Tâches",
+  "@notificationsTasks": {
+    "description": "Switch label in Settings > Notifications: the pushes at the time set on a task. On by default. Also shown as the Notifications row's subtitle in Settings when only these pushes are on."
+  },
+  "notificationsTasksBody": "À l’heure définie pour une tâche, quand sa cloche est activée.",
+  "@notificationsTasksBody": {
+    "description": "Line under the Tasks switch, saying when a task push comes. The bell is the button beside a task's time that turns its push on or off."
+  },
+  "taskEdit": "Modifier",
+  "@taskEdit": {
+    "description": "Tooltip and screen reader label of the pencil button on a task's page (#390): opens the task's form."
+  },
+  "taskDelete": "Supprimer la tâche",
+  "@taskDelete": {
+    "description": "Tooltip and screen reader label of the bin button on a task's page (#390): asks, then deletes the task."
+  },
+  "taskAlertIsOn": "Notifie à cette heure",
+  "@taskAlertIsOn": {
+    "description": "Screen reader label of the bell after a task's time on its page (#390), when the task pushes at that time. Not a button: the bell is changed in the form."
+  },
+  "taskAlertIsOff": "Ne notifie pas",
+  "@taskAlertIsOff": {
+    "description": "Screen reader label of the crossed-out bell after a task's time on its page (#390): no push at that time."
+  },
+  "taskNotFound": "Cette tâche n’est plus dans ta liste.",
+  "@taskNotFound": {
+    "description": "Title shown when a task's page points to one that no longer exists (deleted, maybe on another device). Followed by eventNotFoundBody."
   }
 }
