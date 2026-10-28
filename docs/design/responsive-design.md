@@ -15,8 +15,11 @@ Branch on `context.screenSize`, never on raw pixel widths in a widget.
 | Class | Width | Navigation | Content |
 | --- | --- | --- | --- |
 | `mobile` | < 600 | BottomNav, 4 destinations | single column, 16px side padding |
-| `tablet` | 600–1023 | Sidebar collapsed to 72px icon rail (portrait: BottomNav) | single wide column capped at 640, or two columns above 840 |
-| `desktop` | ≥ 1024 | Sidebar 248px expanded | 2 columns (Today, Goals, Team) or list + detail (Contacts) |
+| `tablet` | 600–1199 | Sidebar collapsed to 72px icon rail (portrait: BottomNav) | single wide column capped at 640, or two columns above 840 |
+| `desktop` | ≥ 1200 | Sidebar 248px expanded | 2 columns (Today, Goals, Team) or list + detail (Contacts) |
+
+`desktop` starts at 1200, not 1024 (#403): at 1024 the sidebar, a list and a
+440px side pane left the pane too narrow, as on a portrait iPad Pro 13" (1032).
 
 Two behaviours cross a boundary that is *not* a size class edge and are therefore
 named explicitly:

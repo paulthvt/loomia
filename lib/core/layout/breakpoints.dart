@@ -18,7 +18,11 @@ enum ScreenSize {
 
 abstract final class Breakpoints {
   static const double tablet = 600;
-  static const double desktop = 1024;
+
+  /// Measured on the whole window, so it leaves room for the expanded sidebar,
+  /// a list and a side pane. 1200, not 1024: a portrait iPad Pro 13" (1032)
+  /// squeezed the pane to one letter a line (#403).
+  static const double desktop = 1200;
 
   /// Max content width on very large screens, to avoid full-bleed text lines.
   static const double maxContentWidth = 1400;

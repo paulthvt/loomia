@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -29,10 +30,10 @@ void main() {
     tester,
   ) async {
     // Under the pair's cap: main gets everything the side leaves.
-    await _pump(tester, 1060);
+    await _pump(tester, 1300);
 
     expect(tester.getSize(find.byKey(_side)).width, 400);
-    expect(tester.getSize(find.byKey(_main)).width, 1060 - 432);
+    expect(tester.getSize(find.byKey(_main)).width, 1300 - 432);
     expect(
       tester.getTopLeft(find.byKey(_side)).dx,
       greaterThan(tester.getTopRight(find.byKey(_main)).dx),
@@ -54,10 +55,10 @@ void main() {
   });
 
   testWidgets('a narrow desktop shrinks main, never side', (tester) async {
-    await _pump(tester, 1024);
+    await _pump(tester, Breakpoints.desktop);
 
     expect(tester.getSize(find.byKey(_side)).width, 400);
-    expect(tester.getSize(find.byKey(_main)).width, 1024 - 432);
+    expect(tester.getSize(find.byKey(_main)).width, Breakpoints.desktop - 432);
     expect(tester.takeException(), isNull);
   });
 
