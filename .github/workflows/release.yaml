@@ -30,6 +30,31 @@ permissions:
   contents: read
 
 jobs:
+  # The hosted schema follows main (#394): every merge pushes its migrations,
+  # so a build made after a merge never runs before its schema. The released
+  # app keeps running on the new schema meanwhile; migration-guard.yaml keeps
+  # the migrations it would not survive out of main. A push with nothing
+  # pending is a no-op. Setup: README.md → Database and project config.
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.120.0
+
+      - run: supabase link --project-ref cskjeqspecsyqioietrj
+
+      # What is about to go out, in the log before it does.
+      - run: supabase db push --dry-run
+
+      - run: supabase db push --yes
+
   yeet:
     runs-on: ubuntu-latest
     permissions:
@@ -70,7 +95,8 @@ jobs:
           echo "tag=$(comm -13 "$RUNNER_TEMP/before" "$RUNNER_TEMP/after" | tail -1)" >> "$GITHUB_OUTPUT"
 
   artifacts:
-    needs: yeet
+    # The schema first: a build never ships ahead of its migrations.
+    needs: [yeet, database]
     if: needs.yeet.outputs.tag != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30

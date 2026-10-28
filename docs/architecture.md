@@ -192,9 +192,15 @@ Anything the client must not do with its own key runs in an Edge Function in
 and nobody else. The user's language choice is in `user_metadata`, next to their
 first name, so it follows them across devices.
 
-Migrations and functions reach the hosted project by hand, after merge, with
-`supabase db push` and `supabase functions deploy`. One maintainer, rare
-migrations: a deploy job would be more secrets than it saves. Automate it when either stops being true.
+Migrations reach the hosted project at merge: the Release workflow's
+`database` job runs `supabase db push` on every push to `main`, after a
+`--dry-run` that lists them, and the app build waits for it (#394). Done by
+hand until then, a debug build made after a merge ran before its schema. The
+released app keeps running on the new schema, so a migration must not break
+it: `migration-guard.yaml` fails a PR that drops, renames, tightens or
+deletes, or that edits an applied migration, unless it carries the
+`breaking-migration` label. Edge Functions are still deployed by hand with
+`supabase functions deploy`.
 
 ### Logging and error reports
 

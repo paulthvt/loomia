@@ -1,0 +1,65 @@
+# Migration guard (#394): the hosted database gets every migration at merge
+# (release.yaml → database), while phones keep the previous build. This check
+# fails a PR whose new migration would break that build, or that edits a
+# migration already applied (db push never re-runs it).
+#
+# The way out, on purpose: the `breaking-migration` label, for the second
+# release of a two-release change (AGENTS.md → Working rules). Adding or
+# removing the label re-runs the check.
+#
+# Its own workflow so a label change re-runs only this, not the whole CI.
+name: Migration guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+concurrency:
+  group: migration-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Migrations keep the released app working
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: The check checks
+        run: bash tool/check_migrations_test.sh
+
+      - name: New and edited migrations
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          BREAKING: ${{ contains(github.event.pull_request.labels.*.name, 'breaking-migration') }}
+        run: |
+          changes=$(git diff --name-status --no-renames "$BASE"...HEAD -- supabase/migrations)
+          if [ -z "$changes" ]; then
+            echo "No migration in this PR."
+            exit 0
+          fi
+          echo "$changes"
+          edited=$(echo "$changes" | awk '$1 != "A" { print $2 }')
+          added=$(echo "$changes" | awk '$1 == "A" { print $2 }')
+          status=0
+          if [ -n "$edited" ]; then
+            echo "::error::An applied migration was edited or removed; db push never re-runs it. Add a new migration instead: $edited"
+            status=1
+          fi
+          if [ -n "$added" ]; then
+            mapfile -t files <<< "$added"
+            if [ "$BREAKING" = "true" ]; then
+              echo "breaking-migration label: statements reported, not blocking."
+              bash tool/check_migrations.sh "${files[@]}" || true
+            elif ! bash tool/check_migrations.sh "${files[@]}"; then
+              echo "::error::A migration would break the released app. See the log, or add the breaking-migration label if this is the planned second step."
+              status=1
+            fi
+          fi
+          exit "$status"

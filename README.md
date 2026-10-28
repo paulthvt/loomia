@@ -59,11 +59,20 @@ supabase db reset                           # re-apply everything from scratch
 The app always talks to the hosted project; the local database is for writing
 and testing migrations.
 
-After a PR merges, apply it to the hosted project (one-off `supabase login` and
+Migrations reach the hosted project by themselves: on every push to `main`,
+the Release workflow's `database` job runs `supabase db push --dry-run`, then
+`supabase db push`, before any build (#394). It needs two repository secrets:
+`SUPABASE_ACCESS_TOKEN` (a personal access token, Account → Access Tokens)
+and `SUPABASE_DB_PASSWORD` (the project's database password). The
+"Migration guard" check fails a PR whose new migration would break the
+released app (a drop, a rename, `set not null`, a column type, `truncate`,
+`delete from`) or that edits an applied one; the `breaking-migration` label
+lets the planned second step of a two-release change through.
+
+The rest stays by hand after a merge (one-off `supabase login` and
 `supabase link --project-ref cskjeqspecsyqioietrj` first):
 
 ```bash
-supabase db push                            # pending migrations
 supabase functions deploy                   # every function in supabase/functions/
 supabase config diff                        # config.toml vs hosted, read-only
 SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=... supabase config push
@@ -102,7 +111,8 @@ The push copy is the `push*` keys of the ARB files. The phone renders it, from
 
 The daily summary and the month-end push are sent by the `send-daily-summary`
 Edge Function, which pg_cron calls every 15 minutes. After a change to either,
-`supabase db push` first, then `supabase functions deploy send-daily-summary`.
+`supabase functions deploy send-daily-summary` once the merge has pushed the
+migrations (Release → `database`).
 Once, on the hosted project:
 
 1. Firebase → Project settings → Service accounts → *Generate new private
