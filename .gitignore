@@ -119,6 +119,8 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 # This is an application, not a package: pin transitive versions.
 !pubspec.lock
+# fastlane's pinned gems (#397).
+!ios/Gemfile.lock
 
 # IDE
 .idea/

@@ -14,7 +14,7 @@
 #
 # Trunk-based, no branches per channel: every release starts internal, only
 # promotion decides what reaches users. Setup: README.md → Releases.
-# Not here yet: TestFlight upload, iOS build (CFBundleVersion = the versionCode below).
+# iOS: the ios job sends the same build number to TestFlight (#397).
 name: Release
 
 on:
@@ -228,3 +228,80 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TAG: ${{ needs.yeet.outputs.tag }}
         run: npx --yes wrangler@4.147.0 versions upload --tag "$TAG" --message "$TAG" --preview-alias internal
+
+  # iOS's internal testing: the same tag, the same build number as Play, to
+  # TestFlight's internal testers (#397). After artifacts, for the release
+  # notes it attached. Signing and upload are fastlane (ios/fastlane/Fastfile);
+  # setup: README.md → Releases → iOS.
+  ios:
+    needs: [yeet, artifacts]
+    if: needs.yeet.outputs.tag != ''
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.yeet.outputs.tag }}
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          working-directory: ios
+          bundler-cache: true
+
+      - run: flutter pub get
+
+      # Push needs it (#275), like google-services.json on Android.
+      - name: Write GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > ios/Runner/GoogleService-Info.plist
+          fi
+
+      - name: Signing
+        working-directory: ios
+        env:
+          IOS_DISTRIBUTION_P12: ${{ secrets.IOS_DISTRIBUTION_P12 }}
+          IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+          IOS_APPSTORE_PROFILE: ${{ secrets.IOS_APPSTORE_PROFILE }}
+        run: bundle exec fastlane signing
+
+      # Same formula as artifacts' versionCode.
+      - name: Build IPA
+        env:
+          TAG: ${{ needs.yeet.outputs.tag }}
+        run: |
+          IFS=. read -r year month micro <<< "${TAG#v}"
+          flutter build ipa --release --build-number="$((year * 10000 + month * 100 + micro))" \
+            --export-options-plist=build/ios/ExportOptions.plist
+
+      # Distribution signing must have turned push to production; a development
+      # value would ship a build that never receives a push.
+      - name: Check push entitlement
+        run: |
+          ipa=$(ls build/ios/ipa/*.ipa)
+          unzip -q -o "$ipa" -d "$RUNNER_TEMP/ipa"
+          codesign -d --entitlements :- "$RUNNER_TEMP"/ipa/Payload/Runner.app 2>/dev/null \
+            | plutil -extract aps-environment raw - | grep -qx production
+
+      - name: Upload to TestFlight
+        working-directory: ios
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.yeet.outputs.tag }}
+        run: |
+          notes=""
+          if gh release download "$TAG" -p release-notes.json -O "$RUNNER_TEMP/notes.json" 2>/dev/null; then
+            notes=$(jq -r '.["en-US"] // (to_entries | first | .value) // ""' "$RUNNER_TEMP/notes.json")
+          fi
+          bundle exec fastlane upload ipa:"$(ls ../build/ios/ipa/*.ipa)" changelog:"$notes"

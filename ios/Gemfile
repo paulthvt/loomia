@@ -1,0 +1,4 @@
+# Release tooling for iOS only (#397), contained in ios/. Not an app dependency.
+source 'https://rubygems.org'
+
+gem 'fastlane', '2.241.2'

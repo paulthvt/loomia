@@ -1,0 +1,2 @@
+app_identifier('app.loomia')
+team_id('378X654D2A') # Loomia's own team, never an employer's (#396).
