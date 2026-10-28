@@ -133,9 +133,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     }
   }
 
-  /// Adds or edits a task; the calendar then shows the day it is due.
-  Future<void> _task(DateTime day, {Task? editing}) async {
-    final saved = await showTask(context, day: day, editing: editing);
+  /// Adds a task; the calendar then shows the day it is due. A task is
+  /// edited from its page (#390).
+  Future<void> _task(DateTime day) async {
+    final saved = await showTask(context, day: day);
     if (saved != null && mounted) {
       ref.read(calendarSelectionProvider.notifier).select(saved.dueOn);
     }
@@ -211,7 +212,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       onAdd: (day) => unawaited(_add(context, ref, day)),
       onToggleTask: (task) => unawaited(_toggleTask(task)),
       onAddTask: (day) => unawaited(_task(day)),
-      onOpenTask: (task) => unawaited(_task(task.dueOn, editing: task)),
+      onOpenTask: (task) => openTask(context, task.id),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => _refresh(context, ref),
       desktop: desktop,

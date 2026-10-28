@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/tick_ring.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
@@ -52,6 +54,76 @@ void main() {
       expect(find.byType(CalendarPage), findsOneWidget);
       expect(find.byType(TaskPane), findsOneWidget);
       expect(find.byType(TaskPage), findsNothing);
+    });
+  });
+
+  group('opened from (#390)', () {
+    Task dueToday() => Task(
+      id: 't9',
+      title: 'Order flyers',
+      note: null,
+      dueOn: today(),
+      doneOn: null,
+      createdAt: DateTime(2026, 10, 1),
+    );
+
+    testWidgets('Today, on the phone: its page, not the form; back to Today', (
+      tester,
+    ) async {
+      tasks = FakeTaskRepository([dueToday()]);
+      final container = await pumpLoomia(tester, size: phone, tasks: tasks);
+
+      await tester.tap(find.text('Order flyers'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TaskPage), findsOneWidget);
+      expect(find.text('Edit task'), findsNothing);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(
+        container
+            .read(routerProvider)
+            .routerDelegate
+            .currentConfiguration
+            .uri
+            .toString(),
+        Routes.today,
+      );
+    });
+
+    testWidgets('Today, on desktop: the Calendar with its pane', (
+      tester,
+    ) async {
+      tasks = FakeTaskRepository([dueToday()]);
+      await pumpLoomia(tester, size: desktop, tasks: tasks);
+
+      await tester.tap(find.text('Order flyers'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CalendarPage), findsOneWidget);
+      expect(find.byType(TaskPane), findsOneWidget);
+    });
+
+    testWidgets('the Calendar, on the phone: its page; an edit moving it '
+        'selects its new day', (tester) async {
+      tasks = FakeTaskRepository([dueToday()]);
+      final container = await pumpLoomia(tester, size: phone, tasks: tasks);
+      container.read(routerProvider).go(Routes.calendar);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Order flyers'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TaskPage), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Edit'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tomorrow'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      final tomorrow = DateTime(today().year, today().month, today().day + 1);
+      expect(tasks.store['t9']!.dueOn, tomorrow);
+      expect(container.read(calendarSelectionProvider).day, tomorrow);
     });
   });
 

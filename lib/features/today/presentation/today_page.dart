@@ -85,7 +85,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
   /// twice.
   String? _opened;
 
-  /// Opens [TodayPage.openTask]'s sheet when [tasks] holds it, then drops
+  /// Opens [TodayPage.openTask]'s page when [tasks] holds it, then drops
   /// the parameter from the address.
   void _openFromPush(List<Task>? tasks) {
     final id = widget.openTask;
@@ -96,10 +96,8 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.go(Routes.today);
-      final task = tasks.where((t) => t.id == id && !t.done).firstOrNull;
-      if (task != null) {
-        unawaited(showTask(context, day: today(), editing: task));
-      }
+      // Its page over Today (#390), ticked or not; a deleted one: Today.
+      if (tasks.any((t) => t.id == id)) openTask(context, id);
     });
   }
 
@@ -417,8 +415,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       ),
       onOpen: (person) => openContact(context, person.id),
       onTickTask: (task) => unawaited(_tickTask(task)),
-      onOpenTask: (task) =>
-          unawaited(showTask(context, day: today(), editing: task)),
+      onOpenTask: (task) => openTask(context, task.id),
       onAddTask: () => unawaited(showTask(context, day: today())),
       onRetry: () {
         if (people.hasError) ref.invalidate(book);
