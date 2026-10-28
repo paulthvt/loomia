@@ -304,4 +304,5 @@ jobs:
           if gh release download "$TAG" -p release-notes.json -O "$RUNNER_TEMP/notes.json" 2>/dev/null; then
             notes=$(jq -r '.["en-US"] // (to_entries | first | .value) // ""' "$RUNNER_TEMP/notes.json")
           fi
-          bundle exec fastlane upload ipa:"$(ls ../build/ios/ipa/*.ipa)" changelog:"$notes"
+          # Absolute: fastlane resolves a relative path from ios/fastlane/, not ios/.
+          bundle exec fastlane upload ipa:"$(ls "$GITHUB_WORKSPACE"/build/ios/ipa/*.ipa)" changelog:"$notes"
