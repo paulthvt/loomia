@@ -7,6 +7,7 @@ class NotificationSettings {
     required this.timeZone,
     this.enabled = false,
     this.ritual = false,
+    this.tasks = true,
     this.hour = 19,
     this.minute = 0,
     this.days = weekdays,
@@ -23,8 +24,14 @@ class NotificationSettings {
   /// the close-and-plan window.
   final bool ritual;
 
-  /// Either push is on: time and days matter, and the phone must allow it.
+  /// Task pushes (#389), at each task's own time when its bell is on.
+  final bool tasks;
+
+  /// The summary or the month-end push is on: time and days matter.
   bool get any => enabled || ritual;
+
+  /// Any push is on: the phone must allow it.
+  bool get pushes => any || tasks;
   final int hour;
   final int minute;
 
@@ -37,6 +44,7 @@ class NotificationSettings {
   NotificationSettings copyWith({
     bool? enabled,
     bool? ritual,
+    bool? tasks,
     int? hour,
     int? minute,
     Set<int>? days,
@@ -44,6 +52,7 @@ class NotificationSettings {
   }) => NotificationSettings(
     enabled: enabled ?? this.enabled,
     ritual: ritual ?? this.ritual,
+    tasks: tasks ?? this.tasks,
     hour: hour ?? this.hour,
     minute: minute ?? this.minute,
     days: days ?? this.days,
@@ -56,6 +65,7 @@ class NotificationSettings {
     return NotificationSettings(
       enabled: row['summary_enabled'] as bool,
       ritual: row['ritual_enabled'] as bool,
+      tasks: row['task_enabled'] as bool? ?? true,
       hour: int.parse(hour),
       minute: int.parse(minute),
       days: {for (final day in row['summary_days'] as List) day as int},
@@ -66,6 +76,7 @@ class NotificationSettings {
   Map<String, dynamic> toRow() => {
     'summary_enabled': enabled,
     'ritual_enabled': ritual,
+    'task_enabled': tasks,
     'summary_time':
         '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
     'summary_days': (days.toList()..sort()),
@@ -77,6 +88,7 @@ class NotificationSettings {
       other is NotificationSettings &&
       other.enabled == enabled &&
       other.ritual == ritual &&
+      other.tasks == tasks &&
       other.hour == hour &&
       other.minute == minute &&
       other.timeZone == timeZone &&
@@ -87,6 +99,7 @@ class NotificationSettings {
   int get hashCode => Object.hash(
     enabled,
     ritual,
+    tasks,
     hour,
     minute,
     timeZone,

@@ -23,6 +23,7 @@ class Task {
     required this.createdAt,
     this.repeat,
     this.dueTime,
+    this.alert = true,
   });
 
   final String id;
@@ -46,6 +47,9 @@ class Task {
   /// (#377); null: any time that day. A push goes at that time.
   final TaskTime? dueTime;
 
+  /// The bell (#389): whether [dueTime] pushes. Unused without a time.
+  final bool alert;
+
   bool get done => doneOn != null;
 
   /// Open and repeating: ticking it makes the next one.
@@ -59,6 +63,7 @@ typedef TaskDraft = ({
   String? note,
   DateTime dueOn,
   TaskTime? dueTime,
+  bool alert,
   TaskRepeat? repeat,
 });
 

@@ -23,6 +23,7 @@ void main() {
       note: null,
       dueOn: DateTime(2026, 10, 25),
       dueTime: null,
+      alert: true,
       repeat: null,
     ));
 
@@ -122,6 +123,7 @@ void main() {
         note: null,
         dueOn: DateTime(2026, 10, 26),
         dueTime: null,
+        alert: true,
         repeat: null,
       )),
       throwsA(PeopleFailure.network),

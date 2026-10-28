@@ -92,9 +92,16 @@ class NotificationSettingsForm extends StatelessWidget {
               onChanged: (value) =>
                   turn(settings.copyWith(ritual: value), value: value),
             ),
+            SwitchListTile(
+              title: Text(l10n.notificationsTasks),
+              subtitle: Text(l10n.notificationsTasksBody),
+              value: settings.tasks,
+              onChanged: (value) =>
+                  turn(settings.copyWith(tasks: value), value: value),
+            ),
           ],
         ),
-        if (on && allowed == false) ...[
+        if (settings.pushes && allowed == false) ...[
           const SizedBox(height: AppSpacing.sm),
           Container(
             padding: const EdgeInsets.all(AppSpacing.ms),

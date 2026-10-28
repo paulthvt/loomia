@@ -7,8 +7,25 @@ void main() {
     expect(settings.enabled, isFalse);
     expect(settings.ritual, isFalse);
     expect(settings.any, isFalse);
+    expect(settings.tasks, isTrue, reason: 'task pushes on, as before #389');
+    expect(settings.pushes, isTrue);
     expect((settings.hour, settings.minute), (19, 0));
     expect(settings.days, {1, 2, 3, 4, 5});
+  });
+
+  test('the Tasks switch reads back, and counts in ==', () {
+    const settings = NotificationSettings(
+      tasks: false,
+      timeZone: 'Europe/Paris',
+    );
+    final row = settings.toRow();
+    expect(row['task_enabled'], isFalse);
+    expect(
+      NotificationSettings.fromRow({...row, 'summary_time': '19:00:00'}),
+      settings,
+    );
+    expect(settings == settings.copyWith(tasks: true), isFalse);
+    expect(settings.pushes, isFalse);
   });
 
   test('a row reads back as it was saved', () {
