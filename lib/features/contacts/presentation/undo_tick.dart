@@ -37,9 +37,12 @@ void offerUndo(
       SnackBar(
         content: Text(message, maxLines: 1, overflow: TextOverflow.ellipsis),
         duration: undoTickDuration,
-        // An action keeps a snackbar up by default; only a screen reader
-        // user needs that, to reach Undo.
-        persist: MediaQuery.accessibleNavigationOf(context),
+        // An action keeps a snackbar up by default. Undo always closes: on
+        // Android, Flutter's accessibleNavigation turns on for any
+        // accessibility service (a password manager), not only a screen
+        // reader, which kept it up forever (#386). A screen reader still
+        // announces it.
+        persist: false,
         width: context.screenSize == ScreenSize.desktop ? _desktopWidth : null,
         action: SnackBarAction(
           label: l10n.tickUndo,

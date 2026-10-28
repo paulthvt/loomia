@@ -174,7 +174,8 @@ void main() {
     expect(find.text('Undo'), findsNothing);
   });
 
-  testWidgets('with a screen reader, Undo stays until dismissed', (
+  testWidgets('with an accessibility service on (a password manager sets '
+      'accessibleNavigation on Android), Undo still goes after 5 s (#386)', (
     tester,
   ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
@@ -184,10 +185,10 @@ void main() {
     await tester.tap(find.byTooltip(_markFirst));
     await tester.pumpAndSettle();
 
-    await tester.pump(const Duration(seconds: 30));
+    await tester.pump(undoTickDuration + const Duration(seconds: 1));
     await tester.pumpAndSettle();
 
-    expect(find.text('Undo'), findsOneWidget);
+    expect(find.text('Undo'), findsNothing);
   });
 
   testWidgets('on desktop the snackbar is 480 wide', (tester) async {
