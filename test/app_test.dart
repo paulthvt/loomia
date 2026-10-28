@@ -39,6 +39,8 @@ void main() {
     expect(Breakpoints.of(375), ScreenSize.mobile);
     expect(Breakpoints.of(Breakpoints.tablet), ScreenSize.tablet);
     expect(Breakpoints.of(Breakpoints.desktop), ScreenSize.desktop);
+    // An iPad Pro 13" in portrait: too narrow for sidebar + list + pane (#403).
+    expect(Breakpoints.of(1032), ScreenSize.tablet);
     expect(ScreenSize.mobile.usesSideNavigation, isFalse);
     expect(ScreenSize.desktop.usesSideNavigation, isTrue);
   });
