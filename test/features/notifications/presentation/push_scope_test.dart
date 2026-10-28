@@ -3,10 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/pick_day.dart';
+import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:loomia/features/notifications/domain/notification_settings.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
+import 'package:loomia/features/tasks/presentation/task_page.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
@@ -79,7 +81,7 @@ void main() {
         .uri
         .toString();
 
-    testWidgets('opens its sheet on Today, then clears the address', (
+    testWidgets('opens its page over Today; back lands on Today (#390)', (
       tester,
     ) async {
       final push = FakePush();
@@ -96,11 +98,16 @@ void main() {
       push.tap({'type': 'task', 'task': 't1'});
       await tester.pumpAndSettle();
 
-      expect(find.text('Edit task'), findsOneWidget);
+      expect(find.byType(TaskPage), findsOneWidget);
+      expect(find.text('Edit task'), findsNothing);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
       expect(where(container), Routes.today);
     });
 
-    testWidgets('a task gone or done: just Today', (tester) async {
+    testWidgets('a done task: its page, ticked; a deleted one: just Today', (
+      tester,
+    ) async {
       final push = FakePush();
       final tasks = FakeTaskRepository([call(doneOn: today())]);
       final container = await pumpLoomia(
@@ -112,10 +119,12 @@ void main() {
 
       push.tap({'type': 'task', 'task': 't1'});
       await tester.pumpAndSettle();
+      expect(find.byType(TaskPage), findsOneWidget);
+      expect(tester.widget<TickRing>(find.byType(TickRing)).selected, isTrue);
+
       push.tap({'type': 'task', 'task': 'gone'});
       await tester.pumpAndSettle();
-
-      expect(find.text('Edit task'), findsNothing);
+      expect(find.byType(TaskPage), findsNothing);
       expect(where(container), Routes.today);
     });
 

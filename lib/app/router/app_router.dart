@@ -23,6 +23,7 @@ import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/features/notifications/presentation/push_scope.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
+import 'package:loomia/features/tasks/presentation/task_page.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -108,7 +109,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state, child) => context.screenSize.isDesktop
                 ? CalendarPage(
                     pane: child,
-                    eventOpen: state.pathParameters.containsKey('id'),
+                    paneOpen: state.pathParameters.containsKey('id'),
                   )
                 : child,
             routes: [
@@ -118,6 +119,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 pageBuilder: (context, state) =>
                     _calendarPage(context, state, null),
                 routes: [
+                  // Before the event's: `task` is never an event id anyway.
+                  GoRoute(
+                    path: Routes.taskSegment,
+                    name: Routes.taskName,
+                    pageBuilder: (context, state) => _calendarPage(
+                      context,
+                      state,
+                      state.pathParameters['id'],
+                      task: true,
+                    ),
+                  ),
                   GoRoute(
                     path: Routes.eventSegment,
                     name: Routes.eventName,
@@ -353,25 +365,35 @@ Page<void> _workflowPage(BuildContext context, GoRouterState state, String id) {
       : MaterialPage<void>(key: state.pageKey, name: state.name, child: child);
 }
 
-/// Desktop: an event's pane beside the month (none for the month alone),
-/// swapped without a transition (see [_settingsPage]). Elsewhere: the month, or an event pushed above it.
+/// Desktop: an event's or a task's pane beside the month (none for the month
+/// alone), swapped without a transition (see [_settingsPage]). Elsewhere: the
+/// month, or the event or task pushed above it.
 Page<void> _calendarPage(
   BuildContext context,
   GoRouterState state,
-  String? id,
-) {
+  String? id, {
+  bool task = false,
+}) {
   if (context.screenSize.isDesktop) {
     return NoTransitionPage<void>(
       key: state.pageKey,
       name: state.name,
       child: Scaffold(
-        body: id == null ? const SizedBox.shrink() : EventPane(id: id),
+        body: switch (id) {
+          null => const SizedBox.shrink(),
+          final id when task => TaskPane(id: id),
+          final id => EventPane(id: id),
+        },
       ),
     );
   }
   return MaterialPage<void>(
     key: state.pageKey,
     name: state.name,
-    child: id == null ? const CalendarPage() : EventPage(id: id),
+    child: switch (id) {
+      null => const CalendarPage(),
+      final id when task => TaskPage(id: id),
+      final id => EventPage(id: id),
+    },
   );
 }

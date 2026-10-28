@@ -8,6 +8,7 @@ import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
+import 'package:loomia/features/tasks/presentation/task_page.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -79,6 +80,39 @@ Widget eventDoneMobileLight() => _app(
       onJoin: (_) {},
       steps: _workshopSteps,
       onTick: (_, _) {},
+    ),
+  ),
+);
+
+/// A task's page (#390): timed, its bell on, repeating, with a note.
+@Preview(group: 'Calendar', name: 'Task — light', size: Size(390, 844))
+Widget taskMobileLight() => _app(
+  AppTheme.light,
+  Scaffold(
+    appBar: AppBar(leading: const BackButton()),
+    body: TaskView(
+      task: Task(
+        id: 't5',
+        title: 'Call the supplier',
+        note: 'Ask about the 10 ml bottles',
+        dueOn: DateTime(2026, 10, 22),
+        doneOn: null,
+        createdAt: DateTime(2026, 10, 5),
+        dueTime: (hour: 14, minute: 0),
+        repeat: (
+          every: 1,
+          unit: RepeatUnit.week,
+          from: DateTime(2026, 10, 22),
+          until: null,
+          scheduledOn: DateTime(2026, 10, 22),
+        ),
+      ),
+      now: DateTime(2026, 10, 20, 9),
+      busy: false,
+      onTick: () {},
+      onEdit: () {},
+      onDelete: () {},
+      onPostpone: (_) {},
     ),
   ),
 );

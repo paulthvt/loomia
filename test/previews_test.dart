@@ -69,6 +69,7 @@ void main() {
     ),
     'event_mobile_light': (const Size(390, 844), eventMobileLight),
     'event_done_mobile_light': (const Size(390, 844), eventDoneMobileLight),
+    'task_mobile_light': (const Size(390, 844), taskMobileLight),
     'goals_mobile_light': (const Size(390, 844), goalsMobileLight),
     'goals_mobile_dark': (const Size(390, 844), goalsMobileDark),
     'goals_desktop_light': (const Size(1440, 900), goalsDesktopLight),

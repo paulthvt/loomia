@@ -49,13 +49,25 @@ void openEvent(BuildContext context, String id) {
   }
 }
 
+/// Opens a task (#390), as [openEvent] opens an event: in the pane beside the
+/// month on desktop, pushed above the current screen elsewhere.
+void openTask(BuildContext context, String id) {
+  final location = Routes.taskLocation(id);
+  if (context.screenSize.isDesktop) {
+    context.go(location);
+  } else {
+    unawaited(context.push(location));
+  }
+}
+
 /// The Calendar destination. On desktop it also holds [pane]: an open
-/// event, beside the month or week ([eventOpen]); a day opens in a popover.
+/// event or task, beside the month or week ([paneOpen]); a day opens in a
+/// popover.
 class CalendarPage extends ConsumerStatefulWidget {
-  const CalendarPage({this.pane, this.eventOpen = false, super.key});
+  const CalendarPage({this.pane, this.paneOpen = false, super.key});
 
   final Widget? pane;
-  final bool eventOpen;
+  final bool paneOpen;
 
   @override
   ConsumerState<CalendarPage> createState() => _CalendarPageState();
@@ -121,9 +133,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     }
   }
 
-  /// Adds or edits a task; the calendar then shows the day it is due.
-  Future<void> _task(DateTime day, {Task? editing}) async {
-    final saved = await showTask(context, day: day, editing: editing);
+  /// Adds a task; the calendar then shows the day it is due. A task is
+  /// edited from its page (#390).
+  Future<void> _task(DateTime day) async {
+    final saved = await showTask(context, day: day);
     if (saved != null && mounted) {
       ref.read(calendarSelectionProvider.notifier).select(saved.dueOn);
     }
@@ -155,7 +168,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final owner = ref.watch(accountProvider)?.email;
     final provider = eventsProvider(owner);
     final pane = widget.pane;
-    final eventOpen = widget.eventOpen;
+    final paneOpen = widget.paneOpen;
     final selector = ref.read(calendarSelectionProvider.notifier);
     final selection = ref.watch(calendarSelectionProvider);
     final desktop = context.screenSize.isDesktop;
@@ -189,7 +202,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       onSelect: (day) {
         selector.select(day);
         // Desktop: an open event gives the pane back to the day.
-        if (desktop && eventOpen) context.go(Routes.calendar);
+        if (desktop && paneOpen) context.go(Routes.calendar);
       },
       onShift: (delta) => selector.shift(delta, firstDayOfWeek: firstDay),
       onToday: selector.toToday,
@@ -199,11 +212,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       onAdd: (day) => unawaited(_add(context, ref, day)),
       onToggleTask: (task) => unawaited(_toggleTask(task)),
       onAddTask: (day) => unawaited(_task(day)),
-      onOpenTask: (task) => unawaited(_task(task.dueOn, editing: task)),
+      onOpenTask: (task) => openTask(context, task.id),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => _refresh(context, ref),
       desktop: desktop,
-      pane: eventOpen ? pane : null,
+      pane: paneOpen ? pane : null,
       // With a sidebar, Settings is its account block instead, and there
       // is no pull to refresh on a mouse: a button, as on Today.
       accountAction: context.screenSize.usesSideNavigation
