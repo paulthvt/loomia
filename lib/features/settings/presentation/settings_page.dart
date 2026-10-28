@@ -349,6 +349,7 @@ class _SettingsListState extends ConsumerState<_SettingsList>
                   .watch(notificationSettingsProvider(account?.email))
                   .value) {
                 final s? when s.any => formatSummaryTime(context, s),
+                final s? when s.tasks => l10n.notificationsTasks,
                 _ => l10n.notificationsOff,
               }),
               trailing: const Icon(Icons.chevron_right_rounded),

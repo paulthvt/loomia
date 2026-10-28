@@ -207,4 +207,81 @@ void main() {
     expect(find.text('7:00 PM'), findsOneWidget);
     expect(find.text('Off'), findsNothing);
   });
+
+  group('the Tasks switch (#389)', () {
+    const tasksOnly = NotificationSettings(timeZone: 'Europe/Paris');
+
+    SwitchListTile tasksTile(WidgetTester tester) => tester
+        .widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Tasks'));
+
+    testWidgets('on by default; off saves, asks nothing', (tester) async {
+      final push = FakePush(isAllowed: true);
+      final notifications = FakeNotificationsRepository();
+      await open(tester, push: push, notifications: notifications);
+      expect(tasksTile(tester).value, isTrue);
+      expect(
+        find.text('At the time set on a task, when its bell is on.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Tasks'));
+      await tester.pumpAndSettle();
+      expect(notifications.saved.single.tasks, isFalse);
+      expect(push.asked, 0);
+      expect(tasksTile(tester).value, isFalse);
+    });
+
+    testWidgets('turning it on asks the phone', (tester) async {
+      final push = FakePush(isAllowed: true);
+      final notifications = FakeNotificationsRepository(
+        tasksOnly.copyWith(tasks: false),
+      );
+      await open(tester, push: push, notifications: notifications);
+      push
+        ..isAllowed = false
+        ..asked = 0;
+
+      await tester.tap(find.text('Tasks'));
+      await tester.pumpAndSettle();
+      expect(push.asked, 1);
+      expect(notifications.saved.single.tasks, isTrue);
+    });
+
+    testWidgets('only Tasks on: the time and days stay off', (tester) async {
+      await open(tester, notifications: FakeNotificationsRepository(tasksOnly));
+      expect(
+        tester.widget<ListTile>(find.widgetWithText(ListTile, 'Time')).enabled,
+        isFalse,
+      );
+      expect(chip(tester, 1).onSelected, isNull);
+    });
+
+    testWidgets('only Tasks on, refused by the phone: the warning', (
+      tester,
+    ) async {
+      await open(
+        tester,
+        push: FakePush(grant: false),
+        notifications: FakeNotificationsRepository(tasksOnly),
+      );
+      expect(
+        find.text("Notifications are off for Loomia in your phone's settings."),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the Settings row says Tasks when only tasks push', (
+      tester,
+    ) async {
+      final container = await pumpLoomia(
+        tester,
+        size: phone,
+        notifications: FakeNotificationsRepository(tasksOnly),
+      );
+      container.read(routerProvider).go(Routes.settings);
+      await tester.pumpAndSettle();
+      expect(find.text('Tasks'), findsOneWidget);
+      expect(find.text('Off'), findsNothing);
+    });
+  });
 }

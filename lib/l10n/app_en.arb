@@ -3124,6 +3124,14 @@
   "@notificationsRitualBody": {
     "description": "Line under the Month-end review switch, saying when that push comes."
   },
+  "notificationsTasks": "Tasks",
+  "@notificationsTasks": {
+    "description": "Switch label in Settings > Notifications: the pushes at the time set on a task. On by default. Also shown as the Notifications row's subtitle in Settings when only these pushes are on."
+  },
+  "notificationsTasksBody": "At the time set on a task, when its bell is on.",
+  "@notificationsTasksBody": {
+    "description": "Line under the Tasks switch, saying when a task push comes. The bell is the button beside a task's time that turns its push on or off."
+  },
   "planReminder": "Remind me when {month} ends",
   "@planReminder": {
     "description": "Switch on the planning screen: turns on the month-end push, which comes in the last days of month.",
