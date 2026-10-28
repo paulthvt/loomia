@@ -46,7 +46,7 @@
 **Interfaces:**
 - Produces: columns `notification_settings.task_enabled boolean`, `task.alert boolean`; `claim_task_alerts`, `complete_task`, `delete_task` with the same signatures.
 
-- [ ] **Step 1: Write `task_alert_controls_test.sql`** (style of `task_time_test.sql`: users, a Paris settings row, tasks due `2026-10-27 14:00`, `pg_temp.claimed(p_now)`), asserting:
+- [x] **Step 1: Write `task_alert_controls_test.sql`** (style of `task_time_test.sql`: users, a Paris settings row, tasks due `2026-10-27 14:00`, `pg_temp.claimed(p_now)`), asserting:
   - `alert` and `task_enabled` default to true on a fresh row;
   - a task with `alert = false` is not claimed at `2026-10-27 13:00:30+00`; the same with `alert = true` is;
   - with `task_enabled = false`, nothing of that owner is claimed;
@@ -54,10 +54,10 @@
   - `complete_task` on a weekly task with `alert = false` makes a next task with `alert = false`; `delete_task(..., false)` likewise;
   - updating only `alert` changes `updated_at`, and leaves `alerted_for` as it was;
   - as `authenticated`, the owner can `update` `alert` and `task_enabled`; `alerted_for` still not.
-- [ ] **Step 2: Run** `supabase test db` → FAIL (columns missing).
-- [ ] **Step 3: Write the migration:** add both columns `not null default true`; `grant update (alert) on public.task to authenticated`; `grant update (task_enabled) on public.notification_settings to authenticated`; recreate `task_set_updated_at` with `alert` in its `update of` list; `create or replace` `complete_task` and `delete_task` from `20261026213314_task_time.sql`, adding `alert` to each `insert` beside `due_time`; `create or replace claim_task_alerts` with `and s.task_enabled and t.alert` in its `where`. Header comment links the spec.
-- [ ] **Step 4: Run** `supabase test db` → all pass, `schema_rls_test.sql` included.
-- [ ] **Step 5: Commit** `feat(db): a switch and a bell for task pushes`.
+- [x] **Step 2: Run** `supabase test db` → FAIL (columns missing).
+- [x] **Step 3: Write the migration:** add both columns `not null default true`; `grant update (alert) on public.task to authenticated`; `grant update (task_enabled) on public.notification_settings to authenticated`; recreate `task_set_updated_at` with `alert` in its `update of` list; `create or replace` `complete_task` and `delete_task` from `20261026213314_task_time.sql`, adding `alert` to each `insert` beside `due_time`; `create or replace claim_task_alerts` with `and s.task_enabled and t.alert` in its `where`. Header comment links the spec.
+- [x] **Step 4: Run** `supabase test db` → all pass, `schema_rls_test.sql` included.
+- [x] **Step 5: Commit** `feat(db): a switch and a bell for task pushes`.
 
 ### Task 2: The Tasks switch
 
@@ -72,17 +72,17 @@
 **Interfaces:**
 - Produces: `NotificationSettings({…, bool tasks = true})`, `final bool tasks`, `copyWith({bool? tasks})`, `bool get pushes => any || tasks`; row key `task_enabled`.
 
-- [ ] **Step 1: Failing tests:**
+- [x] **Step 1: Failing tests:**
   - unit: `fromRow` reads `task_enabled: false` into `tasks == false`; `toRow` writes `'task_enabled'`; `==` differs on `tasks`;
   - widget `'the Tasks switch: on by default, off saves'`: no row → the **Tasks** tile is on; tap it → `notifications.saved.single.tasks == false`, `push.asked == 0`;
   - widget `'turning Tasks on asks the phone'`: row with `tasks: false`, `FakePush()` → tap → `push.asked == 1`, saved `tasks == true`;
   - widget `'only Tasks on: time and days stay off'`: `NotificationSettings(timeZone: 'Europe/Paris')` → the time tile is disabled;
   - widget `'only Tasks on, refused: the warning'`: same settings, `FakePush(isAllowed: false)` → `'notificationsPermissionOff'` copy shows;
   - widget `'the Settings row shows Tasks when only tasks push'`.
-- [ ] **Step 2: Run** `flutter test test/features/notifications` → FAIL.
-- [ ] **Step 3: Implement:** the field everywhere in the model; `task_enabled` in the repository's select; a third `SwitchListTile` (title `notificationsTasks` "Tasks", subtitle `notificationsTasksBody` "At the time set on a task, when its bell is on.") wired through `turn`; the warning condition `settings.pushes && allowed == false`; the Settings row `switch` gains `final s? when s.tasks => l10n.notificationsTasks` after the `any` case.
-- [ ] **Step 4: Run** `flutter test test/features/notifications test/features/settings` → PASS.
-- [ ] **Step 5: Commit** `feat(notifications): a Tasks switch`.
+- [x] **Step 2: Run** `flutter test test/features/notifications` → FAIL.
+- [x] **Step 3: Implement:** the field everywhere in the model; `task_enabled` in the repository's select; a third `SwitchListTile` (title `notificationsTasks` "Tasks", subtitle `notificationsTasksBody` "At the time set on a task, when its bell is on.") wired through `turn`; the warning condition `settings.pushes && allowed == false`; the Settings row `switch` gains `final s? when s.tasks => l10n.notificationsTasks` after the `any` case.
+- [x] **Step 4: Run** `flutter test test/features/notifications test/features/settings` → PASS.
+- [x] **Step 5: Commit** `feat(notifications): a Tasks switch`.
 
 ### Task 3: The bell
 
@@ -98,7 +98,7 @@
 - Consumes: `NotificationSettings.tasks` (Task 2), `notificationSettingsProvider(owner)`.
 - Produces: `Task.alert` (`bool`, constructor default `true`), `TaskDraft.alert` (`bool`), column `alert`.
 
-- [ ] **Step 1: Failing tests** in the `time` group, tooltips found by `find.byTooltip`:
+- [x] **Step 1: Failing tests** in the `time` group, tooltips found by `find.byTooltip`:
   - `'a time shows the bell, on'`: pick a time → `Don't notify me` present; no time → no bell;
   - `'the bell off saves alert false'`: tap it → tooltip `Notify me at this time`; save → `alert == false`;
   - `'off stays off when the time changes'`: editing `alert: false`, pick another time → still off; saved `alert == false`;
@@ -108,15 +108,21 @@
   - `'bell back on asks the phone'`: editing timed `alert: false`, `FakePush()` → tap bell, save → `push.asked == 1`; editing timed `alert: true`, save → `push.asked == 0` (the existing `'a task that had a time asks nothing again'` keeps passing);
   - `'postponing keeps the bell off'`: past its time, `alert: false` → In 15 min → `alert == false`;
   - `'on web: the bell shows and saves'`: no push here → bell present, toggles, saves.
-- [ ] **Step 2: Run** `flutter test test/features/tasks` → FAIL.
-- [ ] **Step 3: Model and data:** `alert` on `Task` (default `true`) and `TaskDraft`; `alert` in `_columns`, `'alert': draft.alert` in `_draftColumns`, `row['alert'] as bool? ?? true` in `taskFromRow`. Update every `TaskDraft` literal (`task_sheet.dart:99` passes `editing.alert`).
-- [ ] **Step 4: Form:** `late bool _alert = widget.editing?.alert ?? true`; `_pickTime` sets `_alert = true` when `_time` was null; the draft carries `_alert`. Arming: `final notifies = _time != null && _alert; final notified = editing?.dueTime != null && (editing?.alert ?? false); final arms = notifies && !notified;` replacing `_save`'s `arms`. In `_timeField`, put the chip and an `IconButton(isSelected: _alert, icon: Icon(Icons.notifications_off_outlined), selectedIcon: Icon(Icons.notifications_active_rounded), tooltip: _alert ? taskAlertOn : taskAlertOff, onPressed: tasksOff || _saving ? null : toggle)` in a `Row`; `tasksOff` reads `ref.watch(notificationSettingsProvider(owner)).value?.tasks == false` (loading or no row: not off). Under it, when `time != null && tasksOff`: the `taskAlertsOff` text and a `TextButton` `taskAlertsTurnOn` doing what the existing Settings link does; the existing permission line only when `!tasksOff`.
-- [ ] **Step 5: Copy:** `taskAlertOn` "Don't notify me", `taskAlertOff` "Notify me at this time", `taskAlertsOff` "Task notifications are off.", `taskAlertsTurnOn` "Turn them on in Settings", each described.
-- [ ] **Step 6: Run** `dart format . && flutter analyze && flutter test` → No issues, all pass.
-- [ ] **Step 7: Commit** `feat(tasks): a bell to choose whether a timed task notifies`.
+- [x] **Step 2: Run** `flutter test test/features/tasks` → FAIL.
+- [x] **Step 3: Model and data:** `alert` on `Task` (default `true`) and `TaskDraft`; `alert` in `_columns`, `'alert': draft.alert` in `_draftColumns`, `row['alert'] as bool? ?? true` in `taskFromRow`. Update every `TaskDraft` literal (`task_sheet.dart:99` passes `editing.alert`).
+- [x] **Step 4: Form:** `late bool _alert = widget.editing?.alert ?? true`; `_pickTime` sets `_alert = true` when `_time` was null; the draft carries `_alert`. Arming: `final notifies = _time != null && _alert; final notified = editing?.dueTime != null && (editing?.alert ?? false); final arms = notifies && !notified;` replacing `_save`'s `arms`. In `_timeField`, put the chip and an `IconButton(isSelected: _alert, icon: Icon(Icons.notifications_off_outlined), selectedIcon: Icon(Icons.notifications_active_rounded), tooltip: _alert ? taskAlertOn : taskAlertOff, onPressed: tasksOff || _saving ? null : toggle)` in a `Row`; `tasksOff` reads `ref.watch(notificationSettingsProvider(owner)).value?.tasks == false` (loading or no row: not off). Under it, when `time != null && tasksOff`: the `taskAlertsOff` text and a `TextButton` `taskAlertsTurnOn` doing what the existing Settings link does; the existing permission line only when `!tasksOff`.
+- [x] **Step 5: Copy:** `taskAlertOn` "Don't notify me", `taskAlertOff` "Notify me at this time", `taskAlertsOff` "Task notifications are off.", `taskAlertsTurnOn` "Turn them on in Settings", each described.
+- [x] **Step 6: Run** `dart format . && flutter analyze && flutter test` → No issues, all pass.
+- [x] **Step 7: Commit** `feat(tasks): a bell to choose whether a timed task notifies`.
 
 ### Task 4: Ship
 
-- [ ] **Step 1:** Tick this plan's boxes; note any deviation at the end.
-- [ ] **Step 2:** `git push -u origin feature/389-task-notifications`; open the PR (title under 70 chars, `Closes #389`, Database: `supabase db push` before or with the release, additive, safe for the released app, no function deploy). Goldens: regenerate through CI only if a preview changed.
-- [ ] **Step 3:** CI green (format/analyze/test, Supabase migrations).
+- [x] **Step 1:** Tick this plan's boxes; note any deviation at the end.
+- [x] **Step 2:** `git push -u origin feature/389-task-notifications`; open the PR (title under 70 chars, `Closes #389`, Database: `supabase db push` before or with the release, additive, safe for the released app, no function deploy). Goldens: regenerate through CI only if a preview changed.
+- [x] **Step 3:** CI green (format/analyze/test, Supabase migrations).
+
+## Changes during implementation
+
+- The local database's migration history had drifted, so `supabase db reset --local` rebuilt it before `supabase test db` (local only).
+- Review (one fresh reviewer, whole branch): nothing blocking. Two minors left as they are: the phone-permission line is read when the form opens or a time is picked, not when the bell is toggled (Save still asks); postpone doesn't prompt, as in #377.
+- The Settings → Notifications preview gains the Tasks row: its golden is regenerated through CI.
