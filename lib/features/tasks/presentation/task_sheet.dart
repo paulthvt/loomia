@@ -93,23 +93,6 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
     unawaited(_checkAllowed());
   }
 
-  /// In 15 min, In 1 hour: saves the task's new day and time and closes.
-  /// A repeating task is put off alone: its schedule stays.
-  Future<void> _postpone(Duration by) async {
-    final editing = widget.editing!;
-    final later = postponed(DateTime.now(), by);
-    await _write(
-      (tasks) => tasks.save(editing.id, (
-        title: editing.title,
-        note: editing.note,
-        dueOn: later.day,
-        dueTime: later.time,
-        alert: editing.alert,
-        repeat: editing.repeat,
-      )),
-    );
-  }
-
   /// The first time on a task: the push needs a zone and the phone's yes.
   Future<void> _armPushes() async {
     final owner = ref.read(accountProvider)?.email;
@@ -222,36 +205,6 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
       if (arms && _allowed != true) await ref.read(pushProvider).ask();
       return saved;
     });
-  }
-
-  Future<void> _delete() async {
-    final editing = widget.editing;
-    if (editing == null) return;
-    final l10n = AppLocalizations.of(context);
-    if (editing.repeats) {
-      final scope = await pickScope(context, delete: true, task: true);
-      if (scope == null) return;
-      await _write((tasks) async {
-        await tasks.removeRepeating(
-          editing,
-          on: today(),
-          following: scope == EventScope.following,
-        );
-        return null;
-      });
-      return;
-    }
-    final confirmed = await confirmDestructive(
-      context,
-      title: l10n.taskDeleteConfirm,
-      action: l10n.historyDeleteConfirm,
-    );
-    if (confirmed) {
-      await _write((tasks) async {
-        await tasks.remove(editing.id);
-        return null;
-      });
-    }
   }
 
   List<Widget> _repeatFields(AppLocalizations l10n) {
@@ -454,48 +407,6 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
 
   /// "It was due at 14:00", or "Due at 14:00" when it's near, then In 15 min
   /// and In 1 hour.
-  Widget _postponeRow(AppLocalizations l10n, Task task) {
-    final time = _formatTime(task.dueTime!);
-    final due = DateTime(
-      task.dueOn.year,
-      task.dueOn.month,
-      task.dueOn.day,
-      task.dueTime!.hour,
-      task.dueTime!.minute,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.sm,
-      children: [
-        Text(
-          DateTime.now().isBefore(due)
-              ? l10n.taskPostponeNear(time)
-              : l10n.taskPostponeWas(time),
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        // Two lines when one doesn't hold both (a phone, French).
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            FilledButton.tonal(
-              onPressed: _saving
-                  ? null
-                  : () => unawaited(_postpone(const Duration(minutes: 15))),
-              child: Text(l10n.taskPostpone15),
-            ),
-            FilledButton.tonal(
-              onPressed: _saving
-                  ? null
-                  : () => unawaited(_postpone(const Duration(hours: 1))),
-              child: Text(l10n.taskPostponeHour),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
   String _formatTime(TaskTime time) =>
       MaterialLocalizations.of(context).formatTimeOfDay(
         TimeOfDay(hour: time.hour, minute: time.minute),
@@ -525,11 +436,6 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
       child: LoomiaDialog(
         title: editing == null ? l10n.taskNewTitle : l10n.taskEditTitle,
         actions: [
-          if (editing != null)
-            TextButton(
-              onPressed: _saving ? null : () => unawaited(_delete()),
-              child: Text(l10n.historyDeleteConfirm),
-            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(material.cancelButtonLabel),
@@ -550,8 +456,6 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
           spacing: AppSpacing.ms,
           children: [
             if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
-            if (editing != null && alertNear(editing, DateTime.now()))
-              _postponeRow(l10n, editing),
             LabeledField(
               label: l10n.taskTitle,
               child: TextFormField(

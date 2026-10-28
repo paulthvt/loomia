@@ -225,34 +225,6 @@ void main() {
     expect(find.text('Edit task'), findsNothing);
   });
 
-  testWidgets('editing: Delete asks then removes', (tester) async {
-    final task = await tasks.add((
-      title: 'Old task',
-      note: null,
-      dueOn: DateTime(2026, 11, 5),
-      dueTime: null,
-      alert: true,
-      repeat: null,
-    ));
-    await _pumpHarness(
-      tester,
-      tasks: tasks,
-      open: (context) =>
-          showTask(context, day: DateTime(2026, 11, 1), editing: task),
-    );
-
-    await tester.tap(find.text('Delete').first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Delete this task?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
-    await tester.pumpAndSettle();
-
-    expect(tasks.calls.last, 'delete(${task.id})');
-    expect(tasks.store, isEmpty);
-    expect(find.text('Edit task'), findsNothing);
-  });
-
   testWidgets('failed save shows failure copy and keeps sheet open', (
     tester,
   ) async {
@@ -486,29 +458,6 @@ void main() {
 
       expect(tasks.store[task.id]!.repeat, isNull);
     });
-
-    testWidgets('delete asks this or following', (tester) async {
-      final task = await lavender();
-      await _pumpHarness(
-        tester,
-        tasks: tasks,
-        open: (context) =>
-            showTask(context, day: DateTime(2026, 11, 1), editing: task),
-      );
-      await tester.tap(find.text('Delete').first);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Delete a repeating task'), findsOneWidget);
-      expect(find.text('Delete this task?'), findsNothing);
-      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
-      await tester.pumpAndSettle();
-
-      expect(
-        tasks.calls,
-        contains('deleteRepeating(${task.id}, following: false)'),
-      );
-      expect(tasks.store.values.single.dueOn, DateTime(2026, 12, 3));
-    });
   });
 
   group('a time (#377)', () {
@@ -670,23 +619,6 @@ void main() {
         expect(push.asked, 1);
       });
 
-      testWidgets('postponing keeps it off', (tester) async {
-        final task = await timed(
-          DateTime.now().subtract(const Duration(hours: 1)),
-          alert: false,
-        );
-        await _pumpHarness(
-          tester,
-          tasks: tasks,
-          open: (context) =>
-              showTask(context, day: DateTime(2026, 11, 1), editing: task),
-        );
-        await tester.tap(find.text('In 15 min'));
-        await tester.pumpAndSettle();
-
-        expect(tasks.store[task.id]!.alert, isFalse);
-      });
-
       testWidgets('no push here (web): the bell still shows and saves', (
         tester,
       ) async {
@@ -794,43 +726,6 @@ void main() {
       );
 
       expect(find.text('Notifications are off on this phone.'), findsNothing);
-    });
-
-    testWidgets('far from its time: no postpone', (tester) async {
-      final task = await timed(DateTime.now().add(const Duration(days: 2)));
-      await _pumpHarness(
-        tester,
-        tasks: tasks,
-        open: (context) =>
-            showTask(context, day: DateTime(2026, 11, 1), editing: task),
-      );
-
-      expect(find.text('In 15 min'), findsNothing);
-    });
-
-    testWidgets('past its time: In 15 min saves it then, and closes', (
-      tester,
-    ) async {
-      final task = await timed(
-        DateTime.now().subtract(const Duration(hours: 1)),
-      );
-      await _pumpHarness(
-        tester,
-        tasks: tasks,
-        open: (context) =>
-            showTask(context, day: DateTime(2026, 11, 1), editing: task),
-      );
-      expect(find.textContaining('It was due at'), findsOneWidget);
-
-      final before = postponed(DateTime.now(), const Duration(minutes: 15));
-      await tester.tap(find.text('In 15 min'));
-      await tester.pumpAndSettle();
-      final after = postponed(DateTime.now(), const Duration(minutes: 15));
-
-      final saved = tasks.store[task.id]!;
-      expect([before.time, after.time], contains(saved.dueTime));
-      expect([before.day, after.day], contains(saved.dueOn));
-      expect(find.text('Edit task'), findsNothing);
     });
   });
 }
