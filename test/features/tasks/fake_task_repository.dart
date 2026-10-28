@@ -50,6 +50,7 @@ class FakeTaskRepository implements TaskRepository {
       createdAt: DateTime.now(),
       repeat: draft.repeat,
       dueTime: draft.dueTime,
+      alert: draft.alert,
     );
     return store[task.id] = task;
   }
@@ -67,6 +68,7 @@ class FakeTaskRepository implements TaskRepository {
       createdAt: old.createdAt,
       repeat: draft.repeat,
       dueTime: draft.dueTime,
+      alert: draft.alert,
     );
     return store[id] = updated;
   }
@@ -85,6 +87,7 @@ class FakeTaskRepository implements TaskRepository {
       createdAt: task.createdAt,
       repeat: task.repeat,
       dueTime: task.dueTime,
+      alert: task.alert,
     );
     return store[id] = updated;
   }
@@ -144,6 +147,7 @@ class FakeTaskRepository implements TaskRepository {
       doneOn: null,
       createdAt: DateTime.now(),
       dueTime: task.dueTime,
+      alert: task.alert,
       repeat: (
         every: n,
         unit: repeat.unit,
@@ -164,6 +168,7 @@ class FakeTaskRepository implements TaskRepository {
     createdAt: task.createdAt,
     repeat: task.repeat,
     dueTime: task.dueTime,
+    alert: task.alert,
   );
 
   @override

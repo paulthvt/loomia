@@ -1292,6 +1292,22 @@
   "@taskNotificationsSettings": {
     "description": "Link after taskNotificationsOff: opens Settings, Notifications."
   },
+  "taskAlertOn": "Don't notify me",
+  "@taskAlertOn": {
+    "description": "Tooltip and screen reader label of the bell beside a task's time, while it is on (#389): tapping it turns off the push at that time, keeping the time."
+  },
+  "taskAlertOff": "Notify me at this time",
+  "@taskAlertOff": {
+    "description": "Tooltip and screen reader label of the bell beside a task's time, while it is off (#389): tapping it turns on a push at that time."
+  },
+  "taskAlertsOff": "Task notifications are off.",
+  "@taskAlertsOff": {
+    "description": "Under a task's time when the Tasks switch in Settings, Notifications is off: no task pushes, whatever the bell. Followed by taskAlertsTurnOn."
+  },
+  "taskAlertsTurnOn": "Turn them on in Settings",
+  "@taskAlertsTurnOn": {
+    "description": "Link after taskAlertsOff: opens Settings, Notifications, where the Tasks switch is."
+  },
   "taskPostponeWas": "It was due at {time}. Put it off:",
   "@taskPostponeWas": {
     "description": "Top of a task's sheet when its time has passed (usually opened from its push), above taskPostpone15 and taskPostponeHour.",

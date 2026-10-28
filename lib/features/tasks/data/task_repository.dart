@@ -15,7 +15,7 @@ class TaskRepository {
   static const String _columns =
       'id, title, note, due_on, done_on, created_at, '
       'repeat_every, repeat_unit, repeat_from, repeat_until, scheduled_on, '
-      'due_time';
+      'due_time, alert';
 
   Future<List<Task>> list() => guardPeople(() async {
     final rows = await _client.from(_table).select(_columns);
@@ -106,6 +106,7 @@ Map<String, Object?> _draftColumns(TaskDraft draft) {
     },
     'scheduled_on': repeat == null ? null : dayColumn(repeat.scheduledOn),
     'due_time': timeColumn(draft.dueTime),
+    'alert': draft.alert,
   };
 }
 
@@ -132,6 +133,7 @@ Task taskFromRow(Map<String, dynamic> row) => Task(
     _ => null,
   },
   dueTime: timeFromColumn(row['due_time'] as String?),
+  alert: row['alert'] as bool? ?? true,
 );
 
 /// Postgres `time` ("14:00:00") as a [TaskTime]; null stays null.

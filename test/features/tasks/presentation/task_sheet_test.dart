@@ -177,6 +177,7 @@ void main() {
       note: 'Check clause 3',
       dueOn: DateTime(2026, 11, 5),
       dueTime: null,
+      alert: true,
       repeat: null,
     ));
     await _pumpHarness(
@@ -198,6 +199,7 @@ void main() {
       note: 'Old note',
       dueOn: DateTime(2026, 11, 5),
       dueTime: null,
+      alert: true,
       repeat: null,
     ));
     await _pumpHarness(
@@ -229,6 +231,7 @@ void main() {
       note: null,
       dueOn: DateTime(2026, 11, 5),
       dueTime: null,
+      alert: true,
       repeat: null,
     ));
     await _pumpHarness(
@@ -298,6 +301,7 @@ void main() {
       note: null,
       dueOn: DateTime(2026, 11, 3),
       dueTime: null,
+      alert: true,
       repeat: (
         every: 1,
         unit: RepeatUnit.month,
@@ -508,11 +512,12 @@ void main() {
   });
 
   group('a time (#377)', () {
-    Future<Task> timed(DateTime at) => tasks.add((
+    Future<Task> timed(DateTime at, {bool alert = true}) => tasks.add((
       title: 'Call the supplier',
       note: 'Ask about the 10 ml bottles',
       dueOn: DateTime(at.year, at.month, at.day),
       dueTime: (hour: at.hour, minute: at.minute),
+      alert: alert,
       repeat: null,
     ));
 
@@ -523,6 +528,183 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
     }
+
+    final bellOn = find.byTooltip("Don't notify me");
+    final bellOff = find.byTooltip('Notify me at this time');
+    IconButton bell(WidgetTester tester) => tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byWidgetPredicate(
+          (w) =>
+              w is Tooltip &&
+              (w.message == "Don't notify me" ||
+                  w.message == 'Notify me at this time'),
+        ),
+        matching: find.byType(IconButton),
+      ),
+    );
+
+    group('the bell (#389)', () {
+      final later = DateTime.now().add(const Duration(days: 2));
+
+      testWidgets('a time shows the bell, on; no time, no bell', (
+        tester,
+      ) async {
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          open: (context) => showTask(context, day: DateTime(2026, 11, 1)),
+        );
+        expect(bellOn, findsNothing);
+        expect(bellOff, findsNothing);
+
+        await pickFirstTime(tester);
+        expect(bellOn, findsOneWidget);
+      });
+
+      testWidgets('turned off, it saves alert false', (tester) async {
+        final task = await timed(later);
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+        await tester.tap(bellOn);
+        await tester.pumpAndSettle();
+        expect(bellOff, findsOneWidget);
+        await save(tester);
+
+        expect(tasks.store[task.id]!.alert, isFalse);
+      });
+
+      testWidgets('off stays off when the time changes', (tester) async {
+        final task = await timed(later, alert: false);
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+        await tester.tap(find.byType(InputChip));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+        expect(bellOff, findsOneWidget);
+        await save(tester);
+
+        expect(tasks.store[task.id]!.alert, isFalse);
+      });
+
+      testWidgets('a time added again starts on', (tester) async {
+        final task = await timed(later, alert: false);
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+        await tester.tap(find.byTooltip('Remove the time'));
+        await tester.pumpAndSettle();
+        await pickFirstTime(tester);
+
+        expect(bellOn, findsOneWidget);
+      });
+
+      testWidgets('Tasks off in Settings: greyed, with the line', (
+        tester,
+      ) async {
+        final task = await timed(later);
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          push: FakePush(),
+          notifications: FakeNotificationsRepository(
+            const NotificationSettings(tasks: false, timeZone: 'Europe/Paris'),
+          ),
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+
+        expect(bell(tester).onPressed, isNull);
+        expect(find.text('Task notifications are off.'), findsOneWidget);
+        expect(
+          find.widgetWithText(TextButton, 'Turn them on in Settings'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Notifications are off on this phone.'),
+          findsNothing,
+          reason: 'one line at a time',
+        );
+      });
+
+      testWidgets('no settings row: the bell works, no line', (tester) async {
+        final task = await timed(later);
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          push: FakePush(isAllowed: true),
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+
+        expect(bell(tester).onPressed, isNotNull);
+        expect(find.text('Task notifications are off.'), findsNothing);
+      });
+
+      testWidgets('turned back on, Save asks the phone', (tester) async {
+        final push = FakePush();
+        final task = await timed(later, alert: false);
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          push: push,
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+        await tester.tap(bellOff);
+        await tester.pumpAndSettle();
+        await save(tester);
+
+        expect(tasks.store[task.id]!.alert, isTrue);
+        expect(push.asked, 1);
+      });
+
+      testWidgets('postponing keeps it off', (tester) async {
+        final task = await timed(
+          DateTime.now().subtract(const Duration(hours: 1)),
+          alert: false,
+        );
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+        await tester.tap(find.text('In 15 min'));
+        await tester.pumpAndSettle();
+
+        expect(tasks.store[task.id]!.alert, isFalse);
+      });
+
+      testWidgets('no push here (web): the bell still shows and saves', (
+        tester,
+      ) async {
+        final task = await timed(later);
+        await _pumpHarness(
+          tester,
+          tasks: tasks,
+          push: FakePush(isAvailable: false),
+          open: (context) =>
+              showTask(context, day: DateTime(2026, 11, 1), editing: task),
+        );
+        await tester.tap(bellOn);
+        await tester.pumpAndSettle();
+        await save(tester);
+
+        expect(tasks.store[task.id]!.alert, isFalse);
+      });
+    });
 
     testWidgets('Add a time sets it; ✕ takes it off', (tester) async {
       await _pumpHarness(

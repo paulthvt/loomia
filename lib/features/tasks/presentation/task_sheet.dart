@@ -62,6 +62,9 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
   late TaskTime? _time = widget.editing?.dueTime;
   bool? _allowed;
 
+  // The bell (#389): whether the time pushes. Kept when the time changes.
+  late bool _alert = widget.editing?.alert ?? true;
+
   @override
   void initState() {
     super.initState();
@@ -82,7 +85,11 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
     };
     final picked = await pickTime(context, initial: initial);
     if (picked == null || !mounted) return;
-    setState(() => _time = (hour: picked.hour, minute: picked.minute));
+    setState(() {
+      // A time added (not changed) starts with the bell on.
+      if (_time == null) _alert = true;
+      _time = (hour: picked.hour, minute: picked.minute);
+    });
     unawaited(_checkAllowed());
   }
 
@@ -97,6 +104,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
         note: editing.note,
         dueOn: later.day,
         dueTime: later.time,
+        alert: editing.alert,
         repeat: editing.repeat,
       )),
     );
@@ -197,9 +205,14 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
       note: note,
       dueOn: _day,
       dueTime: _time,
+      alert: _alert,
       repeat: repeat.$1,
     );
-    final arms = _time != null && editing?.dueTime == null;
+    // Starts notifying (a time added, or the bell back on): the push needs
+    // the settings row and the phone's yes.
+    final notifies = _time != null && _alert;
+    final notified = editing?.dueTime != null && (editing?.alert ?? false);
+    final arms = notifies && !notified;
     await _write((tasks) async {
       if (arms) await _armPushes();
       final saved = await (editing == null
@@ -356,11 +369,30 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
         RepeatUnit.year => l10n.taskRepeatUnitYear(count),
       };
 
-  /// Add a time, or the time with ✕ (#377); the notifications-off line
-  /// under it when this phone refuses pushes.
+  /// Add a time, or the time with ✕ and the bell (#377, #389). Under it, the
+  /// line saying why it won't push: task pushes off in Settings, else this
+  /// phone refusing them.
   Widget _timeField(AppLocalizations l10n) {
     final time = _time;
     final theme = Theme.of(context);
+    // Loading, or no settings row yet: on, the column's default.
+    final tasksOff =
+        ref
+            .watch(
+              notificationSettingsProvider(ref.watch(accountProvider)?.email),
+            )
+            .value
+            ?.tasks ==
+        false;
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: LoomiaColors.of(context).textMuted,
+    );
+    void openSettings() {
+      final router = GoRouter.of(context);
+      Navigator.pop(context);
+      router.push(Routes.settingsNotifications);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: AppSpacing.xs,
@@ -372,29 +404,46 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
             onPressed: _saving ? null : () => unawaited(_pickTime()),
           )
         else
-          InputChip(
-            avatar: const Icon(Icons.schedule_rounded),
-            label: Text(_formatTime(time)),
-            onPressed: _saving ? null : () => unawaited(_pickTime()),
-            onDeleted: _saving ? null : () => setState(() => _time = null),
-            deleteButtonTooltipMessage: l10n.taskRemoveTime,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: AppSpacing.xs,
+            children: [
+              InputChip(
+                avatar: const Icon(Icons.schedule_rounded),
+                label: Text(_formatTime(time)),
+                onPressed: _saving ? null : () => unawaited(_pickTime()),
+                onDeleted: _saving ? null : () => setState(() => _time = null),
+                deleteButtonTooltipMessage: l10n.taskRemoveTime,
+              ),
+              IconButton(
+                isSelected: _alert,
+                icon: const Icon(Icons.notifications_off_outlined),
+                selectedIcon: const Icon(Icons.notifications_active_rounded),
+                tooltip: _alert ? l10n.taskAlertOn : l10n.taskAlertOff,
+                onPressed: tasksOff || _saving
+                    ? null
+                    : () => setState(() => _alert = !_alert),
+              ),
+            ],
           ),
-        if (time != null && _allowed == false)
+        if (time != null && tasksOff)
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(
-                l10n.taskNotificationsOff,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: LoomiaColors.of(context).textMuted,
-                ),
-              ),
+              Text(l10n.taskAlertsOff, style: muted),
               TextButton(
-                onPressed: () {
-                  final router = GoRouter.of(context);
-                  Navigator.pop(context);
-                  router.push(Routes.settingsNotifications);
-                },
+                onPressed: openSettings,
+                child: Text(l10n.taskAlertsTurnOn),
+              ),
+            ],
+          )
+        else if (time != null && _allowed == false)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(l10n.taskNotificationsOff, style: muted),
+              TextButton(
+                onPressed: openSettings,
                 child: Text(l10n.taskNotificationsSettings),
               ),
             ],
