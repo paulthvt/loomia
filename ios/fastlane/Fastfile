@@ -1,0 +1,97 @@
+# Fastlane for iOS releases (#397). Kept small on purpose: Flutter builds the
+# IPA in the workflow, fastlane only signs and uploads. Lanes run from ios/:
+#
+#   bundle exec fastlane signing      # CI only: keychain, cert, profile
+#   flutter build ipa ... --export-options-plist=build/ios/ExportOptions.plist
+#   bundle exec fastlane upload ipa:<path> changelog:<text>
+#
+# Signing comes from secrets, not match or automatic signing: one team, one
+# app, one CI (docs/architecture.md → Releases). Local builds keep Xcode's
+# automatic signing; only the CI checkout is switched to manual.
+# Setup and the yearly renewal: README.md → Releases → iOS.
+
+default_platform(:ios)
+
+platform :ios do
+  desc 'App Store Connect API key from ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64).'
+  private_lane :api_key do
+    app_store_connect_api_key(
+      key_id: ENV.fetch('ASC_KEY_ID'),
+      issuer_id: ENV.fetch('ASC_ISSUER_ID'),
+      key_content: ENV.fetch('ASC_KEY_P8'),
+      is_key_content_base64: true
+    )
+  end
+
+  desc 'CI: import the distribution certificate and profile, switch Release to manual signing.'
+  lane :signing do
+    UI.user_error!('signing is for CI: it switches the project to manual signing') unless is_ci
+
+    # A temporary keychain, made default for this run and deleted with the runner.
+    setup_ci
+
+    require 'base64'
+    tmp = File.expand_path('../build/signing', __dir__)
+    FileUtils.mkdir_p(tmp)
+    cert = File.join(tmp, 'distribution.p12')
+    profile = File.join(tmp, 'appstore.mobileprovision')
+    File.binwrite(cert, Base64.decode64(ENV.fetch('IOS_DISTRIBUTION_P12')))
+    File.binwrite(profile, Base64.decode64(ENV.fetch('IOS_APPSTORE_PROFILE')))
+
+    import_certificate(
+      certificate_path: cert,
+      certificate_password: ENV.fetch('IOS_DISTRIBUTION_P12_PASSWORD'),
+      keychain_name: ENV.fetch('MATCH_KEYCHAIN_NAME'), # set by setup_ci
+      keychain_password: ENV.fetch('MATCH_KEYCHAIN_PASSWORD')
+    )
+    install_provisioning_profile(path: profile)
+    name = FastlaneCore::ProvisioningProfile.name(profile)
+    team = CredentialsManager::AppfileConfig.try_fetch_value(:team_id)
+
+    update_code_signing_settings(
+      path: 'Runner.xcodeproj',
+      targets: ['Runner'],
+      build_configurations: ['Release'],
+      use_automatic_signing: false,
+      team_id: team,
+      code_sign_identity: 'Apple Distribution',
+      profile_name: name
+    )
+
+    # flutter build ipa exports with this: the profile it just installed.
+    export_options = File.expand_path('../../build/ios/ExportOptions.plist', __dir__)
+    FileUtils.mkdir_p(File.dirname(export_options))
+    File.write(export_options, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>method</key><string>app-store-connect</string>
+        <key>teamID</key><string>#{team}</string>
+        <key>signingStyle</key><string>manual</string>
+        <key>provisioningProfiles</key>
+        <dict><key>app.loomia</key><string>#{name}</string></dict>
+        <key>uploadSymbols</key><true/>
+      </dict>
+      </plist>
+    PLIST
+    UI.success("Signing with '#{name}'")
+  end
+
+  desc 'Upload an IPA to TestFlight, internal testers. Options: ipa (required), changelog.'
+  lane :upload do |options|
+    ipa = options[:ipa].to_s
+    UI.user_error!("IPA not found: '#{ipa}'") unless File.exist?(ipa)
+
+    api_key
+    params = {
+      ipa: ipa,
+      # Processing takes minutes; internal testers get it when Apple is done.
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
+    }
+    changelog = options[:changelog].to_s.strip
+    params[:changelog] = changelog unless changelog.empty?
+    upload_to_testflight(params)
+  end
+end

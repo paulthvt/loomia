@@ -273,6 +273,19 @@ Firebase Cloud Messaging, Android and iOS (#268); only `firebase_core` and
   `tool/push_strings.dart` writes the English text for a key a language
   lacks, so every key the sender names exists on the phone.
 
+### Releases — fastlane for store uploads
+
+The workflows build with Flutter. Fastlane only signs and talks to the
+stores (#397). Each platform has its own `Gemfile` under `ios/` or `android/`,
+so Ruby never reaches the project root. iOS signing comes from GitHub secrets: a
+distribution `.p12` and an App Store profile, imported into `setup_ci`'s
+temporary keychain. Two alternatives were ruled out. `match` needs a second repo
+for one team and one app. Automatic signing in CI creates certificates on its own
+and is hard to reason about. Local builds keep automatic signing, and only the CI
+checkout is switched to manual. The cost is renewing the certificate and the
+profile by hand once a year (README.md → Releases → iOS). Android moves to
+the same tool in #401.
+
 ### Not yet present, by design
 
 A `profiles` table (the user's first name and photo

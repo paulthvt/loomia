@@ -362,6 +362,52 @@ A Gemini failure, or a release with nothing user-facing, ships without notes.
    update `site_url` and `additional_redirect_urls` in `supabase/config.toml`,
    remove the old one.
 
+### iOS
+
+The `ios` job of the Release workflow sends the same tag, with the same build
+number, to **TestFlight**, for internal testers. Notes come from the English
+entry of `release-notes.json`. Flutter builds the IPA, and fastlane
+(`ios/fastlane/Fastfile`) signs and uploads it. Locally, Xcode's automatic
+signing with team `378X654D2A` stays as it is; only CI switches to manual
+signing. The PR check `Build ios` compiles without signing.
+
+One-time setup, all in the Loomia team:
+
+1. **App Store Connect API key.** In *Users and Access → Integrations*, create
+   a team key with the **App Manager** role. Download the `.p8` (only once):
+
+   ```bash
+   gh secret set ASC_KEY_ID --body "<key id>"
+   gh secret set ASC_ISSUER_ID --body "<issuer id>"
+   base64 -i AuthKey_<key id>.p8 | gh secret set ASC_KEY_P8
+   ```
+
+2. **Distribution certificate.** In Xcode → Settings → Accounts → the team →
+   *Manage Certificates* → **+** → *Apple Distribution*. Then in Keychain
+   Access, export it with its private key as a `.p12` with a password:
+
+   ```bash
+   base64 -i distribution.p12 | gh secret set IOS_DISTRIBUTION_P12
+   gh secret set IOS_DISTRIBUTION_P12_PASSWORD
+   ```
+
+3. **App Store profile.** In the developer portal, under *Profiles* → **+** →
+   *App Store Connect*, choose App ID `app.loomia` and the certificate from
+   step 2, and download it:
+
+   ```bash
+   base64 -i Loomia_App_Store.mobileprovision | gh secret set IOS_APPSTORE_PROFILE
+   ```
+
+4. **Firebase,** for push (#275): `gh secret set GOOGLE_SERVICE_INFO_PLIST <
+   GoogleService-Info.plist`. Without it, the build has no push.
+
+The certificate and the profile expire after a year. Before then, renew
+both (steps 2 and 3) and replace the three secrets; an expired one fails the
+`Signing` step and blocks no other platform. The first build of each version
+reaches internal testers once Apple has processed it, usually in a few
+minutes.
+
 ## Tracking work
 
 Work is tracked on the
