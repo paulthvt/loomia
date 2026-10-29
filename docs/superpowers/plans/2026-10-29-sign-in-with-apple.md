@@ -1,6 +1,6 @@
 # Sign in with Apple Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Continue with Apple on the Welcome screen on every platform through Supabase's web flow, a first-run name step for accounts that arrive without a name, and a one-command way to regenerate Apple's 6-month secret with a warning before it expires.
 
@@ -56,14 +56,14 @@
 **Interfaces:**
 - Produces: `Future<void> AuthRepository.signInWithApple()`; `bool Account.needsName`.
 
-- [ ] **Step 1: Failing tests** for the account mapping, through a `SupabaseClient` whose `currentUser` metadata is set (or, if the repository has no seam for that, a plain test of a top-level `bool needsNameFrom(Map<String, dynamic> metadata)` used by `account`):
+- [x] **Step 1: Failing tests** for the account mapping, through a `SupabaseClient` whose `currentUser` metadata is set (or, if the repository has no seam for that, a plain test of a top-level `bool needsNameFrom(Map<String, dynamic> metadata)` used by `account`):
   - `{}` → true; `{'first_name': ' '}` → true;
   - `{'first_name': 'Pauline'}` → false;
   - `{'full_name': 'Pauline Martin'}` → false; `{'name': 'Pauline'}` → false; `{'full_name': '  '}` → true.
-- [ ] **Step 2: Run** the test → FAIL.
-- [ ] **Step 3: Implement** as in the Rulings; `_backfillFirstName` reads `_providerName` too.
-- [ ] **Step 4: Run** it and `test/features/auth` → PASS.
-- [ ] **Step 5: Commit** `feat(auth): sign in with Apple in the repository`.
+- [x] **Step 2: Run** the test → FAIL.
+- [x] **Step 3: Implement** as in the Rulings; `_backfillFirstName` reads `_providerName` too.
+- [x] **Step 4: Run** it and `test/features/auth` → PASS.
+- [x] **Step 5: Commit** `feat(auth): sign in with Apple in the repository`.
 
 ### Task 2: The Apple button
 
@@ -78,16 +78,16 @@
 - Consumes: `signInWithApple()` (Task 1).
 - Produces: `ButtonStyle appleButtonStyle(Brightness brightness)`.
 
-- [ ] **Step 1: Failing tests:**
+- [x] **Step 1: Failing tests:**
   - `'offers Google, Apple, then email'`: the three labels, in that vertical order;
   - `'Apple starts the Apple sign-in'`: tap → fake records `signInWithApple()`;
   - `'a failed Apple sign-in shows the error'`: fake throws `AuthFailure.network` → its copy;
   - `'Apple is white with a black outline in light, white in dark'`: the button's resolved `backgroundColor` is white in both, `side` black in light and none in dark, foreground black in both;
   - the existing large-text test still passes with three buttons.
-- [ ] **Step 2: Run** `flutter test test/features/auth/presentation/welcome_page_test.dart` → FAIL.
-- [ ] **Step 3: Implement**: download the logo, `appleButtonStyle`, the button between Google and email (`_busy` handling as Google), the copy key; remove the "absent rather than broken" comment.
-- [ ] **Step 4: Run** it → PASS.
-- [ ] **Step 5: Commit** `feat(auth): Continue with Apple on the Welcome screen`.
+- [x] **Step 2: Run** `flutter test test/features/auth/presentation/welcome_page_test.dart` → FAIL.
+- [x] **Step 3: Implement**: download the logo, `appleButtonStyle`, the button between Google and email (`_busy` handling as Google), the copy key; remove the "absent rather than broken" comment.
+- [x] **Step 4: Run** it → PASS.
+- [x] **Step 5: Commit** `feat(auth): Continue with Apple on the Welcome screen`.
 
 ### Task 3: The name step
 
@@ -102,7 +102,7 @@
 - Consumes: `Account.needsName`, `updateFirstName` (Task 1).
 - Produces: `FirstRunNameStep({required String initial, required ValueChanged<String> onSaved})`.
 
-- [ ] **Step 1: Failing tests** (fake account `onboarded: false`):
+- [x] **Step 1: Failing tests** (fake account `onboarded: false`):
   - `'an account without a name is asked for it first'`: `needsName: true` → `What should we call you?`, no company question;
   - `'an account with a name starts at the company'`: `needsName: false` → the company question (the existing first test, unchanged);
   - `'an empty name is refused'`: Continue with the field empty → `Enter your first name.`, nothing recorded;
@@ -111,11 +111,11 @@
   - `'back from the company returns to the name, filled'`: after saving, back button and then `tester.binding.handlePopRoute()` → the name step with "Pauline";
   - `'needsName read once'`: flip the fake's account to a name while on the name step → still on the name step;
   - `'an onboarded account never sees it'` keeps passing.
-- [ ] **Step 2: Run** `flutter test test/features/onboarding` → FAIL.
-- [ ] **Step 3: Implement** as in the Rulings, plus the copy keys.
-- [ ] **Step 4: Preview** `firstRunNameLight` (the step with an empty field), registered in `previews_test.dart`.
-- [ ] **Step 5: Run** `dart format . && flutter analyze && flutter test test/features/onboarding test/previews_test.dart` → PASS (the new golden is missing locally; it's made on CI).
-- [ ] **Step 6: Commit** `feat(onboarding): ask for a first name when the account has none`.
+- [x] **Step 2: Run** `flutter test test/features/onboarding` → FAIL.
+- [x] **Step 3: Implement** as in the Rulings, plus the copy keys.
+- [x] **Step 4: Preview** `firstRunNameLight` (the step with an empty field), registered in `previews_test.dart`.
+- [x] **Step 5: Run** `dart format . && flutter analyze && flutter test test/features/onboarding test/previews_test.dart` → PASS (the new golden is missing locally; it's made on CI).
+- [x] **Step 6: Commit** `feat(onboarding): ask for a first name when the account has none`.
 
 ### Task 4: Supabase config, the secret lane, the expiry warning, docs
 
@@ -125,19 +125,28 @@
 - Create: `.github/workflows/apple-secret-expiry.yaml`
 - Modify: `README.md` (Sign in with Apple setup and rotation; the line at :45; the `config push` line at :78 gains `SUPABASE_AUTH_EXTERNAL_APPLE_SECRET=...`), `docs/design/screens.md:216-218`, `docs/superpowers/specs/2026-09-23-auth-login-design.md` (its "not wired up" Apple lines)
 
-- [ ] **Step 1: Check, before the lane:** `cd ios && bundle exec ruby -e 'require "jwt"; puts JWT::VERSION::STRING'` prints a version. If not, stop: the spec's "no new gem" ruling needs revisiting with Paul.
-- [ ] **Step 2: The lane**, then verify with a throwaway key in `$KIROCREW_SCRATCH` (`openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt`): run it, decode the printed token's header and claims (`ruby -rjwt -e 'p JWT.decode(ARGV[0], nil, false)'`) → `alg ES256`, `kid` = the given id, `iss 378X654D2A`, `aud https://appleid.apple.com`, `sub app.loomia.signin`, `exp - iat = 15552000`. Record the decoded output (not the token) in the PR.
-- [ ] **Step 3: The workflow**, then check its date logic locally with the same bash: a date 10 days out → exit 1; 60 days out → exit 0; empty → exit 1. Parse the YAML (`ruby -ryaml -e 'YAML.load_file(ARGV[0])'`).
-- [ ] **Step 4: Config and docs.** README's setup lists Paul's steps from the spec's *Setup*, the 6-month rotation, and the App Store profile regeneration if it went Invalid.
-- [ ] **Step 5: Run** `dart format . && flutter analyze && flutter test` → No issues, all pass.
-- [ ] **Step 6: Commit** `feat(auth): turn on the Apple provider, with a secret lane and an expiry check`.
+- [x] **Step 1: Check, before the lane:** `cd ios && bundle exec ruby -e 'require "jwt"; puts JWT::VERSION::STRING'` prints a version. If not, stop: the spec's "no new gem" ruling needs revisiting with Paul.
+- [x] **Step 2: The lane**, then verify with a throwaway key in `$KIROCREW_SCRATCH` (`openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt`): run it, decode the printed token's header and claims (`ruby -rjwt -e 'p JWT.decode(ARGV[0], nil, false)'`) → `alg ES256`, `kid` = the given id, `iss 378X654D2A`, `aud https://appleid.apple.com`, `sub app.loomia.signin`, `exp - iat = 15552000`. Record the decoded output (not the token) in the PR.
+- [x] **Step 3: The workflow**, then check its date logic locally with the same bash: a date 10 days out → exit 1; 60 days out → exit 0; empty → exit 1. Parse the YAML (`ruby -ryaml -e 'YAML.load_file(ARGV[0])'`).
+- [x] **Step 4: Config and docs.** README's setup lists Paul's steps from the spec's *Setup*, the 6-month rotation, and the App Store profile regeneration if it went Invalid.
+- [x] **Step 5: Run** `dart format . && flutter analyze && flutter test` → No issues, all pass.
+- [x] **Step 6: Commit** `feat(auth): turn on the Apple provider, with a secret lane and an expiry check`.
 
 ### Task 5: Ship
 
-- [ ] **Step 1:** Tick this plan; note deviations at the end.
-- [ ] **Step 2:** One fresh reviewer on the whole branch against the spec and this plan; fix what blocks.
+- [x] **Step 1:** Tick this plan; note deviations at the end.
+- [x] **Step 2:** One fresh reviewer on the whole branch against the spec and this plan; fix what blocks.
 - [ ] **Step 3:** `git push -u origin feature/22-sign-in-with-apple`; PR `Closes #22`, Database section: no migration, `supabase config push` by hand after merge with both provider secrets. Regenerate goldens through CI (`gh workflow run CI --ref feature/22-sign-in-with-apple -f update-goldens=true`), check the PNGs, commit them.
 - [ ] **Step 4:** CI green.
 - [ ] **Step 5 (Paul, after merge):** the spec's *Setup* steps 1–3, then the device checks in its *Test plan* on the iPhone, web and Android.
 
 ## Changes during implementation
+
+- The mark: Apple's *left-aligned* logo (black, medium), which carries its own padding and is drawn 44 high, its size for a 44–48 button, not an 18 px mark tinted. The download is public (`Logo-Sign-in-with-Apple.dmg`), no login. Its dark-mode variant isn't needed: the foreground is black in both modes.
+- The style is `AppTheme.signInWithApple(context)`, next to `AppTheme.tonal`, rather than a top-level `appleButtonStyle(Brightness)`.
+- `needsName` is tested through a top-level `needsNameFrom(metadata)` (`test/features/auth/data/needs_name_test.dart`): the repository has no seam for a fake user.
+- The lane prints the secret and the `gh variable set` line with `$stdout.puts`: fastlane prefixes `puts` with a timestamp, which would end up in a copied secret. Verified with a throwaway key: the token verifies with it, header `{kid, alg: ES256}`, claims `iss 378X654D2A`, `aud https://appleid.apple.com`, `sub app.loomia.signin`, `exp - iat = 15552000`.
+- The expiry check's bash, run locally with GNU date: unset → 1, 10 days → 1, 60 days → 0.
+- README: a new "Sign in with Apple" section under Auth, with the portal setup and the rotation.
+- Locally, `nudge_card_test.dart` fails (3 tests) on `main` as well as here, so it's not this branch; CI passed it at the last merges (this Mac runs Flutter 3.47.0, pinned 3.47.7).
+- Review (one fresh reviewer, whole branch): nothing blocking; the five Review Focus points hold. Its one suggestion (the fake's `markOnboarded` "drops" `onboarded`) doesn't apply: `Account.onboarded` defaults to `true`.
