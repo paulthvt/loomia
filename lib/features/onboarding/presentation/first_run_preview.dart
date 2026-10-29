@@ -6,9 +6,13 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Both first-run steps, for `flutter widget-preview start`. Nothing is
+/// Every first-run step, for `flutter widget-preview start`. Nothing is
 /// tapped, so the repository is never read. Nothing in the app imports this
 /// file.
+@Preview(group: 'First run', name: 'Name — light', size: Size(390, 844))
+Widget firstRunNameLight() =>
+    _app(FirstRunNameStep(initial: '', onSaved: (_) {}));
+
 @Preview(group: 'First run', name: 'Company — light', size: Size(390, 844))
 Widget firstRunCompanyLight() => _app(FirstRunCompanyStep(onChosen: () {}));
 

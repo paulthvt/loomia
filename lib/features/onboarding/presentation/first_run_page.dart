@@ -8,52 +8,183 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/business_model/business_model_copy.dart';
 import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
+import 'package:loomia/features/auth/presentation/auth_validation_copy.dart';
 import 'package:loomia/features/auth/presentation/widgets/auth_scaffold.dart';
+import 'package:loomia/features/auth/presentation/widgets/submit_button.dart';
 import 'package:loomia/features/contacts/presentation/add_person_sheet.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Shown once, after sign-up, in two steps: which company the user works
-/// with, then who they already work with. One decision per step.
+/// Shown once, after sign-up: the user's first name when the account came
+/// without one (an Apple sign-in, #22), which company they work with, then who
+/// they already work with. One decision per step.
 ///
 /// The step is local state, not a route, so the router's onboarding guard
-/// stays as it is. Back on the second step — the button or the system
-/// gesture — returns to the first.
-class FirstRunPage extends StatefulWidget {
+/// stays as it is. Back — the button or the system gesture — returns to the
+/// step before; nothing comes before the first one shown.
+class FirstRunPage extends ConsumerStatefulWidget {
   const FirstRunPage({super.key});
 
   @override
-  State<FirstRunPage> createState() => _FirstRunPageState();
+  ConsumerState<FirstRunPage> createState() => _FirstRunPageState();
 }
 
-class _FirstRunPageState extends State<FirstRunPage> {
-  bool _askCompany = true;
+enum _Step { name, company, people }
 
-  void _show({required bool company}) => setState(() => _askCompany = company);
+class _FirstRunPageState extends ConsumerState<FirstRunPage> {
+  /// Read once: a Google backfill landing later must not swap the step away.
+  late final bool _askName =
+      ref.read(authRepositoryProvider).account?.needsName ?? false;
+  late _Step _step = _askName ? _Step.name : _Step.company;
+
+  /// What the name step saved, to prefill it on the way back.
+  String _name = '';
+
+  void _show(_Step step) => setState(() => _step = step);
+
+  _Step? get _previous => switch (_step) {
+    _Step.name => null,
+    _Step.company => _askName ? _Step.name : null,
+    _Step.people => _Step.company,
+  };
 
   @override
   Widget build(BuildContext context) {
+    final previous = _previous;
     return PopScope(
-      canPop: _askCompany,
+      canPop: previous == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _show(company: true);
+        if (!didPop && previous != null) _show(previous);
       },
-      child: _askCompany
-          ? FirstRunCompanyStep(onChosen: () => _show(company: false))
-          : FirstRunPeopleStep(onBack: () => _show(company: true)),
+      child: switch (_step) {
+        _Step.name => FirstRunNameStep(
+          initial: _name,
+          onSaved: (name) {
+            _name = name;
+            _show(_Step.company);
+          },
+        ),
+        _Step.company => FirstRunCompanyStep(
+          onChosen: () => _show(_Step.people),
+          onBack: _askName ? () => _show(_Step.name) : null,
+        ),
+        _Step.people => FirstRunPeopleStep(onBack: () => _show(_Step.company)),
+      },
     );
   }
 }
 
-/// Step 1. Tapping a company saves it and moves on: nothing is preselected
-/// and there is no Next, the tap is the answer. A failure stays here.
+/// Before the company, only when the account has no name. Required, like on
+/// sign-up; saved where sign-up and Settings save it. A failure stays here.
+class FirstRunNameStep extends ConsumerStatefulWidget {
+  const FirstRunNameStep({
+    required this.initial,
+    required this.onSaved,
+    super.key,
+  });
+
+  final String initial;
+  final ValueChanged<String> onSaved;
+
+  @override
+  ConsumerState<FirstRunNameStep> createState() => _FirstRunNameStepState();
+}
+
+class _FirstRunNameStepState extends ConsumerState<FirstRunNameStep> {
+  final _form = GlobalKey<FormState>();
+  late final _name = TextEditingController(text: widget.initial);
+  bool _busy = false;
+  AuthFailure? _failure;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_busy) return;
+    if (!_form.currentState!.validate()) return;
+    final name = _name.text.trim();
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).updateFirstName(name);
+      if (mounted) widget.onSaved(name);
+    } on AuthFailure catch (failure) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _failure = failure;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
+    final failure = _failure;
+
+    return AuthScaffold(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AppSpacing.ms,
+          children: [
+            Text(l10n.firstRunEyebrow, style: text.displaySmall),
+            Text(l10n.firstRunNameQuestion, style: text.titleLarge),
+            Text(l10n.firstRunNameBody, style: text.bodyMedium),
+          ],
+        ),
+        if (failure != null) FormError(authFailureCopy(l10n, failure)),
+        Form(
+          key: _form,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppSpacing.md,
+            children: [
+              LabeledField(
+                label: l10n.authFirstNameLabel,
+                child: TextFormField(
+                  controller: _name,
+                  enabled: !_busy,
+                  validator: (value) => firstNameFieldError(l10n, value),
+                  textCapitalization: TextCapitalization.words,
+                  autofillHints: const [AutofillHints.givenName],
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _submit(),
+                ),
+              ),
+              SubmitButton(
+                label: l10n.firstRunNameContinue,
+                busy: _busy,
+                onPressed: _submit,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Tapping a company saves it and moves on: nothing is preselected and there
+/// is no Next, the tap is the answer. A failure stays here.
 class FirstRunCompanyStep extends ConsumerStatefulWidget {
-  const FirstRunCompanyStep({required this.onChosen, super.key});
+  const FirstRunCompanyStep({required this.onChosen, this.onBack, super.key});
 
   final VoidCallback onChosen;
+
+  /// Back to the name step, when it was shown; then "Welcome" was said there.
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<FirstRunCompanyStep> createState() =>
@@ -90,12 +221,14 @@ class _FirstRunCompanyStepState extends ConsumerState<FirstRunCompanyStep> {
     final failure = _failure;
 
     return AuthScaffold(
+      onBack: widget.onBack,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: AppSpacing.ms,
           children: [
-            Text(l10n.firstRunEyebrow, style: text.displaySmall),
+            if (widget.onBack == null)
+              Text(l10n.firstRunEyebrow, style: text.displaySmall),
             Text(l10n.businessModelQuestion, style: text.titleLarge),
             Text(l10n.firstRunCompanyBody, style: text.bodyMedium),
           ],
