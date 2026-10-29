@@ -15,6 +15,7 @@ class Account {
     this.businessModel = BusinessModel.other,
     this.avatarPath,
     this.googlePicture,
+    this.needsName = false,
   });
 
   /// Empty when the user never gave one (an email sign-up always does).
@@ -40,6 +41,10 @@ class Account {
   /// The picture Google gave at sign-in (`avatar_url`, refreshed by Supabase
   /// on each Google sign-in, #241); null for email and Apple accounts.
   final String? googlePicture;
+
+  /// No first name and none coming from the provider (an Apple sign-in, #22):
+  /// the first run starts by asking for one.
+  final bool needsName;
 
   /// What to show where a name is expected: the first name, else the email.
   String get displayName => firstName.isEmpty ? email : firstName;

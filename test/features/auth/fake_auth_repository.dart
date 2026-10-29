@@ -52,6 +52,9 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> signInWithGoogle() => _record('signInWithGoogle()');
 
   @override
+  Future<void> signInWithApple() => _record('signInWithApple()');
+
+  @override
   Future<void> sendPasswordReset(String email) =>
       _record('sendPasswordReset($email)');
 
@@ -84,6 +87,7 @@ class FakeAuthRepository implements AuthRepository {
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
       googlePicture: current.googlePicture,
+      needsName: current.needsName,
     );
     emit(AuthChange.userUpdated);
   }
@@ -102,6 +106,7 @@ class FakeAuthRepository implements AuthRepository {
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
       googlePicture: current.googlePicture,
+      needsName: firstName.trim().isEmpty && current.needsName,
     );
     emit(AuthChange.userUpdated);
   }
@@ -120,6 +125,7 @@ class FakeAuthRepository implements AuthRepository {
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
       googlePicture: current.googlePicture,
+      needsName: current.needsName,
     );
     emit(AuthChange.userUpdated);
   }
@@ -138,6 +144,7 @@ class FakeAuthRepository implements AuthRepository {
       businessModel: model,
       avatarPath: current.avatarPath,
       googlePicture: current.googlePicture,
+      needsName: current.needsName,
     );
     emit(AuthChange.userUpdated);
   }
@@ -155,6 +162,7 @@ class FakeAuthRepository implements AuthRepository {
       businessModel: current.businessModel,
       avatarPath: current.avatarPath,
       googlePicture: current.googlePicture,
+      needsName: current.needsName,
     );
     emit(AuthChange.userUpdated);
   }
@@ -173,6 +181,7 @@ class FakeAuthRepository implements AuthRepository {
       businessModel: current.businessModel,
       avatarPath: path,
       googlePicture: current.googlePicture,
+      needsName: current.needsName,
     );
     emit(AuthChange.userUpdated);
   }
