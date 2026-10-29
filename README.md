@@ -40,10 +40,43 @@ develop on and run web on a fixed port (`flutter run -d chrome --web-port 5000`)
 Both that origin and the custom scheme must be listed under allowed redirect
 URLs, or Supabase silently falls back to the Site URL.
 
-Those project settings (email confirmations, minimum password length, the Google
-provider, Site URL, redirect URLs) live in `supabase/config.toml`, not in the
-dashboard. Sign in with Apple is not wired up — it needs a paid Apple Developer
-account (issue #22).
+Those project settings (email confirmations, minimum password length, the
+Google and Apple providers, Site URL, redirect URLs) live in
+`supabase/config.toml`, not in the dashboard.
+
+### Sign in with Apple
+
+The web flow on every platform, like Google (#22): Supabase's callback,
+`https://cskjeqspecsyqioietrj.supabase.co/auth/v1/callback`, behind the
+Services ID `app.loomia.signin`. Apple sends no name this way, so the first run
+asks for one. Everything is under team `378X654D2A`.
+
+One-time setup, in [Certificates, IDs & Profiles](https://developer.apple.com/account/resources/identifiers/list):
+
+1. Identifiers → `app.loomia` → tick **Sign In with Apple** → Save. Don't add
+   the entitlement to `Runner.entitlements`: the web flow doesn't use it.
+   Changing the App ID can invalidate the App Store profile: if Profiles shows
+   it *Invalid*, regenerate it and replace `IOS_APPSTORE_PROFILE` (iOS below),
+   or the next TestFlight upload fails at signing.
+2. Identifiers → **+** → Services IDs → `app.loomia.signin`, then
+   **Configure** Sign In with Apple: primary App ID `app.loomia`, domain
+   `cskjeqspecsyqioietrj.supabase.co`, return URL the callback above.
+3. Keys → **+** → Sign In with Apple, configured with `app.loomia`. Download
+   the `.p8` (only once) into the password manager and note its Key ID.
+   Never commit it, never a GitHub secret.
+
+The secret Supabase needs is a JWT signed with that key, valid 180 days at
+most. Generate it, then store its expiry date for the weekly
+"Apple secret expiry" workflow, which fails 30 days before:
+
+```bash
+cd ios && bundle exec fastlane apple_auth_secret key:<path/to/AuthKey.p8> key_id:<Key ID>
+# prints the secret, then the gh variable set APPLE_AUTH_SECRET_EXPIRES … line to run
+```
+
+Then push it with `config push` (next section), both provider secrets set.
+Every 6 months, when the workflow warns: the lane again, the printed
+`gh variable set`, and `config push`.
 
 ### Database and project config
 
@@ -75,12 +108,13 @@ The rest stays by hand after a merge (one-off `supabase login` and
 ```bash
 supabase functions deploy                   # every function in supabase/functions/
 supabase config diff                        # config.toml vs hosted, read-only
-SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=... supabase config push
+SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=... SUPABASE_AUTH_EXTERNAL_APPLE_SECRET=... supabase config push
 ```
 
 `config push` shows each change and asks before writing it. `config.toml`
-references the Google client secret through that variable, so set it before
-pushing (it is in Google Cloud Console, never in this repo).
+references both provider secrets through those variables, so set them before
+pushing: Google's is in Google Cloud Console, Apple's comes from
+`fastlane apple_auth_secret` (Sign in with Apple above); neither is in this repo.
 
 ### Push notifications
 
