@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/supabase/supabase_config.dart';
@@ -7,6 +8,7 @@ import 'package:loomia/features/auth/data/auth_failure_mapping.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Auth's side of the `supabase_flutter` boundary: only `data/` files import it.
 ///
@@ -63,6 +65,11 @@ class AuthRepository {
         };
         if (change == AuthChange.signedIn) {
           _backfillFirstName(state.session?.user);
+          // iOS opens OAuth in an in-app Safari view that the redirect back
+          // doesn't close: Apple's form_post leaves it blank on top (#22).
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+            closeInAppWebView().ignore();
+          }
         }
         return change;
       })
