@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2026.10.8](https://github.com/paulthvt/loomia/compare/v2026.10.7...v2026.10.8) (2026-10-29)
+
+### ✨ Features
+
+- **auth:** sign in with Apple, and ask for a name when none comes (#408) ([c05380d](https://github.com/paulthvt/loomia/commit/c05380da00ba6b4eeb1060836df89bef7667b1e9))
+
+### 🔄 CI/CD
+
+- **ios:** pass TestFlight an absolute IPA path (#407) ([071cf68](https://github.com/paulthvt/loomia/commit/071cf68c2147438fa824ecdba30284b8800ba0e2))
+
 ## [v2026.10.7](https://github.com/paulthvt/loomia/compare/v2026.10.6...v2026.10.7) (2026-10-28)
 
 ### 🐛 Bug Fixes
