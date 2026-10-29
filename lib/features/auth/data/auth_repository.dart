@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/supabase/supabase_config.dart';
@@ -7,6 +8,7 @@ import 'package:loomia/features/auth/data/auth_failure_mapping.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Auth's side of the `supabase_flutter` boundary: only `data/` files import it.
 ///
@@ -33,7 +35,8 @@ class AuthRepository {
     if (user == null) return null;
     final metadata = user.userMetadata ?? const <String, dynamic>{};
     return Account(
-      firstName: (metadata['first_name'] as String?)?.trim() ?? '',
+      firstName: _firstName(metadata),
+      needsName: needsNameFrom(metadata),
       email: user.email ?? '',
       locale: metadata['locale'] as String?,
       appearance:
@@ -62,6 +65,11 @@ class AuthRepository {
         };
         if (change == AuthChange.signedIn) {
           _backfillFirstName(state.session?.user);
+          // iOS opens OAuth in an in-app Safari view that the redirect back
+          // doesn't close: Apple's form_post leaves it blank on top (#22).
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+            closeInAppWebView().ignore();
+          }
         }
         return change;
       })
@@ -73,11 +81,8 @@ class AuthRepository {
   void _backfillFirstName(User? user) {
     if (user == null) return;
     final metadata = user.userMetadata ?? const <String, dynamic>{};
-    final existing = (metadata['first_name'] as String?)?.trim() ?? '';
-    if (existing.isNotEmpty) return;
-    final full =
-        (metadata['full_name'] as String? ?? metadata['name'] as String? ?? '')
-            .trim();
+    if (_firstName(metadata).isNotEmpty) return;
+    final full = _providerName(metadata);
     if (full.isEmpty) return;
     final first = full.split(' ').first;
     _auth.updateUser(UserAttributes(data: {'first_name': first})).ignore();
@@ -101,10 +106,14 @@ class AuthRepository {
     ),
   );
 
-  /// Apple is the other provider the product wants; it needs a paid Apple
-  /// Developer account, so it is not wired up yet (issue #22).
   Future<void> signInWithGoogle() => guardAuth(
     () => _auth.signInWithOAuth(OAuthProvider.google, redirectTo: _redirect),
+  );
+
+  /// The same web flow as Google, on every platform (#22). Apple's name never
+  /// reaches Supabase this way, so the first run asks for it ([needsNameFrom]).
+  Future<void> signInWithApple() => guardAuth(
+    () => _auth.signInWithOAuth(OAuthProvider.apple, redirectTo: _redirect),
   );
 
   Future<void> sendPasswordReset(String email) => guardAuth(
@@ -175,6 +184,21 @@ class AuthRepository {
     await _auth.signOut(scope: SignOutScope.local);
   });
 }
+
+String _firstName(Map<String, dynamic> metadata) =>
+    (metadata['first_name'] as String?)?.trim() ?? '';
+
+/// The name Google sent, which the backfill copies to `first_name`. Apple's
+/// web flow sends none.
+String _providerName(Map<String, dynamic> metadata) =>
+    (metadata['full_name'] as String? ?? metadata['name'] as String? ?? '')
+        .trim();
+
+/// No first name, and none on its way from the provider: the first run asks.
+/// Checking the provider's too keeps a Google user out of that step when the
+/// backfill hasn't landed yet.
+bool needsNameFrom(Map<String, dynamic> metadata) =>
+    _firstName(metadata).isEmpty && _providerName(metadata).isEmpty;
 
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(ref.watch(supabaseClientProvider)),

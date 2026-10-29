@@ -73,6 +73,10 @@
   "@authContinueWithGoogle": {
     "description": "Button that starts Google sign-in. Google is a brand name and stays untranslated."
   },
+  "authContinueWithApple": "Continue with Apple",
+  "@authContinueWithApple": {
+    "description": "Button that starts Sign in with Apple. Apple is a brand name and stays untranslated; the wording follows Apple's allowed button titles (Sign in / Sign up / Continue with Apple)."
+  },
   "authContinueWithEmail": "Continue with email",
   "@authContinueWithEmail": {
     "description": "Button that opens the email sign-in form."
@@ -2330,6 +2334,18 @@
   "firstRunEyebrow": "Welcome",
   "@firstRunEyebrow": {
     "description": "Large word at the top of the first step of the first-run screen, shown once after sign-up."
+  },
+  "firstRunNameQuestion": "What should we call you?",
+  "@firstRunNameQuestion": {
+    "description": "Question on the first-run step that asks for the user's first name, shown only when their account came without one (Sign in with Apple)."
+  },
+  "firstRunNameBody": "Your first name, for your greeting on Today.",
+  "@firstRunNameBody": {
+    "description": "Sentence under the first-name question on the first-run screen. Today is the name of the app's home screen."
+  },
+  "firstRunNameContinue": "Continue",
+  "@firstRunNameContinue": {
+    "description": "Button that saves the first name and moves to the next first-run step."
   },
   "firstRunTitle": "Who do you already work with?",
   "@firstRunTitle": {

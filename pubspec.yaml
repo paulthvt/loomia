@@ -77,8 +77,11 @@ flutter:
   # The official flat Google "G", from developers.google.com/identity — their
   # branding guidelines require their own mark on a sign-in button and forbid
   # redrawing or recolouring it. 1x/2x/3x so Flutter picks the density.
+  # apple_logo: Apple's left-aligned "Sign in with Apple" logo (black, medium,
+  # 44 high with its own padding), from developer.apple.com/design/resources.
   assets:
     - assets/images/google_g.png
+    - assets/images/apple_logo.png
 
   # Bundled, not fetched: identical rendering on Web and mobile, no webfont
   # request, no google_fonts dependency. One variable file covers every weight;

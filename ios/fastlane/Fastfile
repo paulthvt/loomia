@@ -4,6 +4,7 @@
 #   bundle exec fastlane signing      # CI only: keychain, cert, profile
 #   flutter build ipa ... --export-options-plist=build/ios/ExportOptions.plist
 #   bundle exec fastlane upload ipa:<path> changelog:<text>
+#   bundle exec fastlane apple_auth_secret key:<path.p8> key_id:<id>   # by hand, every 6 months
 #
 # Signing comes from secrets, not match or automatic signing: one team, one
 # app, one CI (docs/architecture.md → Releases). Local builds keep Xcode's
@@ -93,5 +94,35 @@ platform :ios do
     changelog = options[:changelog].to_s.strip
     params[:changelog] = changelog unless changelog.empty?
     upload_to_testflight(params)
+  end
+
+  # Supabase's Apple provider takes, as its secret, a JWT signed with the
+  # Sign in with Apple key. Apple caps it at 180 days, so this is rerun every
+  # six months (README.md → Sign in with Apple). Nothing is written to disk.
+  desc 'Print the Supabase Apple secret. Options: key (path to the .p8), key_id.'
+  lane :apple_auth_secret do |options|
+    require 'jwt'
+    key = options[:key].to_s
+    key_id = options[:key_id].to_s
+    UI.user_error!("Key not found: '#{key}'") unless File.exist?(key)
+    UI.user_error!('key_id is required: the Key ID shown beside the key') if key_id.empty?
+
+    now = Time.now.to_i
+    expires = now + 180 * 24 * 60 * 60
+    claims = {
+      iss: CredentialsManager::AppfileConfig.try_fetch_value(:team_id),
+      iat: now,
+      exp: expires,
+      aud: 'https://appleid.apple.com',
+      sub: 'app.loomia.signin' # The Services ID, not the App ID.
+    }
+    secret = JWT.encode(claims, OpenSSL::PKey::EC.new(File.read(key)), 'ES256', { kid: key_id })
+    date = Time.at(expires).utc.strftime('%Y-%m-%d')
+
+    # $stdout, not puts: fastlane prefixes puts with a timestamp, which would
+    # end up in a copied secret.
+    $stdout.puts secret
+    UI.important("Expires #{date}. Then, for the weekly expiry check:")
+    $stdout.puts "gh variable set APPLE_AUTH_SECRET_EXPIRES --repo paulthvt/loomia --body #{date}"
   end
 end

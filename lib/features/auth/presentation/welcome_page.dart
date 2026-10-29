@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_wordmark.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -67,8 +68,6 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: AppSpacing.ms,
           children: [
-            // Sign in with Apple needs a paid Apple Developer account, so it is
-            // absent rather than broken: issue #22.
             OutlinedButton.icon(
               onPressed: _busy
                   ? null
@@ -79,6 +78,18 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
               // branding guidelines set, so it is theirs to change, not ours.
               icon: Image.asset('assets/images/google_g.png', height: 18),
               label: Text(l10n.authContinueWithGoogle),
+            ),
+            OutlinedButton.icon(
+              style: AppTheme.signInWithApple(context),
+              onPressed: _busy
+                  ? null
+                  : () => _continueWith(
+                      ref.read(authRepositoryProvider).signInWithApple,
+                    ),
+              // Apple's left-aligned logo carries its own padding and is
+              // drawn 44 high, its size for a 44-48 button: theirs, not ours.
+              icon: Image.asset('assets/images/apple_logo.png', height: 44),
+              label: Text(l10n.authContinueWithApple),
             ),
             FilledButton(
               onPressed: _busy ? null : () => context.push(Routes.login),

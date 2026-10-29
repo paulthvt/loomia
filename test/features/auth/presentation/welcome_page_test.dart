@@ -12,13 +12,19 @@ import 'package:material_ui/material_ui.dart';
 
 import '../fake_auth_repository.dart';
 
-Widget _host(FakeAuthRepository fake, {double textScale = 1}) => ProviderScope(
+Widget _host(
+  FakeAuthRepository fake, {
+  double textScale = 1,
+  bool dark = false,
+}) => ProviderScope(
   overrides: [authRepositoryProvider.overrideWithValue(fake)],
   child: MaterialApp(
     locale: const Locale('en'),
     localizationsDelegates: localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     theme: AppTheme.light,
+    darkTheme: AppTheme.dark,
+    themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     builder: (context, child) => MediaQuery.withClampedTextScaling(
       minScaleFactor: textScale,
       maxScaleFactor: textScale,
@@ -26,6 +32,12 @@ Widget _host(FakeAuthRepository fake, {double textScale = 1}) => ProviderScope(
     ),
     home: const WelcomePage(),
   ),
+);
+
+Finder _button(String label) => find.ancestor(
+  of: find.text(label),
+  // OutlinedButton.icon builds a private subclass, so not byType.
+  matching: find.byWidgetPredicate((widget) => widget is OutlinedButton),
 );
 
 void main() {
@@ -47,11 +59,65 @@ void main() {
       find.image(const AssetImage('assets/images/google_g.png')),
       findsOneWidget,
     );
-    // Apple needs a paid developer account: issue #22.
-    expect(find.text('Continue with Apple'), findsNothing);
+    // Apple's own mark too, from its design resources.
+    expect(
+      find.image(const AssetImage('assets/images/apple_logo.png')),
+      findsOneWidget,
+    );
     expect(find.text('Continue with email'), findsOneWidget);
+    // Google, Apple, email, top to bottom: same size, Apple not hidden (4.8).
+    final googleY = tester.getCenter(find.text('Continue with Google')).dy;
+    final appleY = tester.getCenter(find.text('Continue with Apple')).dy;
+    final emailY = tester.getCenter(find.text('Continue with email')).dy;
+    expect(googleY < appleY && appleY < emailY, isTrue);
+    expect(
+      tester.getSize(_button('Continue with Apple')),
+      tester.getSize(_button('Continue with Google')),
+    );
     expect(find.text('Create an account'), findsOneWidget);
     expect(find.text('Weave your network. Tend every thread.'), findsOneWidget);
+  });
+
+  testWidgets('Apple calls the repository once', (tester) async {
+    final fake = FakeAuthRepository();
+    await tester.pumpWidget(_host(fake));
+
+    await tester.tap(find.text('Continue with Apple'));
+    await tester.pumpAndSettle();
+
+    expect(fake.calls, ['signInWithApple()']);
+  });
+
+  testWidgets('a failed Apple sign-in shows a form error', (tester) async {
+    final fake = FakeAuthRepository()..failWith = AuthFailure.network;
+    await tester.pumpWidget(_host(fake));
+
+    await tester.tap(find.text('Continue with Apple'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('We could not reach Loomia. Check your connection.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Apple is white with a black outline in light, white in dark', (
+    tester,
+  ) async {
+    for (final dark in [false, true]) {
+      await tester.pumpWidget(_host(FakeAuthRepository(), dark: dark));
+      // MaterialApp animates a theme change.
+      await tester.pumpAndSettle();
+      final style = tester
+          .widget<ButtonStyleButton>(_button('Continue with Apple'))
+          .style!;
+      const none = <WidgetState>{};
+      expect(style.backgroundColor!.resolve(none), const Color(0xFFFFFFFF));
+      expect(style.foregroundColor!.resolve(none), const Color(0xFF000000));
+      final side = style.side!.resolve(none)!;
+      expect(side.style, dark ? BorderStyle.none : BorderStyle.solid);
+      if (!dark) expect(side.color, const Color(0xFF000000));
+    }
   });
 
   testWidgets('Google calls the repository once', (tester) async {

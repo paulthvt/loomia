@@ -86,7 +86,7 @@ Components are instances of the existing library. Three additions, built
 | --- | --- |
 | `FormError` | `semantic/error-container`, `radius/md`, 20px glyph, `body-sm` in `semantic/error`, `message` TEXT property. TextField's Error state is field-level; "we could not sign you in" belongs to the form. |
 | `Brand/Google` | The Google G. **Placeholder artwork** — replace with the asset from Google's Sign-In branding guidelines. |
-| `Brand/Apple` | The Apple mark, bound to `text/primary` so it inverts in dark. **Placeholder artwork** — replace with the official asset. |
+| `Brand/Apple` | The Apple mark. **Placeholder artwork**: the app ships Apple's own logo (`assets/images/apple_logo.png`, #22). |
 
 The password reveal toggle is the existing TextField with
 `showTrailingIcon`. No new component.
@@ -137,8 +137,10 @@ client IDs and secrets; redirect URLs as above.
 ## 5. Data
 
 First name goes in the auth user's `user_metadata` at signup
-(`options.data: {'first_name': …}`). Google and Apple return a name, which is
-written to the same field on first sign-in if it is empty.
+(`options.data: {'first_name': …}`). Google returns a name, which is
+written to the same field on first sign-in if it is empty. Apple's web flow
+returns none, so the first run asks for it (#22,
+`2026-10-29-sign-in-with-apple-design.md`).
 
 No `profiles` table, no migration, no RLS policy, no trigger. Today's greeting
 reads the name from the current session. The table becomes necessary when

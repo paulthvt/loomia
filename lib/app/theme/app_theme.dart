@@ -20,6 +20,22 @@ abstract final class AppTheme {
     );
   }
 
+  /// The Sign in with Apple button, on top of the outlined theme (same height,
+  /// pill and label as Google's). Apple's HIG allows only black, white or
+  /// white-with-outline, so these are Apple's colours, not ours: white with a
+  /// black outline in light (it matches the outlined Google button), plain
+  /// white in dark.
+  static ButtonStyle signInWithApple(BuildContext context) {
+    const white = Color(0xFFFFFFFF);
+    const black = Color(0xFF000000);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return OutlinedButton.styleFrom(
+      backgroundColor: white,
+      foregroundColor: black,
+      side: dark ? BorderSide.none : const BorderSide(color: black),
+    );
+  }
+
   /// The resolve ring of an action item, for an `IconButton` with
   /// `isSelected`: an empty ring that reads "tick me", filled once ticked
   /// (#190). A bare check read as a status, not a button. Selected stays filled
