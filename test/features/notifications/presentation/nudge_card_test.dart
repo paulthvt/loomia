@@ -22,6 +22,7 @@ void main() {
     expect(find.text(title), findsOneWidget);
 
     await tester.ensureVisible(find.text('Turn on'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Turn on'));
     await tester.pumpAndSettle();
     expect(push.asked, 1);
@@ -43,6 +44,7 @@ void main() {
       notifications: notifications,
     );
     await tester.ensureVisible(find.text('7:00 PM'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('7:00 PM'));
     await tester.pumpAndSettle();
     // The Material picker, typed rather than dialled.
@@ -56,6 +58,7 @@ void main() {
     expect(find.text('8:30 AM'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Turn on'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Turn on'));
     await tester.pumpAndSettle();
     final saved = notifications.saved.single;
@@ -71,6 +74,7 @@ void main() {
       notifications: notifications,
     );
     await tester.ensureVisible(find.text('7:00 PM'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('7:00 PM'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
@@ -87,6 +91,7 @@ void main() {
       notifications: notifications,
     );
     await tester.ensureVisible(find.text('Turn on'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Turn on'));
     await tester.pumpAndSettle();
     expect(notifications.saved.single.enabled, isFalse);
@@ -103,6 +108,7 @@ void main() {
       notifications: notifications,
     );
     await tester.ensureVisible(find.text('Not now'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Not now'));
     await tester.pumpAndSettle();
     expect(push.asked, 0);
