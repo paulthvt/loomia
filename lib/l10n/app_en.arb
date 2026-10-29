@@ -73,6 +73,10 @@
   "@authContinueWithGoogle": {
     "description": "Button that starts Google sign-in. Google is a brand name and stays untranslated."
   },
+  "authContinueWithApple": "Continue with Apple",
+  "@authContinueWithApple": {
+    "description": "Button that starts Sign in with Apple. Apple is a brand name and stays untranslated; the wording follows Apple's allowed button titles (Sign in / Sign up / Continue with Apple)."
+  },
   "authContinueWithEmail": "Continue with email",
   "@authContinueWithEmail": {
     "description": "Button that opens the email sign-in form."
