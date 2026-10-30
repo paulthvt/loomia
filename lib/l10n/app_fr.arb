@@ -1217,5 +1217,21 @@
   "taskNotFound": "Cette tâche n’est plus dans ta liste.",
   "@taskNotFound": {
     "description": "Title shown when a task's page points to one that no longer exists (deleted, maybe on another device). Followed by eventNotFoundBody."
+  },
+  "authContinueWithApple": "Continuer avec Apple",
+  "@authContinueWithApple": {
+    "description": "Button that starts Sign in with Apple. Apple is a brand name and stays untranslated; the wording follows Apple's allowed button titles (Sign in / Sign up / Continue with Apple)."
+  },
+  "firstRunNameQuestion": "Comment veux-tu qu’on t’appelle ?",
+  "@firstRunNameQuestion": {
+    "description": "Question on the first-run step that asks for the user's first name, shown only when their account came without one (Sign in with Apple)."
+  },
+  "firstRunNameBody": "Ton prénom, pour ton message d’accueil dans Aujourd’hui.",
+  "@firstRunNameBody": {
+    "description": "Sentence under the first-name question on the first-run screen. Today is the name of the app's home screen."
+  },
+  "firstRunNameContinue": "Continuer",
+  "@firstRunNameContinue": {
+    "description": "Button that saves the first name and moves to the next first-run step."
   }
 }
