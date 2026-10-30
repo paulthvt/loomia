@@ -283,8 +283,9 @@ temporary keychain. Two alternatives were ruled out. `match` needs a second repo
 for one team and one app. Automatic signing in CI creates certificates on its own
 and is hard to reason about. Local builds keep automatic signing, and only the CI
 checkout is switched to manual. The cost is renewing the certificate and the
-profile by hand once a year (README.md → Releases → iOS). Android moves to
-the same tool in #401.
+profile by hand once a year (README.md → Releases → iOS). Android uses the
+same tool (#401): `android/fastlane/` uploads the AAB to internal testing and
+promotes it, sending only the What's new text, never the store listing.
 
 ### Not yet present, by design
 

@@ -1,0 +1,5 @@
+# Release tooling for Android only (#401), contained in android/. Not an app
+# dependency. Same pin as ios/Gemfile: bump both together.
+source 'https://rubygems.org'
+
+gem 'fastlane', '2.241.2'

@@ -1,0 +1,84 @@
+# Fastlane for Play releases (#401), the Android side of ios/fastlane. Flutter
+# builds and signs the AAB in the workflow (key.properties from secrets);
+# fastlane only uploads and promotes. Lanes run from android/:
+#
+#   bundle exec fastlane upload aab:<path> tag:<vYYYY.MM.N> notes:<release-notes.json>
+#   bundle exec fastlane promote tag:<vYYYY.MM.N> track:<alpha|beta|production> notes:<release-notes.json>
+#
+# The service account comes from PLAY_SERVICE_ACCOUNT_JSON. notes is optional:
+# a release whose notes failed ships without them. Paths must be absolute,
+# fastlane resolves relative ones from android/fastlane/.
+
+default_platform(:android)
+
+# Same formula as release.yaml: v2026.10.7 -> 20261007.
+def play_version_code(tag)
+  year, month, micro = tag.delete_prefix('v').split('.').map { |part| Integer(part, 10) }
+  year * 10_000 + month * 100 + micro
+end
+
+# Only the What's new text is uploaded, never the store listing, images or
+# screenshots: those stay in Play Console. Supply reads the notes from a
+# metadata folder, one <lang>/changelogs/<versionCode>.txt each.
+def play_options(tag, notes)
+  options = {
+    json_key_data: ENV.fetch('PLAY_SERVICE_ACCOUNT_JSON'),
+    skip_upload_apk: true,
+    skip_upload_metadata: true,
+    skip_upload_images: true,
+    skip_upload_screenshots: true,
+    skip_upload_changelogs: true
+  }
+  texts = notes.to_s.empty? || !File.exist?(notes.to_s) ? {} : JSON.parse(File.read(notes))
+  return options if texts.empty?
+
+  metadata = File.expand_path('../../build/play-metadata', __dir__)
+  FileUtils.rm_rf(metadata)
+  texts.each do |language, text|
+    dir = File.join(metadata, language, 'changelogs')
+    FileUtils.mkdir_p(dir)
+    File.write(File.join(dir, "#{play_version_code(tag)}.txt"), text)
+  end
+  options.merge(metadata_path: metadata, skip_upload_changelogs: false)
+end
+
+platform :android do
+  desc 'Upload an AAB to internal testing, completed. Options: aab, tag (required), notes.'
+  lane :upload do |options|
+    aab = options[:aab].to_s
+    UI.user_error!("AAB not found: '#{aab}'") unless File.exist?(aab)
+    tag = options.fetch(:tag)
+
+    upload_to_play_store(
+      play_options(tag, options[:notes]).merge(
+        aab: aab,
+        track: 'internal',
+        release_status: 'completed',
+        version_name: tag # The release name testers see in Play Console.
+      )
+    )
+  end
+
+  desc "Move the tag's build from internal testing to track. Options: tag, track (required), notes."
+  lane :promote do |options|
+    tag = options.fetch(:tag)
+    track = options.fetch(:track)
+    code = play_version_code(tag)
+    on_internal = google_play_track_version_codes(
+      track: 'internal', json_key_data: ENV.fetch('PLAY_SERVICE_ACCOUNT_JSON')
+    ).map(&:to_s)
+    UI.user_error!("versionCode #{code} (#{tag}) is not on internal testing") unless on_internal.include?(code.to_s)
+
+    # The release keeps internal's name; its notes are rewritten from notes, so
+    # a fix to the release's release-notes.json reaches the wider track.
+    upload_to_play_store(
+      play_options(tag, options[:notes]).merge(
+        track: 'internal',
+        track_promote_to: track,
+        track_promote_release_status: 'completed',
+        version_code: code,
+        skip_upload_aab: true
+      )
+    )
+  end
+end
