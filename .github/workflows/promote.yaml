@@ -36,12 +36,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        id: auth
+      # The lanes, not the tag's code: promoting rebuilds nothing.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
         with:
-          credentials_json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          working-directory: android
+          bundler-cache: true
 
       # The notes release.yaml attached, so every track shows the same text.
       # Releases from before them, or whose notes failed, have none.
@@ -52,31 +53,18 @@ jobs:
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx release-notes.json; then
             gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p release-notes.json
-          else
-            echo '{}' > release-notes.json
           fi
 
-      # Same formula as release.yaml.
+      # Fails when the tag's build isn't on internal testing.
       - name: Move the build on Play
+        working-directory: android
         env:
-          TOKEN: ${{ steps.auth.outputs.access_token }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           TAG: ${{ inputs.tag }}
           TRACK: ${{ inputs.track }}
-          API: https://androidpublisher.googleapis.com/androidpublisher/v3/applications/app.loomia
-        run: |
-          IFS=. read -r year month micro <<< "${TAG#v}"
-          code=$((year * 10000 + month * 100 + micro))
-          api() { curl -sSf -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$@"; }
-
-          edit=$(api -X POST "$API/edits" | jq -r .id)
-          api "$API/edits/$edit/tracks/internal" \
-            | jq -e --arg code "$code" '[.releases[].versionCodes[]?] | index($code)' > /dev/null \
-            || { echo "::error::versionCode $code ($TAG) is not on internal testing"; exit 1; }
-          jq -n --arg track "$TRACK" --arg code "$code" --arg name "$TAG" --slurpfile notes release-notes.json \
-            '{track: $track, releases: [{name: $name, versionCodes: [$code], status: "completed",
-              releaseNotes: [$notes[0] | to_entries[] | {language: .key, text: .value}]}]}' \
-            | api -X PUT "$API/edits/$edit/tracks/$TRACK" -d @- > /dev/null
-          api -X POST "$API/edits/$edit:commit" > /dev/null
+        run: >-
+          bundle exec fastlane promote tag:"$TAG" track:"$TRACK"
+          notes:"$GITHUB_WORKSPACE/release-notes.json"
 
       # The web version release.yaml uploaded for this tag, no rebuild.
       # ponytail: versions list only sees the 10 latest, so promote within 10 releases.

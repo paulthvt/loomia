@@ -30,6 +30,8 @@ Runner/GeneratedPluginRegistrant.*
 # fastlane gems installed locally (bundle config set --local path vendor/bundle)
 .bundle/
 vendor/
+fastlane/report.xml
+fastlane/README.md
 
 # Exceptions to above rules.
 !default.mode1v3

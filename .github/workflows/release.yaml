@@ -117,6 +117,12 @@ jobs:
           flutter-version-file: .fvmrc
           cache: true
 
+      # Fastlane uploads to Play (android/fastlane/Fastfile).
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          working-directory: android
+          bundler-cache: true
+
       - run: flutter pub get
 
       # The store screenshots of this version, the whole app on sample data.
@@ -183,7 +189,6 @@ jobs:
       # One Gemini call. Failing only costs the notes, the build still ships.
       # Edit the attached release-notes.json before promoting to fix the text.
       - name: Write store release notes
-        id: notes
         continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -192,12 +197,6 @@ jobs:
         run: |
           gh release view "$TAG" --json body -q .body > release-body.md
           dart run tool/release_notes.dart release-body.md release-notes.json
-          [ -f release-notes.json ] || exit 0
-          mkdir whatsnew
-          for lang in $(jq -r 'keys[]' release-notes.json); do
-            jq -j --arg l "$lang" '.[$l]' release-notes.json > "whatsnew/whatsnew-$lang"
-          done
-          echo "dir=whatsnew" >> "$GITHUB_OUTPUT"
 
       - name: Attach artifacts to the release
         env:
@@ -210,15 +209,15 @@ jobs:
           gh release edit "$TAG" --prerelease
 
       - name: Upload to Play internal testing
-        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: app.loomia
-          releaseFiles: build/app/outputs/bundle/release/app-release.aab
-          releaseName: ${{ needs.yeet.outputs.tag }}
-          track: internal
-          status: completed
-          whatsNewDirectory: ${{ steps.notes.outputs.dir }}
+        working-directory: android
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          TAG: ${{ needs.yeet.outputs.tag }}
+        # Absolute paths: fastlane resolves relative ones from android/fastlane/.
+        run: >-
+          bundle exec fastlane upload
+          aab:"$GITHUB_WORKSPACE/build/app/outputs/bundle/release/app-release.aab"
+          tag:"$TAG" notes:"$GITHUB_WORKSPACE/release-notes.json"
 
       # Web's internal testing: a version on the internal preview URL, not
       # live. promote.yaml to production deploys this exact version.

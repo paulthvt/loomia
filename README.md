@@ -283,6 +283,12 @@ versions, `YYYY.MM.MICRO`: `2026.10.1` is the first release of October 2026,
 tagged `v2026.10.1`. Merging the PR tags the version, builds a signed AAB and
 APK, publishes a GitHub **pre-release** with the APK and web build, and uploads
 the AAB to Play **internal testing** (`.github/workflows/release.yaml`).
+Fastlane does both Play steps, the upload and Promote below
+(`android/fastlane/Fastfile`, run from `android/`), with the
+`PLAY_SERVICE_ACCOUNT_JSON` secret. To run a lane by hand, set that variable,
+then once `bundle config set --local path vendor/bundle && bundle install`
+(Homebrew's Ruby can't take the gems itself), and
+`bundle exec fastlane promote tag:... track:...`. The same goes for `ios/`.
 
 Every release starts there. To ship one further, promote the same build — no
 rebuild:
