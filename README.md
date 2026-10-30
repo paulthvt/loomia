@@ -322,7 +322,7 @@ The web build follows the same path on Cloudflare (`wrangler.jsonc`, a Worker
 with static assets only). Each release uploads a version tagged with the
 release, served at the `internal` preview URL
 (`https://internal-loomia.<account>.workers.dev`) but not live. Promote to
-`production` makes that exact version live on `loomia.thevenot.me`. Rolling
+`production` makes that exact version live on `app.getloomia.app`. Rolling
 back is `npx wrangler rollback`.
 
 Auth links from the preview URL land on the live site: it is not in
@@ -387,7 +387,7 @@ A Gemini failure, or a release with nothing user-facing, ships without notes.
    ```
 
 5. **Cloudflare.** Create an API token from the *Edit Cloudflare Workers*
-   template, limited to your account and the `thevenot.me` zone, then:
+   template, limited to your account and the `getloomia.app` zone, then:
 
    ```bash
    gh secret set CLOUDFLARE_API_TOKEN
@@ -397,10 +397,12 @@ A Gemini failure, or a release with nothing user-facing, ships without notes.
    The Worker must exist before a version can be uploaded to it, so deploy once
    by hand: `flutter build web --release && npx wrangler deploy`. Then in
    Workers & Pages → `loomia` → *Settings → Domains & Routes*, add the custom
-   domain `loomia.thevenot.me` (Cloudflare creates the DNS record and
+   domain `app.getloomia.app` (Cloudflare creates the DNS record and
    certificate). Moving to another domain later: add the new custom domain,
-   update `site_url` and `additional_redirect_urls` in `supabase/config.toml`,
-   remove the old one.
+   update `site_url` and `additional_redirect_urls` in `supabase/config.toml`
+   and `supabase config push`, then replace the old custom domain with a
+   proxied DNS record and a 301 Redirect Rule to the new one, path and query
+   kept, so links and installed web apps keep working.
 
 ### iOS
 
