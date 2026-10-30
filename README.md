@@ -395,14 +395,17 @@ A Gemini failure, or a release with nothing user-facing, ships without notes.
    ```
 
    The Worker must exist before a version can be uploaded to it, so deploy once
-   by hand: `flutter build web --release && npx wrangler deploy`. Then in
-   Workers & Pages → `loomia` → *Settings → Domains & Routes*, add the custom
-   domain `app.getloomia.app` (Cloudflare creates the DNS record and
-   certificate). Moving to another domain later: add the new custom domain,
-   update `site_url` and `additional_redirect_urls` in `supabase/config.toml`
-   and `supabase config push`, then replace the old custom domain with a
-   proxied DNS record and a 301 Redirect Rule to the new one, path and query
-   kept, so links and installed web apps keep working.
+   by hand: `flutter build web --release && npx wrangler deploy`.
+
+   The Worker's domains are the `routes` in `wrangler.jsonc`. Releases don't
+   apply them; after changing the list, run `npx wrangler triggers deploy`
+   (logged in with `npx wrangler login`; it needs a `build/web` folder, even
+   an empty one). Cloudflare creates the DNS record and certificate. Moving
+   to another domain: add it to `routes` and deploy the triggers, update
+   `site_url` and `additional_redirect_urls` in `supabase/config.toml` and
+   `supabase config push`, then replace the old domain with a proxied DNS
+   record and a 301 Redirect Rule to the new one, path and query kept, so
+   links and installed web apps keep working.
 
 ### iOS
 
