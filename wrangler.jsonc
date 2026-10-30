@@ -1,9 +1,20 @@
 // The web app on Cloudflare: a Worker with static assets only, no code.
 // release.yaml uploads each release as a preview version, promote.yaml makes it
-// live. Custom domain is set in the dashboard. Setup: README.md → Web.
+// live. Setup: README.md → Web.
 {
   "name": "loomia",
   "compatibility_date": "2026-10-01",
+  // Applied with `npx wrangler triggers deploy`, not by `versions upload`.
+  // This list replaces every domain on the Worker. loomia.thevenot.me stays
+  // until its redirect rule to app.getloomia.app is in place.
+  // Without these two, wrangler turns off the internal preview URL
+  // release.yaml uploads to.
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    { "pattern": "app.getloomia.app", "custom_domain": true },
+    { "pattern": "loomia.thevenot.me", "custom_domain": true }
+  ],
   "assets": {
     "directory": "build/web",
     // go_router owns every path, so unknown ones serve index.html.
