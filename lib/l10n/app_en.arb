@@ -3420,5 +3420,81 @@
   "inviteSheetLinkCopied": "Link copied",
   "@inviteSheetLinkCopied": {
     "description": "Snackbar message shown after the invite link is copied to clipboard."
+  },
+  "contactSharedBy": "Shared by {name}",
+  "@contactSharedBy": {
+    "description": "Header of the section on a team member's contact page showing the goals they share with the user. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactSharedNoMonth": "{name} hasn't set this month yet",
+  "@contactSharedNoMonth": {
+    "description": "In that section, in place of the month's targets, when the team member has not planned the current month. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactSharedNotWritten": "{name} hasn't written this yet",
+  "@contactSharedNotWritten": {
+    "description": "In that section, the value of Their why or Their own goal when the team member shares it but left it blank. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactSharedTeamVolume": "Team volume",
+  "@contactSharedTeamVolume": {
+    "description": "Label of the shared team volume target in that section."
+  },
+  "contactSharedTeamVolumeValue": "{model, select, doterra{Aims for {amount} OV} other{Aims for {amount}}}",
+  "@contactSharedTeamVolumeValue": {
+    "description": "Value of the shared team volume target, e.g. 'Aims for 3,000 OV'. OV is not translated. Other: the number alone.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "amount": { "type": "num", "format": "decimalPattern" }
+    }
+  },
+  "contactSharedVolumeOf": "{model, select, doterra{{done} of {target} PV} other{{done} of {target}}}",
+  "@contactSharedVolumeOf": {
+    "description": "Value of the shared own volume when progress is shared: done so far this month of the target, e.g. '120 of 200 PV'. PV is not translated. Both are formatted numbers.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "done": { "type": "String" },
+      "target": { "type": "String" }
+    }
+  },
+  "contactSharedCountOf": "{done} of {target}",
+  "@contactSharedCountOf": {
+    "description": "Value of a shared count (new prospects, customers...) when progress is shared: done so far this month of the target, e.g. '3 of 8'.",
+    "placeholders": {
+      "done": { "type": "int" },
+      "target": { "type": "int" }
+    }
+  },
+  "contactSharedAimsFor": "Aims for {target}",
+  "@contactSharedAimsFor": {
+    "description": "Value of a shared count (new prospects, customers...) when progress is not shared, e.g. 'Aims for 8'.",
+    "placeholders": { "target": { "type": "int" } }
+  },
+  "contactStopSharingTitle": "Stop seeing what {name} shares?",
+  "@contactStopSharingTitle": {
+    "description": "Title of the dialog confirming the user no longer wants to see a team member's shared goals. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactStopSharingBody": "Their goals stop showing here and your own notes come back. To see them again, send a new invite.",
+  "@contactStopSharingBody": {
+    "description": "Body of that dialog."
+  },
+  "contactInviteToShare": "Invite to share goals",
+  "@contactInviteToShare": {
+    "description": "Button on a team member's contact page that opens the sheet inviting them to share their goals."
+  },
+  "contactInviteSent": "Invite sent · {code}",
+  "@contactInviteSent": {
+    "description": "On a team member's contact page while an invite to share goals is open. code is the invite code, e.g. 'ABCD-EFGH'.",
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "contactInviteUntil": "Works once, until {date}",
+  "@contactInviteUntil": {
+    "description": "Caption under Invite sent: the code works once, until the day it expires, e.g. 'November 14'.",
+    "placeholders": { "date": { "type": "DateTime", "format": "MMMMd" } }
+  },
+  "contactShareAgain": "Share again",
+  "@contactShareAgain": {
+    "description": "Text button beside Invite sent that reopens the invite sheet to send the code again."
   }
 }

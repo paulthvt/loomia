@@ -9,6 +9,11 @@ import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/contact_details.dart';
 import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
+import 'package:loomia/features/goals/domain/month_plan.dart';
+import 'package:loomia/features/sharing/domain/invite_code.dart';
+import 'package:loomia/features/sharing/domain/share_item.dart';
+import 'package:loomia/features/sharing/domain/shared_goals.dart';
+import 'package:loomia/features/sharing/presentation/contact_sharing_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -58,6 +63,8 @@ class _Calls {
   var photoChoices = 0;
   var photoRemovals = 0;
   var loyalty = 0;
+  var invites = 0;
+  var stops = 0;
 }
 
 Future<_Calls> _pump(
@@ -67,6 +74,7 @@ Future<_Calls> _pump(
   String? workflowName,
   BusinessModel model = BusinessModel.other,
   List<Tag> tags = const [],
+  ContactSharing? sharing,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -98,6 +106,9 @@ Future<_Calls> _pump(
           tags: tags,
           onTags: () => calls.tagSheets++,
           workflowName: workflowName,
+          sharing: sharing,
+          onInvite: () => calls.invites++,
+          onStopSharing: () => calls.stops++,
         ),
       ),
     ),
@@ -604,5 +615,258 @@ void main() {
       tester.getTopLeft(find.text('WHERE IT STANDS')).dx,
       lessThan(tester.getTopLeft(facts).dx),
     );
+  });
+
+  group('sharing', () {
+    // Tall enough that the lazy list builds every section.
+    Future<_Calls> pump(
+      WidgetTester tester,
+      Person person, {
+      BusinessModel model = BusinessModel.other,
+      ContactSharing? sharing,
+    }) => _pump(
+      tester,
+      person,
+      size: const Size(800, 2400),
+      model: model,
+      sharing: sharing,
+    );
+
+    Person member({
+      Stage stage = Stage.team,
+      DateTime? by,
+      double? volume = 100,
+    }) => Person(
+      id: 'p1',
+      name: 'Marie Martin',
+      stage: stage,
+      stageSince: DateTime.utc(2026, 3, 4),
+      why: 'More time with my kids',
+      ownGoal: 'Pay for the holidays',
+      currentLevel: 'Manager',
+      targetLevel: 'Elite',
+      targetLevelBy: by,
+      monthlyVolumeTarget: volume,
+      timeAvailable: '10 hours a week',
+    );
+
+    final plan = MonthPlan(
+      month: DateTime(2026, 10),
+      ownVolumeTarget: 200,
+      teamVolumeTarget: 3000,
+      levelTarget: 'Diamond',
+      prospectsTarget: 8,
+      customersTarget: 4,
+      teamMembersTarget: 1,
+      loyaltyTarget: 3,
+    );
+    const progress = Progress(
+      ownVolume: 120,
+      prospects: 3,
+      customers: 1,
+      teamMembers: 0,
+      loyalty: 2,
+    );
+
+    ContactSharing shared({
+      Set<ShareItem> items = const {},
+      MonthPlan? plan,
+      bool noPlan = false,
+      String? why,
+      String? ownGoal,
+    }) => (
+      shared: SharedGoals(
+        memberFirstName: 'Marie',
+        items: items,
+        plan: noPlan ? null : plan,
+        levelNow: 'Executive',
+        progress: progress,
+        why: why,
+        ownGoal: ownGoal,
+      ),
+      invite: null,
+    );
+
+    testWidgets('the shared plan replaces the hand-typed volume', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        member(),
+        model: BusinessModel.doterra,
+        sharing: shared(plan: plan),
+      );
+
+      expect(find.text('SHARED BY MARIE'), findsOneWidget);
+      expect(find.text('Aims for 100 PV'), findsNothing);
+      expect(find.text('Each month'), findsNothing);
+      expect(find.text('Aims for 200 PV'), findsOneWidget);
+      expect(find.text('Aims for 3,000 OV'), findsOneWidget);
+      // Level now is the shared one, not the typed one.
+      expect(find.text('Executive'), findsOneWidget);
+      expect(find.text('Manager'), findsNothing);
+      // What sharing does not replace stays, under its own header.
+      expect(find.text('WHAT THEY ARE AIMING FOR'), findsOneWidget);
+      expect(find.text('10 hours a week'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('SHARED BY MARIE')).dy,
+        lessThan(tester.getTopLeft(find.text('WHAT THEY ARE AIMING FOR')).dy),
+      );
+    });
+
+    testWidgets('their target month stays beside the shared level', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        member(by: DateTime(2027, 3)),
+        sharing: shared(plan: plan),
+      );
+
+      expect(find.text('Diamond by March 2027'), findsOneWidget);
+      expect(find.text('Elite by March 2027'), findsNothing);
+    });
+
+    testWidgets('activity targets not shared: no count rows', (tester) async {
+      await pump(tester, member(), sharing: shared(plan: plan));
+
+      expect(find.text('New prospects'), findsNothing);
+      expect(find.text('New customers'), findsNothing);
+    });
+
+    testWidgets('activity targets shared: counts as aims', (tester) async {
+      await pump(
+        tester,
+        member(),
+        sharing: shared(plan: plan, items: {ShareItem.activityTargets}),
+      );
+
+      expect(find.text('New prospects'), findsOneWidget);
+      expect(find.text('Aims for 8'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+    });
+
+    testWidgets('progress shared: done of aimed, with a bar, none on team', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        member(),
+        model: BusinessModel.doterra,
+        sharing: shared(
+          plan: plan,
+          items: {ShareItem.activityTargets, ShareItem.progress},
+        ),
+      );
+
+      expect(find.text('120 of 200 PV'), findsOneWidget);
+      expect(find.text('3 of 8'), findsOneWidget);
+      expect(find.text('2 of 3'), findsOneWidget);
+      expect(find.text('Aims for 3,000 OV'), findsOneWidget);
+      // Own volume and the four counts; team volume is typed at close.
+      expect(find.byType(LinearProgressIndicator), findsNWidgets(5));
+    });
+
+    testWidgets('about me not shared: their why, as you typed it', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        member(),
+        sharing: shared(plan: plan, why: 'Shared why'),
+      );
+
+      expect(find.text('More time with my kids'), findsOneWidget);
+      expect(find.text('Shared why'), findsNothing);
+    });
+
+    testWidgets('about me shared: theirs, or says it is not written', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        member(),
+        sharing: shared(
+          plan: plan,
+          items: {ShareItem.aboutMe},
+          why: 'Shared why',
+          ownGoal: ' ',
+        ),
+      );
+
+      expect(find.text('Shared why'), findsOneWidget);
+      expect(find.text('More time with my kids'), findsNothing);
+      expect(find.text('Pay for the holidays'), findsNothing);
+      expect(find.text("Marie hasn't written this yet"), findsOneWidget);
+    });
+
+    testWidgets('no plan this month: says so', (tester) async {
+      await pump(tester, member(), sharing: shared(noPlan: true));
+
+      expect(find.text("Marie hasn't set this month yet"), findsOneWidget);
+      expect(find.text('Aims for 100 PV'), findsNothing);
+      expect(find.text('Executive'), findsOneWidget);
+    });
+
+    testWidgets('a customer shows nothing shared', (tester) async {
+      await pump(
+        tester,
+        member(stage: Stage.customer),
+        sharing: shared(plan: plan),
+      );
+
+      expect(find.text('SHARED BY MARIE'), findsNothing);
+      expect(find.text('Invite to share goals'), findsNothing);
+    });
+
+    testWidgets('no link: Invite to share goals', (tester) async {
+      final calls = await pump(
+        tester,
+        member(),
+        sharing: (shared: null, invite: null),
+      );
+
+      expect(find.text('Aims for 100'), findsOneWidget);
+      await tester.tap(find.text('Invite to share goals'));
+      expect(calls.invites, 1);
+    });
+
+    testWidgets('not loaded: no invite button', (tester) async {
+      await pump(tester, member());
+
+      expect(find.text('Invite to share goals'), findsNothing);
+    });
+
+    testWidgets('invite sent: the code, until when, and Share again', (
+      tester,
+    ) async {
+      final calls = await pump(
+        tester,
+        member(),
+        sharing: (
+          shared: null,
+          invite: Invite(code: 'ABCDEFGH', expiresAt: DateTime(2026, 11, 14)),
+        ),
+      );
+
+      expect(find.text('Invite sent · ABCD-EFGH'), findsOneWidget);
+      expect(find.text('Works once, until November 14'), findsOneWidget);
+      expect(find.text('Invite to share goals'), findsNothing);
+      await tester.tap(find.text('Share again'));
+      expect(calls.invites, 1);
+    });
+
+    testWidgets('Stop sharing asks first', (tester) async {
+      final calls = await pump(tester, member(), sharing: shared(plan: plan));
+
+      await tester.tap(find.byTooltip('More').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Stop sharing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Stop seeing what Marie shares?'), findsOneWidget);
+      await tester.tap(find.text('Stop'));
+      await tester.pumpAndSettle();
+      expect(calls.stops, 1);
+    });
   });
 }

@@ -174,6 +174,8 @@ Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
   onLoyalty: () {},
   tags: tagsOf((person ?? _sample.first).tagIds, _tags),
   onTags: () {},
+  onInvite: () {},
+  onStopSharing: () {},
   model: BusinessModel.other,
   onStatus: (_) {},
   onEdit: (_) {},

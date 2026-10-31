@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
@@ -9,6 +10,7 @@ import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/fact_row.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
+import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -16,6 +18,10 @@ import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/edit_person_form.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
+import 'package:loomia/features/sharing/domain/invite_code.dart';
+import 'package:loomia/features/sharing/domain/share_item.dart';
+import 'package:loomia/features/sharing/domain/shared_goals.dart';
+import 'package:loomia/features/sharing/presentation/contact_sharing_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -70,6 +76,9 @@ class ContactDetails extends StatelessWidget {
     required this.onLoyalty,
     required this.tags,
     required this.onTags,
+    required this.onInvite,
+    required this.onStopSharing,
+    this.sharing,
     this.photo,
     this.workflowName,
     this.nextStep,
@@ -119,6 +128,16 @@ class ContactDetails extends StatelessWidget {
 
   /// Opens the tag sheet.
   final VoidCallback onTags;
+
+  /// What a team member shares, or the invite out to them; null until it
+  /// loads, and for anyone not on the team.
+  final ContactSharing? sharing;
+
+  /// Opens the invite sheet.
+  final VoidCallback onInvite;
+
+  /// Called once the user has confirmed.
+  final VoidCallback onStopSharing;
 
   /// The current workflow's name, shown beside Change workflow in ⋯.
   final String? workflowName;
@@ -245,6 +264,17 @@ class ContactDetails extends StatelessWidget {
       action: l10n.contactDeleteConfirm,
     );
     if (confirmed) onDelete();
+  }
+
+  Future<void> _confirmStopSharing(BuildContext context, String name) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await confirmDestructive(
+      context,
+      title: l10n.contactStopSharingTitle(name),
+      body: l10n.contactStopSharingBody,
+      action: l10n.sharingStopAction,
+    );
+    if (confirmed) onStopSharing();
   }
 
   @override
@@ -401,6 +431,26 @@ class ContactDetails extends StatelessWidget {
       ],
     ];
 
+    Widget muted(String text) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Text(
+        text,
+        style: theme.textTheme.bodyMedium?.copyWith(color: colors.textMuted),
+      ),
+    );
+    Widget card(List<Widget> children) => Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
+      ),
+    );
+
     // Facts with a value, under a header that edits them all.
     List<Widget> factsSection(
       String title,
@@ -414,76 +464,216 @@ class ContactDetails extends StatelessWidget {
           actionLabel: l10n.contactEdit,
           onAction: () => onEdit(part),
         ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+        card([
+          if (facts.isEmpty)
+            muted(l10n.contactNothingYet)
+          else
+            for (final (label, value, link) in facts)
+              FactRow(
+                label: label,
+                value: value!,
+                onTap: link == null ? null : () => onLaunch(link),
+              ),
+        ]),
+      ];
+    }
+
+    // Sharing shows only while they are on the team, like their aims.
+    final sharing = person.stage == Stage.team ? this.sharing : null;
+    final shared = sharing?.shared;
+    final aboutMeShared = shared?.items.contains(ShareItem.aboutMe) ?? false;
+    String? aimingForValue(String? level) =>
+        switch ((level, person.targetLevelBy)) {
+          (final String level, final DateTime by) => l10n.factAimingForBy(
+            level,
+            by,
+          ),
+          (final level, _) => level,
+        };
+
+    // What they share, in place of what you typed: never a fallback to your
+    // notes, so it stays clear what came from them.
+    List<Widget> sharedSection(SharedGoals shared) {
+      final name = shared.memberFirstName;
+      final plan = shared.plan;
+      final done = shared.items.contains(ShareItem.progress)
+          ? shared.progress
+          : null;
+      final number = NumberFormat.decimalPattern(l10n.localeName);
+      double? ratio(num value, num target) =>
+          target > 0 ? value / target : null;
+      String written(String? value) => value == null || value.trim().isEmpty
+          ? l10n.contactSharedNotWritten(name)
+          : value;
+      Widget row(String label, String value, [double? progress]) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FactRow(label: label, value: value),
+          if (progress != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: LoomiaProgressBar(value: progress),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (facts.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Text(
-                      l10n.contactNothingYet,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colors.textMuted,
-                      ),
-                    ),
-                  )
-                else
-                  for (final (label, value, link) in facts)
-                    FactRow(
-                      label: label,
-                      value: value!,
-                      onTap: link == null ? null : () => onLaunch(link),
-                    ),
-              ],
+        ],
+      );
+
+      return [
+        SectionHeader(
+          title: l10n.contactSharedBy(name),
+          trailing: PopupMenuButton<void>(
+            tooltip: l10n.contactMore,
+            icon: const Icon(Icons.more_vert_rounded),
+            // 32px, as the header's action.
+            style: IconButton.styleFrom(
+              minimumSize: const Size(32, 32),
+              padding: EdgeInsets.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                onTap: () => _confirmStopSharing(context, name),
+                child: Text(l10n.sharingStopButton),
+              ),
+            ],
           ),
         ),
+        card([
+          if (shared.levelNow case final level?)
+            row(l10n.factLevelNow(model.name), level),
+          if (plan == null)
+            muted(l10n.contactSharedNoMonth(name))
+          else ...[
+            if (aimingForValue(plan.levelTarget) case final level?)
+              row(l10n.factAimingFor, level),
+            if (plan.ownVolumeTarget case final target?)
+              done == null
+                  ? row(
+                      l10n.goalOwnVolume,
+                      l10n.factEachMonthValue(model.name, target),
+                    )
+                  : row(
+                      l10n.goalOwnVolume,
+                      l10n.contactSharedVolumeOf(
+                        model.name,
+                        number.format(done.ownVolume),
+                        number.format(target),
+                      ),
+                      ratio(done.ownVolume, target),
+                    ),
+            // No bar: team volume is typed at close, never tracked.
+            if (plan.teamVolumeTarget case final target?)
+              row(
+                l10n.contactSharedTeamVolume,
+                l10n.contactSharedTeamVolumeValue(model.name, target),
+              ),
+            if (shared.items.contains(ShareItem.activityTargets))
+              for (final (label, target, value) in [
+                (l10n.goalNewProspects, plan.prospectsTarget, done?.prospects),
+                (l10n.goalNewCustomers, plan.customersTarget, done?.customers),
+                (
+                  l10n.goalNewTeamMembers,
+                  plan.teamMembersTarget,
+                  done?.teamMembers,
+                ),
+                (
+                  l10n.goalLoyalty(model.name),
+                  plan.loyaltyTarget,
+                  done?.loyalty,
+                ),
+              ])
+                if (target != null)
+                  value == null
+                      ? row(label, l10n.contactSharedAimsFor(target))
+                      : row(
+                          label,
+                          l10n.contactSharedCountOf(value, target),
+                          ratio(value, target),
+                        ),
+          ],
+          if (aboutMeShared) ...[
+            row(l10n.factWhy, written(shared.why)),
+            row(l10n.factOwnGoal, written(shared.ownGoal)),
+          ],
+        ]),
       ];
     }
 
     // Their own aims, in their words: nothing to rank or compare. A rank is a
-    // fact they told you, never summed or shown elsewhere.
+    // fact they told you, never summed or shown elsewhere. What they share
+    // takes the place of the rows it covers; the rest stays yours.
     final aimingFor = person.stage == Stage.team
-        ? factsSection(l10n.contactSectionAimingFor, EditPart.aims, [
-            (l10n.factWhy, person.why, null),
-            (l10n.factLevelNow(model.name), person.currentLevel, null),
-            (
-              l10n.factAimingFor,
-              switch ((person.targetLevel, person.targetLevelBy)) {
-                (final String level, final DateTime by) => l10n.factAimingForBy(
-                  level,
-                  by,
+        ? [
+            ...factsSection(l10n.contactSectionAimingFor, EditPart.aims, [
+              if (!aboutMeShared) (l10n.factWhy, person.why, null),
+              if (shared == null) ...[
+                (l10n.factLevelNow(model.name), person.currentLevel, null),
+                (l10n.factAimingFor, aimingForValue(person.targetLevel), null),
+                (
+                  l10n.factEachMonth,
+                  switch (person.monthlyVolumeTarget) {
+                    final double amount => l10n.factEachMonthValue(
+                      model.name,
+                      amount,
+                    ),
+                    null => null,
+                  },
+                  null,
                 ),
-                (final level, _) => level,
-              },
-              null,
-            ),
-            (
-              l10n.factEachMonth,
-              switch (person.monthlyVolumeTarget) {
-                final double amount => l10n.factEachMonthValue(
-                  model.name,
-                  amount,
+              ],
+              if (!aboutMeShared) (l10n.factOwnGoal, person.ownGoal, null),
+              (l10n.factTimeAvailable, person.timeAvailable, null),
+              (l10n.factWouldLoveTo, person.wouldLoveTo, null),
+              (l10n.factStrengths, person.strengths, null),
+              (l10n.factStuckOn, person.stuckOn, null),
+            ]),
+            if (sharing case (shared: null, invite: null)) ...[
+              const SizedBox(height: AppSpacing.ms),
+              FilledButton.tonal(
+                onPressed: onInvite,
+                style: AppTheme.tonal(context),
+                child: Text(l10n.contactInviteToShare),
+              ),
+            ] else if (sharing?.invite case final invite?) ...[
+              const SizedBox(height: AppSpacing.ms),
+              card([
+                Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: AppSpacing.xs,
+                          children: [
+                            Text(
+                              l10n.contactInviteSent(formatCode(invite.code)),
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                            Text(
+                              l10n.contactInviteUntil(
+                                invite.expiresAt.toLocal(),
+                              ),
+                              style: AppTypography.caption.copyWith(
+                                color: colors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: onInvite,
+                      child: Text(l10n.contactShareAgain),
+                    ),
+                  ],
                 ),
-                null => null,
-              },
-              null,
-            ),
-            (l10n.factOwnGoal, person.ownGoal, null),
-            (l10n.factTimeAvailable, person.timeAvailable, null),
-            (l10n.factWouldLoveTo, person.wouldLoveTo, null),
-            (l10n.factStrengths, person.strengths, null),
-            (l10n.factStuckOn, person.stuckOn, null),
-          ])
+              ]),
+            ],
+          ]
         : <Widget>[];
+    final sharedGoals = shared == null ? <Widget>[] : sharedSection(shared);
     final whatYouKnow = factsSection(
       l10n.contactSectionWhatYouKnow,
       EditPart.facts,
@@ -515,7 +705,7 @@ class ContactDetails extends StatelessWidget {
                     [?nextStep],
                     [?history],
                   ]),
-                  side: spaced([aimingFor, whatYouKnow]),
+                  side: spaced([sharedGoals, aimingFor, whatYouKnow]),
                 ),
               ]
             : spaced([
@@ -541,6 +731,7 @@ class ContactDetails extends StatelessWidget {
                 ],
                 whereItStands,
                 [?nextStep],
+                sharedGoals,
                 aimingFor,
                 whatYouKnow,
                 [?history],
