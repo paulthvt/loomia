@@ -23,6 +23,7 @@ import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/features/notifications/presentation/push_scope.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_page.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
+import 'package:loomia/features/sharing/presentation/invite_link_page.dart';
 import 'package:loomia/features/tasks/presentation/task_page.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:material_ui/material_ui.dart';
@@ -192,6 +193,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                     _settingsPage(context, state, SettingsSection.tags),
               ),
               GoRoute(
+                path: Routes.settingsSharingSegment,
+                name: Routes.settingsSharingName,
+                pageBuilder: (context, state) =>
+                    _settingsPage(context, state, SettingsSection.sharing),
+              ),
+              GoRoute(
                 path: Routes.settingsWorkflowsSegment,
                 name: Routes.settingsWorkflowsName,
                 pageBuilder: (context, state) =>
@@ -293,6 +300,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.resetPassword,
         name: Routes.resetPasswordName,
         builder: (context, state) => const ResetPasswordPage(),
+      ),
+      GoRoute(
+        path: Routes.inviteSegment,
+        name: Routes.inviteName,
+        builder: (context, state) =>
+            InviteLinkPage(code: state.pathParameters['code']!),
       ),
     ],
   );

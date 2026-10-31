@@ -172,7 +172,7 @@ void main() {
     expect(auth.calls, ['updateBusinessModel(doterra)']);
     expect(auth.account!.businessModel, BusinessModel.doterra);
     expect(auth.account!.onboarded, isFalse);
-    expect(find.text(_people), findsOneWidget);
+    expect(find.text('Invite code'), findsOneWidget);
     expect(find.text(_question), findsNothing);
   });
 
@@ -214,7 +214,7 @@ void main() {
 
     auth.failWith = null;
     await _choose(tester, 'dōTERRA');
-    expect(find.text(_people), findsOneWidget);
+    expect(find.text('Invite code'), findsOneWidget);
   });
 
   testWidgets('a second tap while saving is ignored', (tester) async {
@@ -229,13 +229,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(auth.calls, ['updateBusinessModel(doterra)']);
-    expect(find.text(_people), findsOneWidget);
+    expect(find.text('Invite code'), findsOneWidget);
   });
 
   testWidgets('Skip goes to Today, for good', (tester) async {
     final auth = _newAccount();
     await pumpLoomia(tester, size: _phone, auth: auth);
     await _choose(tester, 'Other');
+
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Skip for now'));
     await tester.pumpAndSettle();
@@ -248,6 +251,9 @@ void main() {
   testWidgets('Import goes to the phone contacts', (tester) async {
     await pumpLoomia(tester, size: _phone, auth: _newAccount());
     await _choose(tester, 'Other');
+
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Import from your contacts'));
     await tester.pumpAndSettle();
@@ -264,5 +270,44 @@ void main() {
     await pumpLoomia(tester, size: _phone);
 
     expect(find.byType(FirstRunPage), findsNothing);
+  });
+
+  group('invite step', () {
+    testWidgets('the flow goes company → invite → people', (tester) async {
+      await pumpLoomia(tester, size: _phone, auth: _newAccount());
+
+      await _choose(tester, 'dōTERRA');
+      expect(find.text('Invite code'), findsOneWidget);
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+      expect(find.text(_people), findsOneWidget);
+    });
+
+    testWidgets('back from people lands on invite', (tester) async {
+      final auth = _newAccount();
+      await pumpLoomia(tester, size: _phone, auth: auth);
+      await _choose(tester, 'dōTERRA');
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Invite code'), findsOneWidget);
+    });
+
+    testWidgets('skip on invite shows people', (tester) async {
+      final auth = _newAccount();
+      await pumpLoomia(tester, size: _phone, auth: auth);
+      await _choose(tester, 'dōTERRA');
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_people), findsOneWidget);
+      expect(auth.calls, contains('updateBusinessModel(doterra)'));
+      expect(auth.calls, isNot(contains('markOnboarded()')));
+    });
   });
 }

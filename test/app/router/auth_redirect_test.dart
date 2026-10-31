@@ -31,6 +31,10 @@ void main() {
         expect(redirect(Routes.resetPassword), Routes.welcome);
       },
     );
+
+    test('is left alone on an invite link', () {
+      expect(redirect('/invite/ABCDEFGH'), isNull);
+    });
   });
 
   group('signed in', () {
@@ -73,6 +77,10 @@ void main() {
       for (final path in Routes.onboardingPaths) {
         expect(redirect(path), isNull, reason: path);
       }
+    });
+
+    test('is left alone on an invite link', () {
+      expect(redirect('/invite/ABCDEFGH'), isNull);
     });
   });
 

@@ -24,6 +24,8 @@ import 'package:loomia/features/settings/presentation/language_settings.dart';
 import 'package:loomia/features/settings/presentation/settings_action.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_scroll.dart';
+import 'package:loomia/features/sharing/presentation/sharing_controller.dart';
+import 'package:loomia/features/sharing/presentation/sharing_page.dart';
 import 'package:loomia/features/workflows/presentation/event_workflow_editor.dart';
 import 'package:loomia/features/workflows/presentation/workflow_editor.dart';
 import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
@@ -38,6 +40,7 @@ enum SettingsSection {
   notifications,
   workflows,
   tags,
+  sharing,
 }
 
 /// The installed app version, major.minor.patch ("0.1.3"): the build number
@@ -78,6 +81,7 @@ class SettingsPage extends StatelessWidget {
       SettingsSection.notifications => Routes.settingsNotifications,
       SettingsSection.workflows => Routes.settingsWorkflows,
       SettingsSection.tags => Routes.settingsTags,
+      SettingsSection.sharing => Routes.settingsSharing,
     };
     if (context.screenSize.isDesktop) {
       context.go(location);
@@ -207,6 +211,10 @@ class _Section extends StatelessWidget {
         title: l10n.tagsTitle,
         child: const TagsSettings(),
       ),
+      SettingsSection.sharing => SettingsScroll(
+        title: l10n.sharingTitle,
+        child: const SharingPage(),
+      ),
     };
   }
 }
@@ -311,6 +319,21 @@ class _SettingsListState extends ConsumerState<_SettingsList>
               ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => SettingsPage.open(context, SettingsSection.tags),
+            ),
+            ListTile(
+              selected: selected == SettingsSection.sharing,
+              leading: const Icon(Icons.share_outlined),
+              title: Text(l10n.sharingTitle),
+              subtitle: ref
+                  .watch(myShareProvider)
+                  .maybeWhen(
+                    data: (share) => share == null
+                        ? Text(l10n.sharingNotSharing)
+                        : Text(l10n.sharingWith(share.mentorFirstName)),
+                    orElse: () => null,
+                  ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => SettingsPage.open(context, SettingsSection.sharing),
             ),
           ],
         ),
