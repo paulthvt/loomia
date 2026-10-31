@@ -1,8 +1,13 @@
 # Marketing site — design
 
-Issue: #121, epic #117. Figma: section "Marketing site — #121" on
-"04 — Screens (Light)" (to mock, see the brief at the end). Logo: page
+Issue: #121, epic #117. Figma: [Marketing site — #121](https://www.figma.com/design/spz2vsSK8gbt1Ok2rW1sdQ/Loomia?node-id=480-15628)
+on "04 — Screens (Light)": home desktop light and dark, home phone, privacy
+desktop, and a "Site parts" row (header, footer, five screenshots). Logo: page
 "Brand" (node 476:2).
+
+The mockup fixes structure, copy and colour. Polish (type scale, spacing,
+device frames) is done in code and reviewed in the browser, not in Figma:
+see "Site look".
 
 ## Intent
 
@@ -61,15 +66,26 @@ notice, © 2026 Loomia).
    `https://app.getloomia.app`, and a phone screenshot of Today. Proposed:
    - EN: "Know who to get back to today." / "Loomia keeps your contacts, follow-ups and plans in one calm place, so nobody falls through the cracks."
    - FR: « Sache qui recontacter aujourd'hui. » / « Loomia garde tes contacts, tes relances et tes objectifs au même endroit, pour que personne ne passe entre les mailles. »
-2. **Three or four features**, each a short title, one sentence and a
-   screenshot: Today (what to do today), Contacts (where each person is, what
-   comes next), Calendar (events and who came), the month plan (goals without
-   pressure).
-3. **Closing line** and the "Open the app" button again. "Coming soon on iOS
-   and Android" as plain text until the store listings are public; no badges.
+2. **Four features**, alternating text and screenshot (copy from the mockup):
+   - Today: "Know what to do today" / "The people to get back to, your tasks and today's events, on one screen."
+   - Contacts: "See where everyone is" / "Each contact shows their step and what comes next, with your notes and tags."
+   - Calendar: "Events, and who was there" / "Plan a workshop, invite people, then note who was there and follow up." ("was there", not "came", as in the app: calendar spec → Wording.)
+   - Month plan: "Goals without pressure" / "Pick a few goals for the month and see how it's going, at your own pace."
+3. **Closing line** "Start with the people you already know." and the "Open
+   the app" button again. "Coming soon on iOS and Android" as plain text until
+   the store listings are public; no badges.
 
-The final copy comes from the mockup review; the wording above is a starting
-point, held to `docs/design/design-principles.md` and the no-MLM rule.
+French copy is written with the build, in the same register.
+
+### Screenshot content
+
+The mockup's screenshots are the app's own sample data, which includes
+"960 PV to go", "Aiming for Elite · OV 6 000" and "Essential oils for sleep".
+On the public site those read as MLM: points volume, a rank, and the classic
+product. Screenshots on the site show none of that: no PV/OV or other points
+units (goals in sales or contacts), no rank names, neutral products and
+events ("Product evening", "Spring open house"). They are made from the app
+(the previews or the simulator) with that data, not copied from Figma.
 
 ### Privacy
 
@@ -141,6 +157,26 @@ changes.
 - No DPO: not required for one person at this scale.
 - No SIRET on the legal notice until the business is registered; the notice
   names Paul as an individual meanwhile.
+
+## Site look
+
+The app's tokens (colours, font, radii) are the base. A site needs more scale
+than an app screen, so the site adds its own, in its CSS only, never in the
+app:
+
+- **Type:** a hero size of 56 px on desktop, scaling down to 36 px on phone
+  (`clamp`), and 32 px section titles. The app's ramp stays for body text.
+- **Spacing:** 128 px between sections on desktop, 80 px on phone.
+- **Widths:** content max 1200 px, reading column 680 px, text beside a
+  screenshot 480 px.
+- **Screenshots:** a phone outline (thin bezel, the app's radius) with a soft
+  shadow, light and dark versions swapped with `prefers-color-scheme`.
+- **Links:** text links in the brand's text colour, underlined on hover and
+  focus, visible focus ring everywhere.
+- **Motion:** none beyond hover; respects `prefers-reduced-motion` anyway.
+
+These are judged in the browser on the first build, not drawn back into
+Figma.
 
 ## SEO
 
