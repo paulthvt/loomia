@@ -13,6 +13,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../fake_sharing_repository.dart';
 
+// As the fake records it: the provider asks for the current month.
+final thisMonth = '${DateTime.now().year}-${DateTime.now().month}';
+
 void main() {
   late FakeSharingRepository repo;
   late ProviderContainer container;
@@ -278,7 +281,7 @@ void main() {
       expect(result.shared, isNotNull);
       expect(result.shared?.memberFirstName, 'Julie');
       expect(result.invite, isNull);
-      expect(repo.calls, contains('sharedGoals(p1, 2026-10)'));
+      expect(repo.calls, contains('sharedGoals(p1, $thisMonth)'));
     });
 
     test('returns open invite when no shared goals', () async {
@@ -293,7 +296,7 @@ void main() {
       expect(result.shared, isNull);
       expect(result.invite, isNotNull);
       expect(result.invite?.code, 'INVITEME');
-      expect(repo.calls, ['sharedGoals(p2, 2026-10)', 'openInvite(p2)']);
+      expect(repo.calls, ['sharedGoals(p2, $thisMonth)', 'openInvite(p2)']);
     });
 
     test('returns null invite when no shared goals and no invite', () async {
