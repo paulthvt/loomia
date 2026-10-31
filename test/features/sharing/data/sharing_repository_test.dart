@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/sharing/data/sharing_repository.dart';
+import 'package:loomia/features/sharing/domain/invite_failure.dart';
 import 'package:loomia/features/sharing/domain/share_item.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -25,6 +26,36 @@ Future<SharingRepository> _answering(Object? answer) async {
 }
 
 void main() {
+  group('no server', () {
+    // Nothing listens on the port: a network error, not a Postgrest one.
+    Future<SharingRepository> offline() async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final port = server.port;
+      await server.close();
+      final client = SupabaseClient('http://127.0.0.1:$port', 'publishable');
+      addTearDown(client.dispose);
+      return SharingRepository(client);
+    }
+
+    test('preview fails as unknown', () async {
+      final repository = await offline();
+
+      await expectLater(
+        repository.previewInvite('ABCDEFGH'),
+        throwsA(InviteFailure.unknown),
+      );
+    });
+
+    test('accept fails as unknown', () async {
+      final repository = await offline();
+
+      await expectLater(
+        repository.acceptInvite('ABCDEFGH', {}),
+        throwsA(InviteFailure.unknown),
+      );
+    });
+  });
+
   group('an account without a first name', () {
     test('previews as an empty name', () async {
       final repository = await _answering(null);

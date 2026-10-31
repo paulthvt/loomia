@@ -45,6 +45,9 @@ class SharingRepository {
       );
     } on PostgrestException catch (e) {
       throw _inviteFailureFrom(e);
+    } catch (_) {
+      // Offline, or an answer of the wrong shape.
+      throw InviteFailure.unknown;
     }
   }
 
@@ -59,6 +62,8 @@ class SharingRepository {
       );
     } on PostgrestException catch (e) {
       throw _inviteFailureFrom(e);
+    } catch (_) {
+      throw InviteFailure.unknown;
     }
   }
 

@@ -69,17 +69,11 @@ class _AcceptInviteState extends ConsumerState<AcceptInvite> {
       final name = await ref
           .read(sharingRepositoryProvider)
           .previewInvite(_normalised!);
-      if (!mounted) return;
-      setState(() {
-        _mentorName = name;
-        _busy = false;
-      });
-    } on InviteFailure catch (failure) {
-      if (!mounted) return;
-      setState(() {
-        _error = _errorMessage(failure);
-        _busy = false;
-      });
+      if (mounted) setState(() => _mentorName = name);
+    } catch (e) {
+      if (mounted) setState(() => _error = _errorMessage(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -95,24 +89,22 @@ class _AcceptInviteState extends ConsumerState<AcceptInvite> {
       await ref
           .read(sharingRepositoryProvider)
           .acceptInvite(_normalised!, _items);
-      if (!mounted) return;
-      widget.onAccepted();
-    } on InviteFailure catch (failure) {
-      if (!mounted) return;
-      setState(() {
-        _error = _errorMessage(failure);
-        _busy = false;
-      });
+      if (mounted) widget.onAccepted();
+    } catch (e) {
+      if (mounted) setState(() => _error = _errorMessage(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  String _errorMessage(InviteFailure failure) {
+  /// Any error, so the spinner always stops.
+  String _errorMessage(Object error) {
     final l10n = AppLocalizations.of(context);
-    return switch (failure) {
+    return switch (error) {
       InviteFailure.invalid => l10n.inviteErrorInvalid,
       InviteFailure.own => l10n.inviteErrorOwn,
       InviteFailure.alreadySharing => l10n.inviteErrorAlreadySharing,
-      InviteFailure.notTeam || InviteFailure.unknown => l10n.authFailureUnknown,
+      _ => l10n.authFailureUnknown,
     };
   }
 

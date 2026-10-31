@@ -145,6 +145,42 @@ void main() {
     );
   });
 
+  testWidgets('any other error stops the spinner and says so', (tester) async {
+    final repo = FakeSharingRepository()..failWith = Exception('offline');
+
+    await pumpAcceptInvite(tester, repo, onAccepted: () {});
+    await tester.enterText(find.byType(TextField), 'ABCDEFGH');
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Something went wrong. Try again.'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('any other error on Share stops the spinner and says so', (
+    tester,
+  ) async {
+    final repo = FakeSharingRepository()..previewInviteValue = 'Marie';
+
+    await pumpAcceptInvite(tester, repo, onAccepted: () {});
+    await tester.enterText(find.byType(TextField), 'ABCDEFGH');
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    repo.failWith = Exception('offline');
+    await tester.tap(find.text('Share'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Something went wrong. Try again.'), findsOneWidget);
+    expect(find.text('Share'), findsOneWidget);
+  });
+
   testWidgets('Continue disabled when normaliseCode is null', (tester) async {
     final repo = FakeSharingRepository();
 
