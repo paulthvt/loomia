@@ -22,7 +22,7 @@ Future<FakeSharingRepository> _openSharing(
 
   final auth = FakeAuthRepository()
     ..session = true
-    ..account = Account(firstName: 'Pauline', email: 'p@example.com');
+    ..account = const Account(firstName: 'Pauline', email: 'p@example.com');
   addTearDown(auth.dispose);
 
   final sharing = FakeSharingRepository()..myShareValue = initialShare;

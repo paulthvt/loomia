@@ -24,12 +24,24 @@ class _SharingPageState extends ConsumerState<SharingPage> {
   late final TextEditingController _whyController;
   late final TextEditingController _ownGoalController;
   bool _aboutMeBusy = false;
+  bool _aboutMeInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _whyController = TextEditingController();
     _ownGoalController = TextEditingController();
+
+    // Initialize controllers when aboutMe data loads
+    ref.listenManual(aboutMeProvider, (previous, next) {
+      if (!_aboutMeInitialized) {
+        next.whenData((data) {
+          if (data.why != null) _whyController.text = data.why!;
+          if (data.ownGoal != null) _ownGoalController.text = data.ownGoal!;
+          _aboutMeInitialized = true;
+        });
+      }
+    });
   }
 
   @override
@@ -85,17 +97,6 @@ class _SharingPageState extends ConsumerState<SharingPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final myShare = ref.watch(myShareProvider);
-    final aboutMe = ref.watch(aboutMeProvider);
-
-    // Set text controllers when aboutMe loads
-    aboutMe.whenData((data) {
-      if (_whyController.text.isEmpty && data.why != null) {
-        _whyController.text = data.why!;
-      }
-      if (_ownGoalController.text.isEmpty && data.ownGoal != null) {
-        _ownGoalController.text = data.ownGoal!;
-      }
-    });
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -111,7 +112,7 @@ class _SharingPageState extends ConsumerState<SharingPage> {
                   )
                 : _LinkedState(share: share, onStopSharing: _stopSharing),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (error, stack) => const SizedBox.shrink(),
           ),
           const SizedBox(height: AppSpacing.lg),
           SectionHeader(title: l10n.sharingAboutMeTitle),

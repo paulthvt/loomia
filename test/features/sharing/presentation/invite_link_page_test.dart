@@ -25,10 +25,10 @@ void main() {
           authRepositoryProvider.overrideWithValue(auth),
           sharingRepositoryProvider.overrideWithValue(sharing),
         ],
-        child: MaterialApp(
+        child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const InviteLinkPage(code: 'ABCDEFGH'),
+          home: InviteLinkPage(code: 'ABCDEFGH'),
         ),
       ),
     );

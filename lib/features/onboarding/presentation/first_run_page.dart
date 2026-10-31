@@ -390,14 +390,42 @@ class FirstRunInviteStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final myShare = ref.watch(myShareProvider);
+
     return AuthScaffold(
       onBack: onBack,
       children: [
-        AcceptInvite(
-          onAccepted: () {
-            ref.invalidate(myShareProvider);
-            onDone();
-          },
+        myShare.when(
+          data: (share) => share == null
+              ? AcceptInvite(
+                  onAccepted: () {
+                    ref.invalidate(myShareProvider);
+                    onDone();
+                  },
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      l10n.sharingLinkedWith(share.mentorFirstName),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    FilledButton(
+                      onPressed: onDone,
+                      child: Text(
+                        MaterialLocalizations.of(context).continueButtonLabel,
+                      ),
+                    ),
+                  ],
+                ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => AcceptInvite(
+            onAccepted: () {
+              ref.invalidate(myShareProvider);
+              onDone();
+            },
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         TextButton(onPressed: onDone, child: Text(l10n.firstRunSkipInvite)),

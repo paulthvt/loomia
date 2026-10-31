@@ -1,18 +1,52 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/app.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/photos/photo_picker.dart';
+import 'package:loomia/core/photos/photo_repository.dart';
+import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
+import 'package:loomia/features/calendar/data/event_repository.dart';
+import 'package:loomia/features/contacts/data/activity_repository.dart';
+import 'package:loomia/features/contacts/data/people_repository.dart';
+import 'package:loomia/features/contacts/data/phone_contacts_repository.dart';
+import 'package:loomia/features/contacts/data/tag_repository.dart';
 import 'package:loomia/features/contacts/presentation/contact_list.dart';
 import 'package:loomia/features/contacts/presentation/import_contacts_page.dart';
+import 'package:loomia/features/goals/data/goals_repository.dart';
+import 'package:loomia/features/notifications/data/notifications_repository.dart';
+import 'package:loomia/features/notifications/data/push.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/onboarding/presentation/first_run_page.dart';
+import 'package:loomia/features/sharing/data/sharing_repository.dart';
+import 'package:loomia/features/sharing/domain/share_item.dart';
+import 'package:loomia/features/sharing/domain/shared_goals.dart';
+import 'package:loomia/features/tasks/data/task_repository.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
+import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
+import 'package:loomia/features/workflows/data/workflow_repository.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
+import '../../../core/photos/fake_photo_picker.dart';
+import '../../../core/photos/fake_photo_repository.dart';
 import '../../auth/fake_auth_repository.dart';
+import '../../calendar/fake_event_repository.dart';
+import '../../contacts/fake_activity_repository.dart';
+import '../../contacts/fake_people_repository.dart';
+import '../../contacts/fake_phone_contacts_repository.dart';
+import '../../contacts/fake_tag_repository.dart';
+import '../../goals/fake_goals_repository.dart';
+import '../../notifications/fake_notifications_repository.dart';
+import '../../notifications/fake_push.dart';
+import '../../sharing/fake_sharing_repository.dart';
+import '../../tasks/fake_task_repository.dart';
+import '../../workflows/fake_event_workflow_repository.dart';
+import '../../workflows/fake_workflow_repository.dart';
 
 const _phone = Size(390, 844);
 const _question = 'Which company do you work with?';
@@ -308,6 +342,72 @@ void main() {
       expect(find.text(_people), findsOneWidget);
       expect(auth.calls, contains('updateBusinessModel(doterra)'));
       expect(auth.calls, isNot(contains('markOnboarded()')));
+    });
+
+    testWidgets('already sharing shows linked state with Continue', (
+      tester,
+    ) async {
+      tester.view.physicalSize = _phone;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      final auth = _newAccount();
+      addTearDown(auth.dispose);
+
+      final sharing = FakeSharingRepository()
+        ..myShareValue = const MyShare(
+          mentorFirstName: 'Alice',
+          items: {ShareItem.activityTargets},
+        );
+
+      // Use a custom ProviderScope to inject the sharing repository
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(auth),
+            sharingRepositoryProvider.overrideWithValue(sharing),
+            peopleRepositoryProvider.overrideWithValue(FakePeopleRepository()),
+            tagRepositoryProvider.overrideWithValue(FakeTagRepository()),
+            activityRepositoryProvider.overrideWithValue(
+              FakeActivityRepository(),
+            ),
+            workflowRepositoryProvider.overrideWithValue(
+              FakeWorkflowRepository(FakeWorkflowRepository.samples()),
+            ),
+            eventWorkflowRepositoryProvider.overrideWithValue(
+              FakeEventWorkflowRepository(
+                FakeEventWorkflowRepository.samples(),
+              ),
+            ),
+            goalsRepositoryProvider.overrideWithValue(FakeGoalsRepository()),
+            eventRepositoryProvider.overrideWithValue(FakeEventRepository()),
+            taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
+            phoneContactsRepositoryProvider.overrideWithValue(
+              FakePhoneContactsRepository(),
+            ),
+            photoRepositoryProvider.overrideWithValue(FakePhotoRepository()),
+            photoPickerProvider.overrideWithValue(FakePhotoPicker()),
+            pushProvider.overrideWithValue(FakePush(isAvailable: false)),
+            notificationsRepositoryProvider.overrideWithValue(
+              FakeNotificationsRepository(),
+            ),
+            deviceTimeZoneProvider.overrideWith((ref) => 'Europe/Paris'),
+          ],
+          child: const LoomiaApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _choose(tester, 'dōTERRA');
+
+      expect(find.text('You share your goals with Alice'), findsOneWidget);
+      expect(find.text('Continue'), findsOneWidget);
+      expect(find.text('Invite code'), findsNothing);
+
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_people), findsOneWidget);
     });
   });
 }
