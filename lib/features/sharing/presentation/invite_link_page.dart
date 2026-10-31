@@ -17,13 +17,15 @@ class InviteLinkPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hasSession = ref.watch(authRepositoryProvider).hasSession;
     final l10n = AppLocalizations.of(context);
+    // The code comes from the URL, as typed or mangled: null when it can't work.
+    final normalised = normaliseCode(code);
 
     if (hasSession) {
       return Scaffold(
         appBar: AppBar(),
         body: SafeArea(
           child: AcceptInvite(
-            initialCode: code,
+            initialCode: normalised,
             onAccepted: () => context.go(Routes.settingsSharing),
           ),
         ),
@@ -40,17 +42,25 @@ class InviteLinkPage extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                formatCode(code),
-                style: Theme.of(context).textTheme.displayMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                l10n.inviteLinkSignedOutBody,
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
+              if (normalised == null)
+                Text(
+                  l10n.inviteErrorInvalid,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                )
+              else ...[
+                Text(
+                  formatCode(normalised),
+                  style: Theme.of(context).textTheme.displayMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  l10n.inviteLinkSignedOutBody,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: AppSpacing.xl),
               FilledButton(
                 onPressed: () => context.go(Routes.login),
