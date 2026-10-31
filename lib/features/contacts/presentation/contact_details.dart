@@ -541,8 +541,11 @@ class ContactDetails extends StatelessWidget {
           ),
         ),
         card([
-          if (shared.levelNow case final level?)
-            row(l10n.factLevelNow(model.name), level),
+          // Their level comes from a closed month: none closed yet says so.
+          row(
+            l10n.factLevelNow(model.name),
+            shared.levelNow ?? l10n.contactSharedNotSet(name),
+          ),
           if (plan == null)
             muted(l10n.contactSharedNoMonth(name))
           else ...[

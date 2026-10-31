@@ -3442,6 +3442,11 @@
     "description": "In that section, the value of Their why or Their own goal when the team member shares it but left it blank. name is their first name.",
     "placeholders": { "name": { "type": "String" } }
   },
+  "contactSharedNotSet": "{name} hasn't set this yet",
+  "@contactSharedNotSet": {
+    "description": "In that section, the value of Level now when the team member shares their goals but has not closed a month yet, so has no level. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
   "contactSharedTeamVolume": "Team volume",
   "@contactSharedTeamVolume": {
     "description": "Label of the shared team volume target in that section."

@@ -675,12 +675,13 @@ void main() {
       bool noPlan = false,
       String? why,
       String? ownGoal,
+      String? levelNow = 'Executive',
     }) => (
       shared: SharedGoals(
         memberFirstName: memberFirstName,
         items: items,
         plan: noPlan ? null : plan,
-        levelNow: 'Executive',
+        levelNow: levelNow,
         progress: progress,
         why: why,
         ownGoal: ownGoal,
@@ -823,6 +824,16 @@ void main() {
         find.text("Marie Martin hasn't set this month yet"),
         findsOneWidget,
       );
+    });
+
+    testWidgets('no closed month: Level now says it is not set', (
+      tester,
+    ) async {
+      await pump(tester, member(), sharing: shared(plan: plan, levelNow: null));
+
+      expect(find.text("Marie hasn't set this yet"), findsOneWidget);
+      // Never a fallback to the level you typed.
+      expect(find.text('Manager'), findsNothing);
     });
 
     testWidgets('a customer shows nothing shared', (tester) async {
