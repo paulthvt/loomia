@@ -84,8 +84,11 @@ class SharingRepository {
         .eq('member_id', _client.auth.currentUser!.id);
   });
 
-  Future<SharedGoals?> sharedGoals(String personId, DateTime month) =>
+  /// The goals shared for [day]'s month: shared_goals answers for the
+  /// current month only, from its first day.
+  Future<SharedGoals?> sharedGoals(String personId, DateTime day) =>
       guardPeople(() async {
+        final month = DateTime(day.year, day.month);
         final rows = await _client.rpc<Object?>(
           'shared_goals',
           params: _monthParams(personId, month),

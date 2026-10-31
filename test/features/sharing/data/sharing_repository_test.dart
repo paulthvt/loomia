@@ -35,6 +35,35 @@ void main() {
     expect(after.difference(DateTime.now()).inSeconds.abs(), lessThan(60));
   });
 
+  test('sharedGoals asks for the month of the day given', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(server.close);
+    final bodies = <Map<String, dynamic>>[];
+    server.listen((request) async {
+      bodies.add(
+        jsonDecode(await utf8.decodeStream(request)) as Map<String, dynamic>,
+      );
+      request.response
+        ..headers.contentType = ContentType.json
+        ..write(jsonEncode(<Object>[]));
+      await request.response.close();
+    });
+    final client = SupabaseClient(
+      'http://${server.address.host}:${server.port}',
+      'publishable',
+    );
+    addTearDown(client.dispose);
+
+    await SharingRepository(client).sharedGoals('p1', DateTime(2026, 10, 31));
+
+    // shared_goals answers for a whole month only.
+    expect(bodies.single['p_month'], '2026-10-01');
+    expect(
+      DateTime.parse(bodies.single['p_starts'] as String),
+      DateTime(2026, 10).toUtc(),
+    );
+  });
+
   group('sharedGoalsFromRow', () {
     test('maps row with progress item and null plan', () {
       final month = DateTime(2026, 10);

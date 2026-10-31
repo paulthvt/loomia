@@ -2,12 +2,26 @@
 -- member's goals. A mentors B; C is a stranger. Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(35);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com', '{"first_name": "Anna"}'),
   ('00000000-0000-0000-0000-00000000000b', 'b@example.com', '{"first_name": "Marie"}'),
   ('00000000-0000-0000-0000-00000000000c', 'c@example.com', '{"first_name": "Chris"}');
+
+-- shared_goals for this month (or n months on), with the bounds of a member
+-- whose app runs in UTC; the function refuses any other month or window.
+create function pg_temp.goals(p_person uuid, p_months int default 0)
+returns table (
+  member_first_name text, items public.share_item[], plan jsonb,
+  level_now text, progress jsonb, why text, own_goal text
+) language sql as $$
+  select g.*
+  from (select date_trunc('month', now() at time zone 'utc')
+               + p_months * interval '1 month' as m) b,
+    public.shared_goals(p_person, b.m::date, b.m at time zone 'utc',
+      (b.m + interval '1 month') at time zone 'utc') g
+$$;
 
 set local role authenticated;
 set local request.jwt.claims =
@@ -160,8 +174,7 @@ select results_eq(
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000c", "role": "authenticated"}';
 select is_empty(
-  $$ select * from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+  $$ select * from pg_temp.goals('00000000-0000-0000-0000-0000000000a1') $$,
   'a stranger reads no shared goals'
 );
 select is_empty(
@@ -179,9 +192,13 @@ set local request.jwt.claims =
 insert into public.month_plan (month, own_volume_target, team_volume_target,
   level_target, prospects_target, customers_target, team_members_target,
   loyalty_target)
-  values ('2026-10-01', 500, 2000, 'Gold', 4, 2, 1, 3);
+  values (date_trunc('month', now() at time zone 'utc'), 500, 2000, 'Gold',
+          4, 2, 1, 3);
 insert into public.month_plan (month, level_actual, closed_at)
-  values ('2026-08-01', 'Bronze', now()), ('2026-09-01', 'Silver', now());
+  values (date_trunc('month', now() at time zone 'utc') - interval '2 months',
+          'Bronze', now()),
+         (date_trunc('month', now() at time zone 'utc') - interval '1 month',
+          'Silver', now());
 insert into public.person (name, stage) values ('Léo', 'prospect');
 
 set local request.jwt.claims =
@@ -189,15 +206,13 @@ set local request.jwt.claims =
 select results_eq(
   $$ select member_first_name, plan->>'own_volume_target',
             plan->>'prospects_target', level_now, progress, why
-     from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+     from pg_temp.goals('00000000-0000-0000-0000-0000000000a1') $$,
   $$ values ('Marie'::text, '500.00'::text, '4'::text, 'Silver'::text,
              null::jsonb, null::text) $$,
   'the mentor reads the plan, the current level and the activity targets'
 );
 select is(
-  (select plan from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-     '2026-11-01', now() - interval '1 hour', now() + interval '1 hour')),
+  (select plan from pg_temp.goals('00000000-0000-0000-0000-0000000000a1', 1)),
   null,
   'no plan for the month reads as null'
 );
@@ -210,8 +225,7 @@ set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 select results_eq(
   $$ select plan ? 'prospects_target', plan->>'level_target'
-     from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+     from pg_temp.goals('00000000-0000-0000-0000-0000000000a1') $$,
   $$ values (false, 'Gold'::text) $$,
   'without activity targets, volume and level only'
 );
@@ -224,8 +238,7 @@ set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 select results_eq(
   $$ select progress ? 'own_volume', progress ? 'prospects'
-     from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+     from pg_temp.goals('00000000-0000-0000-0000-0000000000a1') $$,
   $$ values (true, false) $$,
   'progress without activity targets is the volume only'
 );
@@ -237,8 +250,7 @@ set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 select results_eq(
   $$ select progress->>'prospects', why, own_goal
-     from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+     from pg_temp.goals('00000000-0000-0000-0000-0000000000a1') $$,
   $$ values ('1'::text, 'My kids'::text, 'Gold by June'::text) $$,
   'the counts with activity targets, and About me, once shared'
 );
@@ -255,19 +267,29 @@ select is_empty(
 update public.person set stage = 'customer'
   where id = '00000000-0000-0000-0000-0000000000a1';
 select is_empty(
-  $$ select * from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+  $$ select * from pg_temp.goals('00000000-0000-0000-0000-0000000000a1') $$,
   'off the team, nothing shows'
 );
 update public.person set stage = 'team'
   where id = '00000000-0000-0000-0000-0000000000a1';
 select isnt_empty(
-  $$ select * from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
-       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+  $$ select * from pg_temp.goals('00000000-0000-0000-0000-0000000000a1') $$,
   'back on the team, it shows again'
 );
 
--- 16: deleting the contact ends the link.
+-- 16: this month only, over the whole month.
+select is_empty(
+  $$ select * from pg_temp.goals('00000000-0000-0000-0000-0000000000a1', -3) $$,
+  'a past month shows nothing'
+);
+select is_empty(
+  $$ select * from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
+       date_trunc('month', now() at time zone 'utc')::date,
+       now() - interval '30 minutes', now() + interval '30 minutes') $$,
+  'a one-hour window shows nothing'
+);
+
+-- 17: deleting the contact ends the link.
 delete from public.person where id = '00000000-0000-0000-0000-0000000000a1';
 reset role;
 select is(
@@ -276,7 +298,7 @@ select is(
 );
 set local role authenticated;
 
--- 17: progress is still one's own, and the owner-taking function is closed.
+-- 18: progress is still one's own, and the owner-taking function is closed.
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
 select results_eq(

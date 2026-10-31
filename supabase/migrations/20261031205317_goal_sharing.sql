@@ -293,6 +293,17 @@ language sql stable security definer set search_path = '' as $$
   left join public.about_me a on a.owner_id = l.member_id
   where l.person_id = p_person_id and l.mentor_id = (select auth.uid())
     and p.stage = 'team'
+    -- The current month only, as the member's app counts it: the UTC month
+    -- or the one beside it, within 14 hours of its UTC bounds for the time
+    -- zone. Nothing for another month or a narrower window.
+    and p_month in (
+      select (date_trunc('month', now() at time zone 'utc')
+              + n * interval '1 month')::date
+      from generate_series(-1, 1) n)
+    and p_starts between (p_month::timestamp at time zone 'utc') - interval '14 hours'
+                     and (p_month::timestamp at time zone 'utc') + interval '14 hours'
+    and p_ends between ((p_month + interval '1 month') at time zone 'utc') - interval '14 hours'
+                   and ((p_month + interval '1 month') at time zone 'utc') + interval '14 hours'
 $$;
 
 revoke execute on function public.create_share_invite(uuid) from public, anon;
