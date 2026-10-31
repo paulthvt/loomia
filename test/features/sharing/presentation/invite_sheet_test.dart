@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/sharing/data/sharing_repository.dart';
 import 'package:loomia/features/sharing/domain/invite_code.dart';
 import 'package:loomia/features/sharing/domain/share_item.dart';
@@ -160,6 +161,97 @@ void main() {
 
       expect(repo.calls, ['openInvite(p4)', 'cancelInvite(p4)']);
       expect(find.text('TEST-CODE'), findsNothing); // Sheet closed
+    });
+
+    testWidgets('createInvite failure shows error and Try again', (
+      tester,
+    ) async {
+      repo.openInviteValue = null;
+      repo.failWith = PeopleFailure.network;
+
+      await tester.pumpWidget(
+        wrapped(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  showInviteSheet(context, personId: 'p5', name: 'Taylor'),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Couldn't save. Check your connection and try again."),
+        findsOneWidget,
+      );
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(repo.calls, ['openInvite(p5)']);
+
+      // Try again - this time succeed
+      repo.failWith = null;
+      repo.createInviteValue = Invite(
+        code: 'RETRYOK',
+        expiresAt: DateTime.parse('2026-11-14T00:00:00Z'),
+      );
+
+      await tester.tap(find.text('Try again'));
+      // Give time for the async operations to complete
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      // Check that error is gone and code is shown
+      expect(find.text("Couldn't save. Check your connection and try again."), findsNothing);
+      expect(find.textContaining('RETRY'), findsOneWidget);
+      expect(find.text('Copy link'), findsOneWidget);
+      expect(repo.calls, ['openInvite(p5)', 'openInvite(p5)', 'createInvite(p5)']);
+    });
+
+    testWidgets('cancelInvite failure shows error and re-enables Cancel', (
+      tester,
+    ) async {
+      repo.openInviteValue = Invite(
+        code: 'WILLCANCEL',
+        expiresAt: DateTime.parse('2026-11-14T00:00:00Z'),
+      );
+
+      await tester.pumpWidget(
+        wrapped(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  showInviteSheet(context, personId: 'p6', name: 'Morgan'),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      repo.failWith = PeopleFailure.unknown;
+
+      await tester.tap(find.text('Cancel invite'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Something went wrong. Try again.'), findsOneWidget);
+      expect(find.text('WILL-CANCEL'), findsOneWidget); // Still showing
+      expect(find.text('Cancel invite'), findsOneWidget); // Re-enabled
+
+      // Retry cancel succeeds
+      repo.failWith = null;
+
+      await tester.tap(find.text('Cancel invite'));
+      await tester.pumpAndSettle();
+
+      expect(repo.calls, ['openInvite(p6)', 'cancelInvite(p6)', 'cancelInvite(p6)']);
+      expect(find.text('WILL-CANCEL'), findsNothing); // Sheet closed
     });
   });
 
