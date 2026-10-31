@@ -178,7 +178,7 @@ class _AcceptInviteState extends ConsumerState<AcceptInvite> {
             children: [
               ListTile(
                 title: Text(l10n.inviteAlwaysShared),
-                trailing: const Text('Always shared'),
+                trailing: Text(l10n.inviteAlwaysSharedBadge),
               ),
               SwitchListTile(
                 title: Text(l10n.shareItemActivityTargets),

@@ -3341,6 +3341,8 @@
   },
   "inviteAlwaysShared": "Your volumes and level for the month",
   "@inviteAlwaysShared": {"description": "Text of the always-shared item in the invite preview: what is always visible to the mentor, no switch."},
+  "inviteAlwaysSharedBadge": "Always shared",
+  "@inviteAlwaysSharedBadge": {"description": "Badge text on the always-shared row in the invite preview, shown instead of a switch."},
   "shareItemActivityTargets": "Your targets for prospects, customers, team and loyalty",
   "@shareItemActivityTargets": {"description": "Title of the activity targets share item switch."},
   "shareItemProgress": "How your month is going",
