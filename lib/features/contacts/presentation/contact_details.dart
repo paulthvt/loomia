@@ -494,7 +494,10 @@ class ContactDetails extends StatelessWidget {
     // What they share, in place of what you typed: never a fallback to your
     // notes, so it stays clear what came from them.
     List<Widget> sharedSection(SharedGoals shared) {
-      final name = shared.memberFirstName;
+      // Their account may have no first name: the one you know them by.
+      final name = shared.memberFirstName.isEmpty
+          ? person.name
+          : shared.memberFirstName;
       final plan = shared.plan;
       final done = shared.items.contains(ShareItem.progress)
           ? shared.progress

@@ -1,9 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
+import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
 import 'package:loomia/features/sharing/data/sharing_repository.dart';
 import 'package:loomia/features/sharing/domain/share_item.dart';
@@ -12,6 +15,10 @@ import 'package:loomia/features/sharing/presentation/accept_invite.dart';
 import 'package:loomia/features/sharing/presentation/sharing_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
+
+/// Whom the member shares with; an account may have no first name.
+String sharingLinkedCopy(AppLocalizations l10n, String name) =>
+    name.isEmpty ? l10n.sharingLinkedNoName : l10n.sharingLinkedWith(name);
 
 class SharingPage extends ConsumerStatefulWidget {
   const SharingPage({super.key});
@@ -112,7 +119,24 @@ class _SharingPageState extends ConsumerState<SharingPage> {
                   )
                 : _LinkedState(share: share, onStopSharing: _stopSharing),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => const SizedBox.shrink(),
+            // Always a way back to the link, and so to Stop sharing.
+            error: (error, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppSpacing.ms,
+              children: [
+                FormError(
+                  peopleFailureCopy(
+                    l10n,
+                    error is PeopleFailure ? error : PeopleFailure.unknown,
+                  ),
+                ),
+                FilledButton.tonal(
+                  style: AppTheme.tonal(context),
+                  onPressed: () => ref.invalidate(myShareProvider),
+                  child: Text(l10n.contactsRetry),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           SectionHeader(title: l10n.sharingAboutMeTitle),
@@ -226,7 +250,7 @@ class _LinkedStateState extends ConsumerState<_LinkedState> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          l10n.sharingLinkedWith(widget.share.mentorFirstName),
+          sharingLinkedCopy(l10n, widget.share.mentorFirstName),
           style: theme.textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.lg),

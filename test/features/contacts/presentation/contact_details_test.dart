@@ -669,6 +669,7 @@ void main() {
     );
 
     ContactSharing shared({
+      String memberFirstName = 'Marie',
       Set<ShareItem> items = const {},
       MonthPlan? plan,
       bool noPlan = false,
@@ -676,7 +677,7 @@ void main() {
       String? ownGoal,
     }) => (
       shared: SharedGoals(
-        memberFirstName: 'Marie',
+        memberFirstName: memberFirstName,
         items: items,
         plan: noPlan ? null : plan,
         levelNow: 'Executive',
@@ -806,6 +807,22 @@ void main() {
       expect(find.text("Marie hasn't set this month yet"), findsOneWidget);
       expect(find.text('Aims for 100 PV'), findsNothing);
       expect(find.text('Executive'), findsOneWidget);
+    });
+
+    testWidgets('no first name on their account: the contact\'s name', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        member(),
+        sharing: shared(memberFirstName: '', noPlan: true),
+      );
+
+      expect(find.text('SHARED BY MARIE MARTIN'), findsOneWidget);
+      expect(
+        find.text("Marie Martin hasn't set this month yet"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a customer shows nothing shared', (tester) async {

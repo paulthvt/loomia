@@ -2,7 +2,7 @@
 -- member's goals. A mentors B; C is a stranger. Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(38);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com', '{"first_name": "Anna"}'),
@@ -277,7 +277,32 @@ select isnt_empty(
   'back on the team, it shows again'
 );
 
--- 16: this month only, over the whole month.
+-- 16: an account without a first name reads as an empty one.
+reset role;
+update auth.users set raw_user_meta_data = '{}';
+set local role authenticated;
+select is(
+  (select member_first_name
+   from pg_temp.goals('00000000-0000-0000-0000-0000000000a1')),
+  '',
+  'shared goals of a member without a first name'
+);
+select is(
+  public.share_invite_preview(current_setting('test.c_code')),
+  '',
+  'the preview of a mentor without a first name'
+);
+set local request.jwt.claims =
+  '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
+select is(
+  (select mentor_first_name from public.my_share()),
+  '',
+  'my share with a mentor without a first name'
+);
+set local request.jwt.claims =
+  '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
+
+-- 17: this month only, over the whole month.
 select is_empty(
   $$ select * from pg_temp.goals('00000000-0000-0000-0000-0000000000a1', -3) $$,
   'a past month shows nothing'
@@ -289,7 +314,7 @@ select is_empty(
   'a one-hour window shows nothing'
 );
 
--- 17: deleting the contact ends the link.
+-- 18: deleting the contact ends the link.
 delete from public.person where id = '00000000-0000-0000-0000-0000000000a1';
 reset role;
 select is(
@@ -298,7 +323,7 @@ select is(
 );
 set local role authenticated;
 
--- 18: progress is still one's own, and the owner-taking function is closed.
+-- 19: progress is still one's own, and the owner-taking function is closed.
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
 select results_eq(

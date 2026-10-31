@@ -6,7 +6,53 @@ import 'package:loomia/features/sharing/data/sharing_repository.dart';
 import 'package:loomia/features/sharing/domain/share_item.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// A repository on a local server that answers every request with [answer].
+Future<SharingRepository> _answering(Object? answer) async {
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  addTearDown(server.close);
+  server.listen((request) async {
+    request.response
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode(answer));
+    await request.response.close();
+  });
+  final client = SupabaseClient(
+    'http://${server.address.host}:${server.port}',
+    'publishable',
+  );
+  addTearDown(client.dispose);
+  return SharingRepository(client);
+}
+
 void main() {
+  group('an account without a first name', () {
+    test('previews as an empty name', () async {
+      final repository = await _answering(null);
+
+      expect(await repository.previewInvite('ABCDEFGH'), '');
+    });
+
+    test('shares as an empty name', () async {
+      final repository = await _answering([
+        {
+          'mentor_first_name': null,
+          'items': ['progress'],
+        },
+      ]);
+
+      expect((await repository.myShare())!.mentorFirstName, '');
+    });
+
+    test('is shared with as an empty name', () {
+      final shared = sharedGoalsFromRow({
+        'member_first_name': null,
+        'items': <String>[],
+      }, DateTime(2026, 10));
+
+      expect(shared.memberFirstName, '');
+    });
+  });
+
   test('openInvite asks only for invites not yet expired', () async {
     // A local server stands in for PostgREST: what matters is the query.
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

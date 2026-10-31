@@ -37,9 +37,11 @@ class SharingRepository {
 
   Future<String> previewInvite(String code) async {
     try {
-      return await _client.rpc<String>(
-        'share_invite_preview',
-        params: {'p_code': code},
+      return _firstName(
+        await _client.rpc<Object?>(
+          'share_invite_preview',
+          params: {'p_code': code},
+        ),
       );
     } on PostgrestException catch (e) {
       throw _inviteFailureFrom(e);
@@ -65,7 +67,7 @@ class SharingRepository {
     if (rows is! List || rows.isEmpty) return null;
     final row = rows.first as Map<String, dynamic>;
     return MyShare(
-      mentorFirstName: row['mentor_first_name'] as String,
+      mentorFirstName: _firstName(row['mentor_first_name']),
       items: _parseItems(row['items'] as List),
     );
   });
@@ -150,6 +152,9 @@ final sharingRepositoryProvider = Provider<SharingRepository>(
   (ref) => SharingRepository(ref.watch(supabaseClientProvider)),
 );
 
+/// An account may have no first name yet: empty, and the copy goes without.
+String _firstName(Object? value) => (value as String?)?.trim() ?? '';
+
 Set<ShareItem> _parseItems(List<dynamic> items) => items
     .map((item) => ShareItem.parse(item as String))
     .whereType<ShareItem>()
@@ -159,7 +164,7 @@ SharedGoals sharedGoalsFromRow(Map<String, dynamic> row, DateTime month) {
   final planData = row['plan'];
   final progressData = row['progress'];
   return SharedGoals(
-    memberFirstName: row['member_first_name'] as String,
+    memberFirstName: _firstName(row['member_first_name']),
     items: _parseItems(row['items'] as List),
     plan: planData == null
         ? null

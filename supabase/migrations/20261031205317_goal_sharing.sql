@@ -152,8 +152,9 @@ begin
   ) then
     raise exception 'already_sharing' using errcode = 'P0001';
   end if;
-  return (select u.raw_user_meta_data->>'first_name' from auth.users u
-          where u.id = invite.owner_id);
+  -- An account may have no first name yet: empty, never null.
+  return coalesce((select u.raw_user_meta_data->>'first_name' from auth.users u
+                   where u.id = invite.owner_id), '');
 end $$;
 
 -- Uses the invite up and links the caller to its mentor's contact.
@@ -180,7 +181,7 @@ end $$;
 create function public.my_share()
 returns table (mentor_first_name text, items public.share_item[])
 language sql stable security definer set search_path = '' as $$
-  select u.raw_user_meta_data->>'first_name', l.items
+  select coalesce(u.raw_user_meta_data->>'first_name', ''), l.items
   from public.share_link l join auth.users u on u.id = l.mentor_id
   where l.member_id = (select auth.uid())
 $$;
@@ -254,7 +255,7 @@ create function public.shared_goals(
 )
 language sql stable security definer set search_path = '' as $$
   select
-    u.raw_user_meta_data->>'first_name',
+    coalesce(u.raw_user_meta_data->>'first_name', ''),
     l.items,
     (select jsonb_build_object(
               'own_volume_target', m.own_volume_target,

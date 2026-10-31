@@ -18,6 +18,7 @@ import 'package:loomia/features/auth/presentation/widgets/submit_button.dart';
 import 'package:loomia/features/contacts/presentation/add_person_sheet.dart';
 import 'package:loomia/features/sharing/presentation/accept_invite.dart';
 import 'package:loomia/features/sharing/presentation/sharing_controller.dart';
+import 'package:loomia/features/sharing/presentation/sharing_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -407,7 +408,7 @@ class FirstRunInviteStep extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      l10n.sharingLinkedWith(share.mentorFirstName),
+                      sharingLinkedCopy(l10n, share.mentorFirstName),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: AppSpacing.lg),

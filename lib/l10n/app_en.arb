@@ -3339,6 +3339,8 @@
     "description": "Question at the top of the invite preview screen, with the mentor's first name.",
     "placeholders": {"name": {"type": "String"}}
   },
+  "inviteShareWithNoName": "Share your goals?",
+  "@inviteShareWithNoName": {"description": "Question at the top of the invite preview screen when the mentor's account has no first name."},
   "inviteAlwaysShared": "Your volumes and level for the month",
   "@inviteAlwaysShared": {"description": "Text of the always-shared item in the invite preview: what is always visible to the mentor, no switch."},
   "inviteAlwaysSharedBadge": "Always shared",
@@ -3366,11 +3368,15 @@
     "description": "Subtitle on the Sharing list tile in Settings when the user is sharing with someone.",
     "placeholders": {"name": {"type": "String"}}
   },
+  "sharingWithNoName": "Sharing your goals",
+  "@sharingWithNoName": {"description": "Subtitle on the Sharing list tile in Settings when the user is sharing with someone whose account has no first name."},
   "sharingLinkedWith": "You share your goals with {name}",
   "@sharingLinkedWith": {
     "description": "Text shown when the user is already sharing with someone.",
     "placeholders": {"name": {"type": "String"}}
   },
+  "sharingLinkedNoName": "You share your goals",
+  "@sharingLinkedNoName": {"description": "Text shown when the user is already sharing with someone whose account has no first name."},
   "sharingStopButton": "Stop sharing",
   "@sharingStopButton": {"description": "Button to stop sharing goals."},
   "sharingStopTitle": "Stop sharing?",

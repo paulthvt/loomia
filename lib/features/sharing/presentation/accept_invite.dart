@@ -170,7 +170,9 @@ class _AcceptInviteState extends ConsumerState<AcceptInvite> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n.inviteShareWith(_mentorName!),
+            _mentorName!.isEmpty
+                ? l10n.inviteShareWithNoName
+                : l10n.inviteShareWith(_mentorName!),
             style: theme.textTheme.titleLarge,
           ),
           const SizedBox(height: AppSpacing.lg),

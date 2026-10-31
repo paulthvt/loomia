@@ -49,6 +49,22 @@ void main() {
     expect(find.text('Share your goals with Marie?'), findsOneWidget);
   });
 
+  testWidgets('a mentor without a first name: the question goes without', (
+    tester,
+  ) async {
+    final repo = FakeSharingRepository();
+
+    await pumpAcceptInvite(
+      tester,
+      repo,
+      initialCode: 'ABCDEFGH',
+      onAccepted: () {},
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Share your goals?'), findsOneWidget);
+  });
+
   testWidgets('switches default: activity on, progress off, about-me off', (
     tester,
   ) async {

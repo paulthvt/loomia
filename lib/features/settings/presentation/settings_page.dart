@@ -327,9 +327,11 @@ class _SettingsListState extends ConsumerState<_SettingsList>
               subtitle: ref
                   .watch(myShareProvider)
                   .maybeWhen(
-                    data: (share) => share == null
-                        ? Text(l10n.sharingNotSharing)
-                        : Text(l10n.sharingWith(share.mentorFirstName)),
+                    data: (share) => Text(switch (share?.mentorFirstName) {
+                      null => l10n.sharingNotSharing,
+                      '' => l10n.sharingWithNoName,
+                      final name => l10n.sharingWith(name),
+                    }),
                     orElse: () => null,
                   ),
               trailing: const Icon(Icons.chevron_right_rounded),
