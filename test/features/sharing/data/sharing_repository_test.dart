@@ -67,6 +67,24 @@ void main() {
       expect(result.ownGoal, null);
     });
 
+    test('progress without activity targets carries the volume only', () {
+      final row = {
+        'member_first_name': 'Alice',
+        'items': ['progress'],
+        'plan': null,
+        'level_now': null,
+        'progress': {'own_volume': 120},
+        'why': null,
+        'own_goal': null,
+      };
+
+      final progress = sharedGoalsFromRow(row, DateTime(2026, 10)).progress!;
+
+      expect(progress.ownVolume, 120.0);
+      expect(progress.prospects, 0);
+      expect(progress.loyalty, 0);
+    });
+
     test('ignores unknown item strings', () {
       final month = DateTime(2026, 10);
       final row = {

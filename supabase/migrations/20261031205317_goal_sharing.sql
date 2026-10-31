@@ -272,9 +272,18 @@ language sql stable security definer set search_path = '' as $$
     (select m.level_actual from public.month_plan m
       where m.owner_id = l.member_id and m.closed_at is not null
       order by m.month desc limit 1),
+    -- The counts only with activity targets: progress is for what is shared.
     case when 'progress' = any(l.items) then
-      (select to_jsonb(f) from public.month_progress_for(
-         l.member_id, p_month, p_starts, p_ends) f)
+      (select jsonb_build_object('own_volume', f.own_volume)
+              || case when 'activity_targets' = any(l.items) then
+                   jsonb_build_object(
+                     'prospects', f.prospects,
+                     'customers', f.customers,
+                     'team_members', f.team_members,
+                     'loyalty', f.loyalty)
+                 else '{}'::jsonb end
+         from public.month_progress_for(
+           l.member_id, p_month, p_starts, p_ends) f)
     end,
     case when 'about_me' = any(l.items) then a.why end,
     case when 'about_me' = any(l.items) then a.own_goal end

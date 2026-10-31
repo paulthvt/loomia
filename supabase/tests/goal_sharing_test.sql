@@ -2,7 +2,7 @@
 -- member's goals. A mentors B; C is a stranger. Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(33);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com', '{"first_name": "Anna"}'),
@@ -216,10 +216,22 @@ select results_eq(
   'without activity targets, volume and level only'
 );
 
--- 14: progress and About me.
+-- 14: progress, its counts only with activity targets, and About me.
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
-update public.share_link set items = '{progress,about_me}';
+update public.share_link set items = '{progress}';
+set local request.jwt.claims =
+  '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
+select results_eq(
+  $$ select progress ? 'own_volume', progress ? 'prospects'
+     from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
+       '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
+  $$ values (true, false) $$,
+  'progress without activity targets is the volume only'
+);
+set local request.jwt.claims =
+  '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
+update public.share_link set items = '{progress,activity_targets,about_me}';
 insert into public.about_me (why, own_goal) values ('My kids', 'Gold by June');
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
@@ -228,7 +240,7 @@ select results_eq(
      from public.shared_goals('00000000-0000-0000-0000-0000000000a1',
        '2026-10-01', now() - interval '1 hour', now() + interval '1 hour') $$,
   $$ values ('1'::text, 'My kids'::text, 'Gold by June'::text) $$,
-  'progress and About me, once shared'
+  'the counts with activity targets, and About me, once shared'
 );
 select is_empty(
   $$ select 1 from public.about_me $$,

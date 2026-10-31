@@ -135,10 +135,11 @@ Map<String, Object?> targetsToRow(MonthPlan plan) => {
   'loyalty_forecast': plan.loyaltyForecast,
 };
 
+/// Shared progress leaves the counts out unless activity targets are shared.
 Progress progressFromRow(Map<String, dynamic> row) => Progress(
   ownVolume: _number(row['own_volume']) ?? 0,
-  prospects: row['prospects'] as int,
-  customers: row['customers'] as int,
-  teamMembers: row['team_members'] as int,
-  loyalty: row['loyalty'] as int,
+  prospects: row['prospects'] as int? ?? 0,
+  customers: row['customers'] as int? ?? 0,
+  teamMembers: row['team_members'] as int? ?? 0,
+  loyalty: row['loyalty'] as int? ?? 0,
 );
