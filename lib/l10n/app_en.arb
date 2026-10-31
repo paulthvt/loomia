@@ -3394,5 +3394,31 @@
   "authSignInButton": "Sign in",
   "@authSignInButton": {"description": "Sign in button text."},
   "welcomeRegisterButton": "Create an account",
-  "@welcomeRegisterButton": {"description": "Create account button text on welcome screen."}
+  "@welcomeRegisterButton": {"description": "Create account button text on welcome screen."},
+  "inviteSheetTitle": "Invite {name} to share goals",
+  "@inviteSheetTitle": {
+    "description": "Title of the sheet that invites a team member to share their goals. name is their first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "inviteSheetBody": "Send this to {name}. It works once, for 14 days.",
+  "@inviteSheetBody": {
+    "description": "Body text of the invite sheet explaining how the code works. name is their first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "inviteSheetCopyLink": "Copy link",
+  "@inviteSheetCopyLink": {
+    "description": "Primary button on the invite sheet that copies the invite link to clipboard."
+  },
+  "inviteSheetCancelInvite": "Cancel invite",
+  "@inviteSheetCancelInvite": {
+    "description": "Text button on the invite sheet that cancels the invite."
+  },
+  "inviteSheetLinkCopied": "Link copied",
+  "@inviteSheetLinkCopied": {
+    "description": "Snackbar message shown after the invite link is copied to clipboard."
+  }
 }
