@@ -1,7 +1,9 @@
 #!/bin/sh
 # Renders every app icon from the Loomia mark (Figma `07 — Loomia logo`, E5b).
 # Needs rsvg-convert (`brew install librsvg`). Run from the repo root after
-# changing the geometry below; commit the PNGs it writes.
+# changing the geometry below; commit the PNGs it writes. The same geometry is
+# in lib/core/ui/loomia_mark.dart and in paulthvt/loomia-site
+# (src/components/Mark.astro, public/favicon.svg): change them together.
 set -eu
 
 BRAND='#E8964A'

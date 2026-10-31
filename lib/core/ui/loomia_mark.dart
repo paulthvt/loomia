@@ -7,6 +7,11 @@ import 'package:material_ui/material_ui.dart';
 /// Paints into a [box]-shaped canvas; geometry is in em, measured on the Figma
 /// component at 100px type. [dots] scales each dot, smallest first — the
 /// launch splash grows them in.
+///
+/// The same geometry lives in `tool/brand/icons.sh`,
+/// `android/app/src/main/res/drawable/ic_launcher_foreground.xml` and the
+/// marketing site's `src/components/Mark.astro` (paulthvt/loomia-site):
+/// change them together.
 class LoomiaMarkPainter extends CustomPainter {
   const LoomiaMarkPainter(this.color, {this.dots = const [1, 1, 1]});
 
