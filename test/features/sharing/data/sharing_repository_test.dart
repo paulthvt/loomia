@@ -1,8 +1,40 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/features/sharing/data/sharing_repository.dart';
 import 'package:loomia/features/sharing/domain/share_item.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  test('openInvite asks only for invites not yet expired', () async {
+    // A local server stands in for PostgREST: what matters is the query.
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(server.close);
+    final queries = <Map<String, String>>[];
+    server.listen((request) {
+      queries.add(request.uri.queryParameters);
+      request.response
+        ..headers.contentType = ContentType.json
+        ..write(jsonEncode(<Object>[]))
+        ..close();
+    });
+    final client = SupabaseClient(
+      'http://${server.address.host}:${server.port}',
+      'publishable',
+    );
+    addTearDown(client.dispose);
+
+    final invite = await SharingRepository(client).openInvite('p1');
+
+    expect(invite, isNull);
+    expect(queries.single['person_id'], 'eq.p1');
+    final expires = queries.single['expires_at']!;
+    expect(expires, startsWith('gt.'));
+    final after = DateTime.parse(expires.substring(3));
+    expect(after.difference(DateTime.now()).inSeconds.abs(), lessThan(60));
+  });
+
   group('sharedGoalsFromRow', () {
     test('maps row with progress item and null plan', () {
       final month = DateTime(2026, 10);

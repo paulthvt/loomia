@@ -206,6 +206,7 @@ class ContactPane extends ConsumerWidget {
       );
       return;
     }
+    if (!context.mounted) return;
     ref.invalidate(contactSharingProvider(personId));
   }
 

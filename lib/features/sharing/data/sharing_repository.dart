@@ -17,7 +17,9 @@ class SharingRepository {
     final rows = await _client
         .from('share_invite')
         .select()
-        .eq('person_id', personId);
+        .eq('person_id', personId)
+        // An expired code no longer works: none open, so Invite shows again.
+        .gt('expires_at', DateTime.now().toUtc().toIso8601String());
     if (rows.isEmpty) return null;
     return _inviteFromRow(rows.first);
   });
