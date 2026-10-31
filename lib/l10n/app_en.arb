@@ -3329,5 +3329,30 @@
   "tickUndo": "Undo",
   "@tickUndo": {"description": "Action of the snackbar shown after a tick: takes the tick back, as if it never happened."},
   "tickUndoStale": "That changed in the meantime, so it wasn't undone.",
-  "@tickUndoStale": {"description": "Snackbar when Undo is refused because the person was changed since the tick (for example on another device). Nothing was changed."}
+  "@tickUndoStale": {"description": "Snackbar when Undo is refused because the person was changed since the tick (for example on another device). Nothing was changed."},
+  "inviteCodeLabel": "Invite code",
+  "@inviteCodeLabel": {"description": "Label of the code field when accepting an invite to share goals."},
+  "inviteContinue": "Continue",
+  "@inviteContinue": {"description": "Button on the accept invite screen that previews the invite after entering a code."},
+  "inviteShareWith": "Share your goals with {name}?",
+  "@inviteShareWith": {
+    "description": "Question at the top of the invite preview screen, with the mentor's first name.",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "inviteAlwaysShared": "Your volumes and level for the month",
+  "@inviteAlwaysShared": {"description": "Text of the always-shared item in the invite preview: what is always visible to the mentor, no switch."},
+  "shareItemActivityTargets": "Your targets for prospects, customers, team and loyalty",
+  "@shareItemActivityTargets": {"description": "Title of the activity targets share item switch."},
+  "shareItemProgress": "How your month is going",
+  "@shareItemProgress": {"description": "Title of the progress share item switch."},
+  "shareItemAboutMe": "Your why and your own goal",
+  "@shareItemAboutMe": {"description": "Title of the about-me share item switch."},
+  "inviteAccept": "Share",
+  "@inviteAccept": {"description": "Button that accepts the invite and starts sharing goals."},
+  "inviteErrorInvalid": "This code doesn't work. Ask for a new one.",
+  "@inviteErrorInvalid": {"description": "Error when the invite code is invalid or expired."},
+  "inviteErrorOwn": "That's your own invite.",
+  "@inviteErrorOwn": {"description": "Error when trying to accept your own invite code."},
+  "inviteErrorAlreadySharing": "You already share your goals. Stop that first in Settings → Sharing.",
+  "@inviteErrorAlreadySharing": {"description": "Error when trying to accept an invite while already sharing with someone."}
 }
