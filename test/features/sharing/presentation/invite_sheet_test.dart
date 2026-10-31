@@ -206,10 +206,17 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check that error is gone and code is shown
-      expect(find.text("Couldn't save. Check your connection and try again."), findsNothing);
+      expect(
+        find.text("Couldn't save. Check your connection and try again."),
+        findsNothing,
+      );
       expect(find.textContaining('RETRY'), findsOneWidget);
       expect(find.text('Copy link'), findsOneWidget);
-      expect(repo.calls, ['openInvite(p5)', 'openInvite(p5)', 'createInvite(p5)']);
+      expect(repo.calls, [
+        'openInvite(p5)',
+        'openInvite(p5)',
+        'createInvite(p5)',
+      ]);
     });
 
     testWidgets('cancelInvite failure shows error and re-enables Cancel', (
@@ -250,7 +257,11 @@ void main() {
       await tester.tap(find.text('Cancel invite'));
       await tester.pumpAndSettle();
 
-      expect(repo.calls, ['openInvite(p6)', 'cancelInvite(p6)', 'cancelInvite(p6)']);
+      expect(repo.calls, [
+        'openInvite(p6)',
+        'cancelInvite(p6)',
+        'cancelInvite(p6)',
+      ]);
       expect(find.text('WILL-CANCEL'), findsNothing); // Sheet closed
     });
   });

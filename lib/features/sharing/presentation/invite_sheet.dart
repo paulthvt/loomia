@@ -148,10 +148,7 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
             onPressed: () => Navigator.pop(context),
             child: Text(material.cancelButtonLabel),
           ),
-          FilledButton(
-            onPressed: _loadInvite,
-            child: Text(l10n.contactsRetry),
-          ),
+          FilledButton(onPressed: _loadInvite, child: Text(l10n.contactsRetry)),
         ],
         child: Column(
           mainAxisSize: MainAxisSize.min,
