@@ -110,7 +110,7 @@ test('French uses tu', ...)                  // fr pages: none of /\bvous\b|\bvo
 
 - [x] **Step 1: Capture** on the booted iPhone 17 simulator, signed in to the demo account (Task 0), web or release build of `main`: each of the five screens of the Figma "Site parts" row, light then dark (`xcrun simctl ui booted appearance light|dark`), `xcrun simctl io booted screenshot <name>.png`.
 - [x] **Step 2: Check each image by eye:** no PV/OV, no level name, no real person, status bar time 9:41 (`xcrun simctl status_bar booted override --time 9:41` before capturing).
-- [x] **Step 3: Convert:** `cwebp -q 82 -resize 780 0 <name>.png -o src/assets/shots/<name>.webp`. Expected: each under 120 KB.
+- [x] **Step 3: Convert:** `cwebp -q 82 -resize 786 0 <name>.png -o src/assets/shots/<name>.webp`. Expected: each under 120 KB.
 - [x] **Step 4: Commit:** `feat: app screenshots for the home page`.
 
 ### Task 4: Home page
