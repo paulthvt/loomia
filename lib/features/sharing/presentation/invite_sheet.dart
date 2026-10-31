@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
@@ -25,6 +26,11 @@ Future<void> showInviteSheet(
         .invalidate(contactSharingProvider(personId));
   }
 }
+
+// The web app routes from the fragment (hash URL strategy), so the code
+// rides after the #.
+String _inviteLink(String code) =>
+    'app.getloomia.app/#${Routes.inviteLocation(code)}';
 
 class _InviteSheet extends ConsumerStatefulWidget {
   const _InviteSheet({required this.personId, required this.name});
@@ -88,7 +94,7 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
     if (invite == null) return;
 
     await Clipboard.setData(
-      ClipboardData(text: 'https://app.getloomia.app/invite/${invite.code}'),
+      ClipboardData(text: 'https://${_inviteLink(invite.code)}'),
     );
 
     if (mounted) {
@@ -162,7 +168,6 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
     }
 
     final code = formatCode(invite.code);
-    final link = 'app.getloomia.app/invite/${invite.code}';
 
     return LoomiaDialog(
       title: l10n.inviteSheetTitle(widget.name),
@@ -183,7 +188,7 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
         children: [
           if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
           Text(code, style: Theme.of(context).textTheme.displaySmall),
-          Text(link),
+          Text(_inviteLink(invite.code)),
           Text(l10n.inviteSheetBody(widget.name)),
         ],
       ),

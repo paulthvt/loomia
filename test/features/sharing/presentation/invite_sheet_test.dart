@@ -64,7 +64,7 @@ void main() {
 
       expect(repo.calls, ['openInvite(p1)', 'createInvite(p1)']);
       expect(find.text('ABCD-EFGH'), findsOneWidget);
-      expect(find.text('app.getloomia.app/invite/ABCDEFGH'), findsOneWidget);
+      expect(find.text('app.getloomia.app/#/invite/ABCDEFGH'), findsOneWidget);
     });
 
     testWidgets('does not create invite when one already exists', (
@@ -131,7 +131,7 @@ void main() {
       await tester.tap(find.text('Copy link'));
       await tester.pump();
 
-      expect(clipboardData, 'https://app.getloomia.app/invite/ABCDEFGH');
+      expect(clipboardData, 'https://app.getloomia.app/#/invite/ABCDEFGH');
       expect(find.text('Link copied'), findsOneWidget);
     });
 
