@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/goals/data/goals_repository.dart';
-import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/sharing/domain/invite_code.dart';
 import 'package:loomia/features/sharing/domain/invite_failure.dart';
 import 'package:loomia/features/sharing/domain/share_item.dart';
@@ -151,8 +150,6 @@ Set<ShareItem> _parseItems(List<dynamic> items) => items
     .whereType<ShareItem>()
     .toSet();
 
-double? _number(Object? value) => (value as num?)?.toDouble();
-
 SharedGoals sharedGoalsFromRow(Map<String, dynamic> row, DateTime month) {
   final planData = row['plan'];
   final progressData = row['progress'];
@@ -161,7 +158,10 @@ SharedGoals sharedGoalsFromRow(Map<String, dynamic> row, DateTime month) {
     items: _parseItems(row['items'] as List),
     plan: planData == null
         ? null
-        : _monthPlanFromPlanJson(planData as Map<String, dynamic>, month),
+        : monthPlanFromRow({
+            ...planData as Map<String, dynamic>,
+            'month': dayColumn(month),
+          }),
     levelNow: row['level_now'] as String?,
     progress: progressData == null
         ? null
@@ -170,15 +170,3 @@ SharedGoals sharedGoalsFromRow(Map<String, dynamic> row, DateTime month) {
     ownGoal: row['own_goal'] as String?,
   );
 }
-
-MonthPlan _monthPlanFromPlanJson(Map<String, dynamic> json, DateTime month) =>
-    MonthPlan(
-      month: month,
-      ownVolumeTarget: _number(json['own_volume_target']),
-      teamVolumeTarget: _number(json['team_volume_target']),
-      levelTarget: json['level_target'] as String?,
-      prospectsTarget: json['prospects_target'] as int?,
-      customersTarget: json['customers_target'] as int?,
-      teamMembersTarget: json['team_members_target'] as int?,
-      loyaltyTarget: json['loyalty_target'] as int?,
-    );
