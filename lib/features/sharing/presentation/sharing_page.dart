@@ -20,6 +20,19 @@ import 'package:material_ui/material_ui.dart';
 String sharingLinkedCopy(AppLocalizations l10n, String name) =>
     name.isEmpty ? l10n.sharingLinkedNoName : l10n.sharingLinkedWith(name);
 
+void _showFailure(BuildContext context, Object error) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        peopleFailureCopy(
+          AppLocalizations.of(context),
+          error is PeopleFailure ? error : PeopleFailure.unknown,
+        ),
+      ),
+    ),
+  );
+}
+
 class SharingPage extends ConsumerStatefulWidget {
   const SharingPage({super.key});
 
@@ -78,7 +91,10 @@ class _SharingPageState extends ConsumerState<SharingPage> {
         setState(() => _aboutMeBusy = false);
       }
     } catch (e) {
-      if (mounted) setState(() => _aboutMeBusy = false);
+      if (mounted) {
+        setState(() => _aboutMeBusy = false);
+        _showFailure(context, e);
+      }
     }
   }
 
@@ -96,7 +112,8 @@ class _SharingPageState extends ConsumerState<SharingPage> {
       await ref.read(sharingRepositoryProvider).stopSharing();
       if (mounted) ref.invalidate(myShareProvider);
     } catch (e) {
-      // Silent: stop shows on error, user tries again.
+      // Stop sharing stays, to try again.
+      if (mounted) _showFailure(context, e);
     }
   }
 
@@ -237,6 +254,7 @@ class _LinkedStateState extends ConsumerState<_LinkedState> {
           _items = Set.of(widget.share.items);
           _busy = false;
         });
+        _showFailure(context, e);
       }
     }
   }

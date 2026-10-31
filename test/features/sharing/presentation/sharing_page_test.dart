@@ -141,4 +141,54 @@ void main() {
 
     expect(sharing.calls, contains('stopSharing()'));
   });
+
+  group('a failed save says so', () {
+    const network = "Couldn't save. Check your connection and try again.";
+    const share = MyShare(
+      mentorFirstName: 'Alice',
+      items: {ShareItem.activityTargets},
+    );
+
+    testWidgets('on Stop sharing', (tester) async {
+      final sharing = await _openSharing(tester, initialShare: share);
+
+      sharing.failWith = PeopleFailure.network;
+      final stopButton = find.widgetWithText(FilledButton, 'Stop sharing');
+      await tester.ensureVisible(stopButton);
+      await tester.pumpAndSettle();
+      await tester.tap(stopButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Stop'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(network), findsOneWidget);
+    });
+
+    testWidgets('on a switch, which goes back', (tester) async {
+      final sharing = await _openSharing(tester, initialShare: share);
+
+      sharing.failWith = PeopleFailure.network;
+      await tester.tap(find.byType(SwitchListTile).last);
+      await tester.pumpAndSettle();
+
+      expect(find.text(network), findsOneWidget);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile).last).value,
+        isFalse,
+      );
+    });
+
+    testWidgets('on About me', (tester) async {
+      final sharing = await _openSharing(tester, initialShare: share);
+
+      sharing.failWith = PeopleFailure.network;
+      final save = find.widgetWithText(FilledButton, 'Save');
+      await tester.ensureVisible(save);
+      await tester.pumpAndSettle();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+
+      expect(find.text(network), findsOneWidget);
+    });
+  });
 }
