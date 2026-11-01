@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/app.dart';
 import 'package:loomia/app/shell/app_shell.dart';
+import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -54,7 +55,43 @@ Future<FakeSharingRepository> _openSharing(
   return sharing;
 }
 
+final whyField = find.descendant(
+  of: find.widgetWithText(LabeledField, 'Why you do this'),
+  matching: find.byType(TextField),
+);
+
+FilledButton _aboutMeButton(WidgetTester tester) => tester.widget<FilledButton>(
+  find.ancestor(
+    of: find.textContaining(RegExp(r'^(Save|Saved)$')),
+    matching: find.byType(FilledButton),
+  ),
+);
+
 void main() {
+  testWidgets('About me: Save waits for a change, then says Saved (#439)', (
+    tester,
+  ) async {
+    final sharing = await _openSharing(tester);
+    await tester.ensureVisible(whyField);
+    await tester.pumpAndSettle();
+    expect(_aboutMeButton(tester).onPressed, isNull, reason: 'nothing changed');
+
+    await tester.enterText(whyField, 'For my kids');
+    await tester.pump();
+    expect(_aboutMeButton(tester).onPressed, isNotNull);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(sharing.calls, contains('saveAboutMe()'));
+    expect(find.text('Saved'), findsOneWidget);
+    expect(_aboutMeButton(tester).onPressed, isNull);
+
+    await tester.enterText(whyField, 'For my kids, and me');
+    await tester.pump();
+    expect(find.text('Save'), findsOneWidget);
+    expect(_aboutMeButton(tester).onPressed, isNotNull);
+  });
+
   testWidgets('linked state shows the mentor name', (tester) async {
     await _openSharing(
       tester,
@@ -181,6 +218,7 @@ void main() {
     testWidgets('on About me', (tester) async {
       final sharing = await _openSharing(tester, initialShare: share);
 
+      await tester.enterText(whyField, 'For my kids');
       sharing.failWith = PeopleFailure.network;
       final save = find.widgetWithText(FilledButton, 'Save');
       await tester.ensureVisible(save);
