@@ -14,6 +14,7 @@ import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/tag.dart';
 import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
 import 'package:loomia/features/contacts/presentation/change_workflow_sheet.dart';
@@ -29,6 +30,9 @@ import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/contacts/presentation/tag_sheet.dart';
 import 'package:loomia/features/contacts/presentation/tags_controller.dart';
+import 'package:loomia/features/sharing/data/sharing_repository.dart';
+import 'package:loomia/features/sharing/presentation/contact_sharing_controller.dart';
+import 'package:loomia/features/sharing/presentation/invite_sheet.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -117,8 +121,19 @@ class ContactPane extends ConsumerWidget {
     // scrolls out of the lazy list.
     ref.listen(historyProvider(person.id), (_, _) {});
 
+    // Only a team member can share; null while it loads or if it fails, so
+    // the Invite button never flashes for someone already sharing.
+    final sharing = person.stage == Stage.team
+        ? ref.watch(contactSharingProvider(person.id)).value
+        : null;
+
     return ContactDetails(
       person: person,
+      sharing: sharing,
+      onInvite: () => unawaited(
+        showInviteSheet(context, personId: person.id, name: firstName(person)),
+      ),
+      onStopSharing: () => unawaited(_stopSharing(context, ref, person.id)),
       model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
       onStatus: (status) => unawaited(
         writePeople(context, ref, (people) => people.setStatus(person, status)),
@@ -157,6 +172,7 @@ class ContactPane extends ConsumerWidget {
       onLaunch: (uri) => unawaited(openExternal(context, uri)),
       onRefresh: () {
         ref.invalidate(historyProvider(person.id));
+        ref.invalidate(contactSharingProvider(person.id));
         ref.invalidate(workflows);
         return refreshPeople(context, ref);
       },
@@ -172,6 +188,26 @@ class ContactPane extends ConsumerWidget {
         onAdd: () => unawaited(showLogActivity(context, person)),
       ),
     );
+  }
+
+  /// Their goals go; a failure keeps them and says so.
+  Future<void> _stopSharing(
+    BuildContext context,
+    WidgetRef ref,
+    String personId,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    try {
+      await ref.read(sharingRepositoryProvider).stopSharingWith(personId);
+    } on PeopleFailure catch (failure) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    ref.invalidate(contactSharingProvider(personId));
   }
 
   /// Leaves the screen first, so it never shows the missing state for the

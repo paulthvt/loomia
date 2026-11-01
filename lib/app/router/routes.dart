@@ -90,6 +90,10 @@ abstract final class Routes {
   static const String settingsTags = '$settings/$settingsTagsSegment';
   static const String settingsTagsName = 'settingsTags';
 
+  static const String settingsSharingSegment = 'sharing';
+  static const String settingsSharing = '$settings/$settingsSharingSegment';
+  static const String settingsSharingName = 'settingsSharing';
+
   /// One workflow, nested under [settingsWorkflows] so back returns to it.
   static const String settingsWorkflowSegment = ':id';
   static const String settingsWorkflowName = 'settingsWorkflow';
@@ -125,6 +129,12 @@ abstract final class Routes {
 
   /// Reachable before the first-run screen is passed.
   static const Set<String> onboardingPaths = {start, importContacts};
+
+  static const String invitePrefix = '/invite';
+  static const String inviteSegment = '/invite/:code';
+  static const String inviteName = 'invite';
+
+  static String inviteLocation(String code) => '$invitePrefix/$code';
 
   static const String welcome = '/welcome';
   static const String welcomeName = 'welcome';

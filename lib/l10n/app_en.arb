@@ -3329,5 +3329,183 @@
   "tickUndo": "Undo",
   "@tickUndo": {"description": "Action of the snackbar shown after a tick: takes the tick back, as if it never happened."},
   "tickUndoStale": "That changed in the meantime, so it wasn't undone.",
-  "@tickUndoStale": {"description": "Snackbar when Undo is refused because the person was changed since the tick (for example on another device). Nothing was changed."}
+  "@tickUndoStale": {"description": "Snackbar when Undo is refused because the person was changed since the tick (for example on another device). Nothing was changed."},
+  "inviteCodeLabel": "Invite code",
+  "@inviteCodeLabel": {"description": "Label of the code field when accepting an invite to share goals."},
+  "inviteContinue": "Continue",
+  "@inviteContinue": {"description": "Button on the accept invite screen that previews the invite after entering a code."},
+  "inviteShareWith": "Share your goals with {name}?",
+  "@inviteShareWith": {
+    "description": "Question at the top of the invite preview screen, with the mentor's first name.",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "inviteShareWithNoName": "Share your goals?",
+  "@inviteShareWithNoName": {"description": "Question at the top of the invite preview screen when the mentor's account has no first name."},
+  "inviteAlwaysShared": "Your volumes and level for the month",
+  "@inviteAlwaysShared": {"description": "Text of the always-shared item in the invite preview: what is always visible to the mentor, no switch."},
+  "inviteAlwaysSharedBadge": "Always shared",
+  "@inviteAlwaysSharedBadge": {"description": "Badge text on the always-shared row in the invite preview, shown instead of a switch."},
+  "shareItemActivityTargets": "Your targets for prospects, customers, team and loyalty",
+  "@shareItemActivityTargets": {"description": "Title of the activity targets share item switch."},
+  "shareItemProgress": "How your month is going",
+  "@shareItemProgress": {"description": "Title of the progress share item switch."},
+  "shareItemAboutMe": "Your why and your own goal",
+  "@shareItemAboutMe": {"description": "Title of the about-me share item switch."},
+  "inviteAccept": "Share",
+  "@inviteAccept": {"description": "Button that accepts the invite and starts sharing goals."},
+  "inviteErrorInvalid": "This code doesn't work. Ask for a new one.",
+  "@inviteErrorInvalid": {"description": "Error when the invite code is invalid or expired."},
+  "inviteErrorOwn": "That's your own invite.",
+  "@inviteErrorOwn": {"description": "Error when trying to accept your own invite code."},
+  "inviteErrorAlreadySharing": "You already share your goals. Stop that first in Settings → Sharing.",
+  "@inviteErrorAlreadySharing": {"description": "Error when trying to accept an invite while already sharing with someone."},
+  "sharingTitle": "Sharing",
+  "@sharingTitle": {"description": "Title of the Sharing settings page."},
+  "sharingNotSharing": "Not sharing",
+  "@sharingNotSharing": {"description": "Subtitle on the Sharing list tile in Settings when the user is not sharing."},
+  "sharingWith": "With {name}",
+  "@sharingWith": {
+    "description": "Subtitle on the Sharing list tile in Settings when the user is sharing with someone.",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "sharingWithNoName": "Sharing your goals",
+  "@sharingWithNoName": {"description": "Subtitle on the Sharing list tile in Settings when the user is sharing with someone whose account has no first name."},
+  "sharingLinkedWith": "You share your goals with {name}",
+  "@sharingLinkedWith": {
+    "description": "Text shown when the user is already sharing with someone.",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "sharingLinkedNoName": "You share your goals",
+  "@sharingLinkedNoName": {"description": "Text shown when the user is already sharing with someone whose account has no first name."},
+  "sharingStopButton": "Stop sharing",
+  "@sharingStopButton": {"description": "Button to stop sharing goals."},
+  "sharingStopTitle": "Stop sharing?",
+  "@sharingStopTitle": {"description": "Title of the confirm dialog when stopping sharing."},
+  "sharingStopAction": "Stop",
+  "@sharingStopAction": {"description": "Destructive button that confirms stopping sharing."},
+  "sharingStopBody": "Your goals will no longer be visible to them.",
+  "@sharingStopBody": {"description": "Body of the confirm dialog when stopping sharing."},
+  "sharingAboutMeTitle": "About me",
+  "@sharingAboutMeTitle": {"description": "Section header for the About me section on the Sharing page."},
+  "sharingAboutMeCaption": "Yours, whether you share it or not.",
+  "@sharingAboutMeCaption": {"description": "Caption under the About me section header."},
+  "sharingWhyLabel": "Why you do this",
+  "@sharingWhyLabel": {"description": "Label for the why text field in About me."},
+  "sharingOwnGoalLabel": "Your own goal",
+  "@sharingOwnGoalLabel": {"description": "Label for the own goal text field in About me."},
+  "inviteLinkSignedOutBody": "Sign in or create your account, then enter this code.",
+  "@inviteLinkSignedOutBody": {"description": "Body text shown on the invite link page when signed out."},
+  "firstRunSkipInvite": "Skip",
+  "@firstRunSkipInvite": {"description": "Button to skip the invite step during onboarding."},
+  "authSignInButton": "Sign in",
+  "@authSignInButton": {"description": "Sign in button text."},
+  "welcomeRegisterButton": "Create an account",
+  "@welcomeRegisterButton": {"description": "Create account button text on welcome screen."},
+  "inviteSheetTitle": "Invite {name} to share goals",
+  "@inviteSheetTitle": {
+    "description": "Title of the sheet that invites a team member to share their goals. name is their first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "inviteSheetBody": "Send this to {name}. It works once, for 14 days.",
+  "@inviteSheetBody": {
+    "description": "Body text of the invite sheet explaining how the code works. name is their first name.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "inviteSheetCopyLink": "Copy link",
+  "@inviteSheetCopyLink": {
+    "description": "Primary button on the invite sheet that copies the invite link to clipboard."
+  },
+  "inviteSheetCancelInvite": "Cancel invite",
+  "@inviteSheetCancelInvite": {
+    "description": "Text button on the invite sheet that cancels the invite."
+  },
+  "inviteSheetLinkCopied": "Link copied",
+  "@inviteSheetLinkCopied": {
+    "description": "Snackbar message shown after the invite link is copied to clipboard."
+  },
+  "contactSharedBy": "Shared by {name}",
+  "@contactSharedBy": {
+    "description": "Header of the section on a team member's contact page showing the goals they share with the user. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactSharedNoMonth": "{name} hasn't set this month yet",
+  "@contactSharedNoMonth": {
+    "description": "In that section, in place of the month's targets, when the team member has not planned the current month. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactSharedNotWritten": "{name} hasn't written this yet",
+  "@contactSharedNotWritten": {
+    "description": "In that section, the value of Their why or Their own goal when the team member shares it but left it blank. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactSharedNotSet": "{name} hasn't set this yet",
+  "@contactSharedNotSet": {
+    "description": "In that section, the value of Level now when the team member shares their goals but has not closed a month yet, so has no level. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactSharedTeamVolume": "Team volume",
+  "@contactSharedTeamVolume": {
+    "description": "Label of the shared team volume target in that section."
+  },
+  "contactSharedTeamVolumeValue": "{model, select, doterra{Aims for {amount} OV} other{Aims for {amount}}}",
+  "@contactSharedTeamVolumeValue": {
+    "description": "Value of the shared team volume target, e.g. 'Aims for 3,000 OV'. OV is not translated. Other: the number alone.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "amount": { "type": "num", "format": "decimalPattern" }
+    }
+  },
+  "contactSharedVolumeOf": "{model, select, doterra{{done} of {target} PV} other{{done} of {target}}}",
+  "@contactSharedVolumeOf": {
+    "description": "Value of the shared own volume when progress is shared: done so far this month of the target, e.g. '120 of 200 PV'. PV is not translated. Both are formatted numbers.",
+    "placeholders": {
+      "model": { "type": "String" },
+      "done": { "type": "String" },
+      "target": { "type": "String" }
+    }
+  },
+  "contactSharedCountOf": "{done} of {target}",
+  "@contactSharedCountOf": {
+    "description": "Value of a shared count (new prospects, customers...) when progress is shared: done so far this month of the target, e.g. '3 of 8'.",
+    "placeholders": {
+      "done": { "type": "int" },
+      "target": { "type": "int" }
+    }
+  },
+  "contactSharedAimsFor": "Aims for {target}",
+  "@contactSharedAimsFor": {
+    "description": "Value of a shared count (new prospects, customers...) when progress is not shared, e.g. 'Aims for 8'.",
+    "placeholders": { "target": { "type": "int" } }
+  },
+  "contactStopSharingTitle": "Stop seeing what {name} shares?",
+  "@contactStopSharingTitle": {
+    "description": "Title of the dialog confirming the user no longer wants to see a team member's shared goals. name is their first name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "contactStopSharingBody": "Their goals stop showing here and your own notes come back. To see them again, send a new invite.",
+  "@contactStopSharingBody": {
+    "description": "Body of that dialog."
+  },
+  "contactInviteToShare": "Invite to share goals",
+  "@contactInviteToShare": {
+    "description": "Button on a team member's contact page that opens the sheet inviting them to share their goals."
+  },
+  "contactInviteSent": "Invite sent · {code}",
+  "@contactInviteSent": {
+    "description": "On a team member's contact page while an invite to share goals is open. code is the invite code, e.g. 'ABCD-EFGH'.",
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "contactInviteUntil": "Works once, until {date}",
+  "@contactInviteUntil": {
+    "description": "Caption under Invite sent: the code works once, until the day it expires, e.g. 'November 14'.",
+    "placeholders": { "date": { "type": "DateTime", "format": "MMMMd" } }
+  },
+  "contactShareAgain": "Share again",
+  "@contactShareAgain": {
+    "description": "Text button beside Invite sent that reopens the invite sheet to send the code again."
+  }
 }

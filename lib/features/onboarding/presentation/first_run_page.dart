@@ -16,6 +16,9 @@ import 'package:loomia/features/auth/presentation/auth_validation_copy.dart';
 import 'package:loomia/features/auth/presentation/widgets/auth_scaffold.dart';
 import 'package:loomia/features/auth/presentation/widgets/submit_button.dart';
 import 'package:loomia/features/contacts/presentation/add_person_sheet.dart';
+import 'package:loomia/features/sharing/presentation/accept_invite.dart';
+import 'package:loomia/features/sharing/presentation/sharing_controller.dart';
+import 'package:loomia/features/sharing/presentation/sharing_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -33,7 +36,7 @@ class FirstRunPage extends ConsumerStatefulWidget {
   ConsumerState<FirstRunPage> createState() => _FirstRunPageState();
 }
 
-enum _Step { name, company, people }
+enum _Step { name, company, invite, people }
 
 class _FirstRunPageState extends ConsumerState<FirstRunPage> {
   /// Read once: a Google backfill landing later must not swap the step away.
@@ -49,7 +52,8 @@ class _FirstRunPageState extends ConsumerState<FirstRunPage> {
   _Step? get _previous => switch (_step) {
     _Step.name => null,
     _Step.company => _askName ? _Step.name : null,
-    _Step.people => _Step.company,
+    _Step.invite => _Step.company,
+    _Step.people => _Step.invite,
   };
 
   @override
@@ -69,10 +73,14 @@ class _FirstRunPageState extends ConsumerState<FirstRunPage> {
           },
         ),
         _Step.company => FirstRunCompanyStep(
-          onChosen: () => _show(_Step.people),
+          onChosen: () => _show(_Step.invite),
           onBack: _askName ? () => _show(_Step.name) : null,
         ),
-        _Step.people => FirstRunPeopleStep(onBack: () => _show(_Step.company)),
+        _Step.invite => FirstRunInviteStep(
+          onDone: () => _show(_Step.people),
+          onBack: () => _show(_Step.company),
+        ),
+        _Step.people => FirstRunPeopleStep(onBack: () => _show(_Step.invite)),
       },
     );
   }
@@ -364,6 +372,64 @@ class _FirstRunPeopleStepState extends ConsumerState<FirstRunPeopleStep> {
             ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+/// Step between company and people: accept an invite code, or skip.
+class FirstRunInviteStep extends ConsumerWidget {
+  const FirstRunInviteStep({
+    required this.onDone,
+    required this.onBack,
+    super.key,
+  });
+
+  final VoidCallback onDone;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final myShare = ref.watch(myShareProvider);
+
+    return AuthScaffold(
+      onBack: onBack,
+      children: [
+        myShare.when(
+          data: (share) => share == null
+              ? AcceptInvite(
+                  onAccepted: () {
+                    ref.invalidate(myShareProvider);
+                    onDone();
+                  },
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      sharingLinkedCopy(l10n, share.mentorFirstName),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    FilledButton(
+                      onPressed: onDone,
+                      child: Text(
+                        MaterialLocalizations.of(context).continueButtonLabel,
+                      ),
+                    ),
+                  ],
+                ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => AcceptInvite(
+            onAccepted: () {
+              ref.invalidate(myShareProvider);
+              onDone();
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextButton(onPressed: onDone, child: Text(l10n.firstRunSkipInvite)),
       ],
     );
   }

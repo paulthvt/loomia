@@ -11,6 +11,7 @@ class SectionHeader extends StatelessWidget {
     required this.title,
     this.actionLabel,
     this.onAction,
+    this.trailing,
     super.key,
   });
 
@@ -20,6 +21,9 @@ class SectionHeader extends StatelessWidget {
   /// Null with an [actionLabel] set renders the label as a plain count.
   final VoidCallback? onAction;
 
+  /// In place of the action: a menu, sized as the action is.
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
     final colors = LoomiaColors.of(context);
@@ -28,7 +32,7 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       // The action's own height stands in for part of the gap.
       padding: EdgeInsets.only(
-        bottom: label != null && onAction != null
+        bottom: (label != null && onAction != null) || trailing != null
             ? AppSpacing.xs
             : AppSpacing.ms,
       ),
@@ -40,7 +44,9 @@ class SectionHeader extends StatelessWidget {
               style: AppTypography.overline.copyWith(color: colors.textMuted),
             ),
           ),
-          if (label != null)
+          if (trailing case final trailing?)
+            trailing
+          else if (label != null)
             if (onAction == null)
               Text(
                 label,

@@ -22,6 +22,9 @@ String? authRedirect({
   if (location == Routes.resetPassword) {
     return hasSession ? null : Routes.welcome;
   }
+  // Invite links are accessible in every state except password recovery.
+  if (location.startsWith('${Routes.invitePrefix}/')) return null;
+
   final isAuthRoute = Routes.authPaths.contains(location);
   if (!hasSession) return isAuthRoute ? null : Routes.welcome;
   // A new account starts on the first-run screen, wherever it signed in to.
