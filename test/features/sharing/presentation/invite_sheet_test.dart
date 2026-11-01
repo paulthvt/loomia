@@ -419,21 +419,22 @@ void main() {
       expect(notifications.saved, isEmpty);
     });
 
-    testWidgets('refused by the phone: off, nothing saved, and where to fix it', (
-      tester,
-    ) async {
-      push
-        ..isAvailable = true
-        ..grant = false;
-      await openSheet(tester);
-      await tester.tap(find.text('Copy link'));
-      await tester.pumpAndSettle();
-      expect(notifications.saved, isEmpty);
-      expect(find.text(refused), findsOneWidget);
-      expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-        isFalse,
-      );
-    });
+    testWidgets(
+      'refused by the phone: off, nothing saved, and where to fix it',
+      (tester) async {
+        push
+          ..isAvailable = true
+          ..grant = false;
+        await openSheet(tester);
+        await tester.tap(find.text('Copy link'));
+        await tester.pumpAndSettle();
+        expect(notifications.saved, isEmpty);
+        expect(find.text(refused), findsOneWidget);
+        expect(
+          tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+          isFalse,
+        );
+      },
+    );
   });
 }
