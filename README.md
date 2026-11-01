@@ -226,7 +226,8 @@ upload them by hand in Play Console → Store listing.
 Store screenshots show the whole app — navigation, account button — on a
 sample book, in every app language: `phone` (1080×1920), `tablet-7`
 (1200×1920) and `tablet-10` (2560×1600) for Play, `desktop` (2880×1800) for
-the web:
+the web, `iphone-6.9` (1320×2868) and `ipad-13` (2064×2752) for the App Store,
+uploaded by the Store listing workflow (Releases → iOS):
 
 ```bash
 flutter test test/store_screenshots_test.dart --dart-define=STORE_SCREENSHOTS=true
