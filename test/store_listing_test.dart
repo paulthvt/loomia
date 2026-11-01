@@ -38,6 +38,14 @@ void main() {
     }
   });
 
+  test('the name is the one the App Store record holds', () {
+    // "Loomia" belongs to another developer's app; App Store names are
+    // unique across the store, in every language.
+    for (final lang in languages) {
+      expect(read('$lang/name.txt'), 'LoomiaApp', reason: lang);
+    }
+  });
+
   test('keywords are comma-separated with no spaces after commas', () {
     for (final lang in languages) {
       expect(read('$lang/keywords.txt'), isNot(contains(', ')), reason: lang);
