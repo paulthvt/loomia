@@ -3417,6 +3417,11 @@
       "name": { "type": "String" }
     }
   },
+  "inviteNotifyMe": "Tell me when {name} accepts",
+  "@inviteNotifyMe": {
+    "description": "Switch in the invite sheet: turns on the Sharing push (Settings → Notifications), so a push comes when the invite is accepted (#423). name is the contact's name.",
+    "placeholders": { "name": { "type": "String" } }
+  },
   "inviteSheetBody": "Send this to {name}. It works once, for 14 days.",
   "@inviteSheetBody": {
     "description": "Body text of the invite sheet explaining how the code works. name is their first name.",

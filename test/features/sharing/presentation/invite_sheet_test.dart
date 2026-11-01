@@ -1,7 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/notifications/data/notifications_repository.dart';
+import 'package:loomia/features/notifications/data/push.dart';
+import 'package:loomia/features/notifications/domain/notification_settings.dart';
+import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/sharing/data/sharing_repository.dart';
 import 'package:loomia/features/sharing/domain/invite_code.dart';
 import 'package:loomia/features/sharing/domain/share_item.dart';
@@ -11,6 +17,9 @@ import 'package:loomia/features/sharing/presentation/invite_sheet.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../notifications/fake_notifications_repository.dart';
+import '../../notifications/fake_push.dart';
+
 import '../fake_sharing_repository.dart';
 
 // As the fake records it: the provider asks for the current month.
@@ -18,12 +27,25 @@ final thisMonth = '${DateTime.now().year}-${DateTime.now().month}';
 
 void main() {
   late FakeSharingRepository repo;
+  late FakePush push;
+  late FakeNotificationsRepository notifications;
   late ProviderContainer container;
 
   setUp(() {
     repo = FakeSharingRepository();
+    // The web by default: no push, so no "Tell me" line.
+    push = FakePush(isAvailable: false);
+    notifications = FakeNotificationsRepository();
     container = ProviderContainer(
-      overrides: [sharingRepositoryProvider.overrideWithValue(repo)],
+      overrides: [
+        sharingRepositoryProvider.overrideWithValue(repo),
+        pushProvider.overrideWithValue(push),
+        notificationsRepositoryProvider.overrideWithValue(notifications),
+        accountProvider.overrideWithValue(
+          const Account(firstName: 'Marie', email: 'marie@example.com'),
+        ),
+        deviceTimeZoneProvider.overrideWith((ref) => 'Europe/Paris'),
+      ],
     );
   });
 
@@ -307,6 +329,85 @@ void main() {
 
       expect(result.shared, isNull);
       expect(result.invite, isNull);
+    });
+  });
+
+  group('tell me when they accept (#423)', () {
+    Future<void> openSheet(WidgetTester tester) async {
+      repo.openInviteValue = Invite(
+        code: 'ABCDEFGH',
+        expiresAt: DateTime.parse('2026-11-14T00:00:00Z'),
+      );
+      await tester.pumpWidget(
+        wrapped(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  showInviteSheet(context, personId: 'p1', name: 'Julie'),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+    }
+
+    const tellMe = 'Tell me when Julie accepts';
+    const refused =
+        "Notifications are off for Loomia in your phone's settings.";
+
+    testWidgets('offered on a phone while the Sharing push is off', (
+      tester,
+    ) async {
+      push.isAvailable = true;
+      await openSheet(tester);
+      expect(find.text(tellMe), findsOneWidget);
+    });
+
+    testWidgets('not offered without push (web)', (tester) async {
+      await openSheet(tester);
+      expect(find.text(tellMe), findsNothing);
+    });
+
+    testWidgets('not offered once the Sharing push is on', (tester) async {
+      push.isAvailable = true;
+      notifications.settings = const NotificationSettings(
+        timeZone: 'Europe/Paris',
+        sharing: true,
+      );
+      await openSheet(tester);
+      expect(find.text(tellMe), findsNothing);
+    });
+
+    testWidgets('turning it on asks the phone, saves, and goes away', (
+      tester,
+    ) async {
+      push.isAvailable = true;
+      await openSheet(tester);
+      await tester.tap(find.text(tellMe));
+      await tester.pumpAndSettle();
+      expect(push.asked, 1);
+      expect(notifications.saved.single.sharing, isTrue);
+      expect(notifications.saved.single.timeZone, 'Europe/Paris');
+      expect(find.text(tellMe), findsNothing);
+    });
+
+    testWidgets('refused by the phone: nothing saved, and where to fix it', (
+      tester,
+    ) async {
+      push
+        ..isAvailable = true
+        ..grant = false;
+      await openSheet(tester);
+      await tester.tap(find.text(tellMe));
+      await tester.pumpAndSettle();
+      expect(notifications.saved, isEmpty);
+      expect(find.text(refused), findsOneWidget);
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse,
+      );
     });
   });
 }
