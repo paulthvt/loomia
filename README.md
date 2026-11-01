@@ -146,7 +146,9 @@ The push copy is the `push*` keys of the ARB files. The phone renders it, from
 The daily summary and the month-end push are sent by the `send-daily-summary`
 Edge Function, which pg_cron calls every 15 minutes. After a change to either,
 `supabase functions deploy send-daily-summary` once the merge has pushed the
-migrations (Release → `database`).
+migrations (Release → `database`), from a checkout of up-to-date `main`: the
+CLI deploys the code it runs in, and answers "No change found" when that is
+an older branch.
 Once, on the hosted project:
 
 1. Firebase → Project settings → Service accounts → *Generate new private
