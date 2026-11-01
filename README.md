@@ -301,9 +301,27 @@ gh workflow run Promote -f tag=v2026.10.1 -f track=alpha        # closed testing
 gh workflow run Promote -f tag=v2026.10.1 -f track=production   # also marks the GitHub release final
 ```
 
-Promote from the workflow only, never from the Play Console, so the GitHub
-pre-release flags keep matching what users get. Production needs a closed test
-first on a personal developer account (12 testers opted in for 14 days).
+Promote from the workflow only, never from the Play Console or App Store
+Connect, so the GitHub pre-release flags keep matching what users get.
+Production needs a closed test first on a personal developer account (12
+testers opted in for 14 days).
+
+The same command moves the iOS build, in its own job (`ios/fastlane/Fastfile`,
+lane `promote`), so one store failing leaves the other alone:
+
+| Track | Play | iOS |
+| --- | --- | --- |
+| `alpha` | closed testing | TestFlight group **External testers** |
+| `beta` | open testing | TestFlight group **External testers** |
+| `production` | live within hours; web live; GitHub release final | submitted for App Store review, live by itself once approved (hours to days) |
+
+The first build of each version waits for Beta App Review before external
+testers get it. Production renames the version open in App Store Connect to
+the tag, attaches the build with the listing text from `main` and What's New
+from `release-notes.json` (left out on the app's first version), and stops
+with "Already submitted" if that version is already in review. Created by hand
+once: the **External testers** group (TestFlight → External Testing), and
+*Pricing and Availability* (free).
 
 versionCode (and, with iOS, CFBundleVersion) comes from the tag:
 `year*10000 + month*100 + micro`, so `v2026.10.1` is `20261001`. Tags before

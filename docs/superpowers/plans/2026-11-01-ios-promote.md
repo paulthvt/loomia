@@ -26,6 +26,10 @@
 - **"Already submitted" check** reads the app's App Store versions (`app.get_app_store_versions`) for one whose `version_string` is the tag's and whose state is `WAITING_FOR_REVIEW`, `IN_REVIEW`, `PENDING_DEVELOPER_RELEASE`, `PROCESSING_FOR_APP_STORE` or `READY_FOR_SALE`.
 - **First version** = no App Store version in `READY_FOR_SALE` yet: no `release_notes` passed.
 
+## Deviations while building
+
+- `tag_build` and `review_details` are plain Ruby methods at the top of the Fastfile, not private lanes: a fastlane lane only takes a hash.
+
 ## Review Focus
 
 1. A tag whose build is missing or still processing on TestFlight: a clear "Build <n> (<version>) is not on TestFlight" error. (Task 1, by reading; no live test.)
@@ -45,20 +49,20 @@
 - Consumes: `api_key` (existing private lane), `metadata/`, `rating_config.json`.
 - Produces: `bundle exec fastlane promote tag:<vYYYY.MM.N> track:<alpha|beta|production> notes:<release-notes.json> [dry_run:true]`.
 
-- [ ] **Step 1: `tag_build(tag)`** → `[version_string, build_number]`, regex `\Av(\d{4})\.(\d{1,2})\.(\d+)\z`, error "Tag must look like vYYYY.MM.N: '<tag>'".
-- [ ] **Step 2: Dry run first.** `promote` reads options, `tag_build`, loads notes if the file exists, prints `Would send <version> (<build>) to <target>` with the notes per language, and `next if options[:dry_run]`. Run: `cd ios && bundle exec fastlane promote tag:v2026.11.2 track:beta notes:<downloaded release-notes.json> dry_run:true` → `2026.11.2 (20261102) to External testers`. With `tag:2026.11.2` → the tag error. With a missing notes path and `track:beta` → "TestFlight needs release notes".
-- [ ] **Step 3: alpha/beta.** `api_key`; `upload_to_testflight(distribute_only: true, app_version:, build_number:, distribute_external: true, groups: ['External testers'], notify_external_testers: true, changelog: notes['en-US'])`. Wrap the build lookup error as "Build <n> (<version>) is not on TestFlight".
-- [ ] **Step 4: production.** `api_key`; find the app; "Already submitted" check (ruling above) → `UI.user_error!`; first-version check; `deliver(app_version:, build_number:, skip_binary_upload: true, skip_screenshots: true, metadata_path:, app_rating_config_path:, app_review_information: review_details, release_notes: (first ? nil : notes), submit_for_review: true, automatic_release: true, phased_release: false, run_precheck_before_submit: false, force: true, submission_information: { content_rights_contains_third_party_content: false, export_compliance_uses_encryption: false })`. Move `upload_listing`'s review hash into `review_details` and use it in both lanes.
-- [ ] **Step 5: Re-run Step 2's dry runs and `upload_listing ... dry_run:true`** (unchanged behaviour). Commit: `ci(ios): promote lane for TestFlight and the App Store`.
+- [x] **Step 1: `tag_build(tag)`** → `[version_string, build_number]`, regex `\Av(\d{4})\.(\d{1,2})\.(\d+)\z`, error "Tag must look like vYYYY.MM.N: '<tag>'".
+- [x] **Step 2: Dry run first.** `promote` reads options, `tag_build`, loads notes if the file exists, prints `Would send <version> (<build>) to <target>` with the notes per language, and `next if options[:dry_run]`. Run: `cd ios && bundle exec fastlane promote tag:v2026.11.2 track:beta notes:<downloaded release-notes.json> dry_run:true` → `2026.11.2 (20261102) to External testers`. With `tag:2026.11.2` → the tag error. With a missing notes path and `track:beta` → "TestFlight needs release notes".
+- [x] **Step 3: alpha/beta.** `api_key`; `upload_to_testflight(distribute_only: true, app_version:, build_number:, distribute_external: true, groups: ['External testers'], notify_external_testers: true, changelog: notes['en-US'])`. Wrap the build lookup error as "Build <n> (<version>) is not on TestFlight".
+- [x] **Step 4: production.** `api_key`; find the app; "Already submitted" check (ruling above) → `UI.user_error!`; first-version check; `deliver(app_version:, build_number:, skip_binary_upload: true, skip_screenshots: true, metadata_path:, app_rating_config_path:, app_review_information: review_details, release_notes: (first ? nil : notes), submit_for_review: true, automatic_release: true, phased_release: false, run_precheck_before_submit: false, force: true, submission_information: { content_rights_contains_third_party_content: false, export_compliance_uses_encryption: false })`. Move `upload_listing`'s review hash into `review_details` and use it in both lanes.
+- [x] **Step 5: Re-run Step 2's dry runs and `upload_listing ... dry_run:true`** (unchanged behaviour). Commit: `ci(ios): promote lane for TestFlight and the App Store`.
 
 ### Task 2: The `ios` job and the docs
 
 **Files:**
 - Modify: `.github/workflows/promote.yaml`, `README.md` → Releases (Promote section)
 
-- [ ] **Step 1: Rename the job `promote` → `play`** (same steps) and add `ios`: `macos-latest`, `timeout-minutes: 20`, checkout `main`, `ruby/setup-ruby` in `ios`, fetch `release-notes.json` as the Play job does, `bundle exec fastlane promote tag:"$TAG" track:"$TRACK" notes:"$GITHUB_WORKSPACE/release-notes.json"` with the `ASC_*` secrets. No `needs` between the two. The header comment says what each track means on each store.
-- [ ] **Step 2: README → Promote:** per track, Play vs iOS; production on iOS goes live after Apple's review (hours to days), automatically; the GitHub release turns final at Play production; by hand once: the "External testers" group and Pricing and Availability (free).
-- [ ] **Step 3: Check:** `ruby -ryaml -e 'YAML.load_file(".github/workflows/promote.yaml")'`; `flutter analyze`; `flutter test test/store_listing_test.dart`. Commit: `ci(release): promote iOS builds with Play`.
+- [x] **Step 1: Rename the job `promote` → `play`** (same steps) and add `ios`: `macos-latest`, `timeout-minutes: 20`, checkout `main`, `ruby/setup-ruby` in `ios`, fetch `release-notes.json` as the Play job does, `bundle exec fastlane promote tag:"$TAG" track:"$TRACK" notes:"$GITHUB_WORKSPACE/release-notes.json"` with the `ASC_*` secrets. No `needs` between the two. The header comment says what each track means on each store.
+- [x] **Step 2: README → Promote:** per track, Play vs iOS; production on iOS goes live after Apple's review (hours to days), automatically; the GitHub release turns final at Play production; by hand once: the "External testers" group and Pricing and Availability (free).
+- [x] **Step 3: Check:** `ruby -ryaml -e 'YAML.load_file(".github/workflows/promote.yaml")'`; `flutter analyze`; `flutter test test/store_listing_test.dart`. Commit: `ci(release): promote iOS builds with Play`.
 
 ### Task 3: Ship
 

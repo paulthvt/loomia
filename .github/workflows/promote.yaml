@@ -1,11 +1,15 @@
-# Promote — ship a build already on Play internal testing to a wider track.
+# Promote — ship a release's builds, already with internal testers, further.
 #
-# No rebuild: the exact AAB testers had moves to the target track. Reaching
-# production also makes the web version live and turns the GitHub pre-release
-# into the latest release.
+# No rebuild: the exact AAB and IPA testers had move on. Two jobs that fail
+# independently:
+#   play  alpha/beta/production tracks; production also makes the web version
+#         live and turns the GitHub pre-release into the latest release.
+#   ios   alpha/beta: the "External testers" TestFlight group (Beta App Review
+#         on a version's first build). production: App Store review, live by
+#         itself once approved, hours to days after Play.
 #
-# Promote only from here, never from the Play Console, or GitHub pre-release
-# flags stop matching what users actually get.
+# Promote only from here, never from the Play Console or App Store Connect,
+# or GitHub pre-release flags stop matching what users actually get.
 #
 #   gh workflow run Promote -f tag=v2026.10.1 -f track=alpha
 name: Promote
@@ -17,7 +21,7 @@ on:
         description: Release tag already on internal testing, e.g. v2026.10.1
         required: true
       track:
-        description: Target Play track
+        description: Target track (Play track; on iOS alpha/beta = external TestFlight)
         required: true
         type: choice
         # alpha = closed testing. Production needs it first on a personal
@@ -32,7 +36,47 @@ permissions:
   contents: write
 
 jobs:
-  promote:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      ASC_DEMO_USER: ${{ secrets.ASC_DEMO_USER }}
+      ASC_DEMO_PASSWORD: ${{ secrets.ASC_DEMO_PASSWORD }}
+      ASC_REVIEW_PHONE: ${{ secrets.ASC_REVIEW_PHONE }}
+    steps:
+      # The lane and the listing text on main; the build is the tag's.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          working-directory: ios
+          bundler-cache: true
+
+      # TestFlight's "What to Test" and the App Store's What's New.
+      - name: Fetch the release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx release-notes.json; then
+            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p release-notes.json
+          fi
+
+      # Fails when the tag's build isn't on TestFlight, or production was
+      # already submitted.
+      - name: Move the build on the App Store
+        working-directory: ios
+        env:
+          TAG: ${{ inputs.tag }}
+          TRACK: ${{ inputs.track }}
+        run: >-
+          bundle exec fastlane promote tag:"$TAG" track:"$TRACK"
+          notes:"$GITHUB_WORKSPACE/release-notes.json"
+
+  play:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
