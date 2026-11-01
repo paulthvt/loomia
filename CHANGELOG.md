@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2026.11.3](https://github.com/paulthvt/loomia/compare/v2026.11.2...v2026.11.3) (2026-11-01)
+
+### ✨ Features
+
+- **sharing:** push switch on with Copy link, bells, Saved state for About me (#441) ([e9dbddf](https://github.com/paulthvt/loomia/commit/e9dbddfece993e3e764798308bd8ce4c3a806a10))
+
+### 🔧 Miscellaneous
+
+- **store:** the App Store name is LoomiaApp (#437) ([edd0508](https://github.com/paulthvt/loomia/commit/edd0508b73d23006d004943d887c1a659a49b914))
+
 ## [v2026.11.2](https://github.com/paulthvt/loomia/compare/v2026.11.1...v2026.11.2) (2026-11-01)
 
 ### 🐛 Bug Fixes
