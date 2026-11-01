@@ -170,9 +170,15 @@ class TagAction extends StatelessWidget {
             color: ink,
           ),
           if (empty)
-            Text(
-              l10n.tagsAdd,
-              style: AppTypography.caption.copyWith(color: ink),
+            // Like TagChip's label: a narrow column (French, 10" tablet)
+            // shortens it rather than overflowing.
+            Flexible(
+              child: Text(
+                l10n.tagsAdd,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.caption.copyWith(color: ink),
+              ),
             ),
         ],
       ),
