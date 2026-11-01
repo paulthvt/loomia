@@ -86,9 +86,11 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   : () => _continueWith(
                       ref.read(authRepositoryProvider).signInWithApple,
                     ),
-              // Apple's left-aligned logo carries its own padding and is
-              // drawn 44 high, its size for a 44-48 button: theirs, not ours.
-              icon: Image.asset('assets/images/apple_logo.png', height: 44),
+              // Apple's black logo, trimmed to the glyph on a transparent
+              // background: the file Apple ships is a white tile with its own
+              // padding, which covered the button's outline. Sized like the
+              // Google mark beside it; both buttons are white in every theme.
+              icon: Image.asset('assets/images/apple_logo.png', height: 20),
               label: Text(l10n.authContinueWithApple),
             ),
             FilledButton(

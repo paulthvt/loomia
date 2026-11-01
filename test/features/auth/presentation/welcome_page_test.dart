@@ -120,6 +120,39 @@ void main() {
     }
   });
 
+  testWidgets('the Apple logo sits inside its button, like the Google mark', (
+    tester,
+  ) async {
+    addTearDown(tester.view.reset);
+    // Phone, tablet, desktop; then large text on a phone.
+    for (final (width, scale) in [
+      (360.0, 1.0),
+      (800.0, 1.0),
+      (1440.0, 1.0),
+      (360.0, 2.0),
+    ]) {
+      tester.view
+        ..physicalSize = Size(width, 900)
+        ..devicePixelRatio = 1;
+      await tester.pumpWidget(_host(FakeAuthRepository(), textScale: scale));
+      await tester.pumpAndSettle();
+
+      final button = tester.getRect(_button('Continue with Apple'));
+      final logo = tester.getRect(
+        find.image(const AssetImage('assets/images/apple_logo.png')),
+      );
+      final google = tester.getRect(
+        find.image(const AssetImage('assets/images/google_g.png')),
+      );
+      final at = 'width $width, text ×$scale';
+      // Clear of the outline by at least 8 on top and bottom.
+      expect(logo.top - button.top, greaterThanOrEqualTo(8), reason: at);
+      expect(button.bottom - logo.bottom, greaterThanOrEqualTo(8), reason: at);
+      expect(logo.height, lessThanOrEqualTo(google.height + 4), reason: at);
+      expect(logo.center.dy, moreOrLessEquals(button.center.dy, epsilon: 1));
+    }
+  });
+
   testWidgets('Google calls the repository once', (tester) async {
     final fake = FakeAuthRepository();
     await tester.pumpWidget(_host(fake));
