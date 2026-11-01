@@ -7,6 +7,8 @@
 "push_ritual_plan_title_fr" = "Prépare %1$@";
 "push_ritual_title_en" = "Close %1$@, plan %2$@";
 "push_ritual_title_fr" = "Clôture %1$@, prépare %2$@";
+"push_share_accepted_en" = "%1$@ now shares their goals with you";
+"push_share_accepted_fr" = "%1$@ now shares their goals with you";
 "push_summary_body_one_en" = "One person is worth a message today";
 "push_summary_body_one_fr" = "Une personne mérite un message aujourd’hui";
 "push_summary_body_other_en" = "%1$@ people are worth a message today";

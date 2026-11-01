@@ -2113,6 +2113,11 @@
   },
   "pushRitualPlanBody": "Pick a few numbers before the month starts.",
   "@pushRitualPlanBody": { "description": "Under the card's title, and the month-end push body, when only next month's plan is left." },
+  "pushShareAccepted": "{name} now shares their goals with you",
+  "@pushShareAccepted": {
+    "description": "Push to the person who sent an invite to share goals, once it is accepted. {name} is the contact as they wrote it on their card. Tapping it opens that contact.",
+    "placeholders": { "name": { "type": "String" } }
+  },
   "ritualStart": "Start",
   "@ritualStart": { "description": "Button of the close-and-plan card; opens the flow." },
   "ritualDrafted": "{month}'s plan is drafted. Change it before the 1st.",

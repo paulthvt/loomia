@@ -9,6 +9,8 @@
     <string name="push_ritual_plan_title_fr">Prépare %1$s</string>
     <string name="push_ritual_title_en">Close %1$s, plan %2$s</string>
     <string name="push_ritual_title_fr">Clôture %1$s, prépare %2$s</string>
+    <string name="push_share_accepted_en">%1$s now shares their goals with you</string>
+    <string name="push_share_accepted_fr">%1$s now shares their goals with you</string>
     <string name="push_summary_body_one_en">One person is worth a message today</string>
     <string name="push_summary_body_one_fr">Une personne mérite un message aujourd’hui</string>
     <string name="push_summary_body_other_en">%1$s people are worth a message today</string>
