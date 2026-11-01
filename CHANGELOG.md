@@ -1,5 +1,33 @@
 # Changelog
 
+## [v2026.11.1](https://github.com/paulthvt/loomia/compare/v2026.10.8...v2026.11.1) (2026-11-01)
+
+### ✨ Features
+
+- **sharing:** tell me when an invite is accepted (#424) ([6f8c82b](https://github.com/paulthvt/loomia/commit/6f8c82bbddea71212aec6600d1a37fa047237bfc))
+- **sharing:** share goals with the person mentoring you (#419) ([e03dac0](https://github.com/paulthvt/loomia/commit/e03dac04947baf7f4733f7e7c86398c091c121fe))
+
+### 🐛 Bug Fixes
+
+- **auth:** keep the Apple logo inside its button (#433) ([611599d](https://github.com/paulthvt/loomia/commit/611599dc463716da45757d43fac88140f0592e06))
+
+### 📚 Documentation
+
+- deploy Edge Functions from an up-to-date main (#426) ([a90e752](https://github.com/paulthvt/loomia/commit/a90e752ba0ab28f18b176ab548a89cdd7e69a8fc))
+- **site:** spec and plan for the marketing site (#417) ([e642cf9](https://github.com/paulthvt/loomia/commit/e642cf9a5ed7917b93112afe04fe7b93515ad13d))
+
+### 🔄 CI/CD
+
+- **android:** upload and promote Play builds with fastlane (#410) ([0b6f37c](https://github.com/paulthvt/loomia/commit/0b6f37c807567ae44cab409e9ae895d3d04585ec))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#422) ([0a30f2f](https://github.com/paulthvt/loomia/commit/0a30f2f7fa22cb6b466a51de657ae45e2b7228be))
+- **store:** App Store listing, privacy labels and screenshots (#429) ([364e793](https://github.com/paulthvt/loomia/commit/364e7933969a155fa4777697083073244bca6aea))
+- **web:** drop loomia.thevenot.me from the Worker (#414) ([293ac1e](https://github.com/paulthvt/loomia/commit/293ac1e24e0aa48a370b316e65304a039a33ca4e))
+- **l10n:** sync translations (#416) ([f1530d9](https://github.com/paulthvt/loomia/commit/f1530d980aa2aec7bc33ebe80a248bcc3972249d))
+- **web:** move the web app to app.getloomia.app (#411) ([b884986](https://github.com/paulthvt/loomia/commit/b884986004fcfe13660baee085f89c8bad73714d))
+
 ## [v2026.10.8](https://github.com/paulthvt/loomia/compare/v2026.10.7...v2026.10.8) (2026-10-29)
 
 ### ✨ Features
