@@ -1,5 +1,11 @@
 # Changelog
 
+## [v2026.11.2](https://github.com/paulthvt/loomia/compare/v2026.11.1...v2026.11.2) (2026-11-01)
+
+### 🐛 Bug Fixes
+
+- **contacts:** shorten "Add tag" instead of overflowing (#435) ([cf32716](https://github.com/paulthvt/loomia/commit/cf3271614bab5b2f2eb2d10969250b0c65da000d))
+
 ## [v2026.11.1](https://github.com/paulthvt/loomia/compare/v2026.10.8...v2026.11.1) (2026-11-01)
 
 ### ✨ Features
