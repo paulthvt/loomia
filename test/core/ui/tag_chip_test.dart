@@ -70,6 +70,33 @@ void main() {
     );
   });
 
+  testWidgets('"Add tag" fits a narrow column in French', (tester) async {
+    // The 10" tablet contact page leaves ~94 for it; "Ajouter un tag" is wider.
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('fr'),
+        localizationsDelegates: localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 80,
+              child: Row(
+                children: [
+                  Flexible(child: TagAction(empty: true, onTap: () {})),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Ajouter un tag'), findsOneWidget);
+  });
+
   testWidgets('five tags: three dots, +2, every name read out', (tester) async {
     final handle = tester.ensureSemantics();
     await _pump(
