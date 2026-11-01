@@ -66,6 +66,15 @@ void main() {
     );
   });
 
+  testWidgets('every push switch has the bell, as on a task (#439)', (
+    tester,
+  ) async {
+    await open(tester, notifications: FakeNotificationsRepository());
+    // Nothing saved: only Tasks is on.
+    expect(find.byIcon(Icons.notifications_active_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.notifications_off_outlined), findsNWidgets(3));
+  });
+
   testWidgets('turning it on asks the phone and saves', (tester) async {
     final push = FakePush();
     final notifications = FakeNotificationsRepository();
@@ -137,6 +146,8 @@ void main() {
       findsOneWidget,
     );
 
+    await tester.ensureVisible(find.text('Allow notifications'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Allow notifications'));
     await tester.pumpAndSettle();
     expect(push.asked, 1);

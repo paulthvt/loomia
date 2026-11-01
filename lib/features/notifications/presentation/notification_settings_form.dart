@@ -7,6 +7,7 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/notifications/domain/notification_settings.dart';
+import 'package:loomia/features/notifications/presentation/push_bell.dart';
 import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -81,6 +82,7 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsSummary),
               subtitle: Text(l10n.notificationsSummaryBody),
+              secondary: pushBell(on: settings.enabled),
               value: settings.enabled,
               onChanged: (value) =>
                   turn(settings.copyWith(enabled: value), value: value),
@@ -88,6 +90,7 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsRitual),
               subtitle: Text(l10n.notificationsRitualBody),
+              secondary: pushBell(on: settings.ritual),
               value: settings.ritual,
               onChanged: (value) =>
                   turn(settings.copyWith(ritual: value), value: value),
@@ -95,6 +98,7 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsTasks),
               subtitle: Text(l10n.notificationsTasksBody),
+              secondary: pushBell(on: settings.tasks),
               value: settings.tasks,
               onChanged: (value) =>
                   turn(settings.copyWith(tasks: value), value: value),
@@ -102,6 +106,7 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsSharing),
               subtitle: Text(l10n.notificationsSharingBody),
+              secondary: pushBell(on: settings.sharing),
               value: settings.sharing,
               onChanged: (value) =>
                   turn(settings.copyWith(sharing: value), value: value),
