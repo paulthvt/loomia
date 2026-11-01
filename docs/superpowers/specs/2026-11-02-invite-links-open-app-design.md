@@ -48,7 +48,8 @@ it keeps opening the web page, as today.
   can't see anything after `#`.
 - **Hosting is already ready.** `wrangler.jsonc` serves `index.html` for any
   unknown path (`not_found_handling: "single-page-application"`).
-- **Old links.** Before the router starts, the web app checks whether the
+- **Old links.** At the very start of `main`, before
+  `Supabase.initialize` reads the URL and before the router starts, the web app checks whether the
   URL has a `#` fragment that starts with `/`. If so, it replaces the URL
   with that path, using `replaceState` so that Back doesn't return to it.
   That covers `/#/invite/X` and any other old bookmark.
@@ -63,10 +64,13 @@ it keeps opening the web page, as today.
 
 ### Android App Links
 
-- `web/.well-known/assetlinks.json` declares the package `app.loomia` and the
-  **SHA-256 fingerprint of the Play app signing key** (from Play Console →
-  App integrity), plus the upload key's fingerprint so that debug and
-  sideloaded builds verify too.
+- `web/.well-known/assetlinks.json` declares the package `app.loomia` and two
+  SHA-256 fingerprints, both given by the user (Play Console → Protected
+  with Play → Play Store protection → Play App Signing):
+  - the Play app signing key:
+    `E3:B6:39:FC:A3:7E:09:E3:4F:82:44:22:A4:15:75:B0:91:E4:63:88:C8:FA:87:A1:6F:F2:BB:09:61:B2:6D:07`
+  - the upload key, so that sideloaded builds verify too:
+    `13:40:11:27:F6:6D:08:DA:E8:91:C7:62:AE:32:11:9F:80:F8:25:57:86:9D:4C:CF:31:D0:CD:BD:F4:A6:BA:1D`
 - `AndroidManifest.xml` gets a new intent filter on the main activity:
   `android:autoVerify="true"`, `VIEW`, `DEFAULT` and `BROWSABLE`, with
   `https`, host `app.getloomia.app` and `pathPrefix="/invite/"`.
@@ -112,8 +116,14 @@ it keeps opening the web page, as today.
 - **Check on the preview URL:**
   - `https://<preview>/.well-known/assetlinks.json` returns the JSON;
   - `apple-app-site-association` returns it with `application/json`.
-- **Live.** Both files only go live on `app.getloomia.app` with the next
-  promote to production. Universal and App Links are only verified against
+- **Live, without releasing the mobile apps** (the user doesn't want the
+  stores live yet). Android and iOS read the files from the link's own
+  domain, so a preview URL can't stand in. `promote.yaml` gains a
+  **`web`** choice for `track`. With it, the workflow makes that tag's web
+  version live on `app.getloomia.app` and skips the Play move and the
+  "mark final" step; `alpha`, `beta` and `production` behave as before.
+  After merge and release, the user runs
+  `gh workflow run Promote -f tag=<tag> -f track=web`. Universal and App Links are only verified against
   the live domain. On Android, verification runs at install and update. On
   iOS, through Apple's CDN, which can lag for hours.
 
@@ -142,9 +152,9 @@ it keeps opening the web page, as today.
 
 ## Needs from the user
 
-1. The SHA-256 fingerprints: the Play **app signing** key, and the upload key
-   (Play Console → Test and release → App integrity → App signing).
+1. ~~The SHA-256 fingerprints~~: given, see Android App Links.
 2. Associated Domains turned on for `app.loomia`, a regenerated distribution
    profile, and the CI secret updated.
-3. After merge, a promote to production (or a web-only promote, if that
-   gets added) so the files are live on `app.getloomia.app`.
+3. After merge and release, a web-only promote
+   (`gh workflow run Promote -f tag=<tag> -f track=web`) so the files are
+   live on `app.getloomia.app`.
