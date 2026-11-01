@@ -9,6 +9,7 @@ import {
   type Job,
   type Kind,
   ritualJob,
+  shareAcceptedJob,
   summaryJob,
   taskJob,
 } from './handler.ts'
@@ -17,6 +18,8 @@ import {
   type Outcome,
   outcome,
   ritualMessage,
+  type ShareClaim,
+  shareAcceptedMessage,
   summaryMessage,
   type TaskClaim,
   taskMessage,
@@ -420,4 +423,63 @@ Deno.test('an old app with only tasks due gets no summary, and the day is kept',
   eq(sends, 0)
   eq(calls.release, [])
   eq(result.sent, 0)
+})
+
+const accepted: ShareClaim = {
+  owner_id: 'A',
+  link_id: 'link-1',
+  person_id: 'p1',
+  name: 'Julie',
+  notified_at: '2026-11-01T10:00:00+00:00',
+}
+
+Deno.test('an accepted invite names the contact by key, and opens it', () => {
+  const m = shareAcceptedMessage('t', 'fr', accepted).message
+  eq(m.android.notification, {
+    body_loc_key: 'push_share_accepted_fr',
+    body_loc_args: ['Julie'],
+  })
+  eq(m.apns.payload.aps.alert, {
+    'loc-key': 'push_share_accepted_fr',
+    'loc-args': ['Julie'],
+  })
+  eq(m.data, { type: 'share_accepted', person: 'p1' })
+})
+
+Deno.test('accepted invites: only to apps that list them; a retry hands back that claim', async () => {
+  const released: string[] = []
+  const sent: string[] = []
+  const job = shareAcceptedJob(
+    () => Promise.resolve([accepted]),
+    (link, at) => {
+      released.push(`${link} ${at}`)
+      return Promise.resolve()
+    },
+  )
+  const deps: Deps = {
+    devicesOf: () =>
+      Promise.resolve([
+        {
+          owner_id: 'A',
+          token: 'old',
+          locale: 'en',
+          push_kinds: [...both, 'task_alert'],
+        },
+        {
+          owner_id: 'A',
+          token: 'new',
+          locale: 'en',
+          push_kinds: [...both, 'share_accepted'],
+        },
+      ]),
+    drop: () => Promise.resolve(),
+    send: (m) => {
+      sent.push(m.message.token)
+      return Promise.resolve('retry')
+    },
+  }
+  const result = await handle(deps, job)
+  eq(sent, ['new'])
+  eq(released, ['link-1 2026-11-01T10:00:00+00:00'])
+  eq(result.released, 1)
 })

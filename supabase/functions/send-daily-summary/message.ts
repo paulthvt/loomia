@@ -184,3 +184,36 @@ export function outcome(status: number, body: unknown): Outcome {
   )
   return badToken ? 'drop' : 'failed'
 }
+
+/** claim_share_accepted(): an invite its sender hears about (#423). */
+export type ShareClaim = {
+  owner_id: string
+  link_id: string
+  person_id: string
+  /** The contact as the sender wrote it on their card. */
+  name: string
+  notified_at: string
+}
+
+/**
+ * An accepted invite: a loc key with the sender's own name for the contact,
+ * never the member's account name. A tap opens that contact.
+ */
+export function shareAcceptedMessage(
+  token: string,
+  locale: string,
+  claim: ShareClaim,
+) {
+  const key = `push_share_accepted_${locale}`
+  const args = [claim.name]
+  return {
+    message: {
+      token,
+      data: { type: 'share_accepted', person: claim.person_id },
+      android: { notification: { body_loc_key: key, body_loc_args: args } },
+      apns: {
+        payload: { aps: { alert: { 'loc-key': key, 'loc-args': args } } },
+      },
+    },
+  }
+}
