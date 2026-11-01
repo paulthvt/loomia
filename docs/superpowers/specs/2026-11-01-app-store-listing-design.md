@@ -34,7 +34,7 @@ deciding it; a workflow that needs Paul's Apple ID or Mac.
 | Text source | Written fresh from the site's copy (getloomia.app), not from the Play listing, which stays in Play Console. |
 | Category | Business; secondary Productivity (`BUSINESS`, `PRODUCTIVITY`, the identifiers `deliver` expects). |
 | Age rating | Every content question "none", no unrestricted web access, no gambling, no user-generated content shared with others: 4+. `ios/fastlane/rating_config.json`. |
-| Review notes | Contact first name (Paul), last name (Thevenot) and email (`hello@getloomia.app`), demo account email, and how to reach the sample data, in `review_information/`. The demo password is the secret `ASC_DEMO_PASSWORD`, the contact phone `ASC_REVIEW_PHONE` (the repo is public). |
+| Review notes | Contact first name (Paul), last name (Thevenot) and email (`hello@getloomia.app`), demo account email, and how to reach the sample data, in `review_information/`. The demo account email and password are the secrets `ASC_DEMO_USER` and `ASC_DEMO_PASSWORD`, the contact phone `ASC_REVIEW_PHONE` (the repo is public). |
 | App Privacy labels | By hand in App Store Connect, once, from "App Privacy" below. fastlane's upload for them needs an Apple ID session, not the API key. |
 | iPad | The app ships on iPad (`TARGETED_DEVICE_FAMILY = "1,2"`), so Apple requires iPad screenshots. |
 | Screenshots | Two new devices in `test/store_screenshots_test.dart`: `iphone-6.9` (440×956 @3x = 1320×2868, bottom bar) and `ipad-13` (1032×1376 @2x = 2064×2752, tablet layout). Same four screens, every app language. Apple scales them down for the smaller devices. |
@@ -91,7 +91,7 @@ in Apple's sense). Revisit with #105 (purchases) and #114.
 
 `.github/workflows/store-listing.yaml`, `workflow_dispatch` with one input, `tag`
 (required), `macos-latest`, the existing secrets
-`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, plus `ASC_DEMO_PASSWORD` and
+`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, plus `ASC_DEMO_USER`, `ASC_DEMO_PASSWORD` and
 `ASC_REVIEW_PHONE`. Steps: check out `main` (the listing's current text, which
 can change without a release), download the tag's `store-screenshots.zip`,
 `bundle exec fastlane upload_listing screenshots:<dir>`. The lane calls `deliver` with
@@ -103,7 +103,7 @@ README → Releases → iOS gains the command and when to run it.
 ## By hand, once
 
 1. App Privacy answers (above) in App Store Connect.
-2. `gh secret set ASC_DEMO_PASSWORD` and `ASC_REVIEW_PHONE`.
+2. `gh secret set` for `ASC_DEMO_USER`, `ASC_DEMO_PASSWORD` and `ASC_REVIEW_PHONE`.
 3. Run the workflow on the latest tag, then check the listing in App Store
    Connect.
 
