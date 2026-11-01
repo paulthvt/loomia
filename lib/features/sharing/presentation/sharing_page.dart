@@ -46,6 +46,12 @@ class _SharingPageState extends ConsumerState<SharingPage> {
   bool _aboutMeBusy = false;
   bool _aboutMeInitialized = false;
 
+  /// What the server has: Save waits for a change from it (#439).
+  AboutMe _aboutMeSaved = const AboutMe();
+
+  /// Just saved, nothing typed since: the button says so.
+  bool _aboutMeJustSaved = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,11 +64,34 @@ class _SharingPageState extends ConsumerState<SharingPage> {
         next.whenData((data) {
           if (data.why != null) _whyController.text = data.why!;
           if (data.ownGoal != null) _ownGoalController.text = data.ownGoal!;
+          _aboutMeSaved = data;
           _aboutMeInitialized = true;
         });
       }
     });
+    _whyController.addListener(_aboutMeEdited);
+    _ownGoalController.addListener(_aboutMeEdited);
   }
+
+  /// The fields as they would be saved: trimmed, blank as null.
+  AboutMe get _aboutMeTyped {
+    String? text(TextEditingController c) =>
+        c.text.trim().isEmpty ? null : c.text.trim();
+    return AboutMe(
+      why: text(_whyController),
+      ownGoal: text(_ownGoalController),
+    );
+  }
+
+  bool get _aboutMeChanged {
+    final typed = _aboutMeTyped;
+    return typed.why != _aboutMeSaved.why ||
+        typed.ownGoal != _aboutMeSaved.ownGoal;
+  }
+
+  void _aboutMeEdited() => setState(() {
+    if (_aboutMeChanged) _aboutMeJustSaved = false;
+  });
 
   @override
   void dispose() {
@@ -75,20 +104,17 @@ class _SharingPageState extends ConsumerState<SharingPage> {
     if (_aboutMeBusy) return;
     setState(() => _aboutMeBusy = true);
 
-    final aboutMe = AboutMe(
-      why: _whyController.text.trim().isEmpty
-          ? null
-          : _whyController.text.trim(),
-      ownGoal: _ownGoalController.text.trim().isEmpty
-          ? null
-          : _ownGoalController.text.trim(),
-    );
+    final aboutMe = _aboutMeTyped;
 
     try {
       await ref.read(sharingRepositoryProvider).saveAboutMe(aboutMe);
       if (mounted) {
         ref.invalidate(aboutMeProvider);
-        setState(() => _aboutMeBusy = false);
+        setState(() {
+          _aboutMeBusy = false;
+          _aboutMeSaved = aboutMe;
+          _aboutMeJustSaved = true;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -189,11 +215,22 @@ class _SharingPageState extends ConsumerState<SharingPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     FilledButton(
-                      onPressed: _aboutMeBusy ? null : _saveAboutMe,
+                      onPressed: _aboutMeBusy || !_aboutMeChanged
+                          ? null
+                          : _saveAboutMe,
                       child: _aboutMeBusy
                           ? const SizedBox.square(
                               dimension: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : _aboutMeJustSaved && !_aboutMeChanged
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: AppSpacing.xs,
+                              children: [
+                                const Icon(Icons.check_rounded),
+                                Text(l10n.sharingAboutMeSaved),
+                              ],
                             )
                           : Text(
                               MaterialLocalizations.of(context).saveButtonLabel,

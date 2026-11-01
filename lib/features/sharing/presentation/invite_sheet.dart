@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/router/routes.dart';
@@ -10,6 +12,7 @@ import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/notifications/data/push.dart';
 import 'package:loomia/features/notifications/domain/notification_settings.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
+import 'package:loomia/features/notifications/presentation/push_bell.dart';
 import 'package:loomia/features/sharing/data/sharing_repository.dart';
 import 'package:loomia/features/sharing/domain/invite_code.dart';
 import 'package:loomia/features/sharing/presentation/contact_sharing_controller.dart';
@@ -47,6 +50,11 @@ class _InviteSheet extends ConsumerStatefulWidget {
 }
 
 class _InviteSheetState extends ConsumerState<_InviteSheet> {
+  /// "Tell me when they accept" (#423, #439): on until switched off.
+  bool _tellMe = true;
+  bool _tellMeRefused = false;
+  PeopleFailure? _tellMeFailure;
+
   Invite? _invite;
   bool _loading = true;
   bool _canceling = false;
@@ -93,6 +101,46 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
     }
   }
 
+  /// On a phone, while the Sharing push is off.
+  bool get _offerTellMe {
+    final phone = ref.read(pushAvailableProvider).value ?? false;
+    final settings = ref.read(notificationSettingsProvider(_owner));
+    return phone && settings.hasValue && settings.value?.sharing != true;
+  }
+
+  String? get _owner => ref.read(accountProvider)?.email;
+
+  /// Saved only once the phone allows it; refused, the switch goes off.
+  Future<void> _turnOnSharingPush() async {
+    setState(() {
+      _tellMeRefused = false;
+      _tellMeFailure = null;
+    });
+    final allowed = await ref.read(pushProvider).ask();
+    if (!mounted) return;
+    if (!allowed) {
+      setState(() {
+        _tellMe = false;
+        _tellMeRefused = true;
+      });
+      return;
+    }
+    final zone = await ref.read(deviceTimeZoneProvider.future) ?? 'UTC';
+    final provider = notificationSettingsProvider(_owner);
+    final current = ref.read(provider).value;
+    try {
+      await ref
+          .read(provider.notifier)
+          .save(
+            (current ?? NotificationSettings(timeZone: zone)).copyWith(
+              sharing: true,
+            ),
+          );
+    } on PeopleFailure catch (failure) {
+      if (mounted) setState(() => _tellMeFailure = failure);
+    }
+  }
+
   Future<void> _copyLink() async {
     final invite = _invite;
     if (invite == null) return;
@@ -100,6 +148,7 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
     await Clipboard.setData(
       ClipboardData(text: 'https://${_inviteLink(invite.code)}'),
     );
+    if (_tellMe && _offerTellMe) unawaited(_turnOnSharingPush());
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -172,6 +221,12 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
     }
 
     final code = formatCode(invite.code);
+    final phone = ref.watch(pushAvailableProvider).value ?? false;
+    final settings = ref.watch(
+      notificationSettingsProvider(ref.watch(accountProvider)?.email),
+    );
+    final offerTellMe =
+        phone && settings.hasValue && settings.value?.sharing != true;
 
     return LoomiaDialog(
       title: l10n.inviteSheetTitle(widget.name),
@@ -194,7 +249,17 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
           Text(code, style: Theme.of(context).textTheme.displaySmall),
           Text(_inviteLink(invite.code)),
           Text(l10n.inviteSheetBody(widget.name)),
-          _TellMe(name: widget.name),
+          if (offerTellMe)
+            _TellMe(
+              name: widget.name,
+              wanted: _tellMe,
+              onChanged: (value) => setState(() {
+                _tellMe = value;
+                _tellMeRefused = false;
+              }),
+              refused: _tellMeRefused,
+              failure: _tellMeFailure,
+            ),
         ],
       ),
     );
@@ -202,70 +267,40 @@ class _InviteSheetState extends ConsumerState<_InviteSheet> {
 }
 
 /// The Sharing push, offered when it matters (#423): on a phone, while it is
-/// off. Saved only once the phone allows it; the setting itself lives in
-/// Settings → Notifications.
-class _TellMe extends ConsumerStatefulWidget {
-  const _TellMe({required this.name});
+/// off. On until they say otherwise (#439); Copy link is what turns it on,
+/// through the phone's prompt. The setting itself lives in Settings →
+/// Notifications.
+class _TellMe extends StatelessWidget {
+  const _TellMe({
+    required this.name,
+    required this.wanted,
+    required this.onChanged,
+    required this.refused,
+    this.failure,
+  });
 
   final String name;
-
-  @override
-  ConsumerState<_TellMe> createState() => _TellMeState();
-}
-
-class _TellMeState extends ConsumerState<_TellMe> {
-  bool _refused = false;
-  PeopleFailure? _failure;
-
-  Future<void> _turnOn(NotificationSettings? current) async {
-    setState(() {
-      _refused = false;
-      _failure = null;
-    });
-    final allowed = await ref.read(pushProvider).ask();
-    if (!mounted) return;
-    if (!allowed) {
-      setState(() => _refused = true);
-      return;
-    }
-    final zone = await ref.read(deviceTimeZoneProvider.future) ?? 'UTC';
-    final owner = ref.read(accountProvider)?.email;
-    try {
-      await ref
-          .read(notificationSettingsProvider(owner).notifier)
-          .save(
-            (current ?? NotificationSettings(timeZone: zone)).copyWith(
-              sharing: true,
-            ),
-          );
-    } on PeopleFailure catch (failure) {
-      if (mounted) setState(() => _failure = failure);
-    }
-  }
+  final bool wanted;
+  final ValueChanged<bool> onChanged;
+  final bool refused;
+  final PeopleFailure? failure;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final phone = ref.watch(pushAvailableProvider).value ?? false;
-    final owner = ref.watch(accountProvider)?.email;
-    final settings = ref.watch(notificationSettingsProvider(owner));
-    if (!phone || !settings.hasValue || settings.value?.sharing == true) {
-      return const SizedBox.shrink();
-    }
-    final failure = _failure;
+    final failure = this.failure;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text(l10n.inviteNotifyMe(widget.name)),
-          value: false,
-          onChanged: (value) {
-            if (value) _turnOn(settings.value);
-          },
+          secondary: pushBell(on: wanted),
+          title: Text(l10n.inviteNotifyMe(name)),
+          value: wanted,
+          onChanged: onChanged,
         ),
-        if (_refused) Text(l10n.notificationsPermissionOff),
+        if (refused) Text(l10n.notificationsPermissionOff),
         if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
       ],
     );

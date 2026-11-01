@@ -3400,6 +3400,8 @@
   "@sharingAboutMeCaption": {"description": "Caption under the About me section header."},
   "sharingWhyLabel": "Why you do this",
   "@sharingWhyLabel": {"description": "Label for the why text field in About me."},
+  "sharingAboutMeSaved": "Saved",
+  "@sharingAboutMeSaved": { "description": "About me Save button, right after a save and until the next edit (#439)." },
   "sharingOwnGoalLabel": "Your own goal",
   "@sharingOwnGoalLabel": {"description": "Label for the own goal text field in About me."},
   "inviteLinkSignedOutBody": "Sign in or create your account, then enter this code.",
