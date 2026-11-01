@@ -99,6 +99,13 @@ class NotificationSettingsForm extends StatelessWidget {
               onChanged: (value) =>
                   turn(settings.copyWith(tasks: value), value: value),
             ),
+            SwitchListTile(
+              title: Text(l10n.notificationsSharing),
+              subtitle: Text(l10n.notificationsSharingBody),
+              value: settings.sharing,
+              onChanged: (value) =>
+                  turn(settings.copyWith(sharing: value), value: value),
+            ),
           ],
         ),
         if (settings.pushes && allowed == false) ...[

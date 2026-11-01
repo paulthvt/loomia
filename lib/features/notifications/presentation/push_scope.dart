@@ -31,9 +31,12 @@ class _PushScopeState extends ConsumerState<PushScope> {
     super.initState();
     _opened = ref.read(pushProvider).opened.listen((data) {
       if (!mounted) return;
-      // A task's push opens its sheet (#377); every other one, Today.
+      // A task's push opens its sheet (#377), an accepted invite its contact
+      // (#423); every other one, Today.
       context.go(switch (data) {
         {'type': 'task', 'task': final String id} => Routes.todayTask(id),
+        {'type': 'share_accepted', 'person': final String id} =>
+          Routes.contactLocation(id),
         _ => Routes.today,
       });
     });

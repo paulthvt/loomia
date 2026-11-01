@@ -375,6 +375,7 @@ class _SettingsListState extends ConsumerState<_SettingsList>
                   .value) {
                 final s? when s.any => formatSummaryTime(context, s),
                 final s? when s.tasks => l10n.notificationsTasks,
+                final s? when s.sharing => l10n.notificationsSharing,
                 _ => l10n.notificationsOff,
               }),
               trailing: const Icon(Icons.chevron_right_rounded),

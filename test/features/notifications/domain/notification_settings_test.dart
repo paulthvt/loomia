@@ -28,6 +28,25 @@ void main() {
     expect(settings.pushes, isFalse);
   });
 
+  test('the Sharing switch: off by default, reads back, and asks for push', () {
+    const off = NotificationSettings(timeZone: 'Europe/Paris');
+    expect(off.sharing, isFalse);
+    expect(
+      NotificationSettings.fromRow(
+        {...off.toRow(), 'summary_time': '19:00:00'}..remove('sharing_enabled'),
+      ).sharing,
+      isFalse,
+    );
+    final on = off.copyWith(sharing: true, tasks: false);
+    expect(on.toRow()['sharing_enabled'], isTrue);
+    expect(
+      NotificationSettings.fromRow({...on.toRow(), 'summary_time': '19:00:00'}),
+      on,
+    );
+    expect(on == off.copyWith(tasks: false), isFalse);
+    expect(on.pushes, isTrue);
+  });
+
   test('a row reads back as it was saved', () {
     const settings = NotificationSettings(
       ritual: true,

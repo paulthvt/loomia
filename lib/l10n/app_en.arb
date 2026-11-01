@@ -3189,6 +3189,10 @@
   "@notificationsTasksBody": {
     "description": "Line under the Tasks switch, saying when a task push comes. The bell is the button beside a task's time that turns its push on or off."
   },
+  "notificationsSharing": "Sharing",
+  "@notificationsSharing": { "description": "Settings → Notifications switch: pushes about sharing goals (#423)." },
+  "notificationsSharingBody": "When someone accepts your invite to share their goals.",
+  "@notificationsSharingBody": { "description": "Under the Sharing switch in Settings → Notifications." },
   "planReminder": "Remind me when {month} ends",
   "@planReminder": {
     "description": "Switch on the planning screen: turns on the month-end push, which comes in the last days of month.",

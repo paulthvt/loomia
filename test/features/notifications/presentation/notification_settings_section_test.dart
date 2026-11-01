@@ -35,6 +35,21 @@ void main() {
   FilterChip chip(WidgetTester tester, int day) =>
       tester.widget<FilterChip>(find.byKey(ValueKey('day-$day')));
 
+  /// The page's own scroll, not the days' row.
+  final page = find.byWidgetPredicate(
+    (widget) =>
+        widget is Scrollable && widget.axisDirection == AxisDirection.down,
+  );
+
+  /// The days sit below the switches, off a phone's first screen.
+  Future<void> tapDay(WidgetTester tester, int day) async {
+    final finder = find.byKey(ValueKey('day-$day'));
+    // Built but below the fold: scroll the page, clamped at its end.
+    await tester.drag(page.first, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+  }
+
   testWidgets('nothing saved: off, the defaults, the device zone', (
     tester,
   ) async {
@@ -65,6 +80,20 @@ void main() {
       find.text("Notifications are off for Loomia in your phone's settings."),
       findsNothing,
     );
+  });
+
+  testWidgets('the Sharing switch asks the phone and saves (#423)', (
+    tester,
+  ) async {
+    final push = FakePush();
+    final notifications = FakeNotificationsRepository();
+    await open(tester, push: push, notifications: notifications);
+
+    await tester.scrollUntilVisible(find.text('Sharing'), 100);
+    await tester.tap(find.text('Sharing'));
+    await tester.pumpAndSettle();
+    expect(push.asked, 1);
+    expect(notifications.saved.single.sharing, isTrue);
   });
 
   testWidgets('refused by the phone: on, with the warning', (tester) async {
@@ -121,17 +150,17 @@ void main() {
     final notifications = FakeNotificationsRepository(on);
     await open(tester, notifications: notifications);
 
-    await tester.tap(find.byKey(const ValueKey('day-6')));
+    await tapDay(tester, 6);
     await tester.pumpAndSettle();
     expect(notifications.saved.last.days, {1, 2, 3, 4, 5, 6});
 
     for (final day in [1, 2, 3, 4, 5]) {
-      await tester.tap(find.byKey(ValueKey('day-$day')));
+      await tapDay(tester, day);
       await tester.pumpAndSettle();
     }
     expect(notifications.saved.last.days, {6});
     final saves = notifications.saved.length;
-    await tester.tap(find.byKey(const ValueKey('day-6')));
+    await tapDay(tester, 6);
     await tester.pumpAndSettle();
     expect(notifications.saved.length, saves, reason: 'nothing changed');
     expect(chip(tester, 6).selected, isTrue);
@@ -142,9 +171,12 @@ void main() {
     await open(tester, notifications: notifications);
 
     notifications.failure = PeopleFailure.network;
-    await tester.tap(find.byKey(const ValueKey('day-6')));
+    await tapDay(tester, 6);
     await tester.pumpAndSettle();
     expect(chip(tester, 6).selected, isFalse);
+    // Back to the top, where the form shows its error.
+    await tester.drag(page.first, const Offset(0, 1000));
+    await tester.pumpAndSettle();
     expect(find.textContaining('Check your connection'), findsOneWidget);
   });
 
@@ -281,6 +313,28 @@ void main() {
       container.read(routerProvider).go(Routes.settings);
       await tester.pumpAndSettle();
       expect(find.text('Tasks'), findsOneWidget);
+      expect(find.text('Off'), findsNothing);
+    });
+
+    testWidgets('the Settings row says Sharing when only sharing pushes', (
+      tester,
+    ) async {
+      final container = await pumpLoomia(
+        tester,
+        size: phone,
+        notifications: FakeNotificationsRepository(
+          tasksOnly.copyWith(tasks: false, sharing: true),
+        ),
+      );
+      container.read(routerProvider).go(Routes.settings);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.widgetWithText(ListTile, 'Notifications'),
+          matching: find.text('Sharing'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Off'), findsNothing);
     });
   });

@@ -128,6 +128,18 @@ void main() {
       expect(where(container), Routes.today);
     });
 
+    testWidgets('an accepted invite opens that contact (#423)', (tester) async {
+      final push = FakePush();
+      final container = await pumpLoomia(tester, size: phone, push: push);
+      container.read(routerProvider).go(Routes.goals);
+      await tester.pumpAndSettle();
+
+      push.tap({'type': 'share_accepted', 'person': 'p1'});
+      await tester.pumpAndSettle();
+
+      expect(where(container), Routes.contactLocation('p1'));
+    });
+
     testWidgets('the summary still opens Today', (tester) async {
       final push = FakePush();
       final container = await pumpLoomia(tester, size: phone, push: push);

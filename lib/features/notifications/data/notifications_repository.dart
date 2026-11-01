@@ -16,7 +16,8 @@ class NotificationsRepository {
     final row = await _client
         .from('notification_settings')
         .select(
-          'summary_enabled, ritual_enabled, task_enabled, summary_time, summary_days, '
+          'summary_enabled, ritual_enabled, task_enabled, sharing_enabled, '
+          'summary_time, summary_days, '
           'time_zone',
         )
         .maybeSingle();
