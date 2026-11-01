@@ -38,3 +38,6 @@ fastlane/README.md
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+
+# upload_listing copies a release's screenshots here (#398).
+fastlane/screenshots/

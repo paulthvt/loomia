@@ -26,10 +26,10 @@ Closes #
 
 <!--
 Delete if there is no migration. Otherwise:
-- `supabase db push` after merge: yes
-- Order: push before the app release (the new app needs the schema), or after
+- Pushed at merge by the Release workflow; Edge Function to deploy by hand: none / which
 - Released app: keeps working / breaks because … (then split the PR: add the
-  new beside the old now, remove the old once users have updated)
+  new beside the old now, remove the old once users have updated; only that
+  second PR gets the `breaking-migration` label)
 -->
 
 ## Checklist

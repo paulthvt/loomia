@@ -226,7 +226,8 @@ upload them by hand in Play Console → Store listing.
 Store screenshots show the whole app — navigation, account button — on a
 sample book, in every app language: `phone` (1080×1920), `tablet-7`
 (1200×1920) and `tablet-10` (2560×1600) for Play, `desktop` (2880×1800) for
-the web:
+the web, `iphone-6.9` (1320×2868) and `ipad-13` (2064×2752) for the App Store,
+uploaded by the Store listing workflow (Releases → iOS):
 
 ```bash
 flutter test test/store_screenshots_test.dart --dart-define=STORE_SCREENSHOTS=true
@@ -454,6 +455,31 @@ both (steps 2 and 3) and replace the three secrets; an expired one fails the
 `Signing` step and blocks no other platform. The first build of each version
 reaches internal testers once Apple has processed it, usually in a few
 minutes.
+
+#### Store listing
+
+The App Store listing lives in the repo: text in
+`ios/fastlane/metadata/<en-US|fr-FR>/`, review contact and notes in
+`metadata/review_information/`, categories and copyright beside them, the age
+rating in `ios/fastlane/rating_config.json`. `test/store_listing_test.dart`
+checks Apple's length limits, *tu* in French and the no-MLM wording on every
+PR. Edit the files, merge, then send them with a release's screenshots:
+
+```bash
+gh workflow run "Store listing" -f tag=<tag>
+```
+
+It edits the version App Store Connect has open ("Prepare for Submission"),
+and never uploads a build or submits for review. Run it after changing the
+listing, or after a release whose screenshots should replace the current ones.
+Secrets, once: `gh secret set` for `ASC_DEMO_USER` and `ASC_DEMO_PASSWORD`
+(the demo account the reviewer signs in with) and `ASC_REVIEW_PHONE` (the
+contact Apple calls). The repo is public, so none of them is a file.
+
+**App Privacy** ("nutrition labels") is answered by hand in App Store
+Connect: its API needs an Apple ID session, not the key. The answers are in
+`docs/superpowers/specs/2026-11-01-app-store-listing-design.md` → App
+Privacy; change them when a processor or a stored field changes.
 
 ## Tracking work
 

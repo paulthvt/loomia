@@ -5,6 +5,7 @@
 #   flutter build ipa ... --export-options-plist=build/ios/ExportOptions.plist
 #   bundle exec fastlane upload ipa:<path> changelog:<text>
 #   bundle exec fastlane apple_auth_secret key:<path.p8> key_id:<id>   # by hand, every 6 months
+#   bundle exec fastlane upload_listing screenshots:<dir> [dry_run:true]  # Store listing workflow
 #
 # Signing comes from secrets, not match or automatic signing: one team, one
 # app, one CI (docs/architecture.md → Releases). Local builds keep Xcode's
@@ -94,6 +95,61 @@ platform :ios do
     changelog = options[:changelog].to_s.strip
     params[:changelog] = changelog unless changelog.empty?
     upload_to_testflight(params)
+  end
+
+  # The App Store listing (#398): text in fastlane/metadata/, the age rating
+  # in rating_config.json, screenshots from a release's store-screenshots.zip
+  # (test/store_screenshots_test.dart). Edits whichever version App Store
+  # Connect has open for editing; never uploads a build, never submits (#399).
+  desc 'Upload the App Store listing. Options: screenshots (unzipped store-screenshots.zip), dry_run.'
+  lane :upload_listing do |options|
+    source = File.expand_path(options[:screenshots].to_s, File.expand_path('..', __dir__))
+    devices = %w[iphone-6.9 ipad-13]
+    locales = { 'en' => 'en-US', 'fr' => 'fr-FR' }
+    unless devices.any? { |device| Dir.exist?(File.join(source, device)) }
+      # overwrite_screenshots would otherwise delete the listing's current ones.
+      UI.user_error!("No App Store screenshots in this release: '#{source}' has no #{devices.join(' or ')}")
+    end
+
+    target = File.expand_path('screenshots', __dir__)
+    FileUtils.rm_rf(target)
+    devices.product(locales.keys).each do |device, lang|
+      Dir.glob(File.join(source, device, lang, '*.png')).sort.each do |png|
+        # deliver sorts by name and tells devices apart by size; the prefix
+        # keeps the two devices' "1_today.png" from colliding.
+        dest = File.join(target, locales[lang], "#{device}_#{File.basename(png)}")
+        FileUtils.mkdir_p(File.dirname(dest))
+        FileUtils.cp(png, dest)
+      end
+    end
+    copied = Dir.glob(File.join(target, '*', '*.png')).sort
+    copied.each { |png| UI.message(png.delete_prefix("#{target}/")) }
+    UI.success("#{copied.size} screenshots")
+    next if options[:dry_run]
+
+    api_key
+    app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
+    version = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
+    UI.user_error!('Create a version in App Store Connect first: none is open for editing') unless version
+
+    deliver(
+      app_version: version.version_string,
+      skip_binary_upload: true,
+      skip_app_version_update: true,
+      submit_for_review: false,
+      run_precheck_before_submit: false,
+      force: true,
+      metadata_path: File.expand_path('metadata', __dir__),
+      screenshots_path: target,
+      overwrite_screenshots: true,
+      app_rating_config_path: File.expand_path('rating_config.json', __dir__),
+      # The rest of the review details is in metadata/review_information/.
+      app_review_information: {
+        phone_number: ENV.fetch('ASC_REVIEW_PHONE'),
+        demo_user: ENV.fetch('ASC_DEMO_USER'),
+        demo_password: ENV.fetch('ASC_DEMO_PASSWORD')
+      }
+    )
   end
 
   # Supabase's Apple provider takes, as its secret, a JWT signed with the

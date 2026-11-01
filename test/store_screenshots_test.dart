@@ -30,13 +30,17 @@ import 'load_fonts.dart';
 /// The dates follow the clock, so the header shows the day it ran.
 void main() {
   // Logical size and pixel ratio. Play takes phone and both tablets (sides
-  // within 2:1); desktop is for the web. No App Store sizes until there is an
-  // iOS listing, it wants exact device ones.
+  // within 2:1); desktop is for the web. The App Store wants exact device
+  // sizes and scales them down for smaller devices: iPhone 6.9" and iPad 13",
+  // uploaded by the Store listing workflow (upload_listing in
+  // ios/fastlane/Fastfile).
   const devices = {
     'phone': (Size(360, 640), 3.0), // 1080×1920, bottom bar
     'tablet-7': (Size(600, 960), 2.0), // 1200×1920, icon rail
     'tablet-10': (Size(1280, 800), 2.0), // 2560×1600, sidebar
     'desktop': (Size(1440, 900), 2.0), // 2880×1800, sidebar
+    'iphone-6.9': (Size(440, 956), 3.0), // 1320×2868, bottom bar
+    'ipad-13': (Size(1032, 1376), 2.0), // 2064×2752, icon rail
   };
   final screens = {
     'today': Routes.today,
@@ -103,9 +107,9 @@ List<Person> _book() => [
     prospectStatus: ProspectStatus.thinking,
     phone: '06 12 34 56 78',
     email: 'marie@example.com',
-    needs: 'Sleep, stress',
+    needs: 'Gift ideas',
     profession: 'Nurse',
-    notes: 'Met at the Saturday market. Asked about lavender.',
+    notes: 'Met at the Saturday market. Asked about the autumn range.',
     stageSince: addDays(today(), -40),
     place: _place('samples', 4, 3),
   ),
@@ -136,8 +140,8 @@ List<Person> _book() => [
     id: 'lucas',
     name: 'Lucas Martin',
     stage: Stage.customer,
-    products: 'Lavender, Peppermint',
-    needs: 'Headaches',
+    products: 'Starter set, Refill',
+    needs: 'Monthly refill',
     stageSince: addDays(today(), -60),
     place: _place('new-customer', 3, 14),
   ),
@@ -186,7 +190,7 @@ List<Person> _book() => [
 List<Activity> _history() => [
   for (final (person, ago, kind, text) in [
     ('marie', 3, ActivityKind.message, 'Sent the samples'),
-    ('marie', 10, ActivityKind.note, 'Asked about lavender for sleep'),
+    ('marie', 10, ActivityKind.note, 'Asked about the autumn range'),
     ('bruno', 19, ActivityKind.call, 'Planned the autumn workshop'),
     ('lea', 6, ActivityKind.call, 'Weekly catch-up'),
     ('sophie', 2, ActivityKind.message, 'Shared her first order'),
@@ -209,21 +213,21 @@ List<CalendarEvent> _events() {
   return [
     CalendarEvent(
       id: 'e1',
-      title: 'Essential oils for sleep',
+      title: 'Product evening',
       startsAt: at(0, 19),
       endsAt: at(0, 21),
       place: 'Studio Lumière, Lyon',
     ),
     CalendarEvent(
       id: 'e2',
-      title: 'New member training',
+      title: 'Team catch-up',
       startsAt: at(0, 14),
       endsAt: at(0, 15),
       link: 'https://meet.google.com/abc-defg-hij',
     ),
     CalendarEvent(
       id: 'e3',
-      title: 'Product evening',
+      title: 'Spring open house',
       startsAt: at(6, 19, 30),
       place: 'Chez Claire',
     ),
