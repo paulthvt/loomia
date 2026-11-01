@@ -1,0 +1,47 @@
+# The App Store listing (#398), by hand: text from ios/fastlane/metadata/ on
+# main, screenshots from the store-screenshots.zip of the release you name.
+# Never uploads a build and never submits for review (that is #399).
+#
+#   gh workflow run "Store listing" -f tag=v2026.11.1
+name: Store listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release whose store-screenshots.zip to upload, e.g. v2026.11.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  app-store:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      ASC_DEMO_USER: ${{ secrets.ASC_DEMO_USER }}
+      ASC_DEMO_PASSWORD: ${{ secrets.ASC_DEMO_PASSWORD }}
+      ASC_REVIEW_PHONE: ${{ secrets.ASC_REVIEW_PHONE }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          working-directory: ios
+          bundler-cache: true
+
+      - name: Download the release's screenshots
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release download "$TAG" -p store-screenshots.zip -D "$RUNNER_TEMP"
+          unzip -q "$RUNNER_TEMP/store-screenshots.zip" -d "$RUNNER_TEMP/store"
+
+      - name: Upload the listing
+        working-directory: ios
+        run: bundle exec fastlane upload_listing screenshots:"$RUNNER_TEMP/store"

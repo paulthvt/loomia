@@ -456,6 +456,31 @@ both (steps 2 and 3) and replace the three secrets; an expired one fails the
 reaches internal testers once Apple has processed it, usually in a few
 minutes.
 
+#### Store listing
+
+The App Store listing lives in the repo: text in
+`ios/fastlane/metadata/<en-US|fr-FR>/`, review contact and notes in
+`metadata/review_information/`, categories and copyright beside them, the age
+rating in `ios/fastlane/rating_config.json`. `test/store_listing_test.dart`
+checks Apple's length limits, *tu* in French and the no-MLM wording on every
+PR. Edit the files, merge, then send them with a release's screenshots:
+
+```bash
+gh workflow run "Store listing" -f tag=<tag>
+```
+
+It edits the version App Store Connect has open ("Prepare for Submission"),
+and never uploads a build or submits for review. Run it after changing the
+listing, or after a release whose screenshots should replace the current ones.
+Secrets, once: `gh secret set` for `ASC_DEMO_USER` and `ASC_DEMO_PASSWORD`
+(the demo account the reviewer signs in with) and `ASC_REVIEW_PHONE` (the
+contact Apple calls). The repo is public, so none of them is a file.
+
+**App Privacy** ("nutrition labels") is answered by hand in App Store
+Connect: its API needs an Apple ID session, not the key. The answers are in
+`docs/superpowers/specs/2026-11-01-app-store-listing-design.md` → App
+Privacy; change them when a processor or a stored field changes.
+
 ## Tracking work
 
 Work is tracked on the
