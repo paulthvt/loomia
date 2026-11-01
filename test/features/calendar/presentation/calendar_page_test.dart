@@ -1097,11 +1097,14 @@ void main() {
   });
 
   testWidgets('changing an event date selects that day', (tester) async {
-    // Start with the Calendar on October 15, 2026 with an event that day.
+    // The Calendar opens on the current month: the event is on its 15th.
+    final now = DateTime.now();
+    final day15 = DateTime(now.year, now.month, 15);
+    final day20 = DateTime(now.year, now.month, 20);
     final event = CalendarEvent(
       id: 'e1',
       title: 'Workshop',
-      startsAt: DateTime(2026, 10, 15, 19, 0),
+      startsAt: day15.add(const Duration(hours: 19)),
       endsAt: null,
       place: null,
       link: null,
@@ -1116,7 +1119,7 @@ void main() {
     container.read(routerProvider).go(Routes.calendar);
     await tester.pumpAndSettle();
 
-    // Select October 15 (the event's day).
+    // Select the 15th (the event's day).
     await tester.tap(find.text('15'));
     await tester.pumpAndSettle();
 
@@ -1128,8 +1131,8 @@ void main() {
     await tester.tap(find.byTooltip('Edit event'));
     await tester.pumpAndSettle();
 
-    // Change the date to October 20.
-    await tester.tap(find.text('Thu, Oct 15'));
+    // Change the date to the 20th.
+    await tester.tap(find.text(DateFormat('EEE, MMM d').format(day15)));
     await tester.pumpAndSettle();
     await tester.tap(find.text('20'));
     await tester.pumpAndSettle();
@@ -1144,8 +1147,11 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
-    // The selected day should now be October 20, with the event listed.
-    expect(find.text('TUESDAY, OCTOBER 20'), findsOneWidget);
+    // The selected day should now be the 20th, with the event listed.
+    expect(
+      find.text(DateFormat('EEEE, MMMM d').format(day20).toUpperCase()),
+      findsOneWidget,
+    );
     expect(find.text('Workshop'), findsOneWidget);
   });
 }
