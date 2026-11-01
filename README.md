@@ -318,7 +318,7 @@ lane `promote`), so one store failing leaves the other alone:
 The first build of each version waits for Beta App Review before external
 testers get it. Production renames the version open in App Store Connect to
 the tag, attaches the build with the listing text from `main` and What's New
-from `release-notes.json` (left out on the app's first version), and stops
+from `release-notes.json` (deliver leaves it out on the app's first version), and stops
 with "Already submitted" if that version is already in review. Created by hand
 once: the **External testers** group (TestFlight → External Testing), and
 *Pricing and Availability* (free).

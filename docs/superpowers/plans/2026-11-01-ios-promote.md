@@ -24,11 +24,12 @@
 - **The tag → version/build mapping is a private lane helper** (`tag_build(tag)`), checked by a `dry_run:true` mode that prints version, build number, track and the notes it would send, and stops before any API call. No Ruby test framework, as in #398.
 - **Notes come from `release-notes.json`** like Android: `notes:` option, a path. TestFlight takes `en-US`; production `release_notes` takes both keys.
 - **"Already submitted" check** reads the app's App Store versions (`app.get_app_store_versions`) for one whose `version_string` is the tag's and whose state is `WAITING_FOR_REVIEW`, `IN_REVIEW`, `PENDING_DEVELOPER_RELEASE`, `PROCESSING_FOR_APP_STORE` or `READY_FOR_SALE`.
-- **First version** = no App Store version in `READY_FOR_SALE` yet: no `release_notes` passed.
+- **First version:** deliver's own `is_first_version` drops What's New; the lane always passes the notes.
 
 ## Deviations while building
 
 - `tag_build` and `review_details` are plain Ruby methods at the top of the Fastfile, not private lanes: a fastlane lane only takes a hash.
+- The lane looks the build up (`Build.all`, processing state `VALID`) before distributing: `upload_to_testflight` would otherwise poll for a missing build until the runner times out.
 
 ## Review Focus
 

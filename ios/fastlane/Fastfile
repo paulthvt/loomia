@@ -196,32 +196,36 @@ platform :ios do
     next if options[:dry_run]
 
     api_key
-    if testflight
-      begin
-        upload_to_testflight(
-          distribute_only: true,
-          app_version: version,
-          build_number: build.to_s,
-          distribute_external: true,
-          groups: [EXTERNAL_GROUP],
-          notify_external_testers: true,
-          changelog: notes['en-US']
-        )
-      rescue FastlaneCore::Interface::FastlaneError => e
-        raise unless e.message.match?(/build/i)
+    platform = Spaceship::ConnectAPI::Platform::IOS
+    app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
+    # Checked first: pilot would otherwise wait for a missing build forever.
+    found = Spaceship::ConnectAPI::Build.all(
+      app_id: app.id, version: version, build_number: build.to_s, platform: platform
+    ).first
+    UI.user_error!("Build #{build} (#{version}) is not on TestFlight") unless found
+    unless found.processing_state == Spaceship::ConnectAPI::Build::ProcessingState::VALID
+      UI.user_error!("Build #{build} (#{version}) is #{found.processing_state} on TestFlight, not ready")
+    end
 
-        UI.user_error!("Build #{build} (#{version}) is not on TestFlight: #{e.message}")
-      end
+    if testflight
+      upload_to_testflight(
+        distribute_only: true,
+        app_version: version,
+        build_number: build.to_s,
+        distribute_external: true,
+        groups: [EXTERNAL_GROUP],
+        notify_external_testers: true,
+        changelog: notes['en-US'],
+        # Processed already (checked above); never wait on a runner.
+        skip_waiting_for_build_processing: true
+      )
       next
     end
 
-    app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
-    versions = app.get_app_store_versions(filter: { platform: Spaceship::ConnectAPI::Platform::IOS })
+    versions = app.get_app_store_versions(filter: { platform: platform })
     sent = versions.find { |v| v.version_string == version && SUBMITTED.include?(v.app_version_state) }
     # A rerun would fail on a metadata upload that needs an editable version.
     UI.user_error!("Already submitted: #{version} is #{sent.app_version_state}") if sent
-    # Apple refuses What's New on an app's first version.
-    first = app.get_live_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS).nil?
 
     deliver(
       app_version: version,
@@ -231,7 +235,8 @@ platform :ios do
       metadata_path: File.expand_path('metadata', __dir__),
       app_rating_config_path: File.expand_path('rating_config.json', __dir__),
       app_review_information: review_details,
-      release_notes: first ? nil : notes.slice('en-US', 'fr-FR'),
+      # deliver leaves What's New out on the app's first version itself.
+      release_notes: notes.slice('en-US', 'fr-FR'),
       submit_for_review: true,
       automatic_release: true,
       phased_release: false,
