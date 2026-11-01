@@ -46,7 +46,7 @@ jobs:
 
       - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
-          version: 2.120.0
+          version: 2.122.0
 
       - run: supabase link --project-ref cskjeqspecsyqioietrj
 
@@ -72,13 +72,13 @@ jobs:
 
       # yeet force-pushes its release branch, and an App token gets CI to run on
       # the Release PR (main requires checks). Setup: README.md → Releases.
-      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         id: app
         with:
           client-id: ${{ vars.YEET_APP_ID }}
           private-key: ${{ secrets.YEET_APP_PRIVATE_KEY }}
 
-      - uses: docker://ghcr.io/monkescience/yeet:v0.17.1@sha256:f017d78597e31fb28eb17b46f46e5a18590b7d8f8e68ed194776800b41cf1be8
+      - uses: docker://ghcr.io/monkescience/yeet:v0.18.0@sha256:fb3ac07de8b2d1e26e95bb14cd08e3367431d1169d470c29aae62cd632d77e5f
         with:
           args: release
         env:
@@ -107,7 +107,7 @@ jobs:
         with:
           ref: ${{ needs.yeet.outputs.tag }}
 
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with:
           distribution: temurin
           java-version: '25'
@@ -118,7 +118,7 @@ jobs:
           cache: true
 
       # Fastlane uploads to Play (android/fastlane/Fastfile).
-      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+      - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
         with:
           working-directory: android
           bundler-cache: true
@@ -251,7 +251,7 @@ jobs:
           flutter-version-file: .fvmrc
           cache: true
 
-      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+      - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
         with:
           working-directory: ios
           bundler-cache: true
