@@ -97,8 +97,8 @@ test('the age rating answers every question with none or false', ...) // rating_
 - [x] **Step 3: Check it locally:** run Task 1's render, then `cd ios && bundle exec fastlane upload_listing screenshots:../build/store dry_run:true`. Expected: 16 files listed (4 screens × 2 devices × 2 languages). With `build/store` holding only the Play folders: the "No App Store screenshots" error. Remove `ios/fastlane/screenshots/` after.
 - [x] **Step 4: Workflow** `store-listing.yaml`: `on: workflow_dispatch` with input `tag` (required); `macos-latest`, `timeout-minutes: 20`, `permissions: contents: read`; checkout `main`, `ruby/setup-ruby` (`working-directory: ios`, `bundler-cache: true`), `gh release download "$TAG" -p store-screenshots.zip` and unzip to `$RUNNER_TEMP/store`, then `bundle exec fastlane upload_listing screenshots:$RUNNER_TEMP/store` with `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`, `ASC_DEMO_USER`, `ASC_DEMO_PASSWORD`, `ASC_REVIEW_PHONE`.
 - [x] **Step 5: README → Releases → iOS:** "Store listing" with the files, `gh workflow run "Store listing" -f tag=<tag>`, when to run it, the three secrets, and that App Privacy is answered by hand from the spec.
-- [ ] **Step 6: Run** `dart format .`, `flutter analyze`, `flutter test`; `ruby -ryaml -e 'YAML.load_file(".github/workflows/store-listing.yaml")'`.
-- [ ] **Step 7: Commit:** `ci(store): upload the App Store listing from a workflow`.
+- [x] **Step 6: Run** `dart format .`, `flutter analyze`, `flutter test`; `ruby -ryaml -e 'YAML.load_file(".github/workflows/store-listing.yaml")'`.
+- [x] **Step 7: Commit:** `ci(store): upload the App Store listing from a workflow`.
 
 ### Task 4: Ship
 
