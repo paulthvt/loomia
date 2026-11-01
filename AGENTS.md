@@ -124,6 +124,12 @@ already-installed packages first.
   migration fills the PR template's **Database** section, and the summary
   to the user says whether it is safe for the released app and whether an
   Edge Function needs `supabase functions deploy` by hand.
+- **Deploy Edge Functions from up-to-date `main`, after the merge.** The
+  CLI bundles whatever checkout it runs in, so a feature branch or stale
+  worktree deploys the old code. Run `git switch main && git pull` (or use
+  a worktree on `origin/main`) first, then `supabase functions deploy
+  <name>`. "No change found" after a change to `supabase/functions/` means
+  it ran from the wrong checkout.
 
 ## graphify
 
