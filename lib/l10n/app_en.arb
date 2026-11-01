@@ -2113,6 +2113,11 @@
   },
   "pushRitualPlanBody": "Pick a few numbers before the month starts.",
   "@pushRitualPlanBody": { "description": "Under the card's title, and the month-end push body, when only next month's plan is left." },
+  "pushShareAccepted": "{name} now shares their goals with you",
+  "@pushShareAccepted": {
+    "description": "Push to the person who sent an invite to share goals, once it is accepted. {name} is the contact as they wrote it on their card. Tapping it opens that contact.",
+    "placeholders": { "name": { "type": "String" } }
+  },
   "ritualStart": "Start",
   "@ritualStart": { "description": "Button of the close-and-plan card; opens the flow." },
   "ritualDrafted": "{month}'s plan is drafted. Change it before the 1st.",
@@ -3184,6 +3189,10 @@
   "@notificationsTasksBody": {
     "description": "Line under the Tasks switch, saying when a task push comes. The bell is the button beside a task's time that turns its push on or off."
   },
+  "notificationsSharing": "Sharing",
+  "@notificationsSharing": { "description": "Settings → Notifications switch: pushes about sharing goals (#423)." },
+  "notificationsSharingBody": "When someone accepts your invite to share their goals.",
+  "@notificationsSharingBody": { "description": "Under the Sharing switch in Settings → Notifications." },
   "planReminder": "Remind me when {month} ends",
   "@planReminder": {
     "description": "Switch on the planning screen: turns on the month-end push, which comes in the last days of month.",
@@ -3407,6 +3416,11 @@
     "placeholders": {
       "name": { "type": "String" }
     }
+  },
+  "inviteNotifyMe": "Tell me when {name} accepts",
+  "@inviteNotifyMe": {
+    "description": "Switch in the invite sheet: turns on the Sharing push (Settings → Notifications), so a push comes when the invite is accepted (#423). name is the contact's name.",
+    "placeholders": { "name": { "type": "String" } }
   },
   "inviteSheetBody": "Send this to {name}. It works once, for 14 days.",
   "@inviteSheetBody": {

@@ -8,6 +8,7 @@ class NotificationSettings {
     this.enabled = false,
     this.ritual = false,
     this.tasks = true,
+    this.sharing = false,
     this.hour = 19,
     this.minute = 0,
     this.days = weekdays,
@@ -27,11 +28,14 @@ class NotificationSettings {
   /// Task pushes (#389), at each task's own time when its bell is on.
   final bool tasks;
 
+  /// Sharing pushes (#423): an invite to share goals was accepted.
+  final bool sharing;
+
   /// The summary or the month-end push is on: time and days matter.
   bool get any => enabled || ritual;
 
   /// Any push is on: the phone must allow it.
-  bool get pushes => any || tasks;
+  bool get pushes => any || tasks || sharing;
   final int hour;
   final int minute;
 
@@ -45,6 +49,7 @@ class NotificationSettings {
     bool? enabled,
     bool? ritual,
     bool? tasks,
+    bool? sharing,
     int? hour,
     int? minute,
     Set<int>? days,
@@ -53,6 +58,7 @@ class NotificationSettings {
     enabled: enabled ?? this.enabled,
     ritual: ritual ?? this.ritual,
     tasks: tasks ?? this.tasks,
+    sharing: sharing ?? this.sharing,
     hour: hour ?? this.hour,
     minute: minute ?? this.minute,
     days: days ?? this.days,
@@ -66,6 +72,7 @@ class NotificationSettings {
       enabled: row['summary_enabled'] as bool,
       ritual: row['ritual_enabled'] as bool,
       tasks: row['task_enabled'] as bool? ?? true,
+      sharing: row['sharing_enabled'] as bool? ?? false,
       hour: int.parse(hour),
       minute: int.parse(minute),
       days: {for (final day in row['summary_days'] as List) day as int},
@@ -77,6 +84,7 @@ class NotificationSettings {
     'summary_enabled': enabled,
     'ritual_enabled': ritual,
     'task_enabled': tasks,
+    'sharing_enabled': sharing,
     'summary_time':
         '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
     'summary_days': (days.toList()..sort()),
@@ -89,6 +97,7 @@ class NotificationSettings {
       other.enabled == enabled &&
       other.ritual == ritual &&
       other.tasks == tasks &&
+      other.sharing == sharing &&
       other.hour == hour &&
       other.minute == minute &&
       other.timeZone == timeZone &&
@@ -100,6 +109,7 @@ class NotificationSettings {
     enabled,
     ritual,
     tasks,
+    sharing,
     hour,
     minute,
     timeZone,

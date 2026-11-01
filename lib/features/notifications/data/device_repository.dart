@@ -12,6 +12,8 @@ const pushKinds = [
   // #377: a task's time, and the summary's task counts.
   'task_alert',
   'daily_summary_tasks',
+  // #423: an invite to share goals was accepted.
+  'share_accepted',
 ];
 
 /// Where this phone's pushes go. Throws `PeopleFailure` only.

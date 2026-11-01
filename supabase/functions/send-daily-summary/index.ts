@@ -5,12 +5,14 @@ import {
   type Device,
   handle,
   ritualJob,
+  shareAcceptedJob,
   summaryJob,
   taskJob,
 } from './handler.ts'
-import type { RitualClaim, TaskClaim } from './message.ts'
+import type { RitualClaim, ShareClaim, TaskClaim } from './message.ts'
 
-// The daily summary (#269), the month-end push (#148) and task times (#377),
+// The daily summary (#269), the month-end push (#148), task times (#377)
+// and accepted invites (#423),
 // called by pg_cron every minute with the `cron` named secret key
 // (supabase/migrations/*_daily_summary_cron.sql). Postgres decides who is due
 // and claims them; this sends. Logs carry counts only, never a token or a
@@ -96,10 +98,25 @@ export default {
           },
         ),
       )
-      const result = { summary, ritual, task }
+      const share = await run(
+        'share',
+        shareAcceptedJob(
+          async () =>
+            check(await db.rpc('claim_share_accepted')) as ShareClaim[],
+          async (link, at) => {
+            check(
+              await db.rpc('release_share_accepted', {
+                p_link: link,
+                p_at: at,
+              }),
+            )
+          },
+        ),
+      )
+      const result = { summary, ritual, task, share }
       console.log('send-daily-summary', result)
       return Response.json(result, {
-        status: summary && ritual && task ? 200 : 500,
+        status: summary && ritual && task && share ? 200 : 500,
       })
     } catch (error) {
       console.error('send-daily-summary failed', error)

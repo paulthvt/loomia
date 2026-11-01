@@ -3,6 +3,8 @@ import {
   type Outcome,
   type RitualClaim,
   ritualMessage,
+  type ShareClaim,
+  shareAcceptedMessage,
   summaryMessage,
   type TaskClaim,
   taskMessage,
@@ -13,6 +15,7 @@ export type Kind =
   | 'daily_summary'
   | 'month_ritual'
   | 'task_alert'
+  | 'share_accepted'
   // Not a push: an app whose summary strings count tasks (#377).
   | 'daily_summary_tasks'
 
@@ -92,6 +95,18 @@ export const ritualJob = (
   claim,
   release: (c) => release(c.owner_id, c.claim_date),
   message: (c, d) => ritualMessage(d.token, d.locale, c),
+})
+
+/** An accepted invite (#423): claim_share_accepted, per link. */
+export const shareAcceptedJob = (
+  claim: () => Promise<ShareClaim[]>,
+  release: (link: string, at: string) => Promise<void>,
+): Job<ShareClaim> => ({
+  kind: 'share_accepted',
+  claim,
+  // Its own stamp: a link claimed again since is left alone.
+  release: (c) => release(c.link_id, c.notified_at),
+  message: (c, d) => shareAcceptedMessage(d.token, d.locale, c),
 })
 
 /**
