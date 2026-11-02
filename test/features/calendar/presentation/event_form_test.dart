@@ -1,12 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../contacts/fake_people_repository.dart';
 import '../calendar_harness.dart';
 import '../fake_event_repository.dart';
 
@@ -390,6 +393,139 @@ void main() {
         );
         expect(find.text('Edit event'), findsOneWidget);
       });
+    });
+  });
+
+  group('People (#446)', () {
+    Person person(String id, String name) => Person(
+      id: id,
+      name: name,
+      stage: Stage.customer,
+      stageSince: DateTime.utc(2026, 9),
+    );
+    final claire = person('p1', 'Claire Dubois');
+    final sarah = person('p2', 'Sarah Petit');
+
+    Future<void> open(
+      WidgetTester tester,
+      FakeEventRepository events, {
+      List<Person> picked = const [],
+    }) => pumpCalendarHarness(
+      tester,
+      events: events,
+      people: FakePeopleRepository([claire, sarah]),
+      open: (context) => showEventForm(context, day: _day, people: picked),
+      result: (_) {},
+    );
+
+    Future<void> add(WidgetTester tester, List<String> names) async {
+      final chip = find.widgetWithText(ActionChip, 'Add people');
+      await tester.ensureVisible(chip);
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+      for (final name in names) {
+        await tester.tap(find.text(name).last);
+      }
+      await tester.pump();
+      await tester.tap(
+        find.textContaining(RegExp('^Add (one|${names.length})')),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> save(WidgetTester tester) async {
+      await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('picked, one taken off: the event saves with the other', (
+      tester,
+    ) async {
+      final events = FakeEventRepository();
+      await open(tester, events);
+
+      await tester.enterText(_field('Title'), 'Workshop');
+      await add(tester, ['Claire Dubois', 'Sarah Petit']);
+      expect(find.widgetWithText(InputChip, 'Claire Dubois'), findsOneWidget);
+      await tester.tap(find.byTooltip('Remove Claire Dubois'));
+      await tester.pumpAndSettle();
+      await save(tester);
+
+      final event = events.store.single;
+      expect(
+        events.calls,
+        containsAllInOrder(['add(Workshop)', 'invite(${event.id}:p2)']),
+      );
+      expect(event.attendees.map((a) => a.personId), ['p2']);
+    });
+
+    testWidgets('nobody picked: no invite', (tester) async {
+      final events = FakeEventRepository();
+      await open(tester, events);
+
+      await tester.enterText(_field('Title'), 'Workshop');
+      await save(tester);
+
+      expect(events.calls.where((c) => c.startsWith('invite')), isEmpty);
+    });
+
+    testWidgets('prefilled, and the picker leaves them out', (tester) async {
+      final events = FakeEventRepository();
+      await open(tester, events, picked: [claire]);
+
+      expect(find.widgetWithText(InputChip, 'Claire Dubois'), findsOneWidget);
+      await tester.ensureVisible(find.widgetWithText(ActionChip, 'Add people'));
+      await tester.tap(find.widgetWithText(ActionChip, 'Add people'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(ContactRow, 'Claire Dubois'), findsNothing);
+      expect(find.widgetWithText(ContactRow, 'Sarah Petit'), findsOneWidget);
+    });
+
+    testWidgets('a repeating one: they join the series', (tester) async {
+      final events = FakeEventRepository();
+      await open(tester, events, picked: [claire]);
+
+      await tester.enterText(_field('Title'), 'Team call');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Every week'));
+      await tester.pumpAndSettle();
+      await save(tester);
+
+      final first = events.store.first;
+      expect(events.calls, contains('setSeriesPeople(${first.id}:+p1-)'));
+      expect(events.store[1].attendees.single.personId, 'p1');
+    });
+
+    testWidgets('a failed invite: the event stays, and it says so', (
+      tester,
+    ) async {
+      final events = FakeEventRepository()
+        ..failWith = PeopleFailure.network
+        ..failOnly = 'invite(';
+      await open(tester, events, picked: [claire]);
+
+      await tester.enterText(_field('Title'), 'Workshop');
+      await save(tester);
+
+      expect(events.store.single.attendees, isEmpty);
+      expect(find.text('New event'), findsNothing);
+      expect(find.byType(SnackBar), findsOneWidget);
+    });
+
+    testWidgets('editing: no People field', (tester) async {
+      final event = CalendarEvent(
+        id: 'e1',
+        title: 'Coffee',
+        startsAt: DateTime(2026, 10, 8, 10),
+      );
+      await pumpCalendarHarness(
+        tester,
+        events: FakeEventRepository([event]),
+        open: (context) => showEventForm(context, event: event),
+        result: (_) {},
+      );
+
+      expect(find.widgetWithText(ActionChip, 'Add people'), findsNothing);
     });
   });
 }

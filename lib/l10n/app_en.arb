@@ -2913,6 +2913,17 @@
   "@eventPeople": {
     "description": "Heading of the list of contacts invited to an event, on the event's screen."
   },
+  "eventFormPersonRemove": "Remove {name}",
+  "@eventFormPersonRemove": {
+    "description": "Tooltip of the × on a contact's chip in the People field of the New event form; it takes them off the people to invite.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "eventFormPeopleNotAdded": "The event is saved, but the people couldn't be added. Add them from the event.",
+  "@eventFormPeopleNotAdded": {
+    "description": "Snackbar after saving a new event when inviting the people picked in the form failed; the event exists without them."
+  },
   "eventNoPeople": "Nobody invited yet.",
   "@eventNoPeople": {
     "description": "Shown under an event's People heading when nobody is invited."
