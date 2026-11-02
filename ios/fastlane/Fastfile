@@ -210,6 +210,8 @@ platform :ios do
     if testflight
       upload_to_testflight(
         distribute_only: true,
+        # Without an .ipa (and on Linux) pilot can't infer it and would ask.
+        app_platform: 'ios',
         app_version: version,
         build_number: build.to_s,
         distribute_external: true,
