@@ -6,14 +6,18 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/people_picker.dart';
 import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
@@ -24,28 +28,43 @@ import 'package:material_ui/material_ui.dart';
 /// A new event on [day], or [event] to change: a sheet on mobile, a dialog
 /// elsewhere. Resolves to the saved event, or null when dismissed.
 /// A new event on [day], or [event] to edit. A new one can start with its
-/// [type] chosen and a [title] (Plan on an event step, #315).
+/// [type] chosen, a [title] and [people] invited (Plan on an event step,
+/// #315); its people are invited once it is saved (#446).
 Future<CalendarEvent?> showEventForm(
   BuildContext context, {
   CalendarEvent? event,
   DateTime? day,
   EventWorkflow? type,
   String? title,
+  List<Person> people = const [],
 }) => LoomiaDialog.show<CalendarEvent>(
   context,
-  (_) => _EventForm(event: event, day: day, type: type, title: title),
+  (_) => _EventForm(
+    event: event,
+    day: day,
+    type: type,
+    title: title,
+    people: people,
+  ),
 );
 
 /// A new event starts in the evening, when most workshops are.
 const _defaultStart = TimeOfDay(hour: 19, minute: 0);
 
 class _EventForm extends ConsumerStatefulWidget {
-  const _EventForm({this.event, this.day, this.type, this.title});
+  const _EventForm({
+    this.event,
+    this.day,
+    this.type,
+    this.title,
+    this.people = const [],
+  });
 
   final CalendarEvent? event;
   final DateTime? day;
   final EventWorkflow? type;
   final String? title;
+  final List<Person> people;
 
   @override
   ConsumerState<_EventForm> createState() => _EventFormState();
@@ -72,6 +91,9 @@ class _EventFormState extends ConsumerState<_EventForm> {
   /// The last day it can take place; null is forever.
   DateTime? _until;
   bool _untilBeforeStart = false;
+
+  /// Invited once a new event is saved, in the order picked.
+  late final List<Person> _people = [...widget.people];
 
   @override
   void initState() {
@@ -169,6 +191,32 @@ class _EventFormState extends ConsumerState<_EventForm> {
     }
   }
 
+  Future<void> _pickPeople() async {
+    final List<Person> book;
+    try {
+      // Loaded already, unless the calendar was opened first.
+      book = await ref.read(
+        peopleProvider(ref.read(accountProvider)?.email).future,
+      );
+    } on PeopleFailure catch (failure) {
+      if (mounted) setState(() => _failure = failure);
+      return;
+    }
+    if (!mounted) return;
+    final picked = await pickPeople(
+      context,
+      people: book,
+      except: {for (final person in _people) person.id},
+    );
+    if (picked == null || !mounted) return;
+    setState(
+      () => _people.addAll([
+        for (final person in book)
+          if (picked.contains(person.id)) person,
+      ]),
+    );
+  }
+
   List<EventWorkflow>? get _eventWorkflows =>
       ref.read(eventWorkflowsProvider(ref.read(accountProvider)?.email)).value;
 
@@ -204,6 +252,8 @@ class _EventFormState extends ConsumerState<_EventForm> {
       return value.isEmpty ? null : value;
     }
 
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     // Deleted since the form opened, or since the event was saved: dropped,
     // once the lists say so.
     final owner = ref.read(accountProvider)?.email;
@@ -263,6 +313,25 @@ class _EventFormState extends ConsumerState<_EventForm> {
             : await events.repeat(event.id, draft, rule, zone);
       } else {
         saved = await events.add(draft);
+      }
+      if (event == null && _people.isNotEmpty) {
+        // ponytail: two writes, the event then its people; a failed second
+        // one leaves the event without them, said here. One RPC if that
+        // ever bites.
+        try {
+          await events.invite(
+            saved.id,
+            [for (final person in _people) person.id],
+            today(),
+            following: repeatWeeks != null,
+          );
+          // Their event steps now wait: the book says so.
+          ref.invalidate(peopleProvider(owner));
+        } on PeopleFailure {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.eventFormPeopleNotAdded)),
+          );
+        }
       }
       if (mounted) Navigator.pop(context, saved);
     } on PeopleFailure catch (failure) {
@@ -472,6 +541,35 @@ class _EventFormState extends ConsumerState<_EventForm> {
               ],
             ),
             if (!(widget.event?.done ?? false)) ..._repeat(l10n),
+            // Editing keeps People on the event's page (#446).
+            if (widget.event == null)
+              LabeledField(
+                label: l10n.eventPeople,
+                child: Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final person in _people)
+                      InputChip(
+                        avatar: PhotoAvatar(
+                          name: person.name,
+                          photoPath: person.photoPath,
+                          size: AvatarSize.inline,
+                        ),
+                        label: Text(person.name),
+                        onDeleted: () => setState(() => _people.remove(person)),
+                        deleteButtonTooltipMessage: l10n.eventFormPersonRemove(
+                          person.name,
+                        ),
+                      ),
+                    ActionChip(
+                      avatar: const Icon(Icons.person_add_alt_rounded),
+                      label: Text(l10n.peoplePickerTitle),
+                      onPressed: () => unawaited(_pickPeople()),
+                    ),
+                  ],
+                ),
+              ),
             LabeledField(
               label: l10n.eventPlace,
               child: TextFormField(

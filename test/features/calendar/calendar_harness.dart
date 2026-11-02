@@ -24,11 +24,12 @@ import 'fake_event_repository.dart';
 
 /// A screen with one "Open" button that runs [open], signed in as Pauline
 /// with [events], on a device in [timeZone]. What [open] resolves to goes
-/// to [result].
+/// to [result]. [people] is the book, empty by default.
 Future<void> pumpCalendarHarness(
   WidgetTester tester, {
   required FakeEventRepository events,
   FakeEventWorkflowRepository? eventWorkflows,
+  FakePeopleRepository? people,
   String? timeZone = 'Europe/Paris',
   required Future<Object?> Function(BuildContext context) open,
   required void Function(Object? value) result,
@@ -41,7 +42,7 @@ Future<void> pumpCalendarHarness(
   final eventWorkflowsRepo =
       eventWorkflows ??
       FakeEventWorkflowRepository(FakeEventWorkflowRepository.samples());
-  final people = FakePeopleRepository();
+  final book = people ?? FakePeopleRepository();
   final activities = FakeActivityRepository();
   tester.view
     ..physicalSize = const Size(390, 1200)
@@ -55,7 +56,7 @@ Future<void> pumpCalendarHarness(
         taskRepositoryProvider.overrideWithValue(FakeTaskRepository()),
         eventWorkflowRepositoryProvider.overrideWithValue(eventWorkflowsRepo),
         workflowRepositoryProvider.overrideWithValue(workflows),
-        peopleRepositoryProvider.overrideWithValue(people),
+        peopleRepositoryProvider.overrideWithValue(book),
         activityRepositoryProvider.overrideWithValue(activities),
         deviceTimeZoneProvider.overrideWith((ref) => timeZone),
       ],

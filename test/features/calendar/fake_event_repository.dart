@@ -23,6 +23,10 @@ class FakeEventRepository implements EventRepository {
   /// Thrown by calls started while set. Use a `PeopleFailure`.
   Object? failWith;
 
+  /// When set, [failWith] only hits the calls starting with it, e.g.
+  /// `invite(`.
+  String? failOnly;
+
   /// A [tick] started while set waits on it.
   Completer<void>? gate;
 
@@ -31,7 +35,7 @@ class FakeEventRepository implements EventRepository {
   void _record(String call) {
     calls.add(call);
     final failure = failWith;
-    if (failure != null) throw failure;
+    if (failure != null && call.startsWith(failOnly ?? '')) throw failure;
   }
 
   static CalendarEvent _fromDraft(

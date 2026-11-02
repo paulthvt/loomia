@@ -31,8 +31,9 @@ Future<DateTime?> pickLater(BuildContext context) => pickDay(
 /// Plan on an event step (#315): an event of [type] with [person] in it.
 /// One person per event: the event form, prefilled, a week out. Several: an
 /// upcoming event of that type or a new one, and they join it invited.
-/// True once they are in the event; people reload, since the server decides
-/// that their step now waits.
+/// True once they are in the event (or a new one is saved: the form invites
+/// them, and says so if that failed); people reload, since the server
+/// decides that their step now waits.
 Future<bool> planEvent(
   BuildContext context,
   Person person,
@@ -44,42 +45,42 @@ Future<bool> planEvent(
   final messenger = ScaffoldMessenger.of(context);
   final l10n = AppLocalizations.of(context);
 
-  Future<String?> create() async => (await showEventForm(
+  // The form invites them, with anyone else picked (#446).
+  Future<bool> create() async =>
+      await showEventForm(
+        context,
+        type: type,
+        title: l10n.planEventTitle(type.name, firstName(person)),
+        day: addDays(today(), planInDays),
+        people: [person],
+      ) !=
+      null;
+
+  if (!type.isGroup) return create();
+  final now = DateTime.now();
+  final upcoming = byStart([
+    for (final event
+        in container.read(eventsProvider(owner)).value ??
+            const <CalendarEvent>[])
+      if (event.eventWorkflowId == type.id &&
+          !event.done &&
+          event.startsAt.isAfter(now) &&
+          !event.attendees.any((a) => a.personId == person.id))
+        event,
+  ]);
+  final picked = await LoomiaDialog.show<_Pick>(
     context,
-    type: type,
-    title: l10n.planEventTitle(type.name, firstName(person)),
-    day: addDays(today(), planInDays),
-  ))?.id;
-
-  String? eventId;
-  if (type.isGroup) {
-    final now = DateTime.now();
-    final upcoming = byStart([
-      for (final event
-          in container.read(eventsProvider(owner)).value ??
-              const <CalendarEvent>[])
-        if (event.eventWorkflowId == type.id &&
-            !event.done &&
-            event.startsAt.isAfter(now) &&
-            !event.attendees.any((a) => a.personId == person.id))
-          event,
-    ]);
-    final picked = await LoomiaDialog.show<_Pick>(
-      context,
-      (_) => _GroupPlan(person: person, type: type, upcoming: upcoming),
-    );
-    if (picked == null || !context.mounted) return false;
-    eventId = switch (picked) {
-      _Existing(:final id) => id,
-      _New() => await create(),
-    };
-  } else {
-    eventId = await create();
+    (_) => _GroupPlan(person: person, type: type, upcoming: upcoming),
+  );
+  if (picked == null || !context.mounted) return false;
+  final String eventId;
+  switch (picked) {
+    case _Existing(:final id):
+      eventId = id;
+    case _New():
+      return create();
   }
-  if (eventId == null) return false;
 
-  // ponytail: two writes, the event then the person; a failed second one
-  // leaves the event without them, said here. One RPC if that ever bites.
   try {
     await events.invite(eventId, [person.id], today());
   } on PeopleFailure catch (failure) {
