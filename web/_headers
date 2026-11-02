@@ -1,2 +1,6 @@
 /*
   X-Robots-Tag: noindex
+
+# iOS reads it only as JSON; it has no extension (#440).
+/.well-known/apple-app-site-association
+  Content-Type: application/json
