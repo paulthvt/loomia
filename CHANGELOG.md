@@ -1,5 +1,21 @@
 # Changelog
 
+## [v2026.11.3](https://github.com/paulthvt/loomia/compare/v2026.11.2...v2026.11.3) (2026-11-02)
+
+### ✨ Features
+
+- **sharing:** invite links open the app (#443) ([2840e73](https://github.com/paulthvt/loomia/commit/2840e7347c6cf382776422ad79eb9e5dd8dfc262))
+- **sharing:** push switch on with Copy link, bells, Saved state for About me (#441) ([e9dbddf](https://github.com/paulthvt/loomia/commit/e9dbddfece993e3e764798308bd8ce4c3a806a10))
+
+### 🔄 CI/CD
+
+- **ios:** promote iOS builds to external TestFlight and the App Store (#438) ([ff0edbf](https://github.com/paulthvt/loomia/commit/ff0edbf04a48081a8b4e8aa2938b49ebb7e465a5))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#444) ([cb8ca2e](https://github.com/paulthvt/loomia/commit/cb8ca2e6460a1795ec796337fb26d13f372876d0))
+- **store:** the App Store name is LoomiaApp (#437) ([edd0508](https://github.com/paulthvt/loomia/commit/edd0508b73d23006d004943d887c1a659a49b914))
+
 ## [v2026.11.2](https://github.com/paulthvt/loomia/compare/v2026.11.1...v2026.11.2) (2026-11-01)
 
 ### 🐛 Bug Fixes
