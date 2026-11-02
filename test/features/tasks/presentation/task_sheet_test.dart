@@ -268,10 +268,12 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    Future<Task> lavender() => tasks.add((
+    /// Due on the 3rd of November, or [on]: a test that moves it to Tomorrow
+    /// needs a day that isn't tomorrow already.
+    Future<Task> lavender({DateTime? on}) => tasks.add((
       title: 'Restock lavender',
       note: null,
-      dueOn: DateTime(2026, 11, 3),
+      dueOn: on ?? DateTime(2026, 11, 3),
       dueTime: null,
       alert: true,
       repeat: (
@@ -279,7 +281,7 @@ void main() {
         unit: RepeatUnit.month,
         from: DateTime(2026, 10, 3),
         until: null,
-        scheduledOn: DateTime(2026, 11, 3),
+        scheduledOn: on ?? DateTime(2026, 11, 3),
       ),
     ));
 
@@ -379,7 +381,8 @@ void main() {
     testWidgets('moving the day, This task: postponed, schedule kept', (
       tester,
     ) async {
-      final task = await lavender();
+      final due = addDays(today(), 5);
+      final task = await lavender(on: due);
       await _pumpHarness(
         tester,
         tasks: tasks,
@@ -398,13 +401,13 @@ void main() {
       final saved = tasks.store[task.id]!;
       expect(saved.dueOn, addDays(today(), 1));
       expect(saved.repeat!.from, DateTime(2026, 10, 3));
-      expect(saved.repeat!.scheduledOn, DateTime(2026, 11, 3));
+      expect(saved.repeat!.scheduledOn, due);
     });
 
     testWidgets('moving the day, following: the schedule moves', (
       tester,
     ) async {
-      final task = await lavender();
+      final task = await lavender(on: addDays(today(), 5));
       await _pumpHarness(
         tester,
         tasks: tasks,
