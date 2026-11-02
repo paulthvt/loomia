@@ -6,9 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 // checked against are in web/.well-known/.
 void main() {
   test('Android: a verified App Link for /invite/ only', () {
-    final manifest = File(
-      'android/app/src/main/AndroidManifest.xml',
-    ).readAsStringSync();
+    final manifest = File('android/app/src/main/AndroidManifest.xml')
+        .readAsStringSync();
     expect(manifest, contains('android:autoVerify="true"'));
     expect(manifest, contains('android:host="app.getloomia.app"'));
     expect(manifest, contains('android:pathPrefix="/invite/"'));
