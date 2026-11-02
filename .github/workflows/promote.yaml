@@ -8,6 +8,7 @@
 # flags stop matching what users actually get.
 #
 #   gh workflow run Promote -f tag=v2026.10.1 -f track=alpha
+#   gh workflow run Promote -f tag=v2026.10.1 -f track=web   # web only
 name: Promote
 
 on:
@@ -21,8 +22,10 @@ on:
         required: true
         type: choice
         # alpha = closed testing. Production needs it first on a personal
-        # account: 12 testers opted in for 14 days.
-        options: [alpha, beta, production]
+        # account: 12 testers opted in for 14 days. web = only make this
+        # tag's web version live on app.getloomia.app; the stores are
+        # untouched (#440).
+        options: [alpha, beta, production, web]
 
 concurrency:
   group: release
@@ -40,6 +43,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        if: inputs.track != 'web'
         with:
           working-directory: android
           bundler-cache: true
@@ -47,6 +51,7 @@ jobs:
       # The notes release.yaml attached, so every track shows the same text.
       # Releases from before them, or whose notes failed, have none.
       - name: Fetch the release notes
+        if: inputs.track != 'web'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag }}
@@ -57,6 +62,7 @@ jobs:
 
       # Fails when the tag's build isn't on internal testing.
       - name: Move the build on Play
+        if: inputs.track != 'web'
         working-directory: android
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -69,7 +75,7 @@ jobs:
       # The web version release.yaml uploaded for this tag, no rebuild.
       # ponytail: versions list only sees the 10 latest, so promote within 10 releases.
       - name: Make the web version live
-        if: inputs.track == 'production'
+        if: inputs.track == 'production' || inputs.track == 'web'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

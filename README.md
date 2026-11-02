@@ -325,8 +325,14 @@ The web build follows the same path on Cloudflare (`wrangler.jsonc`, a Worker
 with static assets only). Each release uploads a version tagged with the
 release, served at the `internal` preview URL
 (`https://internal-loomia.<account>.workers.dev`) but not live. Promote to
-`production` makes that exact version live on `app.getloomia.app`. Rolling
-back is `npx wrangler rollback`.
+`production` makes that exact version live on `app.getloomia.app`; `web`
+makes only the web version live, leaving Play and the App Store as they are
+(`gh workflow run Promote -f tag=<tag> -f track=web`). Rolling back is
+`npx wrangler rollback`.
+
+`app.getloomia.app` also serves the files that let an installed app open
+invite links (`web/.well-known/`, #440): Android and iOS read them from the
+live domain only, so a change there needs a promote to take effect.
 
 Auth links from the preview URL land on the live site: it is not in
 `additional_redirect_urls`, so Supabase falls back to the Site URL.
