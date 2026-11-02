@@ -314,6 +314,7 @@ lane `promote`), so one store failing leaves the other alone:
 | `alpha` | closed testing | TestFlight group **External testers** |
 | `beta` | open testing | TestFlight group **External testers** |
 | `production` | live within hours; web live; GitHub release final | submitted for App Store review, live by itself once approved (hours to days) |
+| `web` | untouched (only the web version goes live) | skipped |
 
 The first build of each version waits for Beta App Review before external
 testers get it. Production renames the version open in App Store Connect to

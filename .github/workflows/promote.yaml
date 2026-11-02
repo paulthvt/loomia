@@ -7,6 +7,8 @@
 #   ios   alpha/beta: the "External testers" TestFlight group (Beta App Review
 #         on a version's first build). production: App Store review, live by
 #         itself once approved, hours to days after Play.
+# track=web only makes the tag's web version live: play runs just that step,
+# ios is skipped.
 #
 # Promote only from here, never from the Play Console or App Store Connect,
 # or GitHub pre-release flags stop matching what users actually get.
@@ -40,6 +42,8 @@ permissions:
 
 jobs:
   ios:
+    # track=web touches no store (#440).
+    if: inputs.track != 'web'
     runs-on: macos-latest
     timeout-minutes: 20
     env:
