@@ -42,6 +42,17 @@
                 <data android:scheme="io.supabase.loomia"
                       android:host="login-callback"/>
             </intent-filter>
+            <!-- An invite link opens the app, not the web (#440). Verified
+                 against web/.well-known/assetlinks.json on the live domain;
+                 the rest of app.getloomia.app stays in the browser. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"
+                      android:host="app.getloomia.app"
+                      android:pathPrefix="/invite/"/>
+            </intent-filter>
         </activity>
         <!-- The push's small icon, white on transparent: the launcher icon
              would show as a white square (#268). -->

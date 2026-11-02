@@ -89,5 +89,6 @@ class FakeSharingRepository implements SharingRepository {
   @override
   Future<void> saveAboutMe(AboutMe aboutMe) async {
     await _record('saveAboutMe()');
+    aboutMeValue = aboutMe;
   }
 }

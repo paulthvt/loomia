@@ -89,7 +89,7 @@ void main() {
 
       expect(repo.calls, ['openInvite(p1)', 'createInvite(p1)']);
       expect(find.text('ABCD-EFGH'), findsOneWidget);
-      expect(find.text('app.getloomia.app/#/invite/ABCDEFGH'), findsOneWidget);
+      expect(find.text('app.getloomia.app/invite/ABCDEFGH'), findsOneWidget);
     });
 
     testWidgets('does not create invite when one already exists', (
@@ -156,7 +156,7 @@ void main() {
       await tester.tap(find.text('Copy link'));
       await tester.pump();
 
-      expect(clipboardData, 'https://app.getloomia.app/#/invite/ABCDEFGH');
+      expect(clipboardData, 'https://app.getloomia.app/invite/ABCDEFGH');
       expect(find.text('Link copied'), findsOneWidget);
     });
 
@@ -380,12 +380,26 @@ void main() {
       expect(find.text(tellMe), findsNothing);
     });
 
-    testWidgets('turning it on asks the phone, saves, and goes away', (
+    testWidgets('on, with the bell, until they say otherwise (#439)', (
       tester,
     ) async {
       push.isAvailable = true;
       await openSheet(tester);
-      await tester.tap(find.text(tellMe));
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isTrue,
+      );
+      expect(find.byIcon(Icons.notifications_active_rounded), findsOneWidget);
+      expect(push.asked, 0, reason: 'nothing asked before Copy link');
+      expect(notifications.saved, isEmpty);
+    });
+
+    testWidgets('Copy link asks the phone, saves, and the line goes away', (
+      tester,
+    ) async {
+      push.isAvailable = true;
+      await openSheet(tester);
+      await tester.tap(find.text('Copy link'));
       await tester.pumpAndSettle();
       expect(push.asked, 1);
       expect(notifications.saved.single.sharing, isTrue);
@@ -393,21 +407,34 @@ void main() {
       expect(find.text(tellMe), findsNothing);
     });
 
-    testWidgets('refused by the phone: nothing saved, and where to fix it', (
-      tester,
-    ) async {
-      push
-        ..isAvailable = true
-        ..grant = false;
+    testWidgets('switched off first: Copy link asks nothing', (tester) async {
+      push.isAvailable = true;
       await openSheet(tester);
       await tester.tap(find.text(tellMe));
       await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.notifications_off_outlined), findsOneWidget);
+      await tester.tap(find.text('Copy link'));
+      await tester.pumpAndSettle();
+      expect(push.asked, 0);
       expect(notifications.saved, isEmpty);
-      expect(find.text(refused), findsOneWidget);
-      expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-        isFalse,
-      );
     });
+
+    testWidgets(
+      'refused by the phone: off, nothing saved, and where to fix it',
+      (tester) async {
+        push
+          ..isAvailable = true
+          ..grant = false;
+        await openSheet(tester);
+        await tester.tap(find.text('Copy link'));
+        await tester.pumpAndSettle();
+        expect(notifications.saved, isEmpty);
+        expect(find.text(refused), findsOneWidget);
+        expect(
+          tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+          isFalse,
+        );
+      },
+    );
   });
 }

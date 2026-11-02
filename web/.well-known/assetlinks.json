@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.loomia",
+      "sha256_cert_fingerprints": [
+        "E3:B6:39:FC:A3:7E:09:E3:4F:82:44:22:A4:15:75:B0:91:E4:63:88:C8:FA:87:A1:6F:F2:BB:09:61:B2:6D:07",
+        "13:40:11:27:F6:6D:08:DA:E8:91:C7:62:AE:32:11:9F:80:F8:25:57:86:9D:4C:CF:31:D0:CD:BD:F4:A6:BA:1D"
+      ]
+    }
+  }
+]

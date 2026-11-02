@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["378X654D2A.app.loomia"],
+        "components": [{ "/": "/invite/*" }]
+      }
+    ]
+  }
+}
