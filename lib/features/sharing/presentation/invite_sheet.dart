@@ -34,10 +34,9 @@ Future<void> showInviteSheet(
   }
 }
 
-// The web app routes from the fragment (hash URL strategy), so the code
-// rides after the #.
+// A path, so an installed app opens it (App Links, universal links, #440).
 String _inviteLink(String code) =>
-    'app.getloomia.app/#${Routes.inviteLocation(code)}';
+    'app.getloomia.app${Routes.inviteLocation(code)}';
 
 class _InviteSheet extends ConsumerStatefulWidget {
   const _InviteSheet({required this.personId, required this.name});

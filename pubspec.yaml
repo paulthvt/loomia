@@ -30,6 +30,10 @@ dependencies:
   # The device's IANA time zone ("Europe/Paris") for the daily summary (#270).
   # Dart's DateTime.timeZoneName gives only an abbreviation ("CET").
   flutter_timezone: ^5.1.1
+  # Path URLs on the web (#440), so App Links and universal links can match
+  # `/invite/`; Flutter's hash URLs can't be matched. Part of the SDK.
+  flutter_web_plugins:
+    sdk: flutter
   # Declarative routing with real URLs (web) and deep links (mobile).
   go_router: ^18.0.1
   # ICU message formatting for the generated AppLocalizations class. The version

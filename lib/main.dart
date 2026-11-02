@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:logging/logging.dart';
 import 'package:loomia/app/app.dart';
+import 'package:loomia/app/router/legacy_fragment.dart';
 import 'package:loomia/core/supabase/supabase_config.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -14,6 +16,15 @@ const _sentryDsn =
     'https://35d8f6322bf91e8d854d0d247867ab97@o4512160213499904.ingest.de.sentry.io/4512160219398224';
 
 Future<void> main() async {
+  // Paths, not `#`, so App Links and universal links can match `/invite/`
+  // (#440). First, before Supabase reads the URL: an old `#/…` link moves to
+  // its path, without a history entry.
+  if (kIsWeb) {
+    usePathUrlStrategy();
+    if (legacyFragmentTarget(Uri.base) case final target?) {
+      urlStrategy?.replaceState(null, '', target);
+    }
+  }
   // A `severe` without a stack still points at its call site, not at Sentry.
   recordStackTraceAtLevel = Level.SEVERE;
   if (!kReleaseMode) {
