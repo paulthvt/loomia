@@ -44,7 +44,9 @@ jobs:
   ios:
     # track=web touches no store (#440).
     if: inputs.track != 'web'
-    runs-on: macos-latest
+    # API calls only (no build, no Transporter), so no Mac: macOS runners
+    # can go unassigned for lack of capacity.
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
