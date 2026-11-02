@@ -5,5 +5,12 @@
 	<!-- Push (#268). Distribution signing replaces it with production. -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- An invite link opens the app (#440), checked against
+	     web/.well-known/apple-app-site-association. The App ID needs the
+	     Associated Domains capability, and the profile regenerated with it. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:app.getloomia.app</string>
+	</array>
 </dict>
 </plist>
