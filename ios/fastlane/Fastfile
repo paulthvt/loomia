@@ -210,14 +210,19 @@ platform :ios do
     if testflight
       upload_to_testflight(
         distribute_only: true,
+        # Without an .ipa (and on Linux) pilot can't infer it and would ask.
+        app_platform: 'ios',
         app_version: version,
         build_number: build.to_s,
         distribute_external: true,
         groups: [EXTERNAL_GROUP],
         notify_external_testers: true,
         changelog: notes['en-US'],
-        # Processed already (checked above); never wait on a runner.
-        skip_waiting_for_build_processing: true
+        # Not skip_waiting_for_build_processing: with it, pilot silently skips
+        # a build already with internal testers, i.e. every release's. The
+        # build is processed (checked above), so the wait returns at once;
+        # the timeout is a backstop.
+        wait_processing_timeout_duration: 300
       )
       next
     end
