@@ -6,6 +6,7 @@
 #   bundle exec fastlane upload ipa:<path> changelog:<text>
 #   bundle exec fastlane apple_auth_secret key:<path.p8> key_id:<id>   # by hand, every 6 months
 #   bundle exec fastlane upload_listing screenshots:<dir> [dry_run:true]  # Store listing workflow
+#   bundle exec fastlane promote tag:<vYYYY.MM.N> track:<alpha|beta|production> notes:<release-notes.json> [dry_run:true]
 #
 # Signing comes from secrets, not match or automatic signing: one team, one
 # app, one CI (docs/architecture.md → Releases). Local builds keep Xcode's
@@ -13,6 +14,32 @@
 # Setup and the yearly renewal: README.md → Releases → iOS.
 
 default_platform(:ios)
+
+EXTERNAL_GROUP = 'External testers'
+
+# Already past "Prepare for Submission": promoting it again changes nothing.
+SUBMITTED = %w[
+  WAITING_FOR_REVIEW IN_REVIEW PENDING_DEVELOPER_RELEASE PENDING_APPLE_RELEASE
+  ACCEPTED PROCESSING_FOR_DISTRIBUTION READY_FOR_DISTRIBUTION
+].freeze
+
+# vYYYY.MM.N → ["YYYY.MM.N", build number], the formula release.yaml builds
+# with. Plain methods, not private lanes: a lane only takes a hash.
+def tag_build(tag)
+  match = /\Av(\d{4})\.(\d{1,2})\.(\d+)\z/.match(tag)
+  UI.user_error!("Tag must look like vYYYY.MM.N: '#{tag}'") unless match
+  year, month, micro = match.captures.map(&:to_i)
+  ["#{year}.#{month}.#{micro}", (year * 10_000) + (month * 100) + micro]
+end
+
+# The rest of the review details is in metadata/review_information/.
+def review_details
+  {
+    phone_number: ENV.fetch('ASC_REVIEW_PHONE'),
+    demo_user: ENV.fetch('ASC_DEMO_USER'),
+    demo_password: ENV.fetch('ASC_DEMO_PASSWORD')
+  }
+end
 
 platform :ios do
   desc 'App Store Connect API key from ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (base64).'
@@ -143,14 +170,86 @@ platform :ios do
       screenshots_path: target,
       overwrite_screenshots: true,
       app_rating_config_path: File.expand_path('rating_config.json', __dir__),
-      # The rest of the review details is in metadata/review_information/.
-      app_review_information: {
-        phone_number: ENV.fetch('ASC_REVIEW_PHONE'),
-        demo_user: ENV.fetch('ASC_DEMO_USER'),
-        demo_password: ENV.fetch('ASC_DEMO_PASSWORD')
+      app_review_information: review_details
+    )
+  end
+
+  # Ships the tag's TestFlight build further (#399): never rebuilds. alpha and
+  # beta: the external group (Beta App Review on a version's first build).
+  # production: renames the open App Store version to the tag, attaches the
+  # build and submits it; it goes live once Apple approves.
+  desc 'Promote a release. Options: tag, track (alpha|beta|production), notes (release-notes.json), dry_run.'
+  lane :promote do |options|
+    version, build = tag_build(options[:tag].to_s)
+    track = options[:track].to_s
+    UI.user_error!("Track must be alpha, beta or production: '#{track}'") unless %w[alpha beta production].include?(track)
+    path = options[:notes].to_s
+    notes = File.exist?(path) ? JSON.parse(File.read(path)) : {}
+    testflight = track != 'production'
+    if testflight && notes['en-US'].to_s.strip.empty?
+      UI.user_error!("TestFlight needs release notes (What to Test): '#{path}' has no en-US")
+    end
+
+    target = testflight ? EXTERNAL_GROUP : 'App Store review'
+    UI.message("Would send #{version} (#{build}) to #{target}")
+    notes.each { |locale, text| UI.message("#{locale}: #{text}") }
+    next if options[:dry_run]
+
+    api_key
+    platform = Spaceship::ConnectAPI::Platform::IOS
+    app = Spaceship::ConnectAPI::App.find(CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier))
+    # Checked first: pilot would otherwise wait for a missing build forever.
+    found = Spaceship::ConnectAPI::Build.all(
+      app_id: app.id, version: version, build_number: build.to_s, platform: platform
+    ).first
+    UI.user_error!("Build #{build} (#{version}) is not on TestFlight") unless found
+    unless found.processing_state == Spaceship::ConnectAPI::Build::ProcessingState::VALID
+      UI.user_error!("Build #{build} (#{version}) is #{found.processing_state} on TestFlight, not ready")
+    end
+
+    if testflight
+      upload_to_testflight(
+        distribute_only: true,
+        app_version: version,
+        build_number: build.to_s,
+        distribute_external: true,
+        groups: [EXTERNAL_GROUP],
+        notify_external_testers: true,
+        changelog: notes['en-US'],
+        # Processed already (checked above); never wait on a runner.
+        skip_waiting_for_build_processing: true
+      )
+      next
+    end
+
+    versions = app.get_app_store_versions(filter: { platform: platform })
+    sent = versions.find { |v| v.version_string == version && SUBMITTED.include?(v.app_version_state) }
+    # A rerun would fail on a metadata upload that needs an editable version.
+    UI.user_error!("Already submitted: #{version} is #{sent.app_version_state}") if sent
+
+    deliver(
+      app_version: version,
+      build_number: build.to_s,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      metadata_path: File.expand_path('metadata', __dir__),
+      app_rating_config_path: File.expand_path('rating_config.json', __dir__),
+      app_review_information: review_details,
+      # deliver leaves What's New out on the app's first version itself.
+      release_notes: notes.slice('en-US', 'fr-FR'),
+      submit_for_review: true,
+      automatic_release: true,
+      phased_release: false,
+      run_precheck_before_submit: false,
+      force: true,
+      submission_information: {
+        content_rights_contains_third_party_content: false,
+        export_compliance_uses_encryption: false
       }
     )
   end
+
+
 
   # Supabase's Apple provider takes, as its secret, a JWT signed with the
   # Sign in with Apple key. Apple caps it at 180 days, so this is rerun every
