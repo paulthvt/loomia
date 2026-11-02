@@ -1557,5 +1557,9 @@
         "type": "String"
       }
     }
+  },
+  "sharingAboutMeSaved": "Enregistré",
+  "@sharingAboutMeSaved": {
+    "description": "About me Save button, right after a save and until the next edit (#439)."
   }
 }
