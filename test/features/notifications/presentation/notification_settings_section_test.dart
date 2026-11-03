@@ -218,7 +218,12 @@ void main() {
     expect(push.asked, 1);
     expect(
       notifications.saved.single,
-      const NotificationSettings(ritual: true, timeZone: 'Europe/Paris'),
+      const NotificationSettings(
+        ritual: true,
+        ritualChosen: true,
+        timeZone: 'Europe/Paris',
+      ),
+      reason: 'a choice the plan step then keeps (#412)',
     );
     expect(switchedOn(tester), isFalse, reason: 'the summary stays off');
     expect(chip(tester, 1).onSelected, isNotNull);

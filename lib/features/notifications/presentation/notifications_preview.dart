@@ -67,7 +67,8 @@ Widget notificationsPlanReminderLight() => MaterialApp(
         RitualReminderSwitch(
           month: DateTime(2026, 10),
           time: '7:00 PM',
-          value: false,
+          // On by default (#412).
+          value: true,
           onChanged: (_) {},
         ),
       ],

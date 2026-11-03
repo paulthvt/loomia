@@ -3229,15 +3229,19 @@
   "@notificationsSharing": { "description": "Settings → Notifications switch: pushes about sharing goals (#423)." },
   "notificationsSharingBody": "When someone accepts your invite to share their goals.",
   "@notificationsSharingBody": { "description": "Under the Sharing switch in Settings → Notifications." },
-  "planReminder": "Remind me when {month} ends",
-  "@planReminder": {
-    "description": "Switch on the planning screen: turns on the month-end push, which comes in the last days of month.",
+  "planReviewReminder": "Remind me to review {month}",
+  "@planReviewReminder": {
+    "description": "Switch on the planning screen, on by default: turns on the month-end review push, which comes in the last days of month to look back on it and set the next month's goals.",
     "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
   },
-  "planReminderBody": "One note at {time} when it's time to close it.",
-  "@planReminderBody": {
-    "description": "Under the Remind me switch. time is the user's summary time, already formatted (7:00 PM, 19:00); it refers to the month.",
-    "placeholders": { "time": { "type": "String" } }
+  "planReviewReminderBody": "At the end of {month}, at {time}: see how it went and set your goals for {next}.",
+  "@planReviewReminderBody": {
+    "description": "Under the Remind me to review switch: what the push is for. month is the month just planned, next the one after it; time is the user's summary time, already formatted (7:00 PM, 19:00).",
+    "placeholders": {
+      "month": { "type": "DateTime", "format": "MMMM" },
+      "time": { "type": "String" },
+      "next": { "type": "DateTime", "format": "MMMM" }
+    }
   },
   "notificationsTime": "Time",
   "@notificationsTime": {

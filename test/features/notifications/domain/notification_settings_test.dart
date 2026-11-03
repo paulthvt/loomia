@@ -58,6 +58,15 @@ void main() {
     final row = settings.toRow();
     expect(row['summary_enabled'], isFalse);
     expect(row['ritual_enabled'], isTrue);
+    expect(row['ritual_chosen'], isFalse, reason: 'never chosen (#412)');
+    expect(
+      NotificationSettings.fromRow({
+        ...row,
+        'summary_time': '07:05:00',
+        'ritual_chosen': true,
+      }).ritualChosen,
+      isTrue,
+    );
     expect(row['summary_time'], '07:05');
     expect(row['summary_days'], [1, 6, 7]);
     expect(
