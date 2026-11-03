@@ -1725,6 +1725,14 @@
   "@followWithNothing": {
     "description": "Last option of the choice: follow no workflow."
   },
+  "followWithPlanNow": "Plan it now",
+  "@followWithPlanNow": {
+    "description": "Chip under the first step of the workflow picked in Follow with, when that step is an event to plan (an unboxing call): once saved, opens the event form to pick its day and time."
+  },
+  "followWithRemind": "Remind me",
+  "@followWithRemind": {
+    "description": "Chip beside 'Plan it now': plan the event later instead; shows the day the step comes back on Today."
+  },
   "changeStageWorkflowEnds": "The {workflow} workflow ends here.",
   "@changeStageWorkflowEnds": {
     "description": "Added to the Change stage body when the person was following a workflow.",

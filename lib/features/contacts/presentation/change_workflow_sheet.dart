@@ -4,13 +4,16 @@ import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/presentation/plan_sheet.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/follow_with_field.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -19,17 +22,31 @@ import 'package:material_ui/material_ui.dart';
 /// elsewhere. Saving starts the picked workflow from its first step, even the
 /// current one. Closes once saved, and completes with whether it was. They
 /// must all be in the same stage: the workflows offered are that stage's.
+/// Plan it now (#413) opens the event form once the sheet has closed.
 Future<bool> showChangeWorkflow(
   BuildContext context,
   List<Person> people,
-) async =>
-    await LoomiaDialog.show<bool>(context, (_) => _ChangeWorkflow(people)) ??
-    false;
+) async {
+  EventWorkflow? plan;
+  final saved =
+      await LoomiaDialog.show<bool>(
+        context,
+        (_) => _ChangeWorkflow(people, onPlan: (type) => plan = type),
+      ) ??
+      false;
+  if (plan case final type? when saved && context.mounted) {
+    await planEvent(context, people.single, type);
+  }
+  return saved;
+}
 
 class _ChangeWorkflow extends ConsumerStatefulWidget {
-  const _ChangeWorkflow(this.people);
+  const _ChangeWorkflow(this.people, {required this.onPlan});
 
   final List<Person> people;
+
+  /// The event to plan once closed.
+  final ValueChanged<EventWorkflow> onPlan;
 
   @override
   ConsumerState<_ChangeWorkflow> createState() => _ChangeWorkflowState();
@@ -40,6 +57,9 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
   ({FollowWith? follow})? _picked;
   bool _saving = false;
   PeopleFailure? _failure;
+
+  /// Plan the first step's event once saved, when it is one (#413).
+  bool _plan = true;
 
   Stage get _stage => widget.people.first.stage;
 
@@ -58,7 +78,12 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
         : (workflow: suggested, firstDue: firstDueDefault(suggested, today));
   }
 
-  Future<void> _save(FollowWith? follow) async {
+  Future<void> _save(FollowWith? picked, EventWorkflow? type) async {
+    final plan = _plan ? type : null;
+    // Due today, so a form closed unsaved leaves it on Today.
+    final follow = plan == null || picked == null
+        ? picked
+        : (workflow: picked.workflow, firstDue: today());
     // Close without writing when nothing was picked and they all already
     // follow what is shown.
     if (_picked == null && follow?.workflow.id == _shared) {
@@ -73,6 +98,7 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
       await ref
           .read(peopleProvider(ref.read(accountProvider)?.email).notifier)
           .setWorkflow(widget.people, follow);
+      if (plan != null) widget.onPlan(plan);
       if (mounted) Navigator.pop(context, true);
     } on PeopleFailure catch (failure) {
       if (mounted) {
@@ -93,6 +119,16 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
     final workflows = ref.watch(workflowsProvider(owner)).value ?? const [];
     final now = today();
     final follow = _follow(workflows, now);
+    // One person plans, as in Change stage; not while what they already
+    // follow is only shown, since saving that writes nothing.
+    final type =
+        widget.people.length == 1 &&
+            (_picked != null || follow?.workflow.id != _shared)
+        ? FollowWithField.planType(
+            ref.watch(eventWorkflowsProvider(owner)).value ?? const [],
+            follow,
+          )
+        : null;
 
     return LoomiaDialog(
       title: switch (widget.people) {
@@ -105,7 +141,7 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
           child: Text(material.cancelButtonLabel),
         ),
         FilledButton(
-          onPressed: _saving ? null : () => _save(follow),
+          onPressed: _saving ? null : () => _save(follow, type),
           child: _saving
               ? const SizedBox.square(
                   dimension: 20,
@@ -125,6 +161,8 @@ class _ChangeWorkflowState extends ConsumerState<_ChangeWorkflow> {
             value: follow,
             today: now,
             onChanged: (next) => setState(() => _picked = (follow: next)),
+            plan: type == null ? null : _plan,
+            onPlanChanged: (plan) => setState(() => _plan = plan),
           ),
         ],
       ),
