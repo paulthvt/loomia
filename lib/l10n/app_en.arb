@@ -780,29 +780,33 @@
   "@statusNoReply": {
     "description": "Status of a prospect who has not answered."
   },
-  "contactSectionWhatYouKnow": "What you know",
-  "@contactSectionWhatYouKnow": {
-    "description": "Section header above the facts about a person: needs, products, job, contact details, notes."
+  "contactSectionInfo": "Info",
+  "@contactSectionInfo": {
+    "description": "Section header above the facts about a person: bio, concerns, favourite products, contact details, notes. Short and plural-neutral (French: 'Infos')."
   },
   "contactEdit": "Edit",
   "@contactEdit": {
-    "description": "Action of the 'What you know' section header that opens the edit form."
+    "description": "Action of the 'Info' section header that opens the edit form."
   },
   "contactNothingYet": "Nothing yet.",
   "@contactNothingYet": {
-    "description": "Shown in 'What you know' when no fact about the person is filled in."
+    "description": "Shown in 'Info' when no fact about the person is filled in."
   },
-  "factNeeds": "Needs",
-  "@factNeeds": {
-    "description": "Label of what a person is looking for (e.g. 'Sleep, stress'). Also the edit form field."
+  "factBio": "Bio",
+  "@factBio": {
+    "description": "Label of a few free lines about who a person is: age, children, job. First fact of 'Info'. Also the edit form field."
   },
-  "factProducts": "Uses",
-  "@factProducts": {
-    "description": "Label of the products a person already uses. Also the edit form field."
+  "factBioHint": "Age, children, work…",
+  "@factBioHint": {
+    "description": "Placeholder inside the empty Bio field of the edit form, suggesting what to write."
   },
-  "factProfession": "Works as",
-  "@factProfession": {
-    "description": "Label of a person's job. Also the edit form field."
+  "factConcerns": "Concerns",
+  "@factConcerns": {
+    "description": "Label of the issues a person wants help with (e.g. 'Sleep, stress'). Also the edit form field. French: 'Problématiques'."
+  },
+  "factFavouriteProducts": "Favourite products",
+  "@factFavouriteProducts": {
+    "description": "Label of the products a person likes or already uses. Also the edit form field."
   },
   "factPhone": "Phone",
   "@factPhone": {

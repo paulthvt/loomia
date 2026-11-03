@@ -101,7 +101,7 @@ void main() {
       expect(person.prospectStatus, ProspectStatus.notNow);
       expect(person.phone, '06 12 34 56 78');
       expect(person.needs, 'Sleep, stress');
-      expect(person.profession, 'Nurse');
+      expect(person.bio, 'Nurse');
       expect(person.stageSince, DateTime.utc(2026, 4, 1, 8));
       expect(person.createdAt, DateTime.utc(2026, 3, 4, 10));
     });

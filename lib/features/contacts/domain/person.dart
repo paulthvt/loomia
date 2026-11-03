@@ -30,7 +30,7 @@ class Person {
     this.instagram,
     this.needs,
     this.products,
-    this.profession,
+    this.bio,
     this.address,
     this.notes,
     this.why,
@@ -85,7 +85,10 @@ class Person {
 
   /// Free text: what they already use.
   final String? products;
-  final String? profession;
+
+  /// Free text: age, children, work. Stored in the `profession` column, which
+  /// held only the job before #430.
+  final String? bio;
   final String? address;
   final String? notes;
 
@@ -208,7 +211,7 @@ class Person {
     instagram: instagram,
     needs: needs,
     products: products,
-    profession: profession,
+    bio: bio,
     address: address,
     notes: notes,
     why: why,

@@ -55,7 +55,7 @@ typedef _Action = ({
 /// One person: who they are, how to reach them, where it stands, what's next,
 /// what you know. A pure view; the page owns saving and navigation.
 class ContactDetails extends StatelessWidget {
-  /// WHAT YOU KNOW's column on desktop, beside the rest.
+  /// INFO's column on desktop, beside the rest.
   static const double _factsWidth = 340;
 
   const ContactDetails({
@@ -287,9 +287,9 @@ class ContactDetails extends StatelessWidget {
     final email = person.email;
     final status = person.prospectStatus;
     final facts = [
-      (l10n.factNeeds, person.needs, null),
-      (l10n.factProducts, person.products, null),
-      (l10n.factProfession, person.profession, null),
+      (l10n.factBio, person.bio, null),
+      (l10n.factConcerns, person.needs, null),
+      (l10n.factFavouriteProducts, person.products, null),
       (l10n.factPhone, person.phone, null),
       (
         l10n.factEmail,
@@ -681,7 +681,7 @@ class ContactDetails extends StatelessWidget {
         : <Widget>[];
     final sharedGoals = shared == null ? <Widget>[] : sharedSection(shared);
     final whatYouKnow = factsSection(
-      l10n.contactSectionWhatYouKnow,
+      l10n.contactSectionInfo,
       EditPart.facts,
       facts,
     );

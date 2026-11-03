@@ -447,7 +447,9 @@ Person personFromRow(Map<String, dynamic> row) {
     instagram: _text(row['instagram']),
     needs: _text(row['needs']),
     products: _text(row['products']),
-    profession: _text(row['profession']),
+    // The job became the bio (#430); the column kept its name, so the
+    // released app reads and writes the same text.
+    bio: _text(row['profession']),
     address: _text(row['address']),
     notes: _text(row['notes']),
     why: _text(row['why']),
@@ -537,7 +539,7 @@ Map<String, dynamic> personToRow(Person person) => {
   'instagram': _text(person.instagram),
   'needs': _text(person.needs),
   'products': _text(person.products),
-  'profession': _text(person.profession),
+  'profession': _text(person.bio),
   'address': _text(person.address),
   'notes': _text(person.notes),
   'why': _text(person.why),

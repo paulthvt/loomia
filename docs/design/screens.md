@@ -81,7 +81,7 @@ a 420-person alphabetical list is a database, and this product is not a database
 Sidebar → 440px list column (title + `Add` button, search, filters, grouped rows,
 selected row washed with `primary/muted`) → 752px detail pane showing the selected
 contact: header with actions, `NEXT STEP`, `HISTORY`, and a right column with
-`WHAT YOU KNOW` plus the person's chips.
+`INFO` plus the person's chips.
 
 Selecting a row never navigates. This is the one screen whose desktop layout is
 structurally different from mobile, and the reason is that a pointer can hold a
@@ -98,7 +98,7 @@ above the history because the history is memory, not homework. The app bar title
 is a back affordance, not a repeat of the name — the name is already the largest
 thing on the screen (principle #2).
 
-**`NEXT STEP`** sits between `WHERE IT STANDS` and `WHAT YOU KNOW`, on mobile and
+**`NEXT STEP`** sits between `WHERE IT STANDS` and `INFO`, on mobile and
 in the desktop pane. It follows the person's workflow, one step at a time:
 
 | State | Header | Card |
@@ -257,8 +257,8 @@ Detail frames are drawn full length where the screen scrolls.
 **Contact detail.** The order is: header, `Message` / `Call` / ⋯, then
 `WHERE IT STANDS` for prospects only (Interested / Thinking it over / Not now /
 No reply), `NEXT STEP` with the workflow name and position ("Samples · 3 of 5"),
-`WHAT YOU KNOW` (FactRows, with Edit) and `HISTORY` (with Add). A team member
-also has `WHAT THEY ARE AIMING FOR` above `WHAT YOU KNOW`: their why, own goal,
+`INFO` (FactRows, with Edit) and `HISTORY` (with Add). A team member
+also has `WHAT THEY ARE AIMING FOR` above `INFO`: their why, own goal,
 time they have, what they would love to do, strengths and where they are stuck,
 in their words. After their why come "Rank now", "Aiming for" ("Elite by
 March 2027") and "Each month" ("Aims for 100 PV"); Other reads "Level now" and
@@ -269,7 +269,7 @@ text for Other), aims only above the rank now, a month for "By" once there is
 a target, and a number.
 
 **Edit details** (from ⋯) is grouped as the page is: Name, then
-`WHAT THEY ARE AIMING FOR` (team only), then `WHAT YOU KNOW`. A section's own
+`WHAT THEY ARE AIMING FOR` (team only), then `INFO`. A section's own
 Edit asks only for that section's fields, titled with its name and without a
 header. Frames: `Edit details sheet — team member` (drawn full length) and
 `Edit sheet — what they are aiming for`.
@@ -299,7 +299,7 @@ editor is a list of WorkflowSteps, and each one opens the Edit step sheet (what
 to do, days after the previous step, note).
 
 **Desktop** reuses the §2 split: stage filters in the list column, and the
-detail pane holds `NEXT STEP` + `HISTORY` on the left and `WHAT YOU KNOW` on the
+detail pane holds `NEXT STEP` + `HISTORY` on the left and `INFO` on the
 right.
 
 Two components were added for these frames: `WorkflowStep` (number, label,
