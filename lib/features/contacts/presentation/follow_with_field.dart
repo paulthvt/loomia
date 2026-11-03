@@ -3,6 +3,7 @@ import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/features/workflows/presentation/workflows_settings.dart';
@@ -10,15 +11,22 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// What follows: one of a stage's workflows and its first step's day, or
-/// nothing. Controlled — the sheet holds [value].
+/// nothing. Controlled — the sheet holds [value] and [plan].
 class FollowWithField extends StatelessWidget {
   const FollowWithField({
     required this.workflows,
     required this.value,
     required this.today,
     required this.onChanged,
+    this.plan,
+    this.onPlanChanged,
     super.key,
   });
+
+  /// When the first step is an event to plan (#413): true plans it once
+  /// saved, false reminds on the day picked. Null offers neither.
+  final bool? plan;
+  final ValueChanged<bool>? onPlanChanged;
 
   /// One stage's, default first (`forStage`).
   final List<Workflow> workflows;
@@ -27,6 +35,16 @@ class FollowWithField extends StatelessWidget {
   final FollowWith? value;
   final DateTime today;
   final ValueChanged<FollowWith?> onChanged;
+
+  /// The event [follow]'s first step plans, of [types]; null when it plans
+  /// none.
+  static EventWorkflow? planType(
+    List<EventWorkflow> types,
+    FollowWith? follow,
+  ) => findEventWorkflow(
+    types,
+    follow?.workflow.steps.firstOrNull?.eventWorkflowId,
+  );
 
   // The radio value of "Nothing for now"; ids are uuids, never empty.
   static const _nothing = '';
@@ -89,21 +107,45 @@ class FollowWithField extends StatelessWidget {
             label:
                 follow.workflow.steps.firstOrNull?.label ??
                 follow.workflow.name,
-            child: Semantics(
-              button: true,
-              child: InkWell(
-                onTap: () => _pickDay(context, follow),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    suffixIcon: Icon(Icons.calendar_today_outlined),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppSpacing.sm,
+              children: [
+                if (plan case final plan?)
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      ChoiceChip(
+                        label: Text(l10n.followWithPlanNow),
+                        selected: plan,
+                        onSelected: (_) => onPlanChanged?.call(true),
+                      ),
+                      ChoiceChip(
+                        label: Text(l10n.followWithRemind),
+                        selected: !plan,
+                        onSelected: (_) => onPlanChanged?.call(false),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    follow.firstDue == today
-                        ? l10n.logWhenToday(today)
-                        : dayLabel(l10n, follow.firstDue, today),
+                if (!(plan ?? false))
+                  Semantics(
+                    button: true,
+                    child: InkWell(
+                      onTap: () => _pickDay(context, follow),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          suffixIcon: Icon(Icons.calendar_today_outlined),
+                        ),
+                        child: Text(
+                          follow.firstDue == today
+                              ? l10n.logWhenToday(today)
+                              : dayLabel(l10n, follow.firstDue, today),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+              ],
             ),
           ),
         ],

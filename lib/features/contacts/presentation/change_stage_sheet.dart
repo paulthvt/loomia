@@ -4,6 +4,7 @@ import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/presentation/plan_sheet.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -11,8 +12,10 @@ import 'package:loomia/features/contacts/presentation/follow_with_field.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
+import 'package:loomia/features/workflows/presentation/event_workflows_controller.dart';
 import 'package:loomia/features/workflows/presentation/workflows_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,22 +23,41 @@ import 'package:material_ui/material_ui.dart';
 /// Moves [people] to [stage] once confirmed, in one write: a sheet on mobile,
 /// a dialog elsewhere. Closes once the move is saved, and completes with
 /// whether it was. None of them may be in [stage] already.
+/// Plan it now (#413) opens the event form once the sheet has closed.
 Future<bool> showChangeStage(
   BuildContext context,
   List<Person> people,
   Stage stage,
-) async =>
-    await LoomiaDialog.show<bool>(
-      context,
-      (_) => _ChangeStage(people: people, stage: stage),
-    ) ??
-    false;
+) async {
+  EventWorkflow? plan;
+  final moved =
+      await LoomiaDialog.show<bool>(
+        context,
+        (_) => _ChangeStage(
+          people: people,
+          stage: stage,
+          onPlan: (type) => plan = type,
+        ),
+      ) ??
+      false;
+  if (plan case final type? when moved && context.mounted) {
+    await planEvent(context, people.single, type);
+  }
+  return moved;
+}
 
 class _ChangeStage extends ConsumerStatefulWidget {
-  const _ChangeStage({required this.people, required this.stage});
+  const _ChangeStage({
+    required this.people,
+    required this.stage,
+    required this.onPlan,
+  });
 
   final List<Person> people;
   final Stage stage;
+
+  /// The event to plan once closed.
+  final ValueChanged<EventWorkflow> onPlan;
 
   @override
   ConsumerState<_ChangeStage> createState() => _ChangeStageState();
@@ -47,6 +69,9 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
   ({FollowWith? follow})? _picked;
   bool _saving = false;
   PeopleFailure? _failure;
+
+  /// Plan the first step's event once moved, when it is one (#413).
+  bool _plan = true;
 
   /// One prospect becoming a customer: their registration order (#318).
   final _amount = TextEditingController();
@@ -74,10 +99,15 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
         : (workflow: suggested, firstDue: firstDueDefault(suggested, today));
   }
 
-  Future<void> _move(FollowWith? follow) async {
+  Future<void> _move(FollowWith? picked, EventWorkflow? type) async {
     if (!(_form.currentState?.validate() ?? true)) return;
     final amount = _registers ? _registration : null;
     final text = AppLocalizations.of(context).thereRegistrationOrder;
+    final plan = _plan ? type : null;
+    // Due today, so a form closed unsaved leaves it on Today.
+    final follow = plan == null || picked == null
+        ? picked
+        : (workflow: picked.workflow, firstDue: today());
     setState(() {
       _saving = true;
       _failure = null;
@@ -96,6 +126,7 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
           amount: amount,
         ));
       }
+      if (plan != null) widget.onPlan(plan);
       if (mounted) Navigator.pop(context, true);
     } on PeopleFailure catch (failure) {
       if (mounted) {
@@ -117,6 +148,14 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
     final now = today();
     final follow = _follow(workflows, now);
     final people = widget.people;
+    // ponytail: one person plans; several share a reminder, since an event
+    // per person would need the group choice for each.
+    final type = people.length == 1
+        ? FollowWithField.planType(
+            ref.watch(eventWorkflowsProvider(owner)).value ?? const [],
+            follow,
+          )
+        : null;
     final ending = [
       for (final person in people)
         if (findWorkflow(workflows, person.place?.workflowId)
@@ -152,7 +191,7 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
         FilledButton(
           onPressed: _saving || !workflowsAsync.hasValue
               ? null
-              : () => _move(follow),
+              : () => _move(follow, type),
           child: _saving
               ? const SizedBox.square(
                   dimension: 20,
@@ -172,6 +211,8 @@ class _ChangeStageState extends ConsumerState<_ChangeStage> {
             value: follow,
             today: now,
             onChanged: (next) => setState(() => _picked = (follow: next)),
+            plan: type == null ? null : _plan,
+            onPlanChanged: (plan) => setState(() => _plan = plan),
           ),
           if (_registers)
             Form(

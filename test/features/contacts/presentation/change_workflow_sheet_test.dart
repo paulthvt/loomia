@@ -1,10 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/change_workflow_sheet.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../calendar/fake_event_repository.dart';
+import '../../workflows/fake_event_workflow_repository.dart';
+import '../../workflows/fake_workflow_repository.dart';
 import '../fake_people_repository.dart';
 import 'form_harness.dart';
 
@@ -28,6 +34,75 @@ void main() {
       result: (_) {},
     );
   }
+
+  group('a first step that is an event to plan (#413)', () {
+    late FakeEventRepository events;
+
+    Future<void> openBooking(WidgetTester tester, Person person) async {
+      final workflows = FakeWorkflowRepository([
+        Workflow(
+          id: 'flow',
+          stage: Stage.prospect,
+          name: 'Samples',
+          isDefault: true,
+          steps: const [
+            WorkflowStep(
+              id: 'book',
+              position: 1,
+              label: 'Book the wellness check',
+              days: 0,
+              eventWorkflowId: 'wellness',
+            ),
+          ],
+        ),
+      ]);
+      people = FakePeopleRepository([person])..workflows = workflows.store;
+      events = FakeEventRepository();
+      await pumpFormHarness(
+        tester,
+        people: people,
+        workflows: workflows,
+        eventWorkflows: FakeEventWorkflowRepository([
+          EventWorkflow(
+            id: 'wellness',
+            name: 'Wellness check',
+            isGroup: false,
+            steps: const [],
+          ),
+        ]),
+        events: events,
+        open: (context) => showChangeWorkflow(context, [person]),
+        result: (_) {},
+      );
+    }
+
+    testWidgets('Plan it now: saved, then the event form', (tester) async {
+      await openBooking(tester, _sarah());
+
+      expect(find.widgetWithText(ChoiceChip, 'Plan it now'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(people.calls, contains('setPlace(p1, flow)'));
+      expect(find.text('Wellness check — Sarah'), findsOneWidget);
+    });
+
+    testWidgets('not offered while what they follow is only shown', (
+      tester,
+    ) async {
+      await openBooking(
+        tester,
+        _sarah(place: (workflowId: 'flow', atPosition: 1, lastTick: today())),
+      );
+
+      expect(find.widgetWithText(ChoiceChip, 'Plan it now'), findsNothing);
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(people.calls, isNot(contains('setPlace(p1, flow)')));
+      expect(find.text('Wellness check — Sarah'), findsNothing);
+    });
+  });
 
   testWidgets('the current workflow is selected; Save changes it', (
     tester,

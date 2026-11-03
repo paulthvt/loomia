@@ -3,8 +3,13 @@ import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/change_stage_sheet.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../calendar/fake_event_repository.dart';
+import '../../workflows/fake_event_workflow_repository.dart';
+import '../../workflows/fake_workflow_repository.dart';
 import '../fake_activity_repository.dart';
 import '../fake_people_repository.dart';
 import 'form_harness.dart';
@@ -163,6 +168,87 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  group('a first step that is an event to plan (#413)', () {
+    late FakeEventRepository events;
+
+    Future<void> openBooking(WidgetTester tester) async {
+      final workflows = FakeWorkflowRepository([
+        Workflow(
+          id: 'flow',
+          stage: Stage.customer,
+          name: 'New customer',
+          isDefault: true,
+          steps: const [
+            WorkflowStep(
+              id: 'book',
+              position: 1,
+              label: 'Book the unboxing call',
+              days: 2,
+              eventWorkflowId: 'unboxing',
+            ),
+          ],
+        ),
+      ]);
+      people = FakePeopleRepository([_sarah()])..workflows = workflows.store;
+      events = FakeEventRepository();
+      await pumpFormHarness(
+        tester,
+        people: people,
+        workflows: workflows,
+        eventWorkflows: FakeEventWorkflowRepository([
+          EventWorkflow(
+            id: 'unboxing',
+            name: 'Unboxing call',
+            isGroup: false,
+            steps: const [],
+          ),
+        ]),
+        events: events,
+        open: (context) => showChangeStage(context, [_sarah()], Stage.customer),
+        result: (_) {},
+      );
+    }
+
+    testWidgets('Plan it now, the default: moved, then the event form, '
+        'with a time', (tester) async {
+      await openBooking(tester);
+
+      expect(find.text('Book the unboxing call'), findsOneWidget);
+      expect(find.byIcon(Icons.calendar_today_outlined), findsNothing);
+      await tester.tap(find.widgetWithText(FilledButton, 'Move to customers'));
+      await tester.pumpAndSettle();
+
+      expect(people.store['p1']!.stage, Stage.customer);
+      expect(people.store['p1']!.place?.workflowId, 'flow');
+      expect(find.text('Unboxing call — Sarah'), findsOneWidget);
+      expect(find.text('7:00 PM'), findsOneWidget);
+
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      final added = events.store.single;
+      expect(added.eventWorkflowId, 'unboxing');
+      expect(events.calls, contains('invite(${added.id}:p1)'));
+      expect(find.text('Sarah is now a customer'), findsNothing);
+    });
+
+    testWidgets('Remind me: the day to come back to it, and no form', (
+      tester,
+    ) async {
+      await openBooking(tester);
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Remind me'));
+      await tester.pump();
+      expect(find.byIcon(Icons.calendar_today_outlined), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Move to customers'));
+      await tester.pumpAndSettle();
+
+      expect(people.store['p1']!.place?.workflowId, 'flow');
+      expect(find.text('Unboxing call — Sarah'), findsNothing);
+      expect(events.store, isEmpty);
+    });
   });
 
   testWidgets('several people move in one write', (tester) async {
