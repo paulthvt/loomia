@@ -126,9 +126,14 @@
   "@authCreateAccountSubmit": {
     "description": "Submit button of the registration form."
   },
-  "authRegisterTerms": "By creating an account you agree to the terms and the privacy policy.",
-  "@authRegisterTerms": {
-    "description": "Small print under the registration form."
+  "authRegisterPrivacy": "By creating an account, you accept the {policy}.",
+  "@authRegisterPrivacy": {
+    "description": "Small print under the registration form. policy is authRegisterPrivacyLink, shown as a link to the privacy policy.",
+    "placeholders": { "policy": { "type": "String", "example": "privacy policy" } }
+  },
+  "authRegisterPrivacyLink": "privacy policy",
+  "@authRegisterPrivacyLink": {
+    "description": "Link inside authRegisterPrivacy that opens the privacy policy on getloomia.app."
   },
   "authAlreadyHaveAccount": "Already have an account?",
   "@authAlreadyHaveAccount": {
@@ -461,6 +466,14 @@
   "settingsSignOut": "Sign out",
   "@settingsSignOut": {
     "description": "Button on the Settings screen that signs the user out of the app on this device."
+  },
+  "settingsPrivacyPolicy": "Privacy policy",
+  "@settingsPrivacyPolicy": {
+    "description": "Settings row that opens the privacy policy on getloomia.app, in the browser."
+  },
+  "settingsHelp": "Help",
+  "@settingsHelp": {
+    "description": "Settings row that opens the help page on getloomia.app (contact, deleting an account, notifications), in the browser."
   },
   "settingsVersion": "Version {version}",
   "@settingsVersion": {

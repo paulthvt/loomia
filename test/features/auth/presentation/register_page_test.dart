@@ -61,6 +61,20 @@ void main() {
     expect(find.text('Create account'), findsOneWidget);
   });
 
+  testWidgets('links the privacy policy, and no terms yet', (tester) async {
+    await tester.pumpWidget(_host(_router(), FakeAuthRepository()));
+
+    expect(
+      find.textContaining(
+        'By creating an account, you accept the',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(TextButton, 'privacy policy'), findsOneWidget);
+    expect(find.textContaining('terms', findRichText: true), findsNothing);
+  });
+
   testWidgets('a blank first name blocks the request', (tester) async {
     final fake = FakeAuthRepository();
     await tester.pumpWidget(_host(_router(), fake));

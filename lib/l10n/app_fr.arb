@@ -30,7 +30,6 @@
   "authFirstNameLabel": "Prénom",
   "authPasswordHelperMinimum": "Au moins {count} caractères",
   "authCreateAccountSubmit": "Créer le compte",
-  "authRegisterTerms": "En créant un compte, tu acceptes les conditions d’utilisation et la politique de confidentialité.",
   "authAlreadyHaveAccount": "Tu as déjà un compte ?",
   "authForgotTitle": "Réinitialise ton mot de passe",
   "authForgotBody": "Saisis l’adresse utilisée à l’inscription et on t’enverra un lien.",

@@ -105,9 +105,29 @@ void main() {
     expect(fake.calls.last, 'updateLocale(null)');
   });
 
+  testWidgets('offers the privacy policy and help, leaving the app', (
+    tester,
+  ) async {
+    await _openSettings(tester);
+
+    for (final row in ['Privacy policy', 'Help']) {
+      await tester.scrollUntilVisible(find.text(row), 200);
+      expect(
+        find.ancestor(
+          of: find.byIcon(Icons.open_in_new_rounded),
+          matching: find.widgetWithText(ListTile, row),
+        ),
+        findsOneWidget,
+      );
+    }
+  });
+
   testWidgets('sign out asks the repository', (tester) async {
     final fake = await _openSettings(tester);
 
+    // Below the fold on a phone since the privacy and help rows (#418).
+    await tester.ensureVisible(find.text('Sign out'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();
 
