@@ -25,6 +25,7 @@ Person _person({
   String? email,
   String? instagram,
   String? needs,
+  String? bio,
   String? ownGoal,
   String? stuckOn,
   DateTime? pausedAt,
@@ -42,6 +43,7 @@ Person _person({
   email: email,
   instagram: instagram,
   needs: needs,
+  bio: bio,
   ownGoal: ownGoal,
   stuckOn: stuckOn,
   pausedAt: pausedAt,
@@ -301,9 +303,22 @@ void main() {
 
     await _pump(tester, _person(needs: 'Sleep, stress'));
     expect(find.text('Nothing yet.'), findsNothing);
-    expect(find.text('Needs'), findsOneWidget);
+    expect(find.text('Concerns'), findsOneWidget);
     expect(find.text('Sleep, stress'), findsOneWidget);
     expect(find.text('Phone'), findsNothing);
+  });
+
+  testWidgets('the bio comes first in Info (#430)', (tester) async {
+    await _pump(
+      tester,
+      _person(bio: '34, two kids, nurse', needs: 'Sleep', phone: '06 12'),
+    );
+
+    expect(find.text('Bio'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Bio')).dy,
+      lessThan(tester.getTopLeft(find.text('Concerns')).dy),
+    );
   });
 
   testWidgets('a team member: what they are aiming for, filled facts only', (
@@ -326,7 +341,7 @@ void main() {
     // Above what you know.
     expect(
       tester.getTopLeft(find.text('WHAT THEY ARE AIMING FOR')).dy,
-      lessThan(tester.getTopLeft(find.text('WHAT YOU KNOW')).dy),
+      lessThan(tester.getTopLeft(find.text('INFO')).dy),
     );
   });
 
@@ -607,7 +622,7 @@ void main() {
     await _pump(tester, _person(), size: const Size(1440, 900));
 
     final facts = find.ancestor(
-      of: find.text('WHAT YOU KNOW'),
+      of: find.text('INFO'),
       matching: find.byType(SectionHeader),
     );
     expect(tester.getSize(facts).width, 340);

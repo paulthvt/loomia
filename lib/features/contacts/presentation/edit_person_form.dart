@@ -24,7 +24,7 @@ enum EditPart {
   /// WHAT THEY ARE AIMING FOR: a team member's own profile.
   aims,
 
-  /// WHAT YOU KNOW: every fact but the name and the profile.
+  /// INFO: every fact but the name and the profile.
   facts,
 }
 
@@ -47,9 +47,9 @@ enum _Field {
   wouldLoveTo,
   strengths,
   stuckOn,
+  bio,
   needs,
   products,
-  profession,
   phone,
   email,
   instagram,
@@ -67,13 +67,13 @@ const _teamFields = {
   _Field.stuckOn,
 };
 
-/// WHAT YOU KNOW: the rest but the name.
+/// INFO: the rest but the name.
 final _facts = _Field.values.where(
   (field) => field != _Field.name && !_teamFields.contains(field),
 );
 
 /// Sentences in their words, not a single value.
-const _multiline = {_Field.address, _Field.notes, ..._teamFields};
+const _multiline = {_Field.bio, _Field.address, _Field.notes, ..._teamFields};
 
 class _EditPersonForm extends ConsumerStatefulWidget {
   const _EditPersonForm(this.person, this.part);
@@ -146,7 +146,7 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
       _Field.instagram => p.instagram,
       _Field.needs => p.needs,
       _Field.products => p.products,
-      _Field.profession => p.profession,
+      _Field.bio => p.bio,
       _Field.address => p.address,
       _Field.notes => p.notes,
       _Field.why => p.why,
@@ -206,7 +206,7 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
               instagram: _text(_Field.instagram),
               needs: _text(_Field.needs),
               products: _text(_Field.products),
-              profession: _text(_Field.profession),
+              bio: _text(_Field.bio),
               address: _text(_Field.address),
               notes: _text(_Field.notes),
               why: _text(_Field.why),
@@ -246,9 +246,9 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
       _Field.phone: l10n.factPhone,
       _Field.email: l10n.factEmail,
       _Field.instagram: l10n.factInstagram,
-      _Field.needs: l10n.factNeeds,
-      _Field.products: l10n.factProducts,
-      _Field.profession: l10n.factProfession,
+      _Field.needs: l10n.factConcerns,
+      _Field.products: l10n.factFavouriteProducts,
+      _Field.bio: l10n.factBio,
       _Field.address: l10n.factAddress,
       _Field.notes: l10n.factNotes,
       _Field.why: l10n.factWhy,
@@ -274,6 +274,9 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
           _ => TextInputType.text,
         },
         maxLines: _multiline.contains(field) ? null : 1,
+        decoration: InputDecoration(
+          hintText: field == _Field.bio ? l10n.factBioHint : null,
+        ),
         validator: field == _Field.name
             ? (value) => (value ?? '').trim().isEmpty
                   ? l10n.addPersonNameRequired
@@ -401,7 +404,7 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
         title: switch (widget.part) {
           EditPart.everything => l10n.editPersonTitle,
           EditPart.aims => l10n.contactSectionAimingFor,
-          EditPart.facts => l10n.contactSectionWhatYouKnow,
+          EditPart.facts => l10n.contactSectionInfo,
         },
         actions: [
           TextButton(
@@ -431,7 +434,7 @@ class _EditPersonFormState extends ConsumerState<_EditPersonForm> {
             for (final (index, (header, fields)) in [
               (null, [_Field.name]),
               (l10n.contactSectionAimingFor, _teamFields),
-              (l10n.contactSectionWhatYouKnow, _facts),
+              (l10n.contactSectionInfo, _facts),
             ].where((section) => section.$2.any(_asks)).indexed) ...[
               if (index > 0) const SizedBox(height: AppSpacing.lg),
               if (header != null && widget.part == EditPart.everything)

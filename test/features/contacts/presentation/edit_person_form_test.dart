@@ -50,7 +50,8 @@ void main() {
   testWidgets('saves every field and keeps stage and status', (tester) async {
     await open(tester);
 
-    await tester.enterText(field('Needs'), 'Sleep, stress');
+    await tester.enterText(field('Bio'), '34, two kids\nNurse');
+    await tester.enterText(field('Concerns'), 'Sleep, stress');
     await tester.enterText(field('Phone'), '');
     await tester.ensureVisible(field('Notes'));
     await tester.enterText(field('Notes'), 'Met at the market');
@@ -58,6 +59,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final saved = people.store['p1']!;
+    expect(saved.bio, '34, two kids\nNurse');
     expect(saved.needs, 'Sleep, stress');
     expect(saved.phone, isNull);
     expect(saved.notes, 'Met at the market');
@@ -165,7 +167,7 @@ void main() {
     expect(find.text('What they are aiming for'), findsOneWidget);
     expect(field('Their own goal'), findsOneWidget);
     expect(field('Name'), findsNothing);
-    expect(field('Needs'), findsNothing);
+    expect(field('Concerns'), findsNothing);
     await tester.enterText(field('Their own goal'), 'Pay for the holidays');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
@@ -176,7 +178,7 @@ void main() {
     expect(saved.needs, 'Sleep');
 
     await edit(EditPart.facts);
-    expect(field('Needs'), findsOneWidget);
+    expect(field('Concerns'), findsOneWidget);
     expect(field('Name'), findsNothing);
     expect(field('Their why'), findsNothing);
   });
@@ -481,7 +483,7 @@ void main() {
       );
 
       expect(labeled('Rank now'), findsNothing);
-      await tester.enterText(field('Needs'), 'Sleep, stress');
+      await tester.enterText(field('Concerns'), 'Sleep, stress');
       await save(tester);
 
       final saved = people.store['p2']!;
@@ -513,23 +515,23 @@ void main() {
 
     await edit(member);
     final aims = find.text('WHAT THEY ARE AIMING FOR');
-    final known = find.text('WHAT YOU KNOW');
+    final known = find.text('INFO');
     expect(top(field('Name')), lessThan(top(aims)));
     expect(top(aims), lessThan(top(field('Their why'))));
-    await tester.ensureVisible(field('Needs'));
+    await tester.ensureVisible(field('Concerns'));
     expect(top(field('Where they are stuck')), lessThan(top(known)));
-    expect(top(known), lessThan(top(field('Needs'))));
+    expect(top(known), lessThan(top(field('Concerns'))));
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
     await edit(_marie);
     expect(find.text('WHAT THEY ARE AIMING FOR'), findsNothing);
-    expect(find.text('WHAT YOU KNOW'), findsOneWidget);
+    expect(find.text('INFO'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
     await edit(member, EditPart.facts);
-    expect(find.text('WHAT YOU KNOW'), findsNothing);
+    expect(find.text('INFO'), findsNothing);
   });
 
   testWidgets('a name is still required', (tester) async {
@@ -549,7 +551,7 @@ void main() {
     await open(tester);
     people.failWith = PeopleFailure.unknown;
 
-    await tester.enterText(field('Needs'), 'Sleep');
+    await tester.enterText(field('Concerns'), 'Sleep');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 

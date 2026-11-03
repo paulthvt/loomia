@@ -27,14 +27,14 @@ String peopleFailureCopy(AppLocalizations l10n, PeopleFailure failure) =>
       PeopleFailure.unknown => l10n.peopleFailureUnknown,
     };
 
-/// The second line of a person's row: paused, else what they do, else what
+/// The second line of a person's row: paused, else their bio, else what
 /// they need.
 String? contactSubtitle(AppLocalizations l10n, Person person) =>
     switch (person.pausedAt?.toLocal()) {
       final since? when person.prospectStatus == ProspectStatus.notNow =>
         l10n.contactPausedNotNow(since),
       final since? => l10n.contactPaused(since),
-      null => person.profession ?? person.needs,
+      null => person.bio ?? person.needs,
     };
 
 /// When a step is due, counted in calendar days from [today].

@@ -133,7 +133,7 @@ void main() {
           stage: stage,
           prospectStatus: status,
           stageSince: DateTime.utc(2026),
-          profession: 'Nurse',
+          bio: 'Nurse',
           pausedAt: DateTime(2026, 7, 12, 9),
         );
     expect(
@@ -153,7 +153,7 @@ void main() {
       name: 'Sarah',
       stage: Stage.prospect,
       stageSince: DateTime.utc(2026),
-      profession: 'Nurse',
+      bio: 'Nurse',
       needs: 'Sleep',
     );
     expect(contactSubtitle(l10n, nurse), 'Nurse');

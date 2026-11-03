@@ -19,14 +19,14 @@ Person _person(
   String id,
   String name,
   Stage stage, {
-  String? profession,
+  String? bio,
   DateTime? loyaltySince,
   Set<String> tags = const {},
 }) => Person(
   id: id,
   name: name,
   stage: stage,
-  profession: profession,
+  bio: bio,
   stageSince: DateTime.utc(2026, 3, 4),
   loyaltySince: loyaltySince,
   tagIds: tags,
@@ -36,7 +36,7 @@ const _phone = Size(390, 844);
 const _tablet = Size(800, 900);
 
 final _book = [
-  _person('1', 'Anne Martin', Stage.prospect, profession: 'Nurse'),
+  _person('1', 'Anne Martin', Stage.prospect, bio: 'Nurse'),
   _person('2', 'Bruno Leroy', Stage.customer),
   _person('3', 'Hélène Petit', Stage.team),
 ];
