@@ -2,6 +2,12 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// A page of the marketing site (paulthvt/loomia-site) in [locale]'s
+/// language: French under `/fr`, English for every other language.
+Uri siteUri(Locale locale, String path) => Uri.parse(
+  'https://getloomia.app${locale.languageCode == 'fr' ? '/fr' : ''}$path',
+);
+
 /// Opens [uri] in another app: the dialer, the maps app, the browser. When
 /// nothing opens it, a SnackBar says so.
 Future<void> openExternal(BuildContext context, Uri uri) async {

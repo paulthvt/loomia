@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/back.dart';
@@ -8,6 +10,7 @@ import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
+import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
@@ -389,6 +392,31 @@ class _SettingsListState extends ConsumerState<_SettingsList>
           FormError(authFailureCopy(l10n, error)),
           const SizedBox(height: AppSpacing.md),
         ],
+        // The site's pages, in the browser: the arrow says it leaves the app.
+        SettingsGroup(
+          children: [
+            for (final (icon, title, page) in [
+              (
+                Icons.privacy_tip_outlined,
+                l10n.settingsPrivacyPolicy,
+                '/privacy',
+              ),
+              (Icons.help_outline_rounded, l10n.settingsHelp, '/support'),
+            ])
+              ListTile(
+                leading: Icon(icon),
+                title: Text(title),
+                trailing: const Icon(Icons.open_in_new_rounded),
+                onTap: () => unawaited(
+                  openExternal(
+                    context,
+                    siteUri(Localizations.localeOf(context), page),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
         SettingsGroup(
           children: [
             ListTile(

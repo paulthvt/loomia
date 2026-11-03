@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
 import 'package:loomia/features/auth/domain/auth_validation.dart';
@@ -128,7 +130,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             ],
           ),
         ),
-        Text(l10n.authRegisterTerms, style: text.bodySmall),
+        _PrivacyLine(style: text.bodySmall),
         // Wrap, not Row: "Already have an account?" plus the button is wider
         // than the 400-wide column at larger text scales.
         Wrap(
@@ -143,6 +145,46 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// "By creating an account, you accept the privacy policy.", one translated
+/// sentence whose placeholder is drawn as a link button to the site's policy.
+class _PrivacyLine extends StatelessWidget {
+  const _PrivacyLine({required this.style});
+
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    // The placeholder's position comes from the translation, not the code.
+    const marker = '\u0000';
+    final [before, after] = l10n.authRegisterPrivacy(marker).split(marker);
+    final locale = Localizations.localeOf(context);
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: before),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            // Text.rich already scales a WidgetSpan by the text scale; without
+            // this the link's own Text would be scaled a second time.
+            child: MediaQuery.withNoTextScaling(
+              child: TextButton(
+                style: AppTheme.inlineLink(style),
+                onPressed: () =>
+                    openExternal(context, siteUri(locale, '/privacy')),
+                child: Text(l10n.authRegisterPrivacyLink),
+              ),
+            ),
+          ),
+          TextSpan(text: after),
+        ],
+      ),
+      style: style,
     );
   }
 }

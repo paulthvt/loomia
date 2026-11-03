@@ -40,6 +40,19 @@ abstract final class AppTheme {
   /// `isSelected`: an empty ring that reads "tick me", filled once ticked
   /// (#190). A bare check read as a status, not a button. Selected stays filled
   /// while disabled — that is the tick in flight.
+  /// A link inside a sentence: a TextButton that sits on the text's line, in
+  /// the sentence's own size, with no padding of its own.
+  static ButtonStyle inlineLink(TextStyle? style) => TextButton.styleFrom(
+    padding: EdgeInsets.zero,
+    minimumSize: Size.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    visualDensity: VisualDensity.compact,
+    textStyle: style?.copyWith(
+      fontWeight: FontWeight.w600,
+      decoration: TextDecoration.underline,
+    ),
+  );
+
   static ButtonStyle resolveRing(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final colors = LoomiaColors.of(context);
