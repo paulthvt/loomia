@@ -92,8 +92,10 @@ class NotificationSettingsForm extends StatelessWidget {
               subtitle: Text(l10n.notificationsRitualBody),
               secondary: pushBell(on: settings.ritual),
               value: settings.ritual,
-              onChanged: (value) =>
-                  turn(settings.copyWith(ritual: value), value: value),
+              onChanged: (value) => turn(
+                settings.copyWith(ritual: value, ritualChosen: true),
+                value: value,
+              ),
             ),
             SwitchListTile(
               title: Text(l10n.notificationsTasks),

@@ -52,7 +52,7 @@ class PlanPage extends ConsumerWidget {
               plan,
             ),
             onSaved: onSaved ?? () => backOr(context, Routes.goals),
-            reminder: RitualReminder(month: value.month),
+            reminder: true,
           ),
           AsyncError(:final error) => LoadFailed(
             offline: error == PeopleFailure.network,
@@ -75,7 +75,7 @@ class PlanForm extends StatefulWidget {
     required this.onSave,
     required this.onSaved,
     this.step,
-    this.reminder,
+    this.reminder = false,
     super.key,
   });
 
@@ -84,8 +84,9 @@ class PlanForm extends StatefulWidget {
   /// In the close-and-plan flow: which step this is.
   final int? step;
 
-  /// Above Save: the month-end push offer (`RitualReminder`).
-  final Widget? reminder;
+  /// Above Save: the month-end push offer (`RitualReminder`), applied once
+  /// the plan is saved.
+  final bool reminder;
   final BusinessModel model;
 
   /// Throws `PeopleFailure`; the form stays, with what was typed.
@@ -105,6 +106,7 @@ String _plain(num? value) => switch (value) {
 
 class _PlanFormState extends State<PlanForm> {
   final _form = GlobalKey<FormState>();
+  final _reminder = GlobalKey<RitualReminderState>();
   late final MonthPlan? _saved = widget.month.plan;
 
   /// A saved plan opens as saved: its empty fields stay empty.
@@ -203,6 +205,8 @@ class _PlanFormState extends State<PlanForm> {
           loyaltyForecast: _saved?.loyaltyForecast ?? widget.month.forecast,
         ),
       );
+      // The plan first: the phone's prompt comes once it is safe.
+      await _reminder.currentState?.apply();
       if (!mounted) return;
       setState(() => _saving = false);
       widget.onSaved();
@@ -364,8 +368,8 @@ class _PlanFormState extends State<PlanForm> {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              if (widget.reminder case final reminder?) ...[
-                reminder,
+              if (widget.reminder) ...[
+                RitualReminder(key: _reminder, month: widget.month.month),
                 const SizedBox(height: AppSpacing.lg),
               ],
               FilledButton(

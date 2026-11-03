@@ -7,6 +7,7 @@ class NotificationSettings {
     required this.timeZone,
     this.enabled = false,
     this.ritual = false,
+    this.ritualChosen = false,
     this.tasks = true,
     this.sharing = false,
     this.hour = 19,
@@ -24,6 +25,10 @@ class NotificationSettings {
   /// The month-end push (#148), at the same time, on the first of [days] in
   /// the close-and-plan window.
   final bool ritual;
+
+  /// The user has saved the month-end switch, on or off (#412): until then
+  /// the plan step offers it on.
+  final bool ritualChosen;
 
   /// Task pushes (#389), at each task's own time when its bell is on.
   final bool tasks;
@@ -48,6 +53,7 @@ class NotificationSettings {
   NotificationSettings copyWith({
     bool? enabled,
     bool? ritual,
+    bool? ritualChosen,
     bool? tasks,
     bool? sharing,
     int? hour,
@@ -57,6 +63,7 @@ class NotificationSettings {
   }) => NotificationSettings(
     enabled: enabled ?? this.enabled,
     ritual: ritual ?? this.ritual,
+    ritualChosen: ritualChosen ?? this.ritualChosen,
     tasks: tasks ?? this.tasks,
     sharing: sharing ?? this.sharing,
     hour: hour ?? this.hour,
@@ -71,6 +78,7 @@ class NotificationSettings {
     return NotificationSettings(
       enabled: row['summary_enabled'] as bool,
       ritual: row['ritual_enabled'] as bool,
+      ritualChosen: row['ritual_chosen'] as bool? ?? false,
       tasks: row['task_enabled'] as bool? ?? true,
       sharing: row['sharing_enabled'] as bool? ?? false,
       hour: int.parse(hour),
@@ -83,6 +91,7 @@ class NotificationSettings {
   Map<String, dynamic> toRow() => {
     'summary_enabled': enabled,
     'ritual_enabled': ritual,
+    'ritual_chosen': ritualChosen,
     'task_enabled': tasks,
     'sharing_enabled': sharing,
     'summary_time':
@@ -96,6 +105,7 @@ class NotificationSettings {
       other is NotificationSettings &&
       other.enabled == enabled &&
       other.ritual == ritual &&
+      other.ritualChosen == ritualChosen &&
       other.tasks == tasks &&
       other.sharing == sharing &&
       other.hour == hour &&
@@ -108,6 +118,7 @@ class NotificationSettings {
   int get hashCode => Object.hash(
     enabled,
     ritual,
+    ritualChosen,
     tasks,
     sharing,
     hour,
