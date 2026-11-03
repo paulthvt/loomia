@@ -293,6 +293,9 @@ then once `bundle config set --local path vendor/bundle && bundle install`
 (Homebrew's Ruby can't take the gems itself), and
 `bundle exec fastlane promote tag:... track:...`. The same goes for `ios/`.
 
+Who each channel is for, what a release and a promote change on each store,
+and the road to a public launch: [docs/releases.md](docs/releases.md).
+
 Every release starts there. To ship one further, promote the same build — no
 rebuild:
 
