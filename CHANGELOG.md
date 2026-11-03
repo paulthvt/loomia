@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2026.11.4](https://github.com/paulthvt/loomia/compare/v2026.11.3...v2026.11.4) (2026-11-02)
+
+### ✨ Features
+
+- **calendar:** invite people when creating an event (#449) ([1ed6a38](https://github.com/paulthvt/loomia/commit/1ed6a3814a27782cd614a3a1d2d7a8f5b6252f99))
+
+### 🐛 Bug Fixes
+
+- **ci:** get the iOS promote to distribute (#445) ([7565e41](https://github.com/paulthvt/loomia/commit/7565e41b8767cf8060a38a59d30fe035699a07df))
+
 ## [v2026.11.3](https://github.com/paulthvt/loomia/compare/v2026.11.2...v2026.11.3) (2026-11-02)
 
 ### ✨ Features
