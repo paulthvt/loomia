@@ -331,6 +331,14 @@ final _eventWorkflow = EventWorkflow(
 
 final _events = (
   today: [
+    // Over by 18:50: stepped back (#451).
+    CalendarEvent(
+      id: 'coffee',
+      title: 'Coffee with Emma',
+      startsAt: DateTime(2026, 9, 29, 9, 0),
+      endsAt: DateTime(2026, 9, 29, 10, 0),
+      place: 'Café du Port',
+    ),
     CalendarEvent(
       id: 'oils',
       title: 'Essential oils for sleep',
