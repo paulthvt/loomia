@@ -29,9 +29,9 @@ project, sends from a Supabase address, and only in English.
 
 ## Wording
 
-- **Confirm** — subject "Confirm your email for Loomia" / "Confirme ton email
+- **Confirm** — subject "Confirm your email for Loomia" / "Confirme ton e-mail
   pour Loomia". "Hi {first name}, tap the button to confirm your email and
-  start using Loomia." Button "Confirm my email" / "Confirmer mon email".
+  start using Loomia." Button "Confirm my email" / "Confirmer mon e-mail".
   "If you didn't create an account, ignore this email."
 - **Reset** — subject "Reset your Loomia password" / "Réinitialise ton mot de
   passe Loomia". Button "Choose a new password" / "Choisir un nouveau mot de

@@ -255,7 +255,7 @@ sender_name = "Loomia"
 # fr, else the language saved at sign-up (`email_locale`), else English.
 # Checked by test/supabase/email_templates_test.dart.
 [auth.email.template.confirmation]
-subject = "{{ $fr := eq (or .Data.locale .Data.email_locale \"en\") \"fr\" }}{{ if $fr }}Confirme ton email pour Loomia{{ else }}Confirm your email for Loomia{{ end }}"
+subject = "{{ $fr := eq (or .Data.locale .Data.email_locale \"en\") \"fr\" }}{{ if $fr }}Confirme ton e-mail pour Loomia{{ else }}Confirm your email for Loomia{{ end }}"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
