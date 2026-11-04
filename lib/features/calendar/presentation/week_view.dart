@@ -68,11 +68,15 @@ class WeekList extends StatefulWidget {
     this.people = const PeopleAhead.none(),
     this.model = BusinessModel.other,
     this.onOpenPerson,
+    this.now,
     super.key,
   });
 
   final AsyncValue<List<CalendarEvent>> events;
   final List<Task> tasks;
+
+  /// Events over by it step back (#451).
+  final DateTime? now;
 
   /// Who is due when (#378): each day's People block, folded.
   final PeopleAhead people;
@@ -164,7 +168,11 @@ class _WeekListState extends State<WeekList> {
                       onOpen: (person) => widget.onOpenPerson?.call(person),
                     ),
                   for (final event in events)
-                    EventRow(event: event, onTap: () => widget.onOpen(event)),
+                    EventRow(
+                      event: event,
+                      now: widget.now,
+                      onTap: () => widget.onOpen(event),
+                    ),
                 ],
               },
             ],
