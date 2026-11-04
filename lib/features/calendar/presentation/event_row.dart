@@ -47,6 +47,7 @@ class EventRow extends StatelessWidget {
     required this.event,
     required this.onTap,
     this.trailing,
+    this.now,
     super.key,
   });
 
@@ -59,11 +60,19 @@ class EventRow extends StatelessWidget {
   /// Today's Join.
   final Widget? trailing;
 
+  /// Once the event is over by it, the row steps back (#451): no fill, a
+  /// neutral bar, muted ink. Never over without it.
+  final DateTime? now;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final colors = LoomiaColors.of(context);
+    final over = switch (now) {
+      final at? => event.isOver(at),
+      null => false,
+    };
     final ends = event.endsAt;
     final l10n = AppLocalizations.of(context);
     final where = event.place ?? (event.link == null ? null : l10n.eventOnline);
@@ -82,8 +91,12 @@ class EventRow extends StatelessWidget {
       side: BorderSide(color: colors.borderSubtle),
     );
 
+    // Over: the ink one step down, so the times and title stay readable.
+    final ink = over ? scheme.onSurfaceVariant : scheme.onSurface;
+    final quiet = over ? colors.textMuted : scheme.onSurfaceVariant;
+
     return Material(
-      color: colors.surfaceDefault,
+      color: over ? Colors.transparent : colors.surfaceDefault,
       shape: shape,
       child: InkWell(
         onTap: onTap,
@@ -102,7 +115,7 @@ class EventRow extends StatelessWidget {
                     children: [
                       Text(
                         timeLabel(context, event.startsAt),
-                        style: theme.textTheme.labelLarge,
+                        style: theme.textTheme.labelLarge?.copyWith(color: ink),
                       ),
                       if (ends != null)
                         Text(
@@ -116,7 +129,7 @@ class EventRow extends StatelessWidget {
                 ),
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: scheme.primary,
+                    color: over ? colors.borderStrong : scheme.primary,
                     borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: const SizedBox(width: _bar),
@@ -126,12 +139,17 @@ class EventRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: AppSpacing.xs,
                     children: [
-                      Text(event.title, style: theme.textTheme.titleMedium),
+                      Text(
+                        event.title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: ink,
+                        ),
+                      ),
                       if (line != null)
                         Text(
                           line,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurfaceVariant,
+                            color: quiet,
                           ),
                         ),
                     ],

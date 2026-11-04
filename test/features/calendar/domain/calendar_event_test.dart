@@ -104,6 +104,29 @@ void main() {
     });
   });
 
+  group('isOver', () {
+    final starts = DateTime(2026, 10, 8, 19);
+    final ends = DateTime(2026, 10, 8, 21);
+    final timed = CalendarEvent(
+      id: 'e1',
+      title: 'Workshop',
+      startsAt: starts,
+      endsAt: ends,
+    );
+    final open = CalendarEvent(id: 'e2', title: 'Call', startsAt: starts);
+
+    test('once it has ended, not while it runs', () {
+      expect(timed.isOver(DateTime(2026, 10, 8, 20)), isFalse);
+      expect(timed.isOver(ends), isFalse);
+      expect(timed.isOver(DateTime(2026, 10, 8, 21, 1)), isTrue);
+    });
+
+    test('with no end, once it has started', () {
+      expect(open.isOver(starts), isFalse);
+      expect(open.isOver(DateTime(2026, 10, 8, 19, 1)), isTrue);
+    });
+  });
+
   group('stepDue', () {
     CalendarEvent on(DateTime startsAt) =>
         CalendarEvent(id: 'e', title: 'Workshop', startsAt: startsAt);

@@ -109,6 +109,9 @@ class CalendarEvent {
 
   bool get done => doneAt != null;
 
+  /// Over by [now] (#451): it has ended, or started when it has no end.
+  bool isOver(DateTime now) => (endsAt ?? startsAt).isBefore(now);
+
   /// How many were there. Meaningful once [done].
   int get cameCount => attendees.where((attendee) => attendee.came).length;
 

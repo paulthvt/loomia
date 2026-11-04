@@ -286,7 +286,8 @@ class CalendarView extends StatelessWidget {
   /// The device's today, local midnight.
   final DateTime today;
 
-  /// The desktop week's now line. None without it.
+  /// The desktop week's now line, and which events are over (#451). None
+  /// without it.
   final DateTime? now;
 
   final ValueChanged<DateTime> onSelect;
@@ -495,8 +496,10 @@ class CalendarView extends StatelessWidget {
                         people: people,
                         model: model,
                         onOpenPerson: onOpenPerson,
+                        now: now,
                       )
                     : DaySection(
+                        now: now,
                         events: events,
                         tasks: tasks,
                         busy: busy,
@@ -594,6 +597,7 @@ class CalendarView extends StatelessWidget {
             return ValueListenableBuilder(
               valueListenable: latest,
               builder: (_, view, _) => DaySection(
+                now: view.now,
                 events: view.events,
                 tasks: view.tasks,
                 busy: view.busy,
@@ -990,8 +994,12 @@ class DaySection extends StatelessWidget {
     this.model = BusinessModel.other,
     this.onOpenPerson,
     this.peopleFoldable = true,
+    this.now,
     super.key,
   });
+
+  /// Events over by it step back (#451).
+  final DateTime? now;
 
   final AsyncValue<List<CalendarEvent>> events;
 
@@ -1051,6 +1059,7 @@ class DaySection extends StatelessWidget {
           EventRow(
             key: ValueKey('event:${event.id}'),
             event: event,
+            now: now,
             onTap: () => onOpen(event),
           ),
       ];

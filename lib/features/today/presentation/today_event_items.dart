@@ -30,6 +30,7 @@ List<Widget> todayEventItems(
       EventRow(
         key: ValueKey('event:${event.id}'),
         event: event,
+        now: now,
         onTap: () => onOpen(event),
         trailing: canJoin(event, now)
             ? FilledButton.tonal(
