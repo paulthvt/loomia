@@ -2164,8 +2164,18 @@
     "description": "Title of step 1: looking back on a month. Never a verdict.",
     "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
   },
-  "closeIntro": "What Loomia counted, next to what you planned. Then add the two your company tells you.",
-  "@closeIntro": { "description": "Under the step 1 title." },
+  "closeIntroFinal": "What Loomia counted, next to what you planned. Then fill in your final numbers for the month.",
+  "@closeIntroFinal": { "description": "Under the step 1 title of closing a month: the counts Loomia made, then the final numbers the user types in (see closeFinalNumbers)." },
+  "closeFinalNumbers": "Your final numbers for {month}",
+  "@closeFinalNumbers": {
+    "description": "Section header of closing a month, shown in capitals: the numbers only the user's company knows (team volume, rank), which the user types in once the month is over.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "closeFinalNumbersHint": "{model, select, doterra{Loomia can't see these two. Copy them from your dōTERRA account.} other{Loomia can't see these two. Copy them from your company's account.}}",
+  "@closeFinalNumbersHint": {
+    "description": "Under 'Your final numbers for October': where these numbers come from. dōTERRA stays as written.",
+    "placeholders": { "model": { "type": "String" } }
+  },
   "closeOf": "{done} of {target}",
   "@closeOf": {
     "description": "Right of a counted objective in step 1, e.g. '7 of 8'.",
