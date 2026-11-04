@@ -147,7 +147,7 @@ class _CloseFormState extends State<CloseForm> {
               const StepBar(step: 1),
               const SizedBox(height: AppSpacing.md),
               Text(
-                l10n.closeIntro,
+                l10n.closeIntroFinal,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: colors.textMuted,
                 ),
@@ -206,11 +206,20 @@ class _CloseFormState extends State<CloseForm> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              SectionHeader(title: l10n.planFromCompany),
+              // What the company counts, and where to find it (#428).
+              SectionHeader(
+                title: l10n.closeFinalNumbers(widget.closing.ritual.close),
+              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: AppSpacing.ms,
                 children: [
+                  Text(
+                    l10n.closeFinalNumbersHint(model.name),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colors.textMuted,
+                    ),
+                  ),
                   LabeledField(
                     label: l10n.planTeamVolume(model.name),
                     child: TextFormField(

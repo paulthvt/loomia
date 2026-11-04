@@ -107,6 +107,26 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('the typed figures say what they are and where they come from '
+      '(#428)', (tester) async {
+    await pump(tester);
+    expect(find.text('YOUR FINAL NUMBERS FOR SEPTEMBER'), findsOneWidget);
+    expect(
+      find.text(
+        "Loomia can't see these two. Copy them from your dōTERRA account.",
+      ),
+      findsOneWidget,
+    );
+
+    await pump(tester, model: BusinessModel.other);
+    expect(
+      find.text(
+        "Loomia can't see these two. Copy them from your company's account.",
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('Next closes with the two typed figures', (tester) async {
     await pump(tester);
 

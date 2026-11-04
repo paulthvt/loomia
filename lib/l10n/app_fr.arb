@@ -398,7 +398,6 @@
   "ritualStart": "Commencer",
   "closeStep": "Étape {step} sur {total}",
   "closeTitle": "Comment s’est passé {month} ?",
-  "closeIntro": "Ce que Loomia a compté, à côté de ce que tu avais prévu. Ajoute ensuite les deux chiffres que te donne ton entreprise.",
   "closeOf": "{done} sur {target}",
   "closeVolumeOf": "{model, select, doterra{{done} sur {target} PV} other{{done} sur {target}}}",
   "closeVolumeAlone": "{model, select, doterra{{done} PV} other{{done}}}",
