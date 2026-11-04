@@ -1,0 +1,31 @@
+{{ $fr := eq (or .Data.locale .Data.email_locale "en") "fr" }}<!doctype html>
+<html lang="{{ if $fr }}fr{{ else }}en{{ end }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{{ if $fr }}Confirme ton email{{ else }}Confirm your email{{ end }}</title>
+</head>
+<body style="margin:0;padding:0;background:#FBFAF8;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBFAF8;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#FFFFFF;border:1px solid #E8E4E1;border-radius:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#201B16;">
+<tr><td style="padding:32px 32px 8px;font-size:22px;font-weight:700;color:#A75C15;">Loomia</td></tr>
+<tr><td style="padding:16px 32px 0;font-size:16px;line-height:24px;">
+<p style="margin:0 0 16px;">{{ if $fr }}Bonjour{{ else }}Hi{{ end }}{{ with .Data.first_name }} {{ . }}{{ end }},</p>
+<p style="margin:0 0 24px;">{{ if $fr }}Appuie sur le bouton pour confirmer ton email et commencer à utiliser Loomia.{{ else }}Tap the button to confirm your email and start using Loomia.{{ end }}</p>
+</td></tr>
+<tr><td style="padding:0 32px;">
+<a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 24px;background:#A75C15;color:#FFFFFF;border-radius:999px;font-size:16px;font-weight:600;text-decoration:none;">{{ if $fr }}Confirmer mon email{{ else }}Confirm my email{{ end }}</a>
+</td></tr>
+<tr><td style="padding:24px 32px 0;font-size:14px;line-height:20px;color:#57524C;">
+<p style="margin:0 0 8px;">{{ if $fr }}Le bouton ne marche pas ? Copie ce lien dans ton navigateur :{{ else }}Button not working? Copy this link into your browser:{{ end }}</p>
+<p style="margin:0 0 16px;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#A75C15;">{{ .ConfirmationURL }}</a></p>
+<p style="margin:0;">{{ if $fr }}Tu n'as pas créé de compte ? Ignore simplement cet email.{{ else }}If you didn't create an account, ignore this email.{{ end }}</p>
+</td></tr>
+<tr><td style="padding:32px;font-size:12px;line-height:18px;color:#57524C;"><a href="https://getloomia.app" style="color:#57524C;">getloomia.app</a></td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
