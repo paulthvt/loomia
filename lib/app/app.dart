@@ -1,3 +1,4 @@
+import 'package:feedback/feedback.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/app/launch_splash.dart';
@@ -5,6 +6,8 @@ import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/bug_reports/presentation/bug_report_overlay.dart';
+import 'package:loomia/features/bug_reports/presentation/bug_report_sheet.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -37,7 +40,17 @@ class LoomiaApp extends ConsumerWidget {
         value: Theme.of(context).brightness == Brightness.dark
             ? SystemUiOverlayStyle.light
             : SystemUiOverlayStyle.dark,
-        child: LaunchSplash(child: child!),
+        // Bug reports (#463). Inside the MaterialApp, so Loomia's sheet sees
+        // the app's theme; the panel adds its own Localizations, so it gets
+        // the app's delegates and locale too.
+        child: BetterFeedback(
+          theme: AppTheme.feedback(Theme.of(context).colorScheme),
+          darkTheme: AppTheme.feedback(Theme.of(context).colorScheme),
+          localizationsDelegates: localizationsDelegates,
+          localeOverride: Localizations.localeOf(context),
+          feedbackBuilder: bugReportSheet,
+          child: BugReportOverlay(child: LaunchSplash(child: child!)),
+        ),
       ),
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

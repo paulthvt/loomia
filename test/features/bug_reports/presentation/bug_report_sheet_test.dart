@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/bug_reports/presentation/bug_report_sheet.dart';
@@ -49,6 +51,38 @@ void main() {
     await tester.enterText(find.byType(TextField), 'It froze');
     await tester.pump();
     expect(send(tester).onPressed, isNotNull);
+  });
+
+  testWidgets('a spinner replaces Send until the report is sent', (
+    tester,
+  ) async {
+    final done = Completer<void>();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        localizationsDelegates: localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) =>
+                bugReportSheet(context, (text, {extras}) => done.future, null),
+          ),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField), 'It froze');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+
+    done.complete();
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
   testWidgets('Send submits the trimmed comment', (tester) async {

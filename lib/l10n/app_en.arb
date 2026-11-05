@@ -3602,5 +3602,21 @@
   "bugReportRetry": "Retry",
   "@bugReportRetry": {
     "description": "Snackbar action that sends the same bug report again after it failed."
+  },
+  "bugReportButton": "Report a bug",
+  "@bugReportButton": {
+    "description": "Screen-reader label of the floating bug button testers see on every screen; tapping it opens a screenshot to draw on and comment."
+  },
+  "bugReportDismissTarget": "Turn off bug reports",
+  "@bugReportDismissTarget": {
+    "description": "Screen-reader label of the ✕ circle at the bottom of the screen while the bug button is dragged; dropping the button on it hides the button."
+  },
+  "bugReportsOff": "Bug reports off",
+  "@bugReportsOff": {
+    "description": "Snackbar after the tester dropped the bug button on the ✕: the button is hidden. Has an Undo action."
+  },
+  "bugReportUndo": "Undo",
+  "@bugReportUndo": {
+    "description": "Snackbar action that shows the bug button again right after it was turned off."
   }
 }

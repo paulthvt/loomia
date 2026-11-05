@@ -25,6 +25,18 @@ class _BugReportSheet extends StatefulWidget {
 class _BugReportSheetState extends State<_BugReportSheet> {
   final _comment = TextEditingController();
 
+  /// The package waits for the report to go before closing the panel.
+  bool _sending = false;
+
+  Future<void> _send() async {
+    setState(() => _sending = true);
+    try {
+      await widget.onSubmit(_comment.text.trim());
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
   @override
   void dispose() {
     _comment.dispose();
@@ -58,10 +70,15 @@ class _BugReportSheetState extends State<_BugReportSheet> {
           ListenableBuilder(
             listenable: _comment,
             builder: (context, _) => FilledButton(
-              onPressed: _comment.text.trim().isEmpty
+              onPressed: _sending || _comment.text.trim().isEmpty
                   ? null
-                  : () => widget.onSubmit(_comment.text.trim()),
-              child: Text(l10n.bugReportSend),
+                  : _send,
+              child: _sending
+                  ? const SizedBox.square(
+                      dimension: AppSpacing.md,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n.bugReportSend),
             ),
           ),
         ],
