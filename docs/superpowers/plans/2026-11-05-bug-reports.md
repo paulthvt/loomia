@@ -108,11 +108,11 @@ test('toJson has time (UTC ISO), level, logger, message, error, stack', () { ...
 - Consumes: `accountProvider`, `authRepositoryProvider.changes`.
 - Produces: `final bugReportModeProvider = NotifierProvider<BugReportMode, bool>(BugReportMode.new);` with `void turnOn()`, `void turnOff()`; `bool bugReporterFrom(Map<String, dynamic>? appMetadata)`.
 
-- [ ] **Step 1: Write the failing tests:** `bugReporterFrom({'bug_reporter': true})` is true; `{'bug_reporter': 'true'}`, `{}`, `null` are false. Mode: starts false; `turnOn` → true; `turnOn` for an account with `bugReporter: false` stays false; **sign-out turns the mode off** (emit `AuthChange.signedOut` on `FakeAuthRepository`).
-- [ ] **Step 2: Run both tests** — Expected: FAIL.
-- [ ] **Step 3: Implement.** `BugReportMode.build` listens to `accountProvider` and returns false when the account is null or not a reporter.
-- [ ] **Step 4: Run** — Expected: PASS.
-- [ ] **Step 5: Commit** `feat(bug-reports): allowlist flag and the in-memory mode (#463)`
+- [x] **Step 1: Write the failing tests:** `bugReporterFrom({'bug_reporter': true})` is true; `{'bug_reporter': 'true'}`, `{}`, `null` are false. Mode: starts false; `turnOn` → true; `turnOn` for an account with `bugReporter: false` stays false; **sign-out turns the mode off** (emit `AuthChange.signedOut` on `FakeAuthRepository`).
+- [x] **Step 2: Run both tests** — Expected: FAIL.
+- [x] **Step 3: Implement.** `BugReportMode.build` listens to `accountProvider` and returns false when the account is null or not a reporter.
+- [x] **Step 4: Run** — Expected: PASS.
+- [x] **Step 5: Commit** `feat(bug-reports): allowlist flag and the in-memory mode (#463)`
 
 ### Task 4: Seven taps on the version
 
