@@ -90,11 +90,11 @@ test('toJson has time (UTC ISO), level, logger, message, error, stack', () { ...
 - Consumes: `LogEntry` (Task 1).
 - Produces: `class BugReport { const BugReport({required String id, required String comment, required Uint8List screenshot, required Map<String, Object?> facts, required List<LogEntry> logs}); Map<String, Object?> toJson(); }` with keys `id`, `comment`, `screenshot` (base64), `facts`, `logs`; `Future<Map<String, Object?>> collectDeviceFacts({required String route, required Locale locale, required Size size, required Brightness brightness})` returning `appVersion`, `buildNumber`, `platform` (`kIsWeb ? 'web' : defaultTargetPlatform.name`), `osVersion` (null on web, else `Platform.operatingSystemVersion`), `locale`, `route` (scrubbed), `screen` (`'390x844'`), `brightness`.
 
-- [ ] **Step 1: Write the failing tests:** `toJson` base64-encodes the screenshot and round-trips through `base64Decode`; `logs` is a list of `LogEntry.toJson()` maps; `comment` is trimmed.
-- [ ] **Step 2: Run** `flutter test test/features/bug_reports/domain/bug_report_test.dart` — Expected: FAIL.
-- [ ] **Step 3: Implement** both files. `device_facts.dart` is under `data/` because it reads the platform; `dart:io` is imported only behind `kIsWeb` (use `package:flutter/foundation.dart` + a conditional import if `dart:io` breaks the web build).
-- [ ] **Step 4: Run the test and `flutter build web --release`** — Expected: PASS, web builds.
-- [ ] **Step 5: Commit** `feat(bug-reports): the report and the device facts it carries (#463)`
+- [x] **Step 1: Write the failing tests:** `toJson` base64-encodes the screenshot and round-trips through `base64Decode`; `logs` is a list of `LogEntry.toJson()` maps; `comment` is trimmed.
+- [x] **Step 2: Run** `flutter test test/features/bug_reports/domain/bug_report_test.dart` — Expected: FAIL.
+- [x] **Step 3: Implement** both files. `device_facts.dart` is under `data/` because it reads the platform; `dart:io` is imported only behind `kIsWeb` (use `package:flutter/foundation.dart` + a conditional import if `dart:io` breaks the web build).
+- [x] **Step 4: Run the test and `flutter build web --release`** — Expected: PASS, web builds.
+- [x] **Step 5: Commit** `feat(bug-reports): the report and the device facts it carries (#463)`
 
 ### Task 3: Allowlist flag and the mode
 
