@@ -413,6 +413,11 @@ verify_jwt = false
 [functions.send-daily-summary]
 verify_jwt = false
 
+# Same as delete-account: @supabase/server (`auth: 'user'`) checks the
+# session JWT (#463).
+[functions.report-bug]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

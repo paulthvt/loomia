@@ -11,10 +11,12 @@ import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
+import 'package:loomia/features/bug_reports/presentation/bug_report_mode.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/settings/presentation/settings_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/photos/fake_photo_picker.dart';
 import '../../../core/photos/fake_photo_repository.dart';
@@ -29,6 +31,7 @@ Future<FakeAuthRepository> _openSettings(
   String? googlePicture,
   FakePhotoRepository? photos,
   FakePhotoPicker? picker,
+  bool bugReporter = false,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -40,6 +43,7 @@ Future<FakeAuthRepository> _openSettings(
       email: 'p@example.com',
       avatarPath: avatarPath,
       googlePicture: googlePicture,
+      bugReporter: bugReporter,
     );
   addTearDown(fake.dispose);
   await tester.pumpWidget(
@@ -430,5 +434,60 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('Sign out'), findsOneWidget);
+  });
+
+  group('seven taps on the version (#463)', () {
+    setUp(
+      () => PackageInfo.setMockInitialValues(
+        appName: 'Loomia',
+        packageName: 'app.loomia',
+        version: '0.4.0',
+        buildNumber: '40',
+        buildSignature: '',
+      ),
+    );
+
+    Future<bool> tapVersion(
+      WidgetTester tester, {
+      required int times,
+      Duration gap = const Duration(milliseconds: 500),
+      int? longGapAfter,
+    }) async {
+      final version = find.text('Version 0.4.0');
+      await tester.ensureVisible(version);
+      await tester.pumpAndSettle();
+      for (var i = 1; i <= times; i++) {
+        await tester.tap(version);
+        await tester.pump(
+          i == longGapAfter ? const Duration(milliseconds: 2100) : gap,
+        );
+      }
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsPage)),
+      );
+      return container.read(bugReportModeProvider);
+    }
+
+    testWidgets('turn bug reports on for a reporter', (tester) async {
+      await _openSettings(tester, bugReporter: true);
+      expect(await tapVersion(tester, times: 7), isTrue);
+      expect(find.text('Bug reports on'), findsOneWidget);
+    });
+
+    testWidgets('six taps are not enough', (tester) async {
+      await _openSettings(tester, bugReporter: true);
+      expect(await tapVersion(tester, times: 6), isFalse);
+    });
+
+    testWidgets('a pause over 2 seconds starts again', (tester) async {
+      await _openSettings(tester, bugReporter: true);
+      expect(await tapVersion(tester, times: 7, longGapAfter: 3), isFalse);
+    });
+
+    testWidgets('do nothing for anyone else', (tester) async {
+      await _openSettings(tester);
+      expect(await tapVersion(tester, times: 7), isFalse);
+      expect(find.text('Bug reports on'), findsNothing);
+    });
   });
 }

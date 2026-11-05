@@ -45,6 +45,7 @@ class AuthRepository {
       businessModel: BusinessModel.parse(metadata['business_model']),
       avatarPath: metadata['avatar_path'] as String?,
       googlePicture: metadata['avatar_url'] as String?,
+      bugReporter: bugReporterFrom(user.appMetadata),
     );
   }
 
@@ -199,6 +200,10 @@ String _providerName(Map<String, dynamic> metadata) =>
 /// backfill hasn't landed yet.
 bool needsNameFrom(Map<String, dynamic> metadata) =>
     _firstName(metadata).isEmpty && _providerName(metadata).isEmpty;
+
+/// Only a literal `true`, which only the service role can write (#463).
+bool bugReporterFrom(Map<String, dynamic>? appMetadata) =>
+    appMetadata?['bug_reporter'] == true;
 
 final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(ref.watch(supabaseClientProvider)),

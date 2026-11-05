@@ -181,6 +181,25 @@ events. Debug and profile builds send nothing. PII is off: no email, no IP.
 
 Web stack traces are minified until source maps are uploaded (not set up yet).
 
+### Bug reports from testers
+
+A tester whose account has `app_metadata.bug_reporter` taps the version in
+Settings seven times; a bug button then floats over every screen (drag it
+onto the ✕ to hide it). A report becomes an issue labelled `bug-report` on
+this repo; its screenshot goes to the NAS, behind a sign-in (#463). One-time
+setup:
+
+1. NAS: WebDAV Server over HTTPS with a trusted certificate, a shared folder
+   `loomia-bug-reports`, a user `loomia-bugs` with read/write on that folder
+   only, and read on it for your own account.
+2. GitHub: a fine-grained token on `paulthvt/loomia` with Issues read/write;
+   create the `bug-report` label.
+3. `supabase secrets set GITHUB_ISSUES_TOKEN=… NAS_WEBDAV_URL=https://…/loomia-bug-reports NAS_WEBDAV_USER=loomia-bugs NAS_WEBDAV_PASSWORD=…`,
+   then `supabase functions deploy report-bug` from an up-to-date `main`.
+4. Allowlist a tester in the SQL editor:
+   `update auth.users set raw_app_meta_data = raw_app_meta_data || '{"bug_reporter": true}' where email = '…';`
+   It reaches the app at the next token refresh (up to an hour) or sign-in.
+
 ## Checks
 
 ```bash

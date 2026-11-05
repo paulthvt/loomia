@@ -188,8 +188,10 @@ upload gets a new path, so a cached image is never stale. Objects do not
 cascade with the user: `delete-account` empties the folder first.
 
 Anything the client must not do with its own key runs in an Edge Function in
-`supabase/functions/` — so far only `delete-account`, which deletes the caller
-and nobody else. The user's language choice is in `user_metadata`, next to their
+`supabase/functions/`: `delete-account`, which deletes the caller and nobody
+else, and `report-bug` (#463), which only a user with
+`app_metadata.bug_reporter` may call (read from the user record, not the
+JWT). The user's language choice is in `user_metadata`, next to their
 first name, so it follows them across devices.
 
 Migrations reach the hosted project at merge: the Release workflow's
@@ -222,6 +224,12 @@ emails, phones, notes or titles: ids, codes and counts only. A
 
 Debug and profile builds print every record to the console and send nothing
 to Sentry. To check the Sentry side, `flutter run --release`.
+
+Every build also keeps the last 200 records in memory (`LogBuffer`, #463) for
+a tester's bug report. The report becomes a public GitHub issue, so this copy
+is stricter than Sentry's: UUIDs become `:id`, an error keeps only its type
+and code, and only a `SEVERE` keeps its stack. The screenshot goes to a
+private NAS, never to GitHub (docs/superpowers/specs/2026-11-05-bug-reports-design.md).
 
 ### Push
 

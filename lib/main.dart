@@ -5,6 +5,7 @@ import 'package:logging/logging.dart';
 import 'package:loomia/app/app.dart';
 import 'package:loomia/app/router/legacy_fragment.dart';
 import 'package:loomia/core/supabase/supabase_config.dart';
+import 'package:loomia/features/bug_reports/domain/log_buffer.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sentry_logging/sentry_logging.dart';
@@ -27,6 +28,8 @@ Future<void> main() async {
   }
   // A `severe` without a stack still points at its call site, not at Sentry.
   recordStackTraceAtLevel = Level.SEVERE;
+  // Every build: a bug report carries the recent lines, cleaned (#463).
+  Logger.root.onRecord.listen(logBuffer.add);
   if (!kReleaseMode) {
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {

@@ -5,6 +5,7 @@ import 'package:loomia/core/photos/photo_picker.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/bug_reports/data/bug_report_repository.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/contacts/data/activity_repository.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
@@ -22,6 +23,7 @@ import 'package:material_ui/material_ui.dart';
 import '../core/photos/fake_photo_picker.dart';
 import '../core/photos/fake_photo_repository.dart';
 import '../features/auth/fake_auth_repository.dart';
+import '../features/bug_reports/fake_bug_report_repository.dart';
 import '../features/calendar/fake_event_repository.dart';
 import '../features/contacts/fake_activity_repository.dart';
 import '../features/contacts/fake_people_repository.dart';
@@ -56,6 +58,7 @@ Future<ProviderContainer> pumpLoomia(
   FakePhotoPicker? picker,
   FakePush? push,
   FakeNotificationsRepository? notifications,
+  FakeBugReportRepository? bugReports,
   bool settle = true,
 }) async {
   tester.view.physicalSize = size * pixelRatio;
@@ -105,6 +108,9 @@ Future<ProviderContainer> pumpLoomia(
           notifications ?? FakeNotificationsRepository(),
         ),
         deviceTimeZoneProvider.overrideWith((ref) => 'Europe/Paris'),
+        bugReportRepositoryProvider.overrideWithValue(
+          bugReports ?? FakeBugReportRepository(),
+        ),
       ],
       child: const LoomiaApp(),
     ),

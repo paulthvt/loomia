@@ -16,6 +16,7 @@ class Account {
     this.avatarPath,
     this.googlePicture,
     this.needsName = false,
+    this.bugReporter = false,
   });
 
   /// Empty when the user never gave one (an email sign-up always does).
@@ -45,6 +46,10 @@ class Account {
   /// No first name and none coming from the provider (an Apple sign-in, #22):
   /// the first run starts by asking for one.
   final bool needsName;
+
+  /// May send bug reports (`app_metadata.bug_reporter`, #463). Set by hand in
+  /// SQL; the user can't change `app_metadata`.
+  final bool bugReporter;
 
   /// What to show where a name is expected: the first name, else the email.
   String get displayName => firstName.isEmpty ? email : firstName;

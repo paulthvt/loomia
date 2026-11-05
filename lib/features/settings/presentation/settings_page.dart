@@ -16,6 +16,7 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/presentation/account_photo.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
+import 'package:loomia/features/bug_reports/presentation/bug_report_mode.dart';
 import 'package:loomia/features/contacts/presentation/tags_controller.dart';
 import 'package:loomia/features/contacts/presentation/tags_settings.dart';
 import 'package:loomia/features/notifications/presentation/notification_settings_form.dart';
@@ -427,21 +428,69 @@ class _SettingsListState extends ConsumerState<_SettingsList>
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        Center(
-          child: Text(
-            // Silent until it resolves; a version footer is non-critical.
-            ref
-                .watch(_appVersionProvider)
-                .maybeWhen(
-                  data: (version) => l10n.settingsVersion(version),
-                  orElse: () => '',
-                ),
-            style: AppTypography.caption.copyWith(
-              color: LoomiaColors.of(context).textMuted,
-            ),
+        const _VersionFooter(),
+      ],
+    );
+  }
+}
+
+/// The installed version. For a bug reporter, seven taps in a row (each
+/// within 2 s of the last) turn bug reports on (#463); for anyone else they
+/// do nothing, so the mode can't be found by accident.
+class _VersionFooter extends ConsumerStatefulWidget {
+  const _VersionFooter();
+
+  @override
+  ConsumerState<_VersionFooter> createState() => _VersionFooterState();
+}
+
+class _VersionFooterState extends ConsumerState<_VersionFooter> {
+  static const _unlockTaps = 7;
+  static const _tapWindow = Duration(seconds: 2);
+
+  int _taps = 0;
+  Timer? _reset;
+
+  @override
+  void dispose() {
+    _reset?.cancel();
+    super.dispose();
+  }
+
+  void _onTap() {
+    if (!(ref.read(accountProvider)?.bugReporter ?? false)) return;
+    _reset?.cancel();
+    if (++_taps < _unlockTaps) {
+      _reset = Timer(_tapWindow, () => _taps = 0);
+      return;
+    }
+    _taps = 0;
+    ref.read(bugReportModeProvider.notifier).turnOn();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).bugReportsOn)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _onTap,
+        child: Text(
+          // Silent until it resolves; a version footer is non-critical.
+          ref
+              .watch(_appVersionProvider)
+              .maybeWhen(
+                data: (version) => l10n.settingsVersion(version),
+                orElse: () => '',
+              ),
+          style: AppTypography.caption.copyWith(
+            color: LoomiaColors.of(context).textMuted,
           ),
         ),
-      ],
+      ),
     );
   }
 }
