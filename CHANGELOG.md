@@ -1,5 +1,28 @@
 # Changelog
 
+## [v2026.11.5](https://github.com/paulthvt/loomia/compare/v2026.11.4...v2026.11.5) (2026-11-05)
+
+### ✨ Features
+
+- **bug-reports:** in-app bug reports for allowlisted testers (#464) ([c078068](https://github.com/paulthvt/loomia/commit/c078068d88e419383e210074bb1906e67af48a3f))
+- **calendar:** show events that are over as stepped back (#458) ([5064ee7](https://github.com/paulthvt/loomia/commit/5064ee784a11dc58330578472ce85a41dd13527a))
+- **goals:** say what the month-end reminder is for, on by default (#456) ([3b26e9c](https://github.com/paulthvt/loomia/commit/3b26e9c5e0603defb54e944d93ffd152f4c47fa0))
+- **contacts:** plan an event step right after changing stage (#455) ([7efe098](https://github.com/paulthvt/loomia/commit/7efe09854f49d81db30299cbfde34a2e74328090))
+- **contacts:** rename the facts section to Info and add a bio (#454) ([4108489](https://github.com/paulthvt/loomia/commit/410848980a346806ec76ec895727ce62f1bcc16e))
+- **settings:** link the privacy policy and help from the app (#452) ([494ce02](https://github.com/paulthvt/loomia/commit/494ce02a8025e04f15b9c2647852ab78bf953c9a))
+
+### 🐛 Bug Fixes
+
+- **goals:** say which numbers closing a month asks for, and where (#457) ([6aa2a4e](https://github.com/paulthvt/loomia/commit/6aa2a4e4e1cc53ab85cfec356a5bd61991979d4d))
+
+### 📚 Documentation
+
+- **release:** who each channel is for and the road to launch (#450) ([d5ed2a9](https://github.com/paulthvt/loomia/commit/d5ed2a924f0f563e86dd31eae1e55c479d091b01))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#465) ([e9a13fe](https://github.com/paulthvt/loomia/commit/e9a13fe48ec6d4e3ea8fef5329de27d3d14f814f))
+
 ## [v2026.11.4](https://github.com/paulthvt/loomia/compare/v2026.11.3...v2026.11.4) (2026-11-02)
 
 ### ✨ Features
