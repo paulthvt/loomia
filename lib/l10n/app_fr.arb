@@ -1553,5 +1553,167 @@
   "sharingAboutMeSaved": "Enregistré",
   "@sharingAboutMeSaved": {
     "description": "About me Save button, right after a save and until the next edit (#439)."
+  },
+  "eventFormPersonRemove": "Retirer {name}",
+  "@eventFormPersonRemove": {
+    "description": "Tooltip of the × on a contact's chip in the People field of the New event form; it takes them off the people to invite.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eventFormPeopleNotAdded": "L’événement est enregistré, mais les personnes n’ont pas pu être ajoutées. Ajoute-les depuis l’événement.",
+  "@eventFormPeopleNotAdded": {
+    "description": "Snackbar after saving a new event when inviting the people picked in the form failed; the event exists without them."
+  },
+  "authRegisterPrivacy": "En créant un compte, tu acceptes la {policy}.",
+  "@authRegisterPrivacy": {
+    "description": "Small print under the registration form. policy is authRegisterPrivacyLink, shown as a link to the privacy policy.",
+    "placeholders": {
+      "policy": {
+        "type": "String",
+        "example": "privacy policy"
+      }
+    }
+  },
+  "authRegisterPrivacyLink": "politique de confidentialité",
+  "@authRegisterPrivacyLink": {
+    "description": "Link inside authRegisterPrivacy that opens the privacy policy on getloomia.app."
+  },
+  "settingsPrivacyPolicy": "Politique de confidentialité",
+  "@settingsPrivacyPolicy": {
+    "description": "Settings row that opens the privacy policy on getloomia.app, in the browser."
+  },
+  "settingsHelp": "Aide",
+  "@settingsHelp": {
+    "description": "Settings row that opens the help page on getloomia.app (contact, deleting an account, notifications), in the browser."
+  },
+  "contactSectionInfo": "Infos",
+  "@contactSectionInfo": {
+    "description": "Section header above the facts about a person: bio, concerns, favourite products, contact details, notes. Short and plural-neutral (French: 'Infos')."
+  },
+  "factBio": "Bio",
+  "@factBio": {
+    "description": "Label of a few free lines about who a person is: age, children, job. First fact of 'Info'. Also the edit form field."
+  },
+  "factBioHint": "Âge, enfants, travail…",
+  "@factBioHint": {
+    "description": "Placeholder inside the empty Bio field of the edit form, suggesting what to write."
+  },
+  "factConcerns": "Préoccupations",
+  "@factConcerns": {
+    "description": "Label of the issues a person wants help with (e.g. 'Sleep, stress'). Also the edit form field. French: 'Problématiques'."
+  },
+  "factFavouriteProducts": "Produits préférés",
+  "@factFavouriteProducts": {
+    "description": "Label of the products a person likes or already uses. Also the edit form field."
+  },
+  "followWithPlanNow": "Planifie-le maintenant",
+  "@followWithPlanNow": {
+    "description": "Chip under the first step of the workflow picked in Follow with, when that step is an event to plan (an unboxing call): once saved, opens the event form to pick its day and time."
+  },
+  "followWithRemind": "Rappelle-moi",
+  "@followWithRemind": {
+    "description": "Chip beside 'Plan it now': plan the event later instead; shows the day the step comes back on Today."
+  },
+  "planReviewReminder": "Rappelle-moi de faire le point sur {month}",
+  "@planReviewReminder": {
+    "description": "Switch on the planning screen, on by default: turns on the month-end review push, which comes in the last days of month to look back on it and set the next month's goals.",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "planReviewReminderBody": "À la fin de {month}, à {time} : regarde comment ça s’est passé et définis tes objectifs pour {next}.",
+  "@planReviewReminderBody": {
+    "description": "Under the Remind me to review switch: what the push is for. month is the month just planned, next the one after it; time is the user's summary time, already formatted (7:00 PM, 19:00).",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      },
+      "time": {
+        "type": "String"
+      },
+      "next": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "closeIntroFinal": "Ce que Loomia a compté, à côté de ce que tu avais prévu. Renseigne ensuite tes chiffres définitifs pour le mois.",
+  "@closeIntroFinal": {
+    "description": "Under the step 1 title of closing a month: the counts Loomia made, then the final numbers the user types in (see closeFinalNumbers)."
+  },
+  "closeFinalNumbers": "Tes chiffres définitifs pour {month}",
+  "@closeFinalNumbers": {
+    "description": "Section header of closing a month, shown in capitals: the numbers only the user's company knows (team volume, rank), which the user types in once the month is over.",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "closeFinalNumbersHint": "{model, select, doterra{Loomia ne peut pas voir ces deux éléments. Copie-les depuis ton compte dōTERRA.} other{Loomia ne peut pas voir ces deux éléments. Copie-les depuis le compte de ton entreprise.}}",
+  "@closeFinalNumbersHint": {
+    "description": "Under 'Your final numbers for October': where these numbers come from. dōTERRA stays as written.",
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "bugReportsOn": "Rapports de bugs activés",
+  "@bugReportsOn": {
+    "description": "Snackbar after a tester taps the version in Settings seven times: a floating button to report bugs now shows on every screen. Only testers chosen by the developer see it."
+  },
+  "bugReportCommentLabel": "Que s’est-il passé ?",
+  "@bugReportCommentLabel": {
+    "description": "Label of the comment field in the bug report panel, under the screenshot the tester has drawn on."
+  },
+  "bugReportCommentHelper": "Publié publiquement sur GitHub : n’inclus ni noms ni numéros.",
+  "@bugReportCommentHelper": {
+    "description": "Helper text under the bug report comment field: the comment becomes a public GitHub issue, so the tester should not type customers' names or phone numbers."
+  },
+  "bugReportSend": "Envoyer",
+  "@bugReportSend": {
+    "description": "Button that sends the bug report (screenshot and comment)."
+  },
+  "bugReportSent": "Envoyé sous le #{number}",
+  "@bugReportSent": {
+    "description": "Snackbar after a bug report was sent: it became GitHub issue number {number}, e.g. 'Sent as #123'.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "bugReportFailed": "Impossible d’envoyer",
+  "@bugReportFailed": {
+    "description": "Snackbar when a bug report could not be sent; has a Retry action."
+  },
+  "bugReportRetry": "Réessayer",
+  "@bugReportRetry": {
+    "description": "Snackbar action that sends the same bug report again after it failed."
+  },
+  "bugReportButton": "Signaler un bug",
+  "@bugReportButton": {
+    "description": "Screen-reader label of the floating bug button testers see on every screen; tapping it opens a screenshot to draw on and comment."
+  },
+  "bugReportDismissTarget": "Désactiver les rapports de bugs",
+  "@bugReportDismissTarget": {
+    "description": "Screen-reader label of the ✕ circle at the bottom of the screen while the bug button is dragged; dropping the button on it hides the button."
+  },
+  "bugReportsOff": "Rapports de bugs désactivés",
+  "@bugReportsOff": {
+    "description": "Snackbar after the tester dropped the bug button on the ✕: the button is hidden. Has an Undo action."
+  },
+  "bugReportUndo": "Annuler",
+  "@bugReportUndo": {
+    "description": "Snackbar action that shows the bug button again right after it was turned off."
   }
 }
