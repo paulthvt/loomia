@@ -455,6 +455,7 @@ void main() {
     }) async {
       final version = find.text('Version 0.4.0');
       await tester.ensureVisible(version);
+      await tester.pumpAndSettle();
       for (var i = 1; i <= times; i++) {
         await tester.tap(version);
         await tester.pump(
