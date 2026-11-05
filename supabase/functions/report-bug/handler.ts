@@ -75,7 +75,39 @@ export function parse(json: unknown): Report | null {
   if (!Array.isArray(logs) || logs.length > maxLogs) return null
   const entries = logs.map(parseLog)
   if (entries.some((e) => e === null)) return null
-  return { id, comment: text, png, facts, logs: entries as LogEntry[] }
+  return {
+    id,
+    comment: text,
+    png,
+    facts: knownFacts(facts),
+    logs: entries as LogEntry[],
+  }
+}
+
+/** What `collectDeviceFacts` sends; anything else never reaches the issue. */
+const factKeys = [
+  'appVersion',
+  'buildNumber',
+  'platform',
+  'osVersion',
+  'locale',
+  'route',
+  'screen',
+  'brightness',
+]
+
+// The issue is public, so this is the gate, not the app: only the known
+// keys, each a short string (or null).
+function knownFacts(facts: Record<string, unknown>) {
+  const kept: Record<string, string | null> = {}
+  for (const key of factKeys) {
+    if (!(key in facts)) continue
+    const v = facts[key]
+    kept[key] = typeof v === 'string' || typeof v === 'number'
+      ? String(v).slice(0, 100)
+      : null
+  }
+  return kept
 }
 
 export function issueTitle(comment: string): string {

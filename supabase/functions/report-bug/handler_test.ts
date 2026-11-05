@@ -87,6 +87,29 @@ Deno.test('parse refuses what the app never sends', () => {
   ok(parse(body({ logs: Array(200).fill(log) })))
 })
 
+Deno.test('parse keeps only the known facts, as short strings', () => {
+  const r = parse(body({
+    facts: {
+      appVersion: '0.4.0',
+      osVersion: null,
+      buildNumber: 40,
+      route: 'x'.repeat(300),
+      email: 'ana@example.com',
+      name: 'Ana',
+      platform: { nested: 'Ana' },
+    },
+  }))!
+  eq(r.facts, {
+    appVersion: '0.4.0',
+    osVersion: null,
+    buildNumber: '40',
+    route: 'x'.repeat(100),
+    platform: null,
+  })
+  ok(!issueBody(r, user, 'u').includes('ana@'))
+  ok(!issueBody(r, user, 'u').includes('Ana'))
+})
+
 Deno.test('the title is the first line, cut at 60 characters', () => {
   eq(issueTitle('Button is gone\nmore'), 'Bug report: Button is gone')
   eq(issueTitle('  \nSecond line first'), 'Bug report: Second line first')
