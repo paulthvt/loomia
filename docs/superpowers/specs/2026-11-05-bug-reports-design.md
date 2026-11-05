@@ -1,7 +1,9 @@
 # In-app bug reports — design
 
 Issue: #463. Figma: "Bug reports — #463" on "04 — Screens
-(Light)", to mock (brief at the end).
+(Light)", node `501:19319` (file `spz2vsSK8gbt1Ok2rW1sdQ`); components
+BugReportButton and BugReportDropTarget (Idle, Over: fills with the ink
+colour, not red).
 
 ## Intent
 
@@ -42,10 +44,10 @@ floating button; dragging it onto an ✕ turns the mode off.
 | Who can use it | `app_metadata.bug_reporter = true` on the auth user, set by Paul in SQL (below). The app reads `user.appMetadata` into `Account.bugReporter` where `AuthRepository` builds the account from `userMetadata`. The Edge Function re-reads it with `supabaseAdmin.auth.admin.getUserById(ctx.userClaims!.id)`, not from the JWT. | `app_metadata` is writable only with the service role, so no user can grant it to themselves. The admin read makes removal take effect at once, whatever the token says. No table, no migration. |
 | Unlock | Seven taps on the Settings version footer, each within 2 s of the previous. Only when `bugReporter`; for anyone else the taps do nothing. Snackbar "Bug reports on". | cmc_app's gesture. Silent for others so it isn't discoverable. |
 | Where the mode lives | A Riverpod `Notifier<bool>`, in memory. Off on restart and on sign-out. | No local persistence by design (docs/architecture.md → Not yet present). Seven taps again is cheap for a tester. |
-| The button | A small round button (bug icon, `primaryContainer`), over every screen from `MaterialApp.router`'s `builder`, so it survives navigation. Draggable anywhere inside the safe area, starts bottom-right above the navigation bar, keeps its position in memory. Hidden while the feedback panel is open. | Same as cmc_app. |
+| The button | A small round button (bug icon, `primaryContainer`), over every screen from `MaterialApp.router`'s `builder`, so it survives navigation. Draggable inside the safe area, but never rests in the bottom band where snackbars and the navigation bar sit (bottom inset + navigation bar + 88 dp): a drop there, other than on the ✕, settles just above it. Starts at the right edge, just above that band. Keeps its position in memory. Hidden while the feedback panel is open. | Same as cmc_app. The band keeps it off every snackbar's action (Undo, Retry, and the app's own), without tracking which snackbar is showing (Figma frames 7–8). |
 | Turning it off | While dragging, an ✕ target appears bottom centre; dropping within ~48 px of its centre turns the mode off, with a snackbar "Bug reports off" and Undo. | cmc_app's gesture; Undo covers a slip. |
 | Capture | `BetterFeedback` placed inside `MaterialApp.router`'s `builder` (around the router child), so its sheet inherits Loomia's `Theme` and localizations. Tap on the button calls `BetterFeedback.of(context).show`. | Inside rather than above the `MaterialApp`, unlike cmc_app, so our sheet is a normal `material_ui` widget. |
-| Panel theme | `FeedbackThemeData` from the active `ColorScheme`: backdrop `scrim` at 60 %, sheet `surface`, active mode `primary`, pens `primary`, `tertiary`, `onSurface`, `surface`. Light and dark. | No hard-coded colour; red stays reserved for errors. |
+| Panel theme | `FeedbackThemeData` from the active `ColorScheme`: backdrop `scrim` at 40 % (60 % read almost black in the mock), sheet `surface`, active mode `primary`, pens `primary`, `tertiary`, `onSurface`, `surface`. Light and dark. | No hard-coded colour; red stays reserved for errors. |
 | The sheet | Our own `feedbackBuilder`: filled multi-line field "What went wrong?", helper text "Posted publicly on GitHub: leave out names and numbers.", a pill `FilledButton` "Send", a spinner while sending. | The comment itself goes to a public issue. |
 | Logs | Its own scrubber in `features/bug_reports/domain/`, stricter than Sentry's path and independent of it (no shared redactor exists). A ring buffer of the last 200 `logging` records, fed from `Logger.root.onRecord` in `main.dart` from launch, whatever the mode. Each entry: time, level, logger, message with UUIDs replaced by `:id`, error **type** only (plus `code` for `PostgrestException` / `AuthException`), stack trace for `SEVERE` only. | Messages already hold no personal data (docs/architecture.md → Logging); error text can (`details`, emails). The buffer must hold what happened before the tap. |
 | Device facts | App version and build (`package_info_plus`), platform, `Platform.operatingSystemVersion` (not on web), locale, current route with ids as `:id`, logical screen size, light/dark. No `device_info_plus`. | Enough to reproduce; no new dependency. |
