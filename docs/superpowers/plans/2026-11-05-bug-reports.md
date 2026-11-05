@@ -124,11 +124,11 @@ test('toJson has time (UTC ISO), level, logger, message, error, stack', () { ...
 **Interfaces:**
 - Consumes: `bugReportModeProvider` (Task 3), `Account.bugReporter`.
 
-- [ ] **Step 1: Write the failing tests:** seven taps on the version text (each 500 ms apart) for a `bugReporter` account turn the mode on and show "Bug reports on"; six taps don't; seven taps with a 2.1 s gap after the third don't; seven taps for a non-reporter do nothing and show no snackbar.
-- [ ] **Step 2: Run** — Expected: FAIL.
-- [ ] **Step 3: Implement** a small `ConsumerStatefulWidget` `_VersionFooter` in the same file: tap counter, a 2 s `Timer` reset, `GestureDetector(behavior: HitTestBehavior.opaque)` around the existing `Text`. Only a reporter's taps count. Run `flutter gen-l10n`.
-- [ ] **Step 4: Run** — Expected: PASS.
-- [ ] **Step 5: Commit** `feat(bug-reports): unlock with seven taps on the version (#463)`
+- [x] **Step 1: Write the failing tests:** seven taps on the version text (each 500 ms apart) for a `bugReporter` account turn the mode on and show "Bug reports on"; six taps don't; seven taps with a 2.1 s gap after the third don't; seven taps for a non-reporter do nothing and show no snackbar.
+- [x] **Step 2: Run** — Expected: FAIL.
+- [x] **Step 3: Implement** a small `ConsumerStatefulWidget` `_VersionFooter` in the same file: tap counter, a 2 s `Timer` reset, `GestureDetector(behavior: HitTestBehavior.opaque)` around the existing `Text`. Only a reporter's taps count. Run `flutter gen-l10n`.
+- [x] **Step 4: Run** — Expected: PASS.
+- [x] **Step 5: Commit** `feat(bug-reports): unlock with seven taps on the version (#463)`
 
 ### Task 5: The `report-bug` Edge Function
 

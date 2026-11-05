@@ -3573,5 +3573,9 @@
   "contactShareAgain": "Share again",
   "@contactShareAgain": {
     "description": "Text button beside Invite sent that reopens the invite sheet to send the code again."
+  },
+  "bugReportsOn": "Bug reports on",
+  "@bugReportsOn": {
+    "description": "Snackbar after a tester taps the version in Settings seven times: a floating button to report bugs now shows on every screen. Only testers chosen by the developer see it."
   }
 }
