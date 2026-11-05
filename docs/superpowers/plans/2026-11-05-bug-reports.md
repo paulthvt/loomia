@@ -163,11 +163,11 @@ test('toJson has time (UTC ISO), level, logger, message, error, stack', () { ...
 - Produces: `class BugReportRepository { BugReportRepository(SupabaseClient client); Future<int> send(BugReport report); }` (`functions.invoke('report-bug', body: report.toJson())`, reads `issue`); `final bugReportRepositoryProvider = Provider<BugReportRepository>(...)`; `Widget bugReportSheet(BuildContext context, OnSubmit onSubmit, ScrollController? scrollController)` matching `FeedbackBuilder`; `final bugReportControllerProvider = NotifierProvider<BugReportController, BugReportSendState>(...)` with `Future<void> submit(UserFeedback feedback, {required Map<String, Object?> facts})` and `Future<void> retry()`; `sealed class BugReportSendState` = `Idle` | `Sending` | `Sent(int issue)` | `Failed(BugReport report)`.
 - ARB keys: `bugReportCommentLabel` "What went wrong?", `bugReportCommentHelper` "Posted publicly on GitHub: leave out names and numbers.", `bugReportSend` "Send", `bugReportSent` "Sent as #{number}" (int placeholder), `bugReportFailed` "Couldn't send", `bugReportRetry` "Retry".
 
-- [ ] **Step 1: Write the failing tests:** the sheet shows the label and helper, Send is disabled on an empty or blank comment, enabled after typing; tapping Send calls `onSubmit` with the trimmed text. Controller with `FakeBugReportRepository`: submit sends comment, the PNG bytes, the buffer's entries and a fresh UUID id → `Sent(123)`; failure → `Failed`; **retry resends the same report id** and the same bytes.
-- [ ] **Step 2: Run both** — Expected: FAIL.
-- [ ] **Step 3: Implement.** The sheet uses the theme's filled `TextField` (`minLines: 3`, `maxLines: 6`, `maxLength: 5000`) and a `FilledButton` (pill from the theme). `AppTheme.feedback`: `background: scheme.scrim.withValues(alpha: .4)`, `feedbackSheetColor: scheme.surface`, `activeFeedbackModeColor: scheme.primary`, `drawColors: [scheme.primary, scheme.tertiary, scheme.onSurface, scheme.surface]`, `bottomSheetDescriptionStyle`/`bottomSheetTextInputStyle` from the text theme.
-- [ ] **Step 4: Run** — Expected: PASS.
-- [ ] **Step 5: Commit** `feat(bug-reports): the sheet and sending, with retry (#463)`
+- [x] **Step 1: Write the failing tests:** the sheet shows the label and helper, Send is disabled on an empty or blank comment, enabled after typing; tapping Send calls `onSubmit` with the trimmed text. Controller with `FakeBugReportRepository`: submit sends comment, the PNG bytes, the buffer's entries and a fresh UUID id → `Sent(123)`; failure → `Failed`; **retry resends the same report id** and the same bytes.
+- [x] **Step 2: Run both** — Expected: FAIL.
+- [x] **Step 3: Implement.** The sheet uses the theme's filled `TextField` (`minLines: 3`, `maxLines: 6`, `maxLength: 5000`) and a `FilledButton` (pill from the theme). `AppTheme.feedback`: `background: scheme.scrim.withValues(alpha: .4)`, `feedbackSheetColor: scheme.surface`, `activeFeedbackModeColor: scheme.primary`, `drawColors: [scheme.primary, scheme.tertiary, scheme.onSurface, scheme.surface]`, `bottomSheetDescriptionStyle`/`bottomSheetTextInputStyle` from the text theme.
+- [x] **Step 4: Run** — Expected: PASS.
+- [x] **Step 5: Commit** `feat(bug-reports): the sheet and sending, with retry (#463)`
 
 ### Task 7: The floating button, wiring and docs
 

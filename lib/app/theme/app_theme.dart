@@ -1,3 +1,4 @@
+import 'package:feedback/feedback.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
@@ -8,6 +9,22 @@ import 'package:material_ui/material_ui.dart';
 abstract final class AppTheme {
   static ThemeData get light => _build(AppColors.light, LoomiaColors.light);
   static ThemeData get dark => _build(AppColors.dark, LoomiaColors.dark);
+
+  /// The bug report panel's own toolbar and backdrop (#463), from [scheme].
+  /// No red pen: red stays for errors.
+  static FeedbackThemeData feedback(ColorScheme scheme) => FeedbackThemeData(
+    background: scheme.scrim.withValues(alpha: .4),
+    feedbackSheetColor: scheme.surface,
+    activeFeedbackModeColor: scheme.primary,
+    dragHandleColor: scheme.outlineVariant,
+    drawColors: [
+      scheme.primary,
+      scheme.tertiary,
+      scheme.onSurface,
+      scheme.surface,
+    ],
+    brightness: scheme.brightness,
+  );
 
   /// The Tonal button (`docs/design/components.md` #2), for
   /// `FilledButton.tonal`. Material's tonal reads `secondaryContainer`; ours is

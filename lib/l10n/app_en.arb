@@ -3577,5 +3577,30 @@
   "bugReportsOn": "Bug reports on",
   "@bugReportsOn": {
     "description": "Snackbar after a tester taps the version in Settings seven times: a floating button to report bugs now shows on every screen. Only testers chosen by the developer see it."
+  },
+  "bugReportCommentLabel": "What went wrong?",
+  "@bugReportCommentLabel": {
+    "description": "Label of the comment field in the bug report panel, under the screenshot the tester has drawn on."
+  },
+  "bugReportCommentHelper": "Posted publicly on GitHub: leave out names and numbers.",
+  "@bugReportCommentHelper": {
+    "description": "Helper text under the bug report comment field: the comment becomes a public GitHub issue, so the tester should not type customers' names or phone numbers."
+  },
+  "bugReportSend": "Send",
+  "@bugReportSend": {
+    "description": "Button that sends the bug report (screenshot and comment)."
+  },
+  "bugReportSent": "Sent as #{number}",
+  "@bugReportSent": {
+    "description": "Snackbar after a bug report was sent: it became GitHub issue number {number}, e.g. 'Sent as #123'.",
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "bugReportFailed": "Couldn't send",
+  "@bugReportFailed": {
+    "description": "Snackbar when a bug report could not be sent; has a Retry action."
+  },
+  "bugReportRetry": "Retry",
+  "@bugReportRetry": {
+    "description": "Snackbar action that sends the same bug report again after it failed."
   }
 }
