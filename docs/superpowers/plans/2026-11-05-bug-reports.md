@@ -50,7 +50,7 @@
 **Interfaces:**
 - Produces: `String scrubIds(String text)` (every UUID → `:id`); `class LogEntry { final DateTime time; final String level; final String logger; final String message; final String? error; final String? stack; Map<String, Object?> toJson(); }`; `class LogBuffer { LogBuffer({int capacity = 200}); void add(LogRecord record); List<LogEntry> get entries; }`; `final logBuffer = LogBuffer();`; `final logBufferProvider = Provider<LogBuffer>((_) => logBuffer);`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```dart
 test('keeps the last 200, oldest dropped', () {
@@ -74,10 +74,10 @@ test('a stack trace only for SEVERE', () { /* INFO with stack → null; SEVERE �
 test('toJson has time (UTC ISO), level, logger, message, error, stack', () { ... });
 ```
 
-- [ ] **Step 2: Run `flutter test test/features/bug_reports/domain/log_buffer_test.dart`** — Expected: FAIL, `log_buffer.dart` not found.
-- [ ] **Step 3: Implement `log_buffer.dart`** with a `ListQueue`; the UUID regex is `[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`; messages go through `scrubIds`. In `main.dart`, add `Logger.root.onRecord.listen(logBuffer.add);` outside the `!kReleaseMode` block, with a comment pointing at #463.
-- [ ] **Step 4: Run the test** — Expected: PASS.
-- [ ] **Step 5: Commit** `feat(bug-reports): keep the last 200 log lines, cleaned (#463)`
+- [x] **Step 2: Run `flutter test test/features/bug_reports/domain/log_buffer_test.dart`** — Expected: FAIL, `log_buffer.dart` not found.
+- [x] **Step 3: Implement `log_buffer.dart`** with a `ListQueue`; the UUID regex is `[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`; messages go through `scrubIds`. In `main.dart`, add `Logger.root.onRecord.listen(logBuffer.add);` outside the `!kReleaseMode` block, with a comment pointing at #463.
+- [x] **Step 4: Run the test** — Expected: PASS.
+- [x] **Step 5: Commit** `feat(bug-reports): keep the last 200 log lines, cleaned (#463)`
 
 ### Task 2: Report model and device facts
 
