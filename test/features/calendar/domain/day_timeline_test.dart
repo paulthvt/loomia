@@ -179,5 +179,24 @@ void main() {
       expect(rows[3], isA<TimelineNow>());
       expect((rows[3] as TimelineNow).minute, 1320);
     });
+
+    test('now exactly at event end (gap start)', () {
+      final rows = dayTimeline(
+        [
+          _event(600, 720), // 10:00–12:00
+          _event(840, 900), // 14:00–15:00
+        ],
+        nowMinute: 720,
+      );
+      expect(rows.length, 4);
+      expect(rows[0], isA<TimelineEvent>());
+      expect(rows[1], isA<TimelineNow>());
+      expect((rows[1] as TimelineNow).minute, 720);
+      expect(rows[2], isA<TimelineGap>());
+      expect((rows[2] as TimelineGap).start, 720);
+      expect((rows[2] as TimelineGap).end, 840);
+      expect((rows[2] as TimelineGap).untilOnly, true);
+      expect(rows[3], isA<TimelineEvent>());
+    });
   });
 }
