@@ -21,7 +21,51 @@ Finder _field(String label) => find.descendant(
 final _day = DateTime(2026, 10, 8);
 
 void main() {
-  testWidgets('a new event on the day, at 19:00, with what was typed', (
+  group('shiftEnd (#461)', () {
+    const t = TimeOfDay.new;
+
+    test('keeps the length when the start moves', () {
+      expect(
+        shiftEnd(
+          t(hour: 19, minute: 0),
+          t(hour: 9, minute: 30),
+          t(hour: 21, minute: 0),
+        ),
+        t(hour: 11, minute: 30),
+      );
+    });
+
+    test('no end stays no end', () {
+      expect(
+        shiftEnd(t(hour: 19, minute: 0), t(hour: 9, minute: 0), null),
+        isNull,
+      );
+    });
+
+    test('an end not after the start becomes an hour', () {
+      expect(
+        shiftEnd(
+          t(hour: 19, minute: 0),
+          t(hour: 10, minute: 0),
+          t(hour: 18, minute: 0),
+        ),
+        t(hour: 11, minute: 0),
+      );
+    });
+
+    test('stops at 23:59 rather than passing midnight', () {
+      expect(
+        shiftEnd(
+          t(hour: 19, minute: 0),
+          t(hour: 23, minute: 30),
+          t(hour: 21, minute: 0),
+        ),
+        t(hour: 23, minute: 59),
+      );
+    });
+  });
+
+  testWidgets('a new event on the day, 19:00 to 20:00, with what was typed', (
     tester,
   ) async {
     final events = FakeEventRepository();
@@ -44,7 +88,7 @@ void main() {
     expect(saved, event);
     expect(event.title, 'Essential oils for sleep');
     expect(event.startsAt, DateTime(2026, 10, 8, 19));
-    expect(event.endsAt, isNull);
+    expect(event.endsAt, DateTime(2026, 10, 8, 20));
     expect(event.place, 'Studio Lumière, Lyon');
     expect(event.link, 'https://meet.google.com/abc');
     expect(event.notes, isNull);
