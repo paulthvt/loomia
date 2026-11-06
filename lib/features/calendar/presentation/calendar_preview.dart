@@ -365,7 +365,12 @@ Widget _calendar({
     events: _events,
     today: _today,
   ),
-  selection: (mode: mode, month: DateTime(2026, 10), day: _selected),
+  selection: (
+    mode: mode,
+    month: DateTime(2026, 10),
+    day: _selected,
+    from: _selected,
+  ),
   today: _today,
   // The desktop week's now line, mid-morning.
   now: DateTime(2026, 10, 7, 11, 15),

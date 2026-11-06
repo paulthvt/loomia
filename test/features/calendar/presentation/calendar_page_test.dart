@@ -77,6 +77,7 @@ Future<void> _pump(
               mode: CalendarMode.month,
               month: DateTime(2026, 10),
               day: DateTime(2026, 10, 8),
+              from: DateTime(2026, 10, 8),
             ),
         today: DateTime(2026, 10, 7),
         onSelect: onSelect ?? (_) {},
@@ -193,6 +194,7 @@ void main() {
     mode: CalendarMode.week,
     month: DateTime(2026, 10),
     day: DateTime(2026, 10, 8),
+    from: DateTime(2026, 10, 8),
   );
 
   testWidgets('the switch asks for the other view', (tester) async {
@@ -215,6 +217,7 @@ void main() {
         mode: CalendarMode.month,
         month: DateTime(2026, 9),
         day: DateTime(2026, 9),
+        from: DateTime(2026, 9),
       ),
       onPickTitle: () => picked++,
       accountAction: IconButton(
@@ -450,6 +453,7 @@ void main() {
         mode: CalendarMode.month,
         month: DateTime(2026, 10),
         day: DateTime(2026, 10, 9),
+        from: DateTime(2026, 10, 9),
       ),
       onAdd: added.add,
     );

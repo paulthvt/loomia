@@ -115,6 +115,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           last: last,
         );
         if (month != null) selector.showMonth(month);
+      case CalendarMode.threeDays:
       case CalendarMode.week:
         final day = await pickDay(
           context,

@@ -78,6 +78,7 @@ Future<List<String>> _pump(
             mode: mode,
             month: DateTime(2026, 10),
             day: selected ?? _day,
+            from: selected ?? _day,
           ),
           today: _today,
           onSelect: onSelect ?? (_) {},

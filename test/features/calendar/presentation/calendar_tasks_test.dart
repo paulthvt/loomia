@@ -82,7 +82,12 @@ Future<FakeTaskRepository> _pump(
         home: CalendarView(
           events: AsyncData(events),
           tasks: tasks,
-          selection: (mode: mode, month: DateTime(2026, 10), day: _day),
+          selection: (
+            mode: mode,
+            month: DateTime(2026, 10),
+            day: _day,
+            from: _day,
+          ),
           today: DateTime(2026, 10, 7),
           onSelect: (_) {},
           onShift: (_) {},
