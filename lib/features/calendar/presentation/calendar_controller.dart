@@ -363,5 +363,6 @@ class CalendarSelector extends Notifier<CalendarSelection> {
     select(month.year == now.year && month.month == now.month ? now : month);
   }
 
-  void toToday() => select(today());
+  /// Today; in 3 days, a page starting on it, even when it already shows.
+  void toToday() => state = _on(today(), state.mode);
 }

@@ -293,6 +293,21 @@ void main() {
         expect(selection.day, now);
       });
 
+      test('toToday() starts the page on today when it already shows', () {
+        final container = ProviderContainer.test();
+        final now = today();
+        final yesterday = DateTime(now.year, now.month, now.day - 1);
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(yesterday)
+          ..setMode(CalendarMode.threeDays);
+        expect(container.read(calendarSelectionProvider).from, yesterday);
+
+        selector.toToday();
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, now);
+        expect(selection.day, now);
+      });
+
       test('shownDays for from Oct 24 returns 3 days', () {
         final selection = (
           mode: CalendarMode.threeDays,
