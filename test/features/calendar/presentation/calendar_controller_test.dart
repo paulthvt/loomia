@@ -323,6 +323,86 @@ void main() {
         ]);
       });
 
+      test('select across month boundary keeps from when within page', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 12, 30))
+          ..setMode(CalendarMode.threeDays);
+
+        selector.select(DateTime(2027, 1, 1));
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 12, 30));
+        expect(selection.day, DateTime(2027, 1, 1));
+      });
+
+      test('shift(1) across month boundary, same column', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 12, 30))
+          ..setMode(CalendarMode.threeDays)
+          ..select(DateTime(2026, 12, 31));
+
+        selector.shift(1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2027, 1, 2));
+        expect(selection.day, DateTime(2027, 1, 3));
+      });
+
+      test('shift(1) across month boundary, today shown selects today', () {
+        final container = ProviderContainer.test();
+        // Mock today as Jan 2, 2027 by using a date close to actual today
+        final now = today();
+        // We'll use shift to a future date, then back
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(now.year, now.month, now.day + 3))
+          ..setMode(CalendarMode.threeDays)
+          ..select(DateTime(now.year, now.month, now.day + 4));
+
+        selector.shift(-1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.day, now);
+      });
+
+      test('shift(-1) across month boundary with today in page', () {
+        final container = ProviderContainer.test();
+        final now = today();
+        // Set from to 3 days ahead, so shift(-1) lands on today
+        final future = DateTime(now.year, now.month, now.day + 3);
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(future)
+          ..setMode(CalendarMode.threeDays);
+
+        selector.shift(-1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, now);
+        expect(selection.day, now);
+      });
+
+      test('DST: shift(1) from Oct 24, same column', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 24))
+          ..setMode(CalendarMode.threeDays)
+          ..select(DateTime(2026, 10, 25));
+
+        selector.shift(1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 27));
+        expect(selection.day, DateTime(2026, 10, 28));
+      });
+
+      test('DST: select within page keeps from', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 24))
+          ..setMode(CalendarMode.threeDays);
+
+        selector.select(DateTime(2026, 10, 26));
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 24));
+        expect(selection.day, DateTime(2026, 10, 26));
+      });
+
       test('setMode(week) after 3 days keeps day', () {
         final container = ProviderContainer.test();
         container.read(calendarSelectionProvider.notifier)

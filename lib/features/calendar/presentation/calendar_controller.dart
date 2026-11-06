@@ -243,6 +243,16 @@ List<DateTime> shownDays(CalendarSelection s, int firstDayOfWeek) {
   }
 }
 
+/// Calendar days between [a] and [b], counting from midnight to midnight.
+/// Across DST changes, local midnights are 23 h or 25 h apart, so
+/// a.difference(b).inDays gives 0 when it should be 1. UTC day arithmetic
+/// avoids this.
+int _calendarDays(DateTime a, DateTime b) => DateTime.utc(
+  a.year,
+  a.month,
+  a.day,
+).difference(DateTime.utc(b.year, b.month, b.day)).inDays;
+
 /// The day [delta] pages away from [from]'s. Month view: that month's 1st,
 /// or [today] in the current month. Week view: the same weekday, or
 /// [today] in the current week, weeks starting on [firstDayOfWeek] (0 is
@@ -266,14 +276,14 @@ DateTime shiftedDay(
         from.from.month,
         from.from.day + 3 * delta,
       );
-      final offset = from.day.day - from.from.day;
+      final offset = _calendarDays(from.day, from.from);
       final newDay = DateTime(
         newFrom.year,
         newFrom.month,
         newFrom.day + offset,
       );
       // If today is in the new page, select it.
-      final todayOffset = today.day - newFrom.day;
+      final todayOffset = _calendarDays(today, newFrom);
       return todayOffset >= 0 && todayOffset < 3 ? today : newDay;
     case CalendarMode.week:
       final day = from.day;
@@ -309,7 +319,7 @@ class CalendarSelector extends Notifier<CalendarSelection> {
   /// [from] when [day] is within the page.
   void select(DateTime day) {
     if (state.mode == CalendarMode.threeDays) {
-      final offset = day.day - state.from.day;
+      final offset = _calendarDays(day, state.from);
       state = offset >= 0 && offset < 3
           ? _on(day, state.mode, from: state.from)
           : _on(day, state.mode);
@@ -329,7 +339,7 @@ class CalendarSelector extends Notifier<CalendarSelection> {
         state.from.month,
         state.from.day + 3 * delta,
       );
-      final offset = state.day.day - state.from.day;
+      final offset = _calendarDays(state.day, state.from);
       final newDay = DateTime(
         newFrom.year,
         newFrom.month,
@@ -337,7 +347,7 @@ class CalendarSelector extends Notifier<CalendarSelection> {
       );
       // If today is in the new page, select it.
       final now = today();
-      final todayOffset = now.day - newFrom.day;
+      final todayOffset = _calendarDays(now, newFrom);
       state = todayOffset >= 0 && todayOffset < 3
           ? _on(now, state.mode, from: newFrom)
           : _on(newDay, state.mode, from: newFrom);
