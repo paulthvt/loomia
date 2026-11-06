@@ -50,90 +50,49 @@ final class TimelineNow extends TimelineRow {
 
 const Duration minGap = Duration(hours: 1);
 
+/// [events] (in start order) with the free time of [minGap] or more between
+/// their busy runs. With [nowMinute]: every event started before it sits
+/// above the now line, the rest below; when now is free, what is left of
+/// that gap follows the line as "Free until".
 List<TimelineRow> dayTimeline(List<CalendarEvent> events, {int? nowMinute}) {
   if (events.isEmpty) return [];
 
-  // Step 1: Build events and gaps without considering now
   final rows = <TimelineRow>[];
   var busyEnd = 0;
-
   for (final event in events) {
     final start = startMinute(event);
-    final end = endMinute(event);
-
-    // Check for gap before this event
-    if (busyEnd > 0 && start > busyEnd && start - busyEnd >= minGap.inMinutes) {
+    if (rows.isNotEmpty && start - busyEnd >= minGap.inMinutes) {
       rows.add(TimelineGap(busyEnd, start, false));
     }
-
-    // Only add event if it starts at or after busyEnd (skip overlapping events)
-    if (start >= busyEnd) {
-      rows.add(TimelineEvent(event));
-    }
-
-    busyEnd = math.max(busyEnd, end);
+    rows.add(TimelineEvent(event));
+    busyEnd = math.max(busyEnd, endMinute(event));
   }
+  if (nowMinute == null) return rows;
 
-  // Step 2: Handle now if provided
-  if (nowMinute != null) {
-    final withNow = <TimelineRow>[];
-    var nowInserted = false;
+  bool before(TimelineRow row) => switch (row) {
+    TimelineEvent(:final event) => startMinute(event) < nowMinute,
+    TimelineGap(:final end) => end <= nowMinute,
+    TimelineNow() => false,
+  };
+  // A gap holding now is replaced by its part after now.
+  bool holdsNow(TimelineRow row) =>
+      row is TimelineGap && row.start <= nowMinute && nowMinute < row.end;
 
-    for (var i = 0; i < rows.length; i++) {
-      final row = rows[i];
-
-      if (row is TimelineEvent) {
-        final eventStart = startMinute(row.event);
-        final eventEnd = endMinute(row.event);
-
-        // Insert now before this event if: now <= eventStart and not yet inserted
-        if (!nowInserted && nowMinute <= eventStart) {
-          withNow.add(TimelineNow(nowMinute));
-          nowInserted = true;
-
-          // Check if there's a gap between now and this event
-          if (eventStart - nowMinute >= minGap.inMinutes) {
-            withNow.add(TimelineGap(nowMinute, eventStart, true));
-          }
-        }
-
-        withNow.add(row);
-
-        // Insert now after this event if now is inside the event
-        if (!nowInserted && nowMinute > eventStart && nowMinute <= eventEnd) {
-          withNow.add(TimelineNow(nowMinute));
-          nowInserted = true;
-        }
-      } else if (row is TimelineGap) {
-        final gap = row;
-
-        // If now is at or in this gap and not yet inserted
-        if (!nowInserted && nowMinute >= gap.start && nowMinute < gap.end) {
-          withNow.add(TimelineNow(nowMinute));
-          nowInserted = true;
-
-          // Add the remaining gap after now if it's big enough
-          if (gap.end - nowMinute >= minGap.inMinutes) {
-            withNow.add(TimelineGap(nowMinute, gap.end, true));
-          }
-        } else if (nowMinute == gap.start &&
-            gap.end - gap.start >= minGap.inMinutes) {
-          // Gap starts exactly at now (now was already inserted): mark as untilOnly
-          withNow.add(TimelineGap(gap.start, gap.end, true));
-        } else {
-          // Gap entirely before or after now, keep as-is
-          withNow.add(gap);
-        }
-      }
-    }
-
-    // If now hasn't been inserted yet, it's after all events
-    if (!nowInserted) {
-      withNow.add(TimelineNow(nowMinute));
-    }
-
-    return withNow;
-  }
-
-  return rows;
+  final above = rows.where(before).toList();
+  final below = rows.where((row) => !before(row) && !holdsNow(row)).toList();
+  final aboveEnd = above
+      .whereType<TimelineEvent>()
+      .map((row) => endMinute(row.event))
+      .fold(0, math.max);
+  final next = below.whereType<TimelineEvent>().firstOrNull;
+  final nextStart = next == null ? null : startMinute(next.event);
+  return [
+    ...above,
+    TimelineNow(nowMinute),
+    if (aboveEnd <= nowMinute &&
+        nextStart != null &&
+        nextStart - nowMinute >= minGap.inMinutes)
+      TimelineGap(nowMinute, nextStart, true),
+    ...below,
+  ];
 }

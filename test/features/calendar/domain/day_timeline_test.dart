@@ -57,12 +57,47 @@ void main() {
         _event(660, 780), // 11:00–13:00
         _event(900, 960), // 15:00–16:00
       ]);
-      expect(rows.length, 3);
+      expect(rows.length, 4);
       expect(rows[0], isA<TimelineEvent>());
-      expect(rows[1], isA<TimelineGap>());
-      expect((rows[1] as TimelineGap).start, 780);
-      expect((rows[1] as TimelineGap).end, 900);
-      expect(rows[2], isA<TimelineEvent>());
+      expect(rows[1], isA<TimelineEvent>());
+      expect(rows[2], TimelineGap(780, 900, false));
+      expect(rows[3], isA<TimelineEvent>());
+    });
+
+    test('two events at the same start both show', () {
+      final a = _event(600, 660);
+      final b = CalendarEvent(
+        id: 'other',
+        title: 'Other',
+        startsAt: a.startsAt,
+        endsAt: a.endsAt,
+      );
+      expect(dayTimeline([a, b]), [TimelineEvent(a), TimelineEvent(b)]);
+    });
+
+    test('now inside overlapping events: both above the line', () {
+      final a = _event(600, 720); // 10:00–12:00
+      final b = _event(660, 780); // 11:00–13:00
+      expect(dayTimeline([a, b], nowMinute: 690), [
+        TimelineEvent(a),
+        TimelineEvent(b),
+        TimelineNow(690),
+      ]);
+      final c = _event(810, 870); // 13:30, under an hour after 13:00
+      expect(dayTimeline([a, b, c], nowMinute: 690), [
+        TimelineEvent(a),
+        TimelineEvent(b),
+        TimelineNow(690),
+        TimelineEvent(c),
+      ]);
+      final d = _event(900, 960); // 15:00, two hours after 13:00
+      expect(dayTimeline([a, b, d], nowMinute: 690), [
+        TimelineEvent(a),
+        TimelineEvent(b),
+        TimelineNow(690),
+        TimelineGap(780, 900, false),
+        TimelineEvent(d),
+      ]);
     });
 
     test('event without end at 10:00, next at 11:30', () {
