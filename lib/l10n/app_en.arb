@@ -2798,21 +2798,21 @@
   },
   "calendarChooseDay": "{days}, choose a day",
   "@calendarChooseDay": {
-    "description": "Screen-reader label of the Calendar's title in 3-day view, a button that opens a date picker; the days shown are the first and last of the 3 selected, e.g. 'Oct 19 – Oct 21, choose a day'. {days} is calendarThreeDaysRange.",
+    "description": "Screen-reader label of the 3 days view's title, a button that opens a day picker. {days} is the range shown, e.g. 'Oct 21 – Oct 23'.",
     "placeholders": {
       "days": { "type": "String" }
     }
   },
   "calendarFree": "Free · {duration}",
   "@calendarFree": {
-    "description": "In a day column's free time block: 'Free · 4 h 30'. {duration} is built from calendarHours and calendarHoursMinutes.",
+    "description": "Free time of an hour or more between two events, in the day under the month and in the day sheet: 'Free · 4 h 30'. {duration} is like '4 h 30' (calendarHours or calendarHoursMinutes).",
     "placeholders": {
       "duration": { "type": "String" }
     }
   },
   "calendarFreeUntil": "Free until {time}",
   "@calendarFreeUntil": {
-    "description": "In a day column's free time block at the end of the visible hours: 'Free until 9:00 PM'.",
+    "description": "Today's free time from now to the next event, in the day under the month and in the day sheet: 'Free until 7:00 PM'. {time} is the next event's start.",
     "placeholders": {
       "time": { "type": "String" }
     }
