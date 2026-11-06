@@ -218,6 +218,39 @@ void main() {
     expect(find.text('Nothing planned'), findsNothing);
   });
 
+  testWidgets('3 days: a timed task opens its page, a strip chip the day', (
+    tester,
+  ) async {
+    final opened = <String>[];
+    await _pump(
+      tester,
+      mode: CalendarMode.threeDays,
+      tasks: [
+        Task(
+          id: 'timed',
+          title: 'Timed call',
+          note: null,
+          dueOn: _day,
+          doneOn: null,
+          createdAt: DateTime(2026, 10),
+          dueTime: (hour: 10, minute: 0),
+        ),
+        _task('chip'),
+      ],
+      onOpenTask: (task) => opened.add(task.id),
+    );
+
+    await tester.tap(find.text('Timed call'));
+    await tester.pumpAndSettle();
+    expect(opened, ['timed']);
+    expect(find.byType(BottomSheet), findsNothing);
+
+    await tester.tap(find.text('Task chip'));
+    await tester.pumpAndSettle();
+    expect(opened, ['timed']);
+    expect(find.byType(BottomSheet), findsOneWidget);
+  });
+
   testWidgets('the rings call back with their task', (tester) async {
     final toggled = <String>[];
     await _pump(

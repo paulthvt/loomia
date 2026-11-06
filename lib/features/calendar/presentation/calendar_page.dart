@@ -366,12 +366,18 @@ class CalendarView extends StatelessWidget {
       showSelectedIcon: desktop,
       onSelectionChanged: (modes) => onMode?.call(modes.single),
     );
+    // Desktop in 3 days shows a week: its arrows turn weeks.
+    void turn(int delta) {
+      if (mode != selection.mode) onMode?.call(mode);
+      onShift(delta);
+    }
+
     final todayButton = TextButton(
       onPressed: onToday,
       child: Text(l10n.calendarToday),
     );
     final previous = IconButton(
-      onPressed: () => onShift(-1),
+      onPressed: () => turn(-1),
       tooltip: switch (mode) {
         CalendarMode.month => l10n.calendarPreviousMonth,
         CalendarMode.threeDays => l10n.calendarPreviousDays,
@@ -380,7 +386,7 @@ class CalendarView extends StatelessWidget {
       icon: const Icon(Icons.chevron_left_rounded),
     );
     final next = IconButton(
-      onPressed: () => onShift(1),
+      onPressed: () => turn(1),
       tooltip: switch (mode) {
         CalendarMode.month => l10n.calendarNextMonth,
         CalendarMode.threeDays => l10n.calendarNextDays,
@@ -461,8 +467,7 @@ class CalendarView extends StatelessWidget {
               // still: everything scrolls, and a curved swipe can still miss.
               final pinned = box.maxHeight >= _pinnedMinHeight;
               const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
-              // The bottom inset keeps the last row clear of the add button.
-              const bottom = AppSpacing.xxxl + AppSpacing.lg;
+              const bottom = _fabClearance;
               Widget scrolling(EdgeInsets padding, List<Widget> children) =>
                   _refreshable(
                     ListView(
@@ -642,7 +647,8 @@ class CalendarView extends StatelessWidget {
       now: now,
       onOpen: onOpen,
       tasks: tasks,
-      onOpenTask: (task) => openDay(task.dueOn),
+      onOpenTask: onOpenTask,
+      onStripTask: (task) => openDay(task.dueOn),
       onDay: (day, _) => openDay(day),
       onSelect: onSelect,
       people: people,
@@ -657,6 +663,8 @@ class CalendarView extends StatelessWidget {
           : null,
       scrolls: scrolls,
       scrollToMinute: scrolls ? _opensAt(days, list) : null,
+      // Week fits its height; the 3 days' hours scroll past the button.
+      bottomInset: scrolls && three ? _fabClearance : 0,
     );
   }
 
@@ -672,6 +680,10 @@ class CalendarView extends StatelessWidget {
     ];
     return starts.isEmpty ? null : starts.reduce(math.min);
   }
+
+  /// Under the last row of a list or of the 3 days' hours: clear of the
+  /// add button.
+  static const double _fabClearance = AppSpacing.xxxl + AppSpacing.lg;
 
   /// The phone grid's hour labels ("8 AM") and its least hour height.
   static const double _phoneGutter = 32;

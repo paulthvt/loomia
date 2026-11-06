@@ -621,6 +621,8 @@ class WeekGrid extends StatelessWidget {
     this.scrollToMinute,
     this.onSelect,
     this.scrolls = true,
+    this.onStripTask,
+    this.bottomInset = 0,
     super.key,
   }) : assert(scrolls || hourHeight != null, 'no own scroll needs an hour');
 
@@ -680,6 +682,13 @@ class WeekGrid extends StatelessWidget {
   /// False: the hours take their full height, in a scroll around the grid
   /// (a phone on its side); needs [hourHeight].
   final bool scrolls;
+
+  /// A task chip in the strip; none opens the task, as [onOpenTask].
+  final void Function(Task task)? onStripTask;
+
+  /// Room under the hours, so the last one scrolls clear of what floats
+  /// over the grid (a phone's add button).
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -796,7 +805,8 @@ class WeekGrid extends StatelessWidget {
                               for (final task in day)
                                 MonthTaskChip(
                                   task: task,
-                                  onTap: () => onOpenTask?.call(task),
+                                  onTap: () =>
+                                      (onStripTask ?? onOpenTask)?.call(task),
                                 ),
                             ],
                           ),
@@ -878,12 +888,16 @@ class WeekGrid extends StatelessWidget {
                   );
                   if (!scrolls) return grid;
                   final at = scrollToMinute;
-                  if (at == null) return SingleChildScrollView(child: grid);
+                  final padding = EdgeInsets.only(bottom: bottomInset);
+                  if (at == null) {
+                    return SingleChildScrollView(padding: padding, child: grid);
+                  }
                   final top = (at - 60 - range.first * 60) / 60 * hour;
                   return _OpenedAt(
+                    padding: padding,
                     offset: top.clamp(
                       0,
-                      math.max(0, hour * hours - box.maxHeight),
+                      math.max(0, hour * hours + bottomInset - box.maxHeight),
                     ),
                     child: grid,
                   );
@@ -1323,9 +1337,14 @@ class _WeekCard extends StatelessWidget {
 
 /// [child] in a vertical scroll that opens at [offset].
 class _OpenedAt extends StatefulWidget {
-  const _OpenedAt({required this.offset, required this.child});
+  const _OpenedAt({
+    required this.offset,
+    required this.padding,
+    required this.child,
+  });
 
   final double offset;
+  final EdgeInsets padding;
   final Widget child;
 
   @override
@@ -1342,8 +1361,11 @@ class _OpenedAtState extends State<_OpenedAt> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      SingleChildScrollView(controller: _controller, child: widget.child);
+  Widget build(BuildContext context) => SingleChildScrollView(
+    controller: _controller,
+    padding: widget.padding,
+    child: widget.child,
+  );
 }
 
 /// Shows [builder]'s content in a popover hung under [anchor] (above it when

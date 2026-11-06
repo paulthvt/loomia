@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -124,6 +125,7 @@ Future<ProviderContainer> _pumpLive(
   WidgetTester tester,
   CalendarSelection start, {
   Size size = const Size(390, 844),
+  bool desktop = false,
 }) async {
   tester.view
     ..physicalSize = size
@@ -159,6 +161,7 @@ Future<ProviderContainer> _pumpLive(
               tasks: const [],
               onToggleTask: (_) {},
               onOpenTask: (_) {},
+              desktop: desktop,
             );
           },
         ),
@@ -394,6 +397,45 @@ void main() {
     await tester.tap(find.byTooltip('Previous 3 days'));
     await tester.pumpAndSettle();
     expect(find.text('Oct 21 – Oct 23'), findsOneWidget);
+  });
+
+  testWidgets('desktop in 3 days: the arrows turn the week', (tester) async {
+    final container = await _pumpLive(
+      tester,
+      threeDays,
+      size: const Size(1440, 900),
+      desktop: true,
+    );
+
+    await tester.tap(find.byTooltip('Next week'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Oct 25 – Oct 31'), findsOneWidget);
+    expect(container.read(calendarSelectionProvider).mode, CalendarMode.week);
+  });
+
+  testWidgets('3 days: the last hour scrolls clear of the add button', (
+    tester,
+  ) async {
+    await _pumpLive(tester, threeDays);
+    final hours = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(WeekGrid),
+                matching: find.byType(Scrollable),
+              )
+              .last,
+        )
+        .position;
+
+    // 8:00 to 22:00 at 52 an hour, and the add button's clearance.
+    expect(
+      hours.maxScrollExtent,
+      moreOrLessEquals(
+        14 * 52 + AppSpacing.xxxl + AppSpacing.lg - hours.viewportDimension,
+      ),
+    );
   });
 
   testWidgets('desktop in 3 days shows the week', (tester) async {
