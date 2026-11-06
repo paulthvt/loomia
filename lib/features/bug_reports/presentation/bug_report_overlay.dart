@@ -110,6 +110,9 @@ class _BugReportOverlayState extends ConsumerState<BugReportOverlay> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.bugReportsOff),
+          // An action keeps a snackbar up while accessibleNavigation is on,
+          // which any Android accessibility service turns on (#386, #467).
+          persist: false,
           action: SnackBarAction(
             label: l10n.bugReportUndo,
             onPressed: mode.turnOn,
@@ -163,6 +166,8 @@ class _BugReportOverlayState extends ConsumerState<BugReportOverlay> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(l10n.bugReportFailed),
+            // Same as "Bug reports off": close even with a service on.
+            persist: false,
             action: SnackBarAction(
               label: l10n.bugReportRetry,
               onPressed: ref.read(bugReportControllerProvider.notifier).retry,

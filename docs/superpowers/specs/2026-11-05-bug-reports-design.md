@@ -61,6 +61,8 @@ floating button; dragging it onto an ✕ turns the mode off.
 | Partial failure | The app gives each report a UUID when Send is tapped and keeps it across retries; the file is `<yyyy-mm-dd>-<reportId>.png`. Upload first, then the issue. A NAS failure stops before GitHub (502, nothing created). A GitHub failure leaves the PNG; Retry PUTs the same name again, overwriting it, then retries the issue. | Retries never pile up files. At worst one PNG with no issue, when the tester gives up. |
 | Result in the app | Success: snackbar "Sent as #123". Failure: snackbar "Couldn't send" with Retry, which resends the same report kept in memory until it goes or the app closes. | The panel closes on Send, so the draft must survive a failure. |
 | Copy | English keys in `app_en.arb` with descriptions; French via Weblate, *tu*. "Bug report" is fine wording. | Conventions. |
+| Title (#467) | A required single-line Title field above the description, max 100 chars, sent as `title`; it is the issue title as typed. The description becomes optional (`_No description._` in the issue). The "public" helper moves under the Title. The function still accepts a report with no `title` (comment required, first line as title) | The tester names the bug better than a first line does. Accepting the old shape keeps a build from before #467 working. |
+| Snackbars close (#467) | "Bug reports off · Undo" and "Couldn't send · Retry" use `persist: false` | An action keeps a snackbar up while accessibleNavigation is on, which any Android accessibility service sets (#386). |
 
 ## Tests
 

@@ -3578,6 +3578,10 @@
   "@bugReportsOn": {
     "description": "Snackbar after a tester taps the version in Settings seven times: a floating button to report bugs now shows on every screen. Only testers chosen by the developer see it."
   },
+  "bugReportTitleLabel": "Title",
+  "@bugReportTitleLabel": {
+    "description": "Label of the short, required field in the bug report panel; it becomes the title of the GitHub issue, e.g. 'Plan button missing on Today'."
+  },
   "bugReportCommentLabel": "What went wrong?",
   "@bugReportCommentLabel": {
     "description": "Label of the comment field in the bug report panel, under the screenshot the tester has drawn on."

@@ -9,6 +9,7 @@ import 'package:loomia/features/bug_reports/domain/log_buffer.dart';
 class BugReport {
   const BugReport({
     required this.id,
+    required this.title,
     required this.comment,
     required this.screenshot,
     required this.facts,
@@ -16,6 +17,11 @@ class BugReport {
   });
 
   final String id;
+
+  /// The GitHub issue's title, as the tester typed it (#467).
+  final String title;
+
+  /// May be empty: the title can say it all.
   final String comment;
 
   /// PNG bytes.
@@ -25,6 +31,7 @@ class BugReport {
 
   Map<String, Object?> toJson() => {
     'id': id,
+    'title': title.trim(),
     'comment': comment.trim(),
     'screenshot': base64Encode(screenshot),
     'facts': facts,

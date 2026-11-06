@@ -165,7 +165,11 @@ void main() {
       await container
           .read(bugReportControllerProvider.notifier)
           .submit(
-            UserFeedback(text: 'It froze', screenshot: Uint8List(8)),
+            UserFeedback(
+              text: 'It froze',
+              screenshot: Uint8List(8),
+              extra: const {'title': 'It froze'},
+            ),
             facts: const {},
           );
       await tester.pumpAndSettle();
@@ -192,6 +196,59 @@ void main() {
       await tester.pumpAndSettle();
       expect(repository.sent, hasLength(2));
       expect(repository.sent[1].id, repository.sent[0].id);
+    });
+  });
+
+  // An Android accessibility service (a password manager) turns on
+  // accessibleNavigation, which keeps a snackbar with an action up forever
+  // (#386). Both of ours close on their own (#467).
+  group('with an accessibility service on', () {
+    void accessibilityOn(WidgetTester tester) {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(accessibleNavigation: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+    }
+
+    testWidgets('"Bug reports off · Undo" still closes', (tester) async {
+      accessibilityOn(tester);
+      await pump(tester);
+      final gesture = await tester.startGesture(tester.getCenter(_button));
+      await gesture.moveBy(const Offset(-20, 0));
+      await tester.pump();
+      await gesture.moveTo(tester.getCenter(_target));
+      await tester.pump();
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.text('Bug reports off'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+      expect(find.text('Bug reports off'), findsNothing);
+    });
+
+    testWidgets('"Couldn\'t send · Retry" still closes', (tester) async {
+      accessibilityOn(tester);
+      final repository = FakeBugReportRepository()
+        ..failOnce = StateError('offline');
+      final container = await pump(tester, bugReports: repository);
+      await container
+          .read(bugReportControllerProvider.notifier)
+          .submit(
+            UserFeedback(
+              text: '',
+              screenshot: Uint8List(8),
+              extra: const {'title': 'It froze'},
+            ),
+            facts: const {},
+          );
+      await tester.pumpAndSettle();
+      expect(find.text("Couldn't send"), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+      expect(find.text("Couldn't send"), findsNothing);
     });
   });
 }

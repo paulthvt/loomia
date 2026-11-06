@@ -7,10 +7,16 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
-void main() {
-  late List<String> submitted;
+final _title = find.widgetWithText(TextField, 'Title');
+final _description = find.widgetWithText(TextField, 'What went wrong?');
 
-  Future<void> pumpSheet(WidgetTester tester) async {
+void main() {
+  late List<(String, Map<String, dynamic>?)> submitted;
+
+  Future<void> pumpSheet(
+    WidgetTester tester, {
+    Future<void> Function()? wait,
+  }) async {
     submitted = [];
     await tester.pumpWidget(
       MaterialApp(
@@ -19,11 +25,11 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Builder(
-            builder: (context) => bugReportSheet(
-              context,
-              (text, {extras}) async => submitted.add(text),
-              null,
-            ),
+            builder: (context) =>
+                bugReportSheet(context, (text, {extras}) async {
+                  submitted.add((text, extras));
+                  await wait?.call();
+                }, null),
           ),
         ),
       ),
@@ -33,22 +39,31 @@ void main() {
   FilledButton send(WidgetTester tester) =>
       tester.widget(find.widgetWithText(FilledButton, 'Send'));
 
-  testWidgets('shows the question and the public warning', (tester) async {
+  testWidgets('shows a title, the question and the public warning', (
+    tester,
+  ) async {
     await pumpSheet(tester);
-    expect(find.text('What went wrong?'), findsOneWidget);
+    expect(_title, findsOneWidget);
+    expect(_description, findsOneWidget);
     expect(
       find.text('Posted publicly on GitHub: leave out names and numbers.'),
       findsOneWidget,
     );
   });
 
-  testWidgets('Send waits for a comment', (tester) async {
+  testWidgets('Send waits for a title; the description is optional', (
+    tester,
+  ) async {
     await pumpSheet(tester);
     expect(send(tester).onPressed, isNull);
-    await tester.enterText(find.byType(TextField), '   ');
+    await tester.enterText(_description, 'It froze on Today');
     await tester.pump();
     expect(send(tester).onPressed, isNull);
-    await tester.enterText(find.byType(TextField), 'It froze');
+    await tester.enterText(_title, '   ');
+    await tester.pump();
+    expect(send(tester).onPressed, isNull);
+    await tester.enterText(_title, 'Today froze');
+    await tester.enterText(_description, '');
     await tester.pump();
     expect(send(tester).onPressed, isNotNull);
   });
@@ -57,20 +72,8 @@ void main() {
     tester,
   ) async {
     final done = Completer<void>();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        localizationsDelegates: localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: Builder(
-            builder: (context) =>
-                bugReportSheet(context, (text, {extras}) => done.future, null),
-          ),
-        ),
-      ),
-    );
-    await tester.enterText(find.byType(TextField), 'It froze');
+    await pumpSheet(tester, wait: () => done.future);
+    await tester.enterText(_title, 'Today froze');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pump();
@@ -85,12 +88,17 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
-  testWidgets('Send submits the trimmed comment', (tester) async {
+  testWidgets('Send submits the trimmed description, the title in extras', (
+    tester,
+  ) async {
     await pumpSheet(tester);
-    await tester.enterText(find.byType(TextField), '  It froze \n');
+    await tester.enterText(_title, '  Today froze ');
+    await tester.enterText(_description, '  After a swipe \n');
     await tester.pump();
     await tester.tap(find.text('Send'));
     await tester.pump();
-    expect(submitted, ['It froze']);
+    final (text, extras) = submitted.single;
+    expect(text, 'After a swipe');
+    expect(extras, {'title': 'Today froze'});
   });
 }
