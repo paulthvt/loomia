@@ -49,7 +49,7 @@ typedef _Action = ({
   String label,
   IconData icon,
   VoidCallback onTap,
-  String? trailing,
+  String? detail,
 });
 
 /// One person: who they are, how to reach them, where it stands, what's next,
@@ -153,7 +153,7 @@ class ContactDetails extends StatelessWidget {
       label: l10n.contactLogSomething,
       icon: Icons.edit_note_rounded,
       onTap: onLog,
-      trailing: null,
+      detail: null,
     ),
     for (final stage in Stage.values)
       if (stage != person.stage)
@@ -161,33 +161,33 @@ class ContactDetails extends StatelessWidget {
           label: moveToLabel(l10n, stage),
           icon: Icons.swap_horiz_rounded,
           onTap: () => onMove(stage),
-          trailing: null,
+          detail: null,
         ),
     (
       label: l10n.contactChangeWorkflow,
       icon: Icons.alt_route_rounded,
       onTap: onChangeWorkflow,
-      trailing: workflowName,
+      detail: workflowName,
     ),
     if (person.pausedAt == null)
       (
         label: l10n.contactPause,
         icon: Icons.pause_circle_outline_rounded,
         onTap: onPause,
-        trailing: null,
+        detail: null,
       )
     else
       (
         label: l10n.contactResume,
         icon: Icons.play_circle_outline_rounded,
         onTap: onResume,
-        trailing: null,
+        detail: null,
       ),
     (
       label: l10n.contactEditDetails,
       icon: Icons.edit_outlined,
       onTap: () => onEdit(EditPart.everything),
-      trailing: null,
+      detail: null,
     ),
   ];
 
@@ -198,7 +198,7 @@ class ContactDetails extends StatelessWidget {
       label: l10n.contactDeleteName(firstName(person)),
       icon: Icons.delete_outline_rounded,
       onTap: () => _confirmDelete(context),
-      trailing: null,
+      detail: null,
     );
     const icon = Icon(Icons.more_horiz_rounded);
 
@@ -234,13 +234,14 @@ class ContactDetails extends StatelessWidget {
         for (final action in actions)
           PopupMenuItem(
             value: action.onTap,
-            child: Row(
-              spacing: AppSpacing.md,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Text(action.label)),
-                if (action.trailing case final trailing?)
+                Text(action.label),
+                if (action.detail case final detail?)
                   Text(
-                    trailing,
+                    detail,
                     style: TextStyle(color: LoomiaColors.of(context).textMuted),
                   ),
               ],
@@ -767,7 +768,9 @@ class _MoreSheet extends StatelessWidget {
     Widget tile(_Action action, {Color? color}) => ListTile(
       leading: Icon(action.icon, color: color),
       title: Text(action.label, style: TextStyle(color: color)),
-      trailing: switch (action.trailing) {
+      // Under the label, not beside it: a long workflow name beside it
+      // squeezed the label to a few letters per line (#462).
+      subtitle: switch (action.detail) {
         final text? => Text(
           text,
           style: TextStyle(color: LoomiaColors.of(context).textMuted),
