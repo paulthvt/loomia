@@ -2784,6 +2784,67 @@
       "title": { "type": "String" }
     }
   },
+  "calendarViewThreeDays": "3 days",
+  "@calendarViewThreeDays": {
+    "description": "Calendar screen: the switch segment that shows three days side by side."
+  },
+  "calendarPreviousDays": "Previous 3 days",
+  "@calendarPreviousDays": {
+    "description": "Tooltip on the left arrow of the 3-day view: navigates to the previous 3 days."
+  },
+  "calendarNextDays": "Next 3 days",
+  "@calendarNextDays": {
+    "description": "Tooltip on the right arrow of the 3-day view: navigates to the next 3 days."
+  },
+  "calendarChooseDay": "{days}, choose a day",
+  "@calendarChooseDay": {
+    "description": "Screen-reader label of the Calendar's title in 3-day view, a button that opens a date picker; the days shown are the first and last of the 3 selected, e.g. 'Oct 19 – Oct 21, choose a day'. {days} is calendarThreeDaysRange.",
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "calendarFree": "Free · {duration}",
+  "@calendarFree": {
+    "description": "In a day column's free time block: 'Free · 4 h 30'. {duration} is built from calendarHours and calendarHoursMinutes.",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+  "calendarFreeUntil": "Free until {time}",
+  "@calendarFreeUntil": {
+    "description": "In a day column's free time block at the end of the visible hours: 'Free until 9:00 PM'.",
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "calendarHours": "{hours} h",
+  "@calendarHours": {
+    "description": "Duration on a free time block, only the hour part: '4 h'. Shown when minutes are 0 or omitted. {hours} is an int.",
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "calendarHoursMinutes": "{hours} h {minutes}",
+  "@calendarHoursMinutes": {
+    "description": "Duration on a free time block, hours and minutes: '4 h 30'. {minutes} is a String, already 2 digits.",
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "String" }
+    }
+  },
+  "calendarPeopleToFollowUp": "{count, plural, =1{1 person to follow up} other{{count} people to follow up}}",
+  "@calendarPeopleToFollowUp": {
+    "description": "Label on a free time block: how many people from the follow-ups list are free at the same time."
+  },
+  "calendarCardSemantics": "{title}, {start} to {end}",
+  "@calendarCardSemantics": {
+    "description": "What a screen reader says for an event card: its title, then the time range, e.g. 'Team check-in, 2:00 PM to 3:00 PM'.",
+    "placeholders": {
+      "title": { "type": "String" },
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
   "calendarNothingPlanned": "Nothing planned",
   "@calendarNothingPlanned": {
     "description": "Shown under the selected day on the Calendar screen when it has no event and no task."
