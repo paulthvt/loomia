@@ -116,7 +116,8 @@ List<TimelineRow> dayTimeline(List<CalendarEvent> events, {int? nowMinute}) {
           if (gap.end - nowMinute >= minGap.inMinutes) {
             withNow.add(TimelineGap(nowMinute, gap.end, true));
           }
-        } else if (nowMinute == gap.start && gap.end - gap.start >= minGap.inMinutes) {
+        } else if (nowMinute == gap.start &&
+            gap.end - gap.start >= minGap.inMinutes) {
           // Gap starts exactly at now (now was already inserted): mark as untilOnly
           withNow.add(TimelineGap(gap.start, gap.end, true));
         } else {

@@ -181,13 +181,10 @@ void main() {
     });
 
     test('now exactly at event end (gap start)', () {
-      final rows = dayTimeline(
-        [
-          _event(600, 720), // 10:00–12:00
-          _event(840, 900), // 14:00–15:00
-        ],
-        nowMinute: 720,
-      );
+      final rows = dayTimeline([
+        _event(600, 720), // 10:00–12:00
+        _event(840, 900), // 14:00–15:00
+      ], nowMinute: 720);
       expect(rows.length, 4);
       expect(rows[0], isA<TimelineEvent>());
       expect(rows[1], isA<TimelineNow>());
