@@ -2834,7 +2834,8 @@
   },
   "calendarPeopleToFollowUp": "{count, plural, =1{1 person to follow up} other{{count} people to follow up}}",
   "@calendarPeopleToFollowUp": {
-    "description": "Label on a free time block: how many people from the follow-ups list are free at the same time."
+    "description": "Today's free time after now, in the day under the month: how many people are due a follow-up today. Tapping it opens them.",
+    "placeholders": { "count": { "type": "int" } }
   },
   "calendarCardSemantics": "{title}, {start} to {end}",
   "@calendarCardSemantics": {
