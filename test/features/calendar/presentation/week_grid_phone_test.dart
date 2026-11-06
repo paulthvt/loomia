@@ -48,6 +48,7 @@ void main() {
     Size size = const Size(358, 600),
     Locale locale = const Locale('en'),
     bool use24 = true,
+    List<CalendarEvent> more = const [],
   }) async {
     tester.view
       ..physicalSize = size
@@ -65,7 +66,7 @@ void main() {
         theme: AppTheme.light,
         home: WeekGrid(
           days: shown ?? days,
-          events: events,
+          events: [...events, ...more],
           selected: DateTime(2026, 10, 21),
           today: DateTime(2026, 10, 21),
           now: now,
@@ -189,6 +190,35 @@ void main() {
     expect(
       position.pixels,
       moreOrLessEquals((11 * 60 + 30 - 60 - firstHour * 60) / 60 * 52),
+    );
+  });
+
+  testWidgets('3 days: an early event loading later opens it again at now', (
+    tester,
+  ) async {
+    final now = DateTime(2026, 10, 21, 11, 30);
+    final shown = days.sublist(1, 4);
+    await pumpGrid(tester, shown: shown, threeDays: true, now: now);
+    await pumpGrid(
+      tester,
+      shown: shown,
+      threeDays: true,
+      now: now,
+      more: [
+        CalendarEvent(
+          id: 'early',
+          title: 'Early walk',
+          startsAt: DateTime(2026, 10, 22, 6),
+        ),
+      ],
+    );
+    // The range now starts at 6:00.
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable).last)
+        .position;
+    expect(
+      position.pixels,
+      moreOrLessEquals((11 * 60 + 30 - 60 - 6 * 60) / 60 * 52),
     );
   });
 

@@ -895,6 +895,13 @@ class WeekGrid extends StatelessWidget {
                   }
                   final top = (at - 60 - range.first * 60) / 60 * hour;
                   return _OpenedAt(
+                    // Events loading later move the first hour or the
+                    // earliest start: open again. Not on today's minute,
+                    // which moves on with each rebuild.
+                    key: ValueKey((
+                      range.first,
+                      days.contains(today) ? null : at,
+                    )),
                     padding: padding,
                     offset: top.clamp(
                       0,
@@ -1340,6 +1347,7 @@ class _WeekCard extends StatelessWidget {
 class _OpenedAt extends StatefulWidget {
   const _OpenedAt({
     required this.offset,
+    super.key,
     required this.padding,
     required this.child,
   });
