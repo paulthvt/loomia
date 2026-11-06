@@ -680,11 +680,13 @@ class WeekGrid extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
       final available = box.maxWidth - gutter;
+      final wide = available - (days.length - 1) * _narrow;
+      // Too narrow for even that: equal columns.
       final focusing =
           focus &&
           days.contains(selected) &&
-          available / days.length < _focusUnder;
-      final wide = available - (days.length - 1) * _narrow;
+          available / days.length < _focusUnder &&
+          wide >= _narrow;
       final duration = context.motion(AppMotion.medium);
       Widget cell(DateTime day, Widget child) => focusing
           ? AnimatedContainer(
@@ -722,8 +724,11 @@ class WeekGrid extends StatelessWidget {
         for (final task in day) taskSpan(task.dueTime!),
     ]);
     final hours = range.last - range.first;
-    final hourStyle = Theme.of(context).textTheme.labelSmall
-        ?.copyWith(color: colors.textMuted);
+    // A phone's narrow gutter: the hour alone ("8 AM", "08 h"), smaller.
+    final hourStyle =
+        (compact ? AppTypography.micro : Theme.of(context).textTheme.labelSmall)
+            ?.copyWith(color: colors.textMuted);
+    final hourOnly = DateFormat.j(Localizations.localeOf(context).toString());
     return _Board(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -814,16 +819,23 @@ class WeekGrid extends StatelessWidget {
                                 for (var h = range.first; h < range.last; h++)
                                   PositionedDirectional(
                                     top: (h - range.first) * hour,
-                                    end: AppSpacing.sm,
+                                    // "10 AM" needs 28.4 of the 32.
+                                    end: compact
+                                        ? AppSpacing.xs / 2
+                                        : AppSpacing.sm,
                                     child: Padding(
                                       padding: const EdgeInsets.only(
                                         top: AppSpacing.xs,
                                       ),
                                       child: Text(
-                                        timeLabel(
-                                          context,
-                                          DateTime(2000, 1, 1, h),
-                                        ),
+                                        compact
+                                            ? hourOnly.format(
+                                                DateTime(2000, 1, 1, h),
+                                              )
+                                            : timeLabel(
+                                                context,
+                                                DateTime(2000, 1, 1, h),
+                                              ),
                                         style: hourStyle,
                                       ),
                                     ),
