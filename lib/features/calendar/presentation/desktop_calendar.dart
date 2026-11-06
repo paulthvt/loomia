@@ -9,6 +9,7 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/domain/week_grid.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/fit_words.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -596,6 +597,10 @@ class MonthTaskChip extends StatelessWidget {
 /// at their start and as tall as they last, overlapping ones side by side.
 /// The selected column is tinted, today's has a line at [now]. A week with
 /// tasks has a strip under the headings: each day's, as in the month.
+///
+/// On a phone (#448) the same grid shows 3 days ([hourHeight], opened at
+/// [scrollToMinute]) or the week with the selected column wide ([focus]),
+/// its cards title only ([compact]).
 class WeekGrid extends StatelessWidget {
   const WeekGrid({
     required this.days,
@@ -608,14 +613,21 @@ class WeekGrid extends StatelessWidget {
     this.onOpenTask,
     this.now,
     this.people = const PeopleAhead.none(),
+    this.compact = false,
+    this.focus = false,
+    this.gutter = 72,
+    this.minHour = 40,
+    this.hourHeight,
+    this.scrollToMinute,
+    this.onSelect,
     super.key,
   });
 
-  /// Wider than the Figma's 56: "10:00 AM" in 12-hour locales.
-  static const double _gutter = 72;
+  /// A [focus] week's other columns.
+  static const double _narrow = 40;
 
-  /// Below this an hour gets, the grid scrolls instead of shrinking.
-  static const double _minHour = 40;
+  /// Below this, equal columns give way to [focus]'s wide one.
+  static const double _focusUnder = 90;
 
   /// The most of the window the task strip takes; past it, it scrolls.
   static const double _maxStrip = 1 / 3;
@@ -636,10 +648,61 @@ class WeekGrid extends StatelessWidget {
   /// Who is due when (#378): "N people" in the strip, above the tasks.
   final PeopleAhead people;
   final void Function(CalendarEvent event) onOpen;
+
+  /// A heading's tap, and a column's when there is no [onSelect].
   final OpenDay onDay;
 
+  /// Cards show their title only: the hour axis gives the time.
+  final bool compact;
+
+  /// When equal columns would be under 90 dp, the selected day's takes what
+  /// the others leave at 40 dp each.
+  final bool focus;
+
+  /// The hour labels' width: wider than the Figma's 56 by default, for
+  /// "10:00 AM" in 12-hour locales.
+  final double gutter;
+
+  /// Below this an hour gets, the grid scrolls instead of shrinking.
+  final double minHour;
+
+  /// A fixed hour height; none fits the hours to the height, down to
+  /// [minHour].
+  final double? hourHeight;
+
+  /// Opens scrolled so an hour before this minute of the day is at the top.
+  final int? scrollToMinute;
+
+  /// A tap on an empty part of a column; none opens the day, as [onDay].
+  final ValueChanged<DateTime>? onSelect;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final available = box.maxWidth - gutter;
+      final focusing =
+          focus &&
+          days.contains(selected) &&
+          available / days.length < _focusUnder;
+      final wide = available - (days.length - 1) * _narrow;
+      final duration = context.motion(AppMotion.medium);
+      Widget cell(DateTime day, Widget child) => focusing
+          ? AnimatedContainer(
+              duration: duration,
+              curve: AppMotion.standard,
+              width: day == selected ? wide : _narrow,
+              child: child,
+            )
+          : Expanded(child: child);
+      return _grid(context, cell, narrow: (day) => focusing && day != selected);
+    },
+  );
+
+  Widget _grid(
+    BuildContext context,
+    Widget Function(DateTime day, Widget child) cell, {
+    required bool Function(DateTime day) narrow,
+  }) {
     final colors = LoomiaColors.of(context);
     final week = [
       for (final event in events)
@@ -669,10 +732,11 @@ class WeekGrid extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(
               children: [
-                const SizedBox(width: _gutter),
+                SizedBox(width: gutter),
                 for (final (index, day) in days.indexed)
-                  Expanded(
-                    child: _ColumnHeader(
+                  cell(
+                    day,
+                    _ColumnHeader(
                       day: day,
                       selected: day == selected,
                       today: day == today,
@@ -695,10 +759,11 @@ class WeekGrid extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(width: _gutter),
+                    SizedBox(width: gutter),
                     for (final (index, day) in untimed.indexed)
-                      Expanded(
-                        child: Padding(
+                      cell(
+                        days[index],
+                        Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.xs,
                           ),
@@ -734,58 +799,71 @@ class WeekGrid extends StatelessWidget {
               ),
               child: LayoutBuilder(
                 builder: (context, box) {
-                  final hour = math.max(_minHour, box.maxHeight / hours);
-                  return SingleChildScrollView(
-                    child: SizedBox(
-                      height: hour * hours,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            width: _gutter,
-                            child: ExcludeSemantics(
-                              child: Stack(
-                                children: [
-                                  for (var h = range.first; h < range.last; h++)
-                                    PositionedDirectional(
-                                      top: (h - range.first) * hour,
-                                      end: AppSpacing.sm,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: AppSpacing.xs,
+                  final hour =
+                      hourHeight ?? math.max(minHour, box.maxHeight / hours);
+                  final grid = SizedBox(
+                    height: hour * hours,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          width: gutter,
+                          child: ExcludeSemantics(
+                            child: Stack(
+                              children: [
+                                for (var h = range.first; h < range.last; h++)
+                                  PositionedDirectional(
+                                    top: (h - range.first) * hour,
+                                    end: AppSpacing.sm,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: AppSpacing.xs,
+                                      ),
+                                      child: Text(
+                                        timeLabel(
+                                          context,
+                                          DateTime(2000, 1, 1, h),
                                         ),
-                                        child: Text(
-                                          timeLabel(
-                                            context,
-                                            DateTime(2000, 1, 1, h),
-                                          ),
-                                          style: hourStyle,
-                                        ),
+                                        style: hourStyle,
                                       ),
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
                           ),
-                          for (final (index, day) in days.indexed)
-                            Expanded(
-                              child: _DayColumn(
-                                day: day,
-                                events: eventsOn(week, day),
-                                tasks: timed[index],
-                                onOpenTask: onOpenTask,
-                                firstHour: range.first,
-                                hours: hours,
-                                hour: hour,
-                                selected: day == selected,
-                                now: day == today ? now : null,
-                                onOpen: onOpen,
-                                onDay: onDay,
-                              ),
+                        ),
+                        for (final (index, day) in days.indexed)
+                          cell(
+                            day,
+                            _DayColumn(
+                              day: day,
+                              events: eventsOn(week, day),
+                              tasks: timed[index],
+                              onOpenTask: onOpenTask,
+                              firstHour: range.first,
+                              hours: hours,
+                              hour: hour,
+                              selected: day == selected,
+                              now: day == today ? now : null,
+                              onOpen: onOpen,
+                              onDay: onDay,
+                              onSelect: onSelect,
+                              compact: compact,
+                              narrow: narrow(day),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
+                  );
+                  final at = scrollToMinute;
+                  if (at == null) return SingleChildScrollView(child: grid);
+                  final top = (at - 60 - range.first * 60) / 60 * hour;
+                  return _OpenedAt(
+                    offset: top.clamp(
+                      0,
+                      math.max(0, hour * hours - box.maxHeight),
+                    ),
+                    child: grid,
                   );
                 },
               ),
@@ -897,6 +975,9 @@ class _DayColumn extends StatelessWidget {
     required this.now,
     required this.onOpen,
     required this.onDay,
+    this.onSelect,
+    this.compact = false,
+    this.narrow = false,
   });
 
   /// Between a card and its column's edges, and between lanes.
@@ -919,6 +1000,15 @@ class _DayColumn extends StatelessWidget {
   final DateTime? now;
   final void Function(CalendarEvent event) onOpen;
   final OpenDay onDay;
+
+  /// A tap off the cards, instead of [onDay].
+  final ValueChanged<DateTime>? onSelect;
+
+  /// [_WeekCard.compact].
+  final bool compact;
+
+  /// [_WeekCard.narrow].
+  final bool narrow;
 
   double _y(int minute) => (minute - firstHour * 60) / 60 * hour;
 
@@ -954,6 +1044,8 @@ class _DayColumn extends StatelessWidget {
           excludeFromSemantics: true,
           canRequestFocus: false,
           onTap: () {
+            final select = onSelect;
+            if (select != null) return select(day);
             final column = _globalRect(context);
             onDay(day, Rect.fromLTWH(column.left, column.top, column.width, 0));
           },
@@ -992,6 +1084,8 @@ class _DayColumn extends StatelessWidget {
                         final event as CalendarEvent => _WeekCard(
                           event: event,
                           onTap: () => onOpen(event),
+                          compact: compact,
+                          narrow: narrow,
                         ),
                       },
                     ),
@@ -1057,14 +1151,24 @@ class _WeekTask extends StatelessWidget {
 
 /// A desktop week card: time and title, a start bar while upcoming; done,
 /// outlined and muted. Too short for both lines: "14:00 · Team check-in".
+///
+/// [compact] (a phone, #448): the title only, read with its times; in a
+/// [narrow] column, at 10 px, whole words.
 class _WeekCard extends StatelessWidget {
-  const _WeekCard({required this.event, required this.onTap});
+  const _WeekCard({
+    required this.event,
+    required this.onTap,
+    this.compact = false,
+    this.narrow = false,
+  });
 
   static const double _bar = 3;
   static const double _vertical = AppSpacing.xs / 2;
 
   final CalendarEvent event;
   final VoidCallback onTap;
+  final bool compact;
+  final bool narrow;
 
   static TextStyle _timeStyle(BuildContext context) =>
       (Theme.of(context).textTheme.labelSmall ?? AppTypography.caption)
@@ -1072,6 +1176,38 @@ class _WeekCard extends StatelessWidget {
 
   static TextStyle _titleStyle(BuildContext context) =>
       Theme.of(context).textTheme.labelMedium ?? AppTypography.label;
+
+  /// [compact]'s title alone, on as many lines as the card holds; [narrow],
+  /// at 10 px and whole words. Its semantics are the card's label.
+  Widget _title(BuildContext context, BoxConstraints box, Color? ink) {
+    final style =
+        (narrow
+                ? AppTypography.micro
+                : Theme.of(context).textTheme.labelSmall ??
+                      AppTypography.caption)
+            .copyWith(color: ink);
+    final lines = math.max(
+      1,
+      (box.maxHeight / _lineHeight(context, style)).floor(),
+    );
+    return ExcludeSemantics(
+      child: Text(
+        narrow
+            ? fitWords(
+                event.title,
+                style: style,
+                width: box.maxWidth,
+                maxLines: lines,
+                scaler: MediaQuery.textScalerOf(context),
+                direction: Directionality.of(context),
+              )
+            : event.title,
+        maxLines: lines,
+        overflow: narrow ? TextOverflow.clip : TextOverflow.ellipsis,
+        style: style,
+      ),
+    );
+  }
 
   /// The one-line card's height.
   static double minHeight(BuildContext context) =>
@@ -1086,9 +1222,17 @@ class _WeekCard extends StatelessWidget {
     final time = timeLabel(context, event.startsAt);
     final timeStyle = _timeStyle(context).copyWith(color: ink);
     final titleStyle = _titleStyle(context).copyWith(color: ink);
+    final ends = event.endsAt ?? event.startsAt.add(shownWithoutEnd);
     return MergeSemantics(
       child: Semantics(
         button: true,
+        label: compact
+            ? AppLocalizations.of(context).calendarCardSemantics(
+                event.title,
+                time,
+                timeLabel(context, ends),
+              )
+            : null,
         child: Material(
           color: colors.surfaceDefault,
           shape: RoundedRectangleBorder(
@@ -1108,12 +1252,14 @@ class _WeekCard extends StatelessWidget {
                         start: BorderSide(color: scheme.primary, width: _bar),
                       ),
                     ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
+              // A 40 dp column's title needs every point it can get.
+              padding: EdgeInsets.symmetric(
+                horizontal: narrow ? 0 : AppSpacing.sm,
                 vertical: _vertical,
               ),
               child: LayoutBuilder(
                 builder: (context, box) {
+                  if (compact) return _title(context, box, ink);
                   final lines =
                       ((box.maxHeight - _lineHeight(context, timeStyle)) /
                               _lineHeight(context, titleStyle))
@@ -1149,6 +1295,31 @@ class _WeekCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// [child] in a vertical scroll that opens at [offset].
+class _OpenedAt extends StatefulWidget {
+  const _OpenedAt({required this.offset, required this.child});
+
+  final double offset;
+  final Widget child;
+
+  @override
+  State<_OpenedAt> createState() => _OpenedAtState();
+}
+
+class _OpenedAtState extends State<_OpenedAt> {
+  late final _controller = ScrollController(initialScrollOffset: widget.offset);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      SingleChildScrollView(controller: _controller, child: widget.child);
 }
 
 /// Shows [builder]'s content in a popover hung under [anchor] (above it when
