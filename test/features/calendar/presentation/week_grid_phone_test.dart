@@ -47,12 +47,13 @@ void main() {
     OpenDay? onDay,
     Size size = const Size(358, 600),
     Locale locale = const Locale('en'),
+    bool use24 = true,
   }) async {
     tester.view
       ..physicalSize = size
       ..devicePixelRatio = 1;
     tester.platformDispatcher
-      ..alwaysUse24HourFormatTestValue = true
+      ..alwaysUse24HourFormatTestValue = use24
       ..textScaleFactorTestValue = textScale;
     addTearDown(tester.view.reset);
     addTearDown(tester.platformDispatcher.clearAllTestValues);
@@ -222,7 +223,7 @@ void main() {
 
   for (final locale in const [Locale('en', 'US'), Locale('fr')]) {
     testWidgets('the hour labels fit the gutter in $locale', (tester) async {
-      await pumpGrid(tester, locale: locale);
+      await pumpGrid(tester, locale: locale, use24: false);
       final hour = DateFormat.j(locale.toString());
       for (var h = 8; h < 22; h++) {
         final label = hour.format(DateTime(2000, 1, 1, h));
@@ -234,4 +235,19 @@ void main() {
       }
     });
   }
+
+  testWidgets('the hour labels follow the 24-hour setting', (tester) async {
+    await pumpGrid(tester, locale: const Locale('en', 'US'));
+    expect(find.text('14'), findsOneWidget);
+    expect(find.text('2 PM'), findsNothing);
+    for (var h = 8; h < 22; h++) {
+      final label = DateFormat.H('en_US').format(DateTime(2000, 1, 1, h));
+      // "19" to "21" are also the headings' dates: the hour's is the last.
+      expect(
+        tester.getSize(find.text(label).last).width,
+        lessThanOrEqualTo(32 - AppSpacing.xs / 2),
+        reason: label,
+      );
+    }
+  });
 }

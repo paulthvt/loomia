@@ -724,11 +724,15 @@ class WeekGrid extends StatelessWidget {
         for (final task in day) taskSpan(task.dueTime!),
     ]);
     final hours = range.last - range.first;
-    // A phone's narrow gutter: the hour alone ("8 AM", "08 h"), smaller.
+    // A phone's narrow gutter: the hour alone ("8 AM", "08 h", "14" in
+    // 24-hour), smaller.
     final hourStyle =
         (compact ? AppTypography.micro : Theme.of(context).textTheme.labelSmall)
             ?.copyWith(color: colors.textMuted);
-    final hourOnly = DateFormat.j(Localizations.localeOf(context).toString());
+    final locale = Localizations.localeOf(context).toString();
+    final hourOnly = MediaQuery.alwaysUse24HourFormatOf(context)
+        ? DateFormat.H(locale)
+        : DateFormat.j(locale);
     return _Board(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
