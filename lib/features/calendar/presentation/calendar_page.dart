@@ -16,6 +16,7 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/day_timeline.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
@@ -514,6 +515,7 @@ class CalendarView extends StatelessWidget {
                         people: people,
                         model: model,
                         onOpenPerson: onOpenPerson,
+                        timeline: true,
                       ),
               ),
             );
@@ -995,6 +997,7 @@ class DaySection extends StatelessWidget {
     this.model = BusinessModel.other,
     this.onOpenPerson,
     this.peopleFoldable = true,
+    this.timeline = false,
     this.now,
     super.key,
   });
@@ -1015,6 +1018,9 @@ class DaySection extends StatelessWidget {
   /// False in the desktop popover: the people always show.
   final bool peopleFoldable;
 
+  /// True on mobile/tablet: events as a timeline with free time gaps.
+  final bool timeline;
+
   /// [Task.key]s whose write is in flight.
   final Set<String> busy;
   final DateTime day;
@@ -1028,6 +1034,49 @@ class DaySection extends StatelessWidget {
   /// Adds a task on the day. With it, Add asks Event or Task first.
   final ValueChanged<DateTime>? onAddTask;
   final VoidCallback onRetry;
+
+  List<Widget> _timelineRows(
+    BuildContext context,
+    List<CalendarEvent> events,
+    DateTime day,
+  ) {
+    final localNow = now?.toLocal();
+    final isToday =
+        localNow != null &&
+        day.year == localNow.year &&
+        day.month == localNow.month &&
+        day.day == localNow.day;
+    final nowMinute = isToday ? localNow.hour * 60 + localNow.minute : null;
+    final rows = dayTimeline(events, nowMinute: nowMinute);
+    final peopleCount = people.count(day);
+
+    return [
+      for (final row in rows)
+        switch (row) {
+          TimelineEvent(:final event) => EventRow(
+            key: ValueKey('event:${event.id}'),
+            event: event,
+            now: now,
+            onTap: () => onOpen(event),
+          ),
+          TimelineGap(:final start, :final end, :final untilOnly) => _GapRow(
+            key: ValueKey('gap:$start:$end'),
+            start: start,
+            end: end,
+            untilOnly: untilOnly,
+            showPeople: untilOnly && isToday && peopleCount > 0,
+            peopleCount: peopleCount,
+            onTapPeople: () {
+              // TODO(#448): Wire up unfold + scroll to People block
+            },
+          ),
+          TimelineNow(:final minute) => _NowRow(
+            key: ValueKey('now:$minute'),
+            minute: minute,
+          ),
+        },
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1056,13 +1105,16 @@ class DaySection extends StatelessWidget {
             foldable: peopleFoldable,
             onOpen: (person) => onOpenPerson?.call(person),
           ),
-        for (final event in eventsOn(list, day))
-          EventRow(
-            key: ValueKey('event:${event.id}'),
-            event: event,
-            now: now,
-            onTap: () => onOpen(event),
-          ),
+        if (timeline)
+          ..._timelineRows(context, eventsOn(list, day), day)
+        else
+          for (final event in eventsOn(list, day))
+            EventRow(
+              key: ValueKey('event:${event.id}'),
+              event: event,
+              now: now,
+              onTap: () => onOpen(event),
+            ),
       ];
       body = onDay.isEmpty
           ? [
@@ -1102,6 +1154,172 @@ class DaySection extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.ms),
         ...body,
+      ],
+    );
+  }
+}
+
+class _GapRow extends StatelessWidget {
+  const _GapRow({
+    required this.start,
+    required this.end,
+    required this.untilOnly,
+    required this.showPeople,
+    required this.peopleCount,
+    required this.onTapPeople,
+    super.key,
+  });
+
+  final int start;
+  final int end;
+  final bool untilOnly;
+  final bool showPeople;
+  final int peopleCount;
+  final VoidCallback onTapPeople;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colors = LoomiaColors.of(context);
+    final duration = end - start;
+    final hours = duration ~/ 60;
+    final minutes = duration % 60;
+
+    String durationLabel;
+    if (minutes == 0) {
+      durationLabel = l10n.calendarHours(hours);
+    } else {
+      durationLabel = l10n.calendarHoursMinutes(
+        hours,
+        minutes.toString().padLeft(2, '0'),
+      );
+    }
+
+    String gapText;
+    if (untilOnly) {
+      final endTime = DateTime(2026, 1, 1, end ~/ 60, end % 60);
+      gapText = l10n.calendarFreeUntil(timeLabel(context, endTime));
+    } else {
+      gapText = l10n.calendarFree(durationLabel);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: EventRow.timeWidth + AppSpacing.ms),
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
+          color: colors.borderStrong,
+          radius: AppRadii.md,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.ms),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                gapText,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colors.textMuted,
+                ),
+              ),
+              if (showPeople) ...[
+                const SizedBox(height: AppSpacing.xs),
+                GestureDetector(
+                  onTap: onTapPeople,
+                  child: Text(
+                    l10n.calendarPeopleToFollowUp(peopleCount),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colors.primaryText,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    const dashWidth = 4.0;
+    const dashSpace = 4.0;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final pathMetrics = path.computeMetrics();
+
+    for (final metric in pathMetrics) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final start = metric.getTangentForOffset(distance)!.position;
+        distance += dashWidth;
+        final end = metric.getTangentForOffset(distance)!.position;
+        canvas.drawLine(start, end, paint);
+        distance += dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
+      color != oldDelegate.color || radius != oldDelegate.radius;
+}
+
+class _NowRow extends StatelessWidget {
+  const _NowRow({required this.minute, super.key});
+
+  final int minute;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = LoomiaColors.of(context);
+    final time = DateTime(2026, 1, 1, minute ~/ 60, minute % 60);
+
+    return Row(
+      children: [
+        SizedBox(
+          width: EventRow.timeWidth,
+          child: Text(
+            timeLabel(context, time),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colors.primaryText,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.ms),
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: colors.primaryText,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Expanded(child: Container(height: 2, color: colors.primaryText)),
+            ],
+          ),
+        ),
       ],
     );
   }

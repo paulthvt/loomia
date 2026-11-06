@@ -51,7 +51,7 @@ class EventRow extends StatelessWidget {
     super.key,
   });
 
-  static const double _timeWidth = 64;
+  static const double timeWidth = 64;
   static const double _bar = 3;
 
   final CalendarEvent event;
@@ -109,7 +109,7 @@ class EventRow extends StatelessWidget {
               spacing: AppSpacing.ms,
               children: [
                 SizedBox(
-                  width: _timeWidth,
+                  width: timeWidth,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

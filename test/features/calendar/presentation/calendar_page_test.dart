@@ -1158,4 +1158,133 @@ void main() {
     );
     expect(find.text('Workshop'), findsOneWidget);
   });
+
+  testWidgets('the day as a timeline: gaps between events, the now line', (
+    tester,
+  ) async {
+    final oct21 = DateTime(2026, 10, 21);
+    final events = [
+      CalendarEvent(
+        id: 'e1',
+        title: 'Morning session',
+        startsAt: DateTime(2026, 10, 21, 8),
+        endsAt: DateTime(2026, 10, 21, 10),
+      ),
+      CalendarEvent(
+        id: 'e2',
+        title: 'Afternoon call',
+        startsAt: DateTime(2026, 10, 21, 14, 30),
+        endsAt: DateTime(2026, 10, 21, 15, 20),
+      ),
+      CalendarEvent(
+        id: 'e3',
+        title: 'Evening workshop',
+        startsAt: DateTime(2026, 10, 21, 19),
+        endsAt: DateTime(2026, 10, 21, 21),
+      ),
+    ];
+    await _pump(
+      tester,
+      events: events,
+      selection: (
+        mode: CalendarMode.month,
+        month: DateTime(2026, 10),
+        day: oct21,
+        from: oct21,
+      ),
+      now: DateTime(2026, 10, 21, 15, 20),
+    );
+
+    // Find the gaps and now line in order.
+    expect(find.text('Free · 4 h 30'), findsOneWidget);
+    expect(find.textContaining('Free until'), findsOneWidget);
+    expect(find.text('3:20 PM'), findsWidgets);
+
+    // Check vertical order: gap, event, now line text, gap, event
+    final gap1 = tester.getTopLeft(find.text('Free · 4 h 30'));
+    final afternoon = tester.getTopLeft(find.text('Afternoon call'));
+    final gap2 = tester.getTopLeft(find.textContaining('Free until'));
+    final evening = tester.getTopLeft(find.text('Evening workshop'));
+
+    expect(gap1.dy, lessThan(afternoon.dy));
+    expect(afternoon.dy, lessThan(gap2.dy));
+    expect(gap2.dy, lessThan(evening.dy));
+  });
+
+  testWidgets('the gap after now says who is waiting, and opens them', (
+    tester,
+  ) async {
+    // TODO: test with people due today
+  });
+
+  testWidgets('another day: gaps, no now, no people', (tester) async {
+    final oct22 = DateTime(2026, 10, 22);
+    final events = [
+      CalendarEvent(
+        id: 'e1',
+        title: 'Morning session',
+        startsAt: DateTime(2026, 10, 22, 8),
+        endsAt: DateTime(2026, 10, 22, 10),
+      ),
+      CalendarEvent(
+        id: 'e2',
+        title: 'Evening workshop',
+        startsAt: DateTime(2026, 10, 22, 19),
+        endsAt: DateTime(2026, 10, 22, 21),
+      ),
+    ];
+    await _pump(
+      tester,
+      events: events,
+      selection: (
+        mode: CalendarMode.month,
+        month: DateTime(2026, 10),
+        day: oct22,
+        from: oct22,
+      ),
+      now: DateTime(2026, 10, 21, 15, 20), // today is Oct 21, not 22
+    );
+
+    // Shows a gap but not "Free until" (not the untilOnly pattern).
+    expect(find.textContaining('Free ·'), findsOneWidget);
+    expect(find.textContaining('Free until'), findsNothing);
+    expect(find.textContaining('to follow up'), findsNothing);
+  });
+
+  testWidgets('the desktop popover keeps the plain list', (tester) async {
+    final events = [
+      CalendarEvent(
+        id: 'e1',
+        title: 'Morning session',
+        startsAt: DateTime(2026, 10, 21, 8),
+        endsAt: DateTime(2026, 10, 21, 10),
+      ),
+      CalendarEvent(
+        id: 'e2',
+        title: 'Evening workshop',
+        startsAt: DateTime(2026, 10, 21, 19),
+        endsAt: DateTime(2026, 10, 21, 21),
+      ),
+    ];
+    await _pump(
+      tester,
+      size: const Size(1200, 800),
+      desktop: true,
+      events: events,
+      selection: (
+        mode: CalendarMode.month,
+        month: DateTime(2026, 10),
+        day: DateTime(2026, 10, 21),
+        from: DateTime(2026, 10, 21),
+      ),
+      now: DateTime(2026, 10, 21, 15, 20),
+    );
+
+    // Open the day popover.
+    await tester.tap(find.text('21'));
+    await tester.pumpAndSettle();
+
+    // The popover should not show timeline gaps.
+    expect(find.textContaining('Free ·'), findsNothing);
+  });
 }
