@@ -16,7 +16,9 @@ import 'package:material_ui/material_ui.dart';
 
 /// The Calendar and an event, for `flutter widget-preview start`, on a fixed
 /// day so the goldens never follow the clock: the Figma's October 2026,
-/// today the 7th, the 8th selected. Nothing in the app imports this file.
+/// today the 7th, the 8th selected. Mobile shows the timeline with an
+/// afternoon gap holding now (15:30) and people due today. Nothing in the
+/// app imports this file.
 @Preview(group: 'Calendar', name: 'Mobile — light', size: Size(390, 844))
 Widget calendarMobileLight() => _app(AppTheme.light, _calendar());
 
@@ -25,6 +27,10 @@ Widget calendarMobileDark() => _app(AppTheme.dark, _calendar());
 
 @Preview(group: 'Calendar', name: 'Desktop — light', size: Size(1440, 900))
 Widget calendarDesktopLight() => _app(AppTheme.light, _calendar(desktop: true));
+
+@Preview(group: 'Calendar', name: '3 days — light', size: Size(390, 844))
+Widget calendarThreeDaysLight() =>
+    _app(AppTheme.light, _calendar(mode: CalendarMode.threeDays));
 
 @Preview(group: 'Calendar', name: 'Week — light', size: Size(390, 844))
 Widget calendarWeekLight() =>
@@ -372,8 +378,14 @@ Widget _calendar({
     from: _selected,
   ),
   today: _today,
-  // The desktop week's now line, mid-morning.
-  now: DateTime(2026, 10, 7, 11, 15),
+  // Month mode (mobile): Oct 8 15:30, in the afternoon gap between events,
+  // so "N people to follow up" shows. 3 days/week: Oct 7 15:30, visible in
+  // the hour grid. Desktop week: Oct 7 11:15.
+  now: mode == CalendarMode.month
+      ? DateTime(2026, 10, 8, 15, 30)
+      : (desktop
+            ? DateTime(2026, 10, 7, 11, 15)
+            : DateTime(2026, 10, 7, 15, 30)),
   onSelect: (_) {},
   onShift: (_) {},
   onToday: () {},
