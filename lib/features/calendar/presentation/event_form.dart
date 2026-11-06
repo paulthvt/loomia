@@ -48,8 +48,24 @@ Future<CalendarEvent?> showEventForm(
   ),
 );
 
-/// A new event starts in the evening, when most workshops are.
+/// A new event starts in the evening, when most workshops are, for an hour.
 const _defaultStart = TimeOfDay(hour: 19, minute: 0);
+const _defaultEnd = TimeOfDay(hour: 20, minute: 0);
+const _defaultLength = 60;
+
+/// The end once the start moved from [from] to [to]: as long as before, or
+/// an hour when it wasn't after the start (#461). Null stays null: no end.
+// ponytail: an end can't pass midnight (see _at), so it stops at 23:59.
+@visibleForTesting
+TimeOfDay? shiftEnd(TimeOfDay from, TimeOfDay to, TimeOfDay? end) {
+  if (end == null) return null;
+  int minutes(TimeOfDay time) => time.hour * 60 + time.minute;
+  final length = minutes(end) - minutes(from);
+  final ends = minutes(to) + (length > 0 ? length : _defaultLength);
+  return ends >= Duration.minutesPerDay
+      ? const TimeOfDay(hour: 23, minute: 59)
+      : TimeOfDay(hour: ends ~/ 60, minute: ends % 60);
+}
 
 class _EventForm extends ConsumerStatefulWidget {
   const _EventForm({
@@ -102,6 +118,7 @@ class _EventFormState extends ConsumerState<_EventForm> {
     if (event == null) {
       _day = widget.day ?? today();
       _start = _defaultStart;
+      _end = _defaultEnd;
       if (widget.type case final type?) {
         _typeName = type.name;
         _eventWorkflowId = type.id;
@@ -149,6 +166,7 @@ class _EventFormState extends ConsumerState<_EventForm> {
     final time = await pickTime(context, initial: _start);
     if (time == null || !mounted) return;
     setState(() {
+      _end = shiftEnd(_start, time, _end);
       _start = time;
       _endBeforeStart = false;
     });
