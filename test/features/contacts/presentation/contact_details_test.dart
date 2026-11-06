@@ -582,6 +582,28 @@ void main() {
     expect(calls.workflowChanges, 1);
   });
 
+  testWidgets('mobile ⋯: a long workflow name sits under the label (#462)', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      _person(),
+      size: const Size(390, 844),
+      workflowName: 'Wellness consultation proposal for new customers',
+    );
+
+    await tester.tap(find.byTooltip('More'));
+    await tester.pumpAndSettle();
+
+    final label = tester.getRect(find.text('Change workflow'));
+    final name = tester.getRect(
+      find.text('Wellness consultation proposal for new customers'),
+    );
+    // One line, with the workflow's name below it rather than beside it.
+    expect(label.height, lessThan(30));
+    expect(name.top, greaterThanOrEqualTo(label.bottom));
+  });
+
   testWidgets('mobile ⋯, paused: Resume instead of Pause', (tester) async {
     final calls = await _pump(
       tester,
