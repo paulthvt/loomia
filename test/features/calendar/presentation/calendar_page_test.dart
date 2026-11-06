@@ -1214,7 +1214,91 @@ void main() {
   testWidgets('the gap after now says who is waiting, and opens them', (
     tester,
   ) async {
-    // TODO: test with people due today
+    final today = DateTime.now();
+    final todayMidnight = DateTime(today.year, today.month, today.day);
+    final people = [
+      Person(
+        id: 'p1',
+        name: 'Alice Smith',
+        stage: Stage.prospect,
+        stageSince: DateTime.utc(2026),
+        reminders: [
+          (
+            id: 'r1',
+            text: 'Follow up',
+            dueOn: todayMidnight,
+            createdAt: DateTime.utc(2026),
+          ),
+        ],
+      ),
+      Person(
+        id: 'p2',
+        name: 'Bob Jones',
+        stage: Stage.prospect,
+        stageSince: DateTime.utc(2026),
+        reminders: [
+          (
+            id: 'r2',
+            text: 'Call',
+            dueOn: todayMidnight,
+            createdAt: DateTime.utc(2026),
+          ),
+        ],
+      ),
+      Person(
+        id: 'p3',
+        name: 'Charlie Brown',
+        stage: Stage.prospect,
+        stageSince: DateTime.utc(2026),
+        reminders: [
+          (
+            id: 'r3',
+            text: 'Meeting',
+            dueOn: todayMidnight,
+            createdAt: DateTime.utc(2026),
+          ),
+        ],
+      ),
+    ];
+    final events = [
+      CalendarEvent(
+        id: 'e1',
+        title: 'Morning session',
+        startsAt: todayMidnight.add(const Duration(hours: 8)),
+        endsAt: todayMidnight.add(const Duration(hours: 10)),
+      ),
+      CalendarEvent(
+        id: 'e2',
+        title: 'Evening workshop',
+        startsAt: todayMidnight.add(const Duration(hours: 19)),
+        endsAt: todayMidnight.add(const Duration(hours: 21)),
+      ),
+    ];
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      people: FakePeopleRepository(people),
+      events: FakeEventRepository(events),
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+
+    // Check that we're on today and people are shown
+    expect(find.text('PEOPLE'), findsOneWidget);
+
+    // Should show "3 people to follow up" in the gap after now
+    expect(find.text('3 people to follow up'), findsOneWidget);
+
+    // Before tapping, people are folded: show button visible, names not
+    expect(find.text('Show'), findsOneWidget);
+    expect(find.text('Alice Smith'), findsNothing);
+
+    // Tap "3 people to follow up"
+    await tester.tap(find.text('3 people to follow up'));
+    await tester.pumpAndSettle();
+
+    // Now a person's name should be visible (unfolded)
+    expect(find.text('Alice Smith'), findsOneWidget);
   });
 
   testWidgets('another day: gaps, no now, no people', (tester) async {

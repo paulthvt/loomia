@@ -981,7 +981,7 @@ class _SwipePagerState extends State<_SwipePager>
 
 /// The selected day: its heading with Add, then its tasks and its events,
 /// or what is wrong with loading the events.
-class DaySection extends StatelessWidget {
+class DaySection extends StatefulWidget {
   const DaySection({
     required this.events,
     required this.day,
@@ -1035,12 +1035,19 @@ class DaySection extends StatelessWidget {
   final ValueChanged<DateTime>? onAddTask;
   final VoidCallback onRetry;
 
+  @override
+  State<DaySection> createState() => _DaySectionState();
+}
+
+class _DaySectionState extends State<DaySection> {
+  final _peopleKey = GlobalKey<PeopleBlockState>();
+
   List<Widget> _timelineRows(
     BuildContext context,
     List<CalendarEvent> events,
     DateTime day,
   ) {
-    final localNow = now?.toLocal();
+    final localNow = widget.now?.toLocal();
     final isToday =
         localNow != null &&
         day.year == localNow.year &&
@@ -1048,7 +1055,7 @@ class DaySection extends StatelessWidget {
         day.day == localNow.day;
     final nowMinute = isToday ? localNow.hour * 60 + localNow.minute : null;
     final rows = dayTimeline(events, nowMinute: nowMinute);
-    final peopleCount = people.count(day);
+    final peopleCount = widget.people.count(day);
 
     return [
       for (final row in rows)
@@ -1056,8 +1063,8 @@ class DaySection extends StatelessWidget {
           TimelineEvent(:final event) => EventRow(
             key: ValueKey('event:${event.id}'),
             event: event,
-            now: now,
-            onTap: () => onOpen(event),
+            now: widget.now,
+            onTap: () => widget.onOpen(event),
           ),
           TimelineGap(:final start, :final end, :final untilOnly) => _GapRow(
             key: ValueKey('gap:$start:$end'),
@@ -1067,7 +1074,13 @@ class DaySection extends StatelessWidget {
             showPeople: untilOnly && isToday && peopleCount > 0,
             peopleCount: peopleCount,
             onTapPeople: () {
-              // TODO(#448): Wire up unfold + scroll to People block
+              _peopleKey.currentState?.unfold();
+              if (_peopleKey.currentContext != null) {
+                Scrollable.ensureVisible(
+                  _peopleKey.currentContext!,
+                  duration: context.motion(AppMotion.medium),
+                );
+              }
             },
           ),
           TimelineNow(:final minute) => _NowRow(
@@ -1083,37 +1096,39 @@ class DaySection extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     // `.value` survives a failed refresh, so the rows stay on screen.
-    final list = events.value;
+    final list = widget.events.value;
     final List<Widget> body;
     if (list == null) {
-      body = [?eventsNotLoaded(context, events, onRetry)];
+      body = [?eventsNotLoaded(context, widget.events, widget.onRetry)];
     } else {
       final onDay = <Widget>[
-        for (final task in tasksOn(tasks, day))
+        for (final task in tasksOn(widget.tasks, widget.day))
           TaskRow(
             key: ValueKey('task:${task.id}'),
             task: task,
-            busy: busy.contains(task.key),
-            onOpen: () => onOpenTask?.call(task),
-            onToggle: () => onToggleTask?.call(task),
+            busy: widget.busy.contains(task.key),
+            onOpen: () => widget.onOpenTask?.call(task),
+            onToggle: () => widget.onToggleTask?.call(task),
           ),
-        if (people.on(day) case final due when due.isNotEmpty)
+        if (widget.people.on(widget.day) case final due when due.isNotEmpty)
           PeopleBlock(
-            key: ValueKey(day),
+            key: widget.timeline && widget.peopleFoldable
+                ? _peopleKey
+                : ValueKey(widget.day),
             people: due,
-            model: model,
-            foldable: peopleFoldable,
-            onOpen: (person) => onOpenPerson?.call(person),
+            model: widget.model,
+            foldable: widget.peopleFoldable,
+            onOpen: (person) => widget.onOpenPerson?.call(person),
           ),
-        if (timeline)
-          ..._timelineRows(context, eventsOn(list, day), day)
+        if (widget.timeline)
+          ..._timelineRows(context, eventsOn(list, widget.day), widget.day)
         else
-          for (final event in eventsOn(list, day))
+          for (final event in eventsOn(list, widget.day))
             EventRow(
               key: ValueKey('event:${event.id}'),
               event: event,
-              now: now,
-              onTap: () => onOpen(event),
+              now: widget.now,
+              onTap: () => widget.onOpen(event),
             ),
       ];
       body = onDay.isEmpty
@@ -1129,7 +1144,7 @@ class DaySection extends StatelessWidget {
               // A task or event added or deleted grows in or folds out once
               // its sheet has closed; another day is a new list.
               AnimatedRows(
-                key: ValueKey(('rows', day)),
+                key: ValueKey(('rows', widget.day)),
                 spacing: AppSpacing.ms,
                 delay: context.motion(AppMotion.slow),
                 children: onDay,
@@ -1142,13 +1157,18 @@ class DaySection extends StatelessWidget {
       children: [
         Builder(
           builder: (header) => SectionHeader(
-            title: l10n.calendarDayTitle(day),
+            title: l10n.calendarDayTitle(widget.day),
             actionLabel: l10n.calendarAdd,
-            onAction: switch (onAddTask) {
+            onAction: switch (widget.onAddTask) {
               final onTask? => () => unawaited(
-                chooseAdd(header, day: day, onEvent: onAdd, onTask: onTask),
+                chooseAdd(
+                  header,
+                  day: widget.day,
+                  onEvent: widget.onAdd,
+                  onTask: onTask,
+                ),
               ),
-              null => () => onAdd(day),
+              null => () => widget.onAdd(widget.day),
             },
           ),
         ),
