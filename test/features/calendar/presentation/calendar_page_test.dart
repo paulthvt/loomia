@@ -1514,6 +1514,10 @@ void main() {
       '3 people to follow up',
     );
     expect(peopleButtonSemantics, findsOneWidget);
+    expect(
+      tester.getSize(peopleButtonSemantics).height,
+      greaterThanOrEqualTo(kMinInteractiveDimension),
+    );
 
     // Before tapping, people are folded: show button visible, names not
     expect(find.text('Show'), findsOneWidget);

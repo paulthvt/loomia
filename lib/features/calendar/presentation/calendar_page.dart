@@ -1367,8 +1367,6 @@ class _GapRow extends StatelessWidget {
     super.key,
   });
 
-  static const double _minButtonHeight = 48;
-
   final int start;
   final int end;
   final bool untilOnly;
@@ -1403,6 +1401,11 @@ class _GapRow extends StatelessWidget {
       gapText = l10n.calendarFree(durationLabel);
     }
 
+    final muted = theme.textTheme.labelSmall?.copyWith(color: colors.textMuted);
+    final people = theme.textTheme.labelSmall?.copyWith(
+      color: colors.primaryText,
+    );
+
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         start: EventRow.timeWidth + AppSpacing.ms,
@@ -1414,36 +1417,39 @@ class _GapRow extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.ms),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // Figma D: "Free until 19:00 · 3 people to follow up ›" on one
+          // line, the people part on the next only when it doesn't fit.
+          child: Wrap(
+            spacing: AppSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(
-                gapText,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colors.textMuted,
-                ),
-              ),
+              Text(gapText, style: muted),
               if (showPeople) ...[
-                const SizedBox(height: AppSpacing.xs),
+                Text('·', style: muted),
                 Semantics(
                   button: true,
-                  label: l10n.calendarPeopleToFollowUp(peopleCount),
+                  label: l10n.calendarPeopleSummary(peopleCount),
                   child: InkWell(
                     onTap: onTapPeople,
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
-                        minHeight: _minButtonHeight,
+                        minHeight: kMinInteractiveDimension,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.xs,
-                        ),
-                        child: Text(
-                          l10n.calendarPeopleToFollowUp(peopleCount),
-                          style: theme.textTheme.labelSmall?.copyWith(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              l10n.calendarPeopleSummary(peopleCount),
+                              style: people,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: people?.fontSize,
                             color: colors.primaryText,
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),

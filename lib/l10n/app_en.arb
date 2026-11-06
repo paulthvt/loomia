@@ -2832,11 +2832,6 @@
       "minutes": { "type": "String" }
     }
   },
-  "calendarPeopleToFollowUp": "{count, plural, =1{1 person to follow up} other{{count} people to follow up}}",
-  "@calendarPeopleToFollowUp": {
-    "description": "Today's free time after now, in the day under the month: how many people are due a follow-up today. Tapping it opens them.",
-    "placeholders": { "count": { "type": "int" } }
-  },
   "calendarCardSemantics": "{title}, {start} to {end}",
   "@calendarCardSemantics": {
     "description": "What a screen reader says for an event card: its title, then the time range, e.g. 'Team check-in, 2:00 PM to 3:00 PM'.",
@@ -2892,7 +2887,7 @@
   },
   "calendarPeopleSummary": "{count, plural, =1{One person to follow up} other{{count} people to follow up}}",
   "@calendarPeopleSummary": {
-    "description": "The folded People block under a day in the Calendar: how many people are due to be followed up that day. Tapping it shows them.",
+    "description": "The folded People block under a day in the Calendar, and today's free time after now in the day under the month and the day sheet: how many people are due to be followed up that day. Tapping it shows them.",
     "placeholders": {
       "count": { "type": "int" }
     }
