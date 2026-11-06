@@ -13,6 +13,9 @@ export type LogEntry = {
 
 export type Report = {
   id: string
+  /** The tester's own title; null from an app older than #467. */
+  title: string | null
+  /** May be empty when there is a title. */
   comment: string
   png: Uint8Array<ArrayBuffer>
   facts: Record<string, unknown>
@@ -27,6 +30,7 @@ export type Deps = {
   createIssue(title: string, body: string): Promise<number>
 }
 
+const maxTitle = 100
 const maxComment = 5000
 const maxPng = 5 * 1024 * 1024
 const maxLogs = 200
@@ -62,11 +66,20 @@ const parseLog = (v: unknown): LogEntry | null => {
 /** Null unless [json] is a report the app could have sent. */
 export function parse(json: unknown): Report | null {
   if (!isObject(json)) return null
-  const { id, comment, screenshot, facts, logs } = json
+  const { id, title, comment, screenshot, facts, logs } = json
   if (typeof id !== 'string' || !uuid.test(id)) return null
+  // An older app sends no title: then the comment's first line is the title,
+  // so the comment must be there.
+  let heading: string | null = null
+  if (title !== undefined) {
+    if (typeof title !== 'string') return null
+    heading = title.trim().replace(/\s+/g, ' ')
+    if (heading.length === 0 || heading.length > maxTitle) return null
+  }
   if (typeof comment !== 'string') return null
   const text = comment.trim()
-  if (text.length === 0 || text.length > maxComment) return null
+  if (text.length > maxComment) return null
+  if (heading === null && text.length === 0) return null
   if (typeof screenshot !== 'string') return null
   const png = decode(screenshot)
   if (png === null || png.length > maxPng) return null
@@ -77,6 +90,7 @@ export function parse(json: unknown): Report | null {
   if (entries.some((e) => e === null)) return null
   return {
     id,
+    title: heading,
     comment: text,
     png,
     facts: knownFacts(facts),
@@ -138,7 +152,7 @@ export function issueBody(r: Report, userId: string, screenshotUrl: string) {
   // The screenshot is a link, not an image: GitHub's image proxy can't sign
   // in to the NAS, and the screenshot must stay private.
   return [
-    r.comment,
+    r.comment || '_No description._',
     '',
     `[Screenshot](${screenshotUrl}) (NAS sign-in)`,
     '',
@@ -179,7 +193,7 @@ export async function handle(
   }
   try {
     const issue = await deps.createIssue(
-      issueTitle(report.comment),
+      report.title ?? issueTitle(report.comment),
       issueBody(report, userId, url),
     )
     return json(200, { issue })

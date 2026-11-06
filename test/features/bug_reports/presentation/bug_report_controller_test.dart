@@ -19,7 +19,11 @@ void main() {
   late FakeBugReportRepository repository;
   late ProviderContainer container;
   final png = Uint8List.fromList([137, 80, 78, 71]);
-  final feedback = UserFeedback(text: 'It froze', screenshot: png);
+  final feedback = UserFeedback(
+    text: 'It froze',
+    screenshot: png,
+    extra: const {'title': 'Today froze'},
+  );
 
   setUp(() {
     repository = FakeBugReportRepository();
@@ -40,6 +44,7 @@ void main() {
     await controller().submit(feedback, facts: const {'route': '/today'});
 
     final report = repository.sent.single;
+    expect(report.title, 'Today froze');
     expect(report.comment, 'It froze');
     expect(report.screenshot, png);
     expect(report.facts, {'route': '/today'});

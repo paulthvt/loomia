@@ -14,6 +14,7 @@ void main() {
   );
   final report = BugReport(
     id: '3f2b8c1e-9a4d-4e6b-8c2f-1a2b3c4d5e6f',
+    title: ' Plan button gone ',
     comment: '  The button is gone \n',
     screenshot: Uint8List.fromList([137, 80, 78, 71, 1, 2, 3]),
     facts: const {'appVersion': '0.4.0'},
@@ -37,6 +38,7 @@ void main() {
     final json = report.toJson();
     expect(json['id'], '3f2b8c1e-9a4d-4e6b-8c2f-1a2b3c4d5e6f');
     expect(json['comment'], 'The button is gone');
+    expect(json['title'], 'Plan button gone');
     expect(json['facts'], {'appVersion': '0.4.0'});
   });
 

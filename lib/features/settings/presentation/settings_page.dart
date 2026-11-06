@@ -429,6 +429,8 @@ class _SettingsListState extends ConsumerState<_SettingsList>
         ),
         const SizedBox(height: AppSpacing.lg),
         const _VersionFooter(),
+        // Room below the last line, so it doesn't sit on the screen's edge.
+        const SizedBox(height: AppSpacing.xl),
       ],
     );
   }

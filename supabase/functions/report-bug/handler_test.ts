@@ -110,6 +110,29 @@ Deno.test('parse keeps only the known facts, as short strings', () => {
   ok(!issueBody(r, user, 'u').includes('Ana'))
 })
 
+Deno.test('the tester\'s title becomes the issue title, as typed', async () => {
+  const { deps: d, calls } = deps()
+  await handle(user, body({ title: '  Plan button gone  ' }), d, '2026-11-05')
+  eq(calls.issues, ['Plan button gone'])
+})
+
+Deno.test('with a title, the description may be empty', async () => {
+  const r = parse(body({ title: 'Plan button gone', comment: '  ' }))!
+  eq(r.comment, '')
+  ok(issueBody(r, user, 'u').startsWith('_No description._'))
+})
+
+Deno.test('parse refuses a blank, long or non-string title', () => {
+  for (const title of ['', '   ', 'x'.repeat(101), 7]) {
+    eq(parse(body({ title })), null, String(title))
+  }
+  ok(parse(body({ title: 'x'.repeat(100) })))
+})
+
+Deno.test('without a title (an older app), the comment is still required', () => {
+  eq(parse(body({ comment: '' })), null)
+})
+
 Deno.test('the title is the first line, cut at 60 characters', () => {
   eq(issueTitle('Button is gone\nmore'), 'Bug report: Button is gone')
   eq(issueTitle('  \nSecond line first'), 'Bug report: Second line first')

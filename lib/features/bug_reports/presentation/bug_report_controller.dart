@@ -46,6 +46,8 @@ class BugReportController extends Notifier<BugReportSendState> {
   }) => _send(
     BugReport(
       id: _uuidV4(),
+      // The sheet passes it as an extra; `feedback` has no title of its own.
+      title: feedback.extra?['title'] as String? ?? '',
       comment: feedback.text,
       screenshot: feedback.screenshot,
       facts: facts,
