@@ -218,22 +218,6 @@ void main() {
     expect(find.text('Nothing planned'), findsNothing);
   });
 
-  testWidgets('the week list shows a day\'s tasks above its events', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      mode: CalendarMode.week,
-      events: [_event('e1', 10)],
-      tasks: [_task('t1')],
-    );
-
-    expect(
-      tester.getTopLeft(find.text('Task t1')).dy,
-      lessThan(tester.getTopLeft(find.byType(EventRow)).dy),
-    );
-  });
-
   testWidgets('the rings call back with their task', (tester) async {
     final toggled = <String>[];
     await _pump(

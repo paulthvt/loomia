@@ -8,7 +8,6 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
-import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
@@ -17,9 +16,9 @@ import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
-import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -27,6 +26,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../../contacts/fake_people_repository.dart';
+import '../../tasks/fake_task_repository.dart';
 import '../fake_event_repository.dart';
 
 final _workshop = CalendarEvent(
@@ -107,6 +107,66 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+/// Starts the Calendar's selection at [start] instead of today.
+class _Starting extends CalendarSelector {
+  _Starting(this.start);
+
+  final CalendarSelection start;
+
+  @override
+  CalendarSelection build() => start;
+}
+
+/// The view wired to the real selection, from [start].
+Future<ProviderContainer> _pumpLive(
+  WidgetTester tester,
+  CalendarSelection start, {
+  Size size = const Size(390, 844),
+}) async {
+  tester.view
+    ..physicalSize = size
+    ..devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  final container = ProviderContainer(
+    overrides: [calendarSelectionProvider.overrideWith(() => _Starting(start))],
+  );
+  addTearDown(container.dispose);
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: AppTheme.light,
+        home: Consumer(
+          builder: (context, ref, _) {
+            final selector = ref.read(calendarSelectionProvider.notifier);
+            return CalendarView(
+              events: const AsyncData([]),
+              selection: ref.watch(calendarSelectionProvider),
+              today: DateTime(2026, 10, 7),
+              onSelect: selector.select,
+              onShift: selector.shift,
+              onToday: selector.toToday,
+              onMode: selector.setMode,
+              onOpen: (_) {},
+              onAdd: (_) {},
+              onAddTask: (_) {},
+              onRetry: () {},
+              tasks: const [],
+              onToggleTask: (_) {},
+              onOpenTask: (_) {},
+            );
+          },
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return container;
 }
 
 void main() {
@@ -242,39 +302,111 @@ void main() {
     );
   });
 
-  testWidgets('week view: the strip, then every day with its events', (
+  testWidgets('week on a phone: the hour grid, no strip, no list', (
     tester,
   ) async {
     CalendarEvent? opened;
     await _pump(
       tester,
       selection: week,
+      today: DateTime(2026, 10, 8),
       events: [_workshop, _training],
       onOpen: (event) => opened = event,
     );
 
     // From Sunday in English: October 4 to 10.
     expect(find.text('Oct 4 – Oct 10'), findsOneWidget);
-    expect(find.byType(WeekStrip), findsOneWidget);
+    expect(find.byType(WeekGrid), findsOneWidget);
+    expect(tester.widget<WeekGrid>(find.byType(WeekGrid)).days, hasLength(7));
     expect(find.byType(MonthGrid), findsNothing);
-    for (final heading in ['Sun 4', 'Wed 7', 'Thu 8', 'Sat 10']) {
-      expect(find.text(heading), findsOneWidget);
-    }
-    // Today's heading says so; six days have nothing.
+    expect(find.byType(DayCell), findsNothing);
+    expect(find.byType(DaySection), findsNothing);
+    expect(find.text('Nothing planned'), findsNothing);
+    // Today's column, the selected one, is the wide one.
+    Finder header(String day) => find.bySemanticsLabel(RegExp('^$day'));
     expect(
-      find.descendant(
-        of: find.ancestor(of: find.text('Wed 7'), matching: find.byType(Row)),
-        matching: find.text('Today'),
-      ),
+      tester.getSize(header('Thursday, October 8')).width,
+      greaterThan(tester.getSize(header('Monday, October 5')).width),
+    );
+    expect(
+      tester.getSize(header('Monday, October 5')).width,
+      moreOrLessEquals(40),
+    );
+    await tester.tap(
+      find.bySemanticsLabel(RegExp('^Essential oils for sleep, ')),
+    );
+    expect(opened, _workshop);
+  });
+
+  final threeDays = (
+    mode: CalendarMode.threeDays,
+    month: DateTime(2026, 10),
+    day: DateTime(2026, 10, 21),
+    from: DateTime(2026, 10, 21),
+  );
+
+  testWidgets('the switch has Month, 3 days and Week on a phone, two on '
+      'desktop', (tester) async {
+    final modes = <CalendarMode>[];
+    await _pump(tester, onMode: modes.add);
+    for (final label in ['Month', '3 days', 'Week']) {
+      expect(find.text(label), findsOneWidget);
+    }
+    await tester.tap(find.text('3 days'));
+    expect(modes, [CalendarMode.threeDays]);
+
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      selection: threeDays,
+    );
+    expect(find.text('3 days'), findsNothing);
+    expect(
+      tester
+          .widget<SegmentedButton<CalendarMode>>(
+            find.byType(SegmentedButton<CalendarMode>),
+          )
+          .selected,
+      {CalendarMode.week},
+    );
+  });
+
+  testWidgets('3 days: three columns from the selected day; arrows move 3 '
+      'days', (tester) async {
+    await _pumpLive(tester, threeDays);
+
+    expect(find.text('Oct 21 – Oct 23'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Oct 21 – Oct 23, choose a day'),
       findsOneWidget,
     );
-    expect(find.text('Nothing planned'), findsNWidgets(6));
-    expect(
-      tester.getTopLeft(find.text('New member training')).dy,
-      lessThan(tester.getTopLeft(find.text('Essential oils for sleep')).dy),
+    expect(tester.widget<WeekGrid>(find.byType(WeekGrid)).days, [
+      DateTime(2026, 10, 21),
+      DateTime(2026, 10, 22),
+      DateTime(2026, 10, 23),
+    ]);
+    expect(find.byType(DayCell), findsNothing);
+
+    await tester.tap(find.byTooltip('Next 3 days'));
+    await tester.pumpAndSettle();
+    expect(find.text('Oct 24 – Oct 26'), findsOneWidget);
+    await tester.tap(find.byTooltip('Previous 3 days'));
+    await tester.pumpAndSettle();
+    expect(find.text('Oct 21 – Oct 23'), findsOneWidget);
+  });
+
+  testWidgets('desktop in 3 days shows the week', (tester) async {
+    await _pump(
+      tester,
+      size: const Size(1440, 900),
+      desktop: true,
+      selection: threeDays,
     );
-    await tester.tap(find.text('Essential oils for sleep'));
-    expect(opened, _workshop);
+
+    expect(find.text('Oct 18 – Oct 24'), findsOneWidget);
+    expect(tester.widget<WeekGrid>(find.byType(WeekGrid)).days, hasLength(7));
+    expect(find.byTooltip('Next week'), findsOneWidget);
   });
 
   testWidgets('week view: the arrows say week, and the title the week', (
@@ -303,7 +435,10 @@ void main() {
     await _pump(tester, selection: week, locale: const Locale('fr'));
 
     expect(find.text('5 oct. – 11 oct.'), findsOneWidget);
-    expect(find.text('lun. 5'), findsOneWidget);
+    expect(
+      tester.getCenter(find.text('lun.')).dx,
+      lessThan(tester.getCenter(find.text('dim.')).dx),
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -901,10 +1036,9 @@ void main() {
     await tester.tap(find.text('Week'));
     await tester.pumpAndSettle();
     final day = container.read(calendarSelectionProvider).day;
-    final strips = find.byType(WeekStrip);
 
     // From the same spot: the page under it is still sliding out.
-    final from = tester.getCenter(strips);
+    final from = tester.getCenter(find.byType(WeekGrid));
     await tester.flingFrom(from, const Offset(-150, 0), 1500);
     // A few frames of the turn, as a finger coming back 80 ms later sees.
     for (var i = 0; i < 5; i++) {
@@ -1309,7 +1443,9 @@ void main() {
     expect(find.text('3 people to follow up'), findsNWidgets(2));
 
     // Check button semantics (wrapped in Semantics with button: true)
-    final peopleButtonSemantics = find.bySemanticsLabel('3 people to follow up');
+    final peopleButtonSemantics = find.bySemanticsLabel(
+      '3 people to follow up',
+    );
     expect(peopleButtonSemantics, findsOneWidget);
 
     // Before tapping, people are folded: show button visible, names not
@@ -1401,5 +1537,171 @@ void main() {
 
     // The popover should not show timeline gaps.
     expect(find.textContaining('Free ·'), findsNothing);
+  });
+  testWidgets('a day header opens its sheet; ticking a task there shows no '
+      'Undo', (tester) async {
+    final now = today();
+    final tasks = FakeTaskRepository([
+      Task(
+        id: 't1',
+        title: 'Call Léa',
+        note: null,
+        dueOn: now,
+        doneOn: null,
+        createdAt: DateTime(2026),
+      ),
+    ]);
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      tasks: tasks,
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('3 days'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.bySemanticsLabel(
+        RegExp('^${DateFormat.MMMMEEEEd('en').format(now)}'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final sheet = find.byType(BottomSheet);
+    expect(sheet, findsOneWidget);
+    expect(
+      find.descendant(of: sheet, matching: find.text('Call Léa')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('Mark "Call Léa" done'));
+    await tester.pumpAndSettle();
+    expect(tasks.store['t1']!.done, isTrue);
+    expect(find.text('Undo'), findsNothing);
+    // Crossed out in place: the sheet reads the latest view.
+    expect(find.byTooltip('Mark "Call Léa" not done'), findsOneWidget);
+
+    await tester.dragFrom(
+      tester.getRect(sheet).topCenter + const Offset(0, 8),
+      const Offset(0, 600),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  testWidgets('in the app: a swipe on the 3-day grid that starts leaning down '
+      'turns the page; a vertical drag scrolls', (tester) async {
+    final container = await pumpLoomia(tester, size: const Size(390, 844));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('3 days'));
+    await tester.pumpAndSettle();
+    final from = container.read(calendarSelectionProvider).from;
+
+    // A thumb's arc: the first pixels go down as much as sideways.
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byType(WeekGrid)),
+    );
+    for (var i = 0; i < 4; i++) {
+      await gesture.moveBy(const Offset(-4, 5));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    for (var i = 0; i < 10; i++) {
+      await gesture.moveBy(const Offset(-25, 2));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await tester.pumpAndSettle();
+    final turned = DateTime(from.year, from.month, from.day + 3);
+    expect(container.read(calendarSelectionProvider).from, turned);
+
+    // Straight up or down: the hours scroll, the page stays.
+    ScrollPosition hours() => tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(WeekGrid),
+                matching: find.byType(Scrollable),
+              )
+              .last,
+        )
+        .position;
+    final before = hours().pixels;
+    final up = before < hours().maxScrollExtent;
+    await tester.drag(find.byType(WeekGrid), Offset(0, up ? -150 : 150));
+    await tester.pumpAndSettle();
+    expect(hours().pixels, up ? greaterThan(before) : lessThan(before));
+    expect(container.read(calendarSelectionProvider).from, turned);
+  });
+
+  testWidgets('in the app: the week grid pulls to refresh', (tester) async {
+    final events = FakeEventRepository();
+    final container = await pumpLoomia(
+      tester,
+      size: const Size(390, 844),
+      events: events,
+    );
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+    final loads = events.calls.where((call) => call == 'list()').length;
+
+    await tester.fling(find.byType(WeekGrid), const Offset(0, 400), 1000);
+    await tester.pumpAndSettle();
+
+    expect(events.calls.where((call) => call == 'list()').length, loads + 1);
+  });
+
+  testWidgets('in the app, on its side: the 3-day grid scrolls with the page', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(844, 390));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('3 days'));
+    await tester.pumpAndSettle();
+    final top = tester.getTopLeft(find.byType(WeekGrid)).dy;
+
+    // Taller than the screen: from a point of it on screen.
+    await tester.dragFrom(
+      tester.getTopLeft(find.byType(WeekGrid)) + const Offset(200, 100),
+      const Offset(6, -200),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getTopLeft(find.byType(WeekGrid)).dy, lessThan(top));
+    expect(
+      container.read(calendarSelectionProvider).mode,
+      CalendarMode.threeDays,
+    );
+  });
+
+  testWidgets('the title in 3 days opens the day picker; the picked day '
+      'starts the page', (tester) async {
+    final container = await pumpLoomia(tester, size: const Size(390, 844));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('3 days'));
+    await tester.pumpAndSettle();
+    final now = today();
+    // Same month, well off the page.
+    final picked = DateTime(
+      now.year,
+      now.month,
+      now.day <= 14 ? now.day + 10 : now.day - 10,
+    );
+
+    await tester.tap(find.bySemanticsLabel(RegExp(r', choose a day$')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('${picked.day}'));
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    final selection = container.read(calendarSelectionProvider);
+    expect(selection.mode, CalendarMode.threeDays);
+    expect(selection.from, picked);
+    expect(selection.day, picked);
   });
 }

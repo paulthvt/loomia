@@ -53,42 +53,6 @@ class MonthGrid extends StatelessWidget {
   );
 }
 
-/// One week of the month grid's day cells under their weekday names: the
-/// week view's strip.
-class WeekStrip extends StatelessWidget {
-  const WeekStrip({
-    required this.days,
-    required this.selected,
-    required this.today,
-    required this.counts,
-    required this.onSelect,
-    this.taskCounts = const {},
-    this.people = const PeopleAhead.none(),
-    super.key,
-  });
-
-  /// The week's 7 days, as `weekDays`.
-  final List<DateTime> days;
-  final DateTime selected;
-  final DateTime today;
-  final Map<DateTime, int> counts;
-  final Map<DateTime, int> taskCounts;
-  final PeopleAhead people;
-  final ValueChanged<DateTime> onSelect;
-
-  @override
-  Widget build(BuildContext context) => _DayRows(
-    days: days,
-    inMonth: (_) => true,
-    selected: selected,
-    today: today,
-    counts: counts,
-    taskCounts: taskCounts,
-    people: people,
-    onSelect: onSelect,
-  );
-}
-
 /// [days], whole weeks, as rows of [DayCell]s under the weekday names.
 class _DayRows extends StatelessWidget {
   const _DayRows({
@@ -161,7 +125,7 @@ class _DayRows extends StatelessWidget {
   }
 }
 
-/// A day of the month grid, the week strip and the desktop week's column
+/// A day of the month grid and the desktop week's column
 /// headings: its number in a circle (filled when selected, ringed today),
 /// up to three dots: its events', then hollow ones for its open tasks.
 class DayCell extends StatelessWidget {

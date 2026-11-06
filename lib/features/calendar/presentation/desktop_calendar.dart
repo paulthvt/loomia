@@ -620,8 +620,9 @@ class WeekGrid extends StatelessWidget {
     this.hourHeight,
     this.scrollToMinute,
     this.onSelect,
+    this.scrolls = true,
     super.key,
-  });
+  }) : assert(scrolls || hourHeight != null, 'no own scroll needs an hour');
 
   /// A [focus] week's other columns.
   static const double _narrow = 40;
@@ -675,6 +676,10 @@ class WeekGrid extends StatelessWidget {
 
   /// A tap on an empty part of a column; none opens the day, as [onDay].
   final ValueChanged<DateTime>? onSelect;
+
+  /// False: the hours take their full height, in a scroll around the grid
+  /// (a phone on its side); needs [hourHeight].
+  final bool scrolls;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -801,8 +806,8 @@ class WeekGrid extends StatelessWidget {
                 ),
               ),
             ),
-          Expanded(
-            child: DecoratedBox(
+          _fill(
+            DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: colors.borderSubtle)),
               ),
@@ -871,6 +876,7 @@ class WeekGrid extends StatelessWidget {
                       ],
                     ),
                   );
+                  if (!scrolls) return grid;
                   final at = scrollToMinute;
                   if (at == null) return SingleChildScrollView(child: grid);
                   final top = (at - 60 - range.first * 60) / 60 * hour;
@@ -889,6 +895,8 @@ class WeekGrid extends StatelessWidget {
       ),
     );
   }
+
+  Widget _fill(Widget child) => scrolls ? Expanded(child: child) : child;
 }
 
 /// A desktop week column's heading: weekday, then the date in a circle,
