@@ -1067,7 +1067,9 @@ class _DaySectionState extends State<DaySection> {
             onTap: () => widget.onOpen(event),
           ),
           TimelineGap(:final start, :final end, :final untilOnly) => _GapRow(
-            key: ValueKey('gap:$start:$end'),
+            key: untilOnly
+                ? ValueKey('gap:$end:until')
+                : ValueKey('gap:$start:$end'),
             start: start,
             end: end,
             untilOnly: untilOnly,
@@ -1084,7 +1086,7 @@ class _DaySectionState extends State<DaySection> {
             },
           ),
           TimelineNow(:final minute) => _NowRow(
-            key: ValueKey('now:$minute'),
+            key: const ValueKey('now'),
             minute: minute,
           ),
         },
@@ -1190,6 +1192,8 @@ class _GapRow extends StatelessWidget {
     super.key,
   });
 
+  static const double _minButtonHeight = 48;
+
   final int start;
   final int end;
   final bool untilOnly;
@@ -1225,7 +1229,9 @@ class _GapRow extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(left: EventRow.timeWidth + AppSpacing.ms),
+      padding: const EdgeInsetsDirectional.only(
+        start: EventRow.timeWidth + AppSpacing.ms,
+      ),
       child: CustomPaint(
         painter: _DashedBorderPainter(
           color: colors.borderStrong,
@@ -1244,12 +1250,26 @@ class _GapRow extends StatelessWidget {
               ),
               if (showPeople) ...[
                 const SizedBox(height: AppSpacing.xs),
-                GestureDetector(
-                  onTap: onTapPeople,
-                  child: Text(
-                    l10n.calendarPeopleToFollowUp(peopleCount),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colors.primaryText,
+                Semantics(
+                  button: true,
+                  label: l10n.calendarPeopleToFollowUp(peopleCount),
+                  child: InkWell(
+                    onTap: onTapPeople,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: _minButtonHeight,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.xs,
+                        ),
+                        child: Text(
+                          l10n.calendarPeopleToFollowUp(peopleCount),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colors.primaryText,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1265,6 +1285,10 @@ class _GapRow extends StatelessWidget {
 class _DashedBorderPainter extends CustomPainter {
   const _DashedBorderPainter({required this.color, required this.radius});
 
+  static const double _strokeWidth = 1.0;
+  static const double _dashWidth = 4.0;
+  static const double _dashSpace = 4.0;
+
   final Color color;
   final double radius;
 
@@ -1273,10 +1297,7 @@ class _DashedBorderPainter extends CustomPainter {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    const dashWidth = 4.0;
-    const dashSpace = 4.0;
+      ..strokeWidth = _strokeWidth;
     final rrect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Radius.circular(radius),
@@ -1289,10 +1310,10 @@ class _DashedBorderPainter extends CustomPainter {
       var distance = 0.0;
       while (distance < metric.length) {
         final start = metric.getTangentForOffset(distance)!.position;
-        distance += dashWidth;
+        distance += _dashWidth;
         final end = metric.getTangentForOffset(distance)!.position;
         canvas.drawLine(start, end, paint);
-        distance += dashSpace;
+        distance += _dashSpace;
       }
     }
   }
@@ -1304,6 +1325,9 @@ class _DashedBorderPainter extends CustomPainter {
 
 class _NowRow extends StatelessWidget {
   const _NowRow({required this.minute, super.key});
+
+  static const double _nowDot = 8;
+  static const double _nowLine = 2;
 
   final int minute;
 
@@ -1329,14 +1353,16 @@ class _NowRow extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 8,
-                height: 8,
+                width: _nowDot,
+                height: _nowDot,
                 decoration: BoxDecoration(
                   color: colors.primaryText,
                   shape: BoxShape.circle,
                 ),
               ),
-              Expanded(child: Container(height: 2, color: colors.primaryText)),
+              Expanded(
+                child: Container(height: _nowLine, color: colors.primaryText),
+              ),
             ],
           ),
         ),

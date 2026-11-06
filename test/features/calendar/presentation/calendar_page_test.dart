@@ -8,15 +8,19 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
+import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
+import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/people_controller.dart';
+import 'package:loomia/features/workflows/domain/workflow.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -56,8 +60,10 @@ Future<void> _pump(
   VoidCallback? onPickTitle,
   bool? desktop,
   DateTime? now,
+  DateTime? today,
   Widget? accountAction,
   Widget? pane,
+  PeopleAhead people = const PeopleAhead.none(),
 }) async {
   tester.view
     ..physicalSize = size
@@ -79,7 +85,7 @@ Future<void> _pump(
               day: DateTime(2026, 10, 8),
               from: DateTime(2026, 10, 8),
             ),
-        today: DateTime(2026, 10, 7),
+        today: today ?? DateTime(2026, 10, 7),
         onSelect: onSelect ?? (_) {},
         onShift: onShift ?? (_) {},
         onToday: onToday ?? () {},
@@ -96,6 +102,7 @@ Future<void> _pump(
         now: now,
         accountAction: accountAction,
         pane: pane,
+        people: people,
       ),
     ),
   );
@@ -1195,27 +1202,35 @@ void main() {
       now: DateTime(2026, 10, 21, 15, 20),
     );
 
-    // Find the gaps and now line in order.
+    // Find the gaps and now line.
     expect(find.text('Free · 4 h 30'), findsOneWidget);
-    expect(find.textContaining('Free until'), findsOneWidget);
-    expect(find.text('3:20 PM'), findsWidgets);
+    expect(find.text('Free until 7:00 PM'), findsOneWidget);
 
-    // Check vertical order: gap, event, now line text, gap, event
+    // Find the now row specifically (by key)
+    final nowRow = find.byKey(const ValueKey('now'));
+    expect(nowRow, findsOneWidget);
+    expect(
+      find.descendant(of: nowRow, matching: find.text('3:20 PM')),
+      findsOneWidget,
+    );
+
+    // Check vertical order: gap1, afternoon event, now row, gap2, evening
     final gap1 = tester.getTopLeft(find.text('Free · 4 h 30'));
     final afternoon = tester.getTopLeft(find.text('Afternoon call'));
-    final gap2 = tester.getTopLeft(find.textContaining('Free until'));
+    final nowRowPos = tester.getTopLeft(nowRow);
+    final gap2 = tester.getTopLeft(find.text('Free until 7:00 PM'));
     final evening = tester.getTopLeft(find.text('Evening workshop'));
 
     expect(gap1.dy, lessThan(afternoon.dy));
-    expect(afternoon.dy, lessThan(gap2.dy));
+    expect(afternoon.dy, lessThan(nowRowPos.dy));
+    expect(nowRowPos.dy, lessThan(gap2.dy));
     expect(gap2.dy, lessThan(evening.dy));
   });
 
   testWidgets('the gap after now says who is waiting, and opens them', (
     tester,
   ) async {
-    final today = DateTime.now();
-    final todayMidnight = DateTime(today.year, today.month, today.day);
+    final oct21 = DateTime(2026, 10, 21);
     final people = [
       Person(
         id: 'p1',
@@ -1226,7 +1241,7 @@ void main() {
           (
             id: 'r1',
             text: 'Follow up',
-            dueOn: todayMidnight,
+            dueOn: oct21,
             createdAt: DateTime.utc(2026),
           ),
         ],
@@ -1237,12 +1252,7 @@ void main() {
         stage: Stage.prospect,
         stageSince: DateTime.utc(2026),
         reminders: [
-          (
-            id: 'r2',
-            text: 'Call',
-            dueOn: todayMidnight,
-            createdAt: DateTime.utc(2026),
-          ),
+          (id: 'r2', text: 'Call', dueOn: oct21, createdAt: DateTime.utc(2026)),
         ],
       ),
       Person(
@@ -1254,7 +1264,7 @@ void main() {
           (
             id: 'r3',
             text: 'Meeting',
-            dueOn: todayMidnight,
+            dueOn: oct21,
             createdAt: DateTime.utc(2026),
           ),
         ],
@@ -1264,37 +1274,50 @@ void main() {
       CalendarEvent(
         id: 'e1',
         title: 'Morning session',
-        startsAt: todayMidnight.add(const Duration(hours: 8)),
-        endsAt: todayMidnight.add(const Duration(hours: 10)),
+        startsAt: DateTime(2026, 10, 21, 8),
+        endsAt: DateTime(2026, 10, 21, 10),
       ),
       CalendarEvent(
         id: 'e2',
         title: 'Evening workshop',
-        startsAt: todayMidnight.add(const Duration(hours: 19)),
-        endsAt: todayMidnight.add(const Duration(hours: 21)),
+        startsAt: DateTime(2026, 10, 21, 19),
+        endsAt: DateTime(2026, 10, 21, 21),
       ),
     ];
-    final container = await pumpLoomia(
+    await _pump(
       tester,
+      events: events,
+      selection: (
+        mode: CalendarMode.month,
+        month: DateTime(2026, 10),
+        day: oct21,
+        from: oct21,
+      ),
       size: const Size(390, 844),
-      people: FakePeopleRepository(people),
-      events: FakeEventRepository(events),
+      today: oct21,
+      now: DateTime(2026, 10, 21, 15, 20),
+      people: PeopleAhead(
+        people: people,
+        workflows: const <Workflow>[],
+        events: events,
+        today: oct21,
+      ),
     );
-    container.read(routerProvider).go(Routes.calendar);
-    await tester.pumpAndSettle();
 
-    // Check that we're on today and people are shown
-    expect(find.text('PEOPLE'), findsOneWidget);
+    // Should show "3 people to follow up" in the gap after now (finds 2: one
+    // summary in People block, one button in gap).
+    expect(find.text('3 people to follow up'), findsNWidgets(2));
 
-    // Should show "3 people to follow up" in the gap after now
-    expect(find.text('3 people to follow up'), findsOneWidget);
+    // Check button semantics (wrapped in Semantics with button: true)
+    final peopleButtonSemantics = find.bySemanticsLabel('3 people to follow up');
+    expect(peopleButtonSemantics, findsOneWidget);
 
     // Before tapping, people are folded: show button visible, names not
     expect(find.text('Show'), findsOneWidget);
     expect(find.text('Alice Smith'), findsNothing);
 
-    // Tap "3 people to follow up"
-    await tester.tap(find.text('3 people to follow up'));
+    // Tap "3 people to follow up" (the button in the gap)
+    await tester.tap(find.bySemanticsLabel('3 people to follow up'));
     await tester.pumpAndSettle();
 
     // Now a person's name should be visible (unfolded)
@@ -1333,6 +1356,9 @@ void main() {
     expect(find.textContaining('Free ·'), findsOneWidget);
     expect(find.textContaining('Free until'), findsNothing);
     expect(find.textContaining('to follow up'), findsNothing);
+
+    // No now row on a different day
+    expect(find.byKey(const ValueKey('now')), findsNothing);
   });
 
   testWidgets('the desktop popover keeps the plain list', (tester) async {
@@ -1367,6 +1393,11 @@ void main() {
     // Open the day popover.
     await tester.tap(find.text('21'));
     await tester.pumpAndSettle();
+
+    // The popover is open: events are shown (finds 2 because one is in the
+    // day section below and one in the popover).
+    expect(find.text('Morning session'), findsAtLeastNWidgets(1));
+    expect(find.text('Evening workshop'), findsAtLeastNWidgets(1));
 
     // The popover should not show timeline gaps.
     expect(find.textContaining('Free ·'), findsNothing);
