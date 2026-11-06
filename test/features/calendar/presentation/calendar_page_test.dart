@@ -438,6 +438,31 @@ void main() {
     );
   });
 
+  testWidgets('week on a phone: the hours fit and end above the add button', (
+    tester,
+  ) async {
+    await _pumpLive(tester, week);
+    final scrollable = find
+        .descendant(
+          of: find.byType(WeekGrid),
+          matching: find.byType(Scrollable),
+        )
+        .last;
+    expect(
+      tester.state<ScrollableState>(scrollable).position.maxScrollExtent,
+      0,
+    );
+    final column = find.byWidgetPredicate(
+      (widget) => widget.runtimeType.toString() == '_DayColumn',
+    );
+    expect(
+      tester.getBottomLeft(column.last).dy,
+      moreOrLessEquals(
+        tester.getBottomLeft(scrollable).dy - AppSpacing.xxxl - AppSpacing.lg,
+      ),
+    );
+  });
+
   testWidgets('desktop in 3 days shows the week', (tester) async {
     await _pump(
       tester,

@@ -663,8 +663,8 @@ class CalendarView extends StatelessWidget {
           : null,
       scrolls: scrolls,
       scrollToMinute: scrolls ? _opensAt(days, list) : null,
-      // Week fits its height; the 3 days' hours scroll past the button.
-      bottomInset: scrolls && three ? _fabClearance : 0,
+      // Week ends its hours above the button; the 3 days' scroll past it.
+      bottomInset: scrolls ? _fabClearance : 0,
     );
   }
 
@@ -681,7 +681,7 @@ class CalendarView extends StatelessWidget {
     return starts.isEmpty ? null : starts.reduce(math.min);
   }
 
-  /// Under the last row of a list or of the 3 days' hours: clear of the
+  /// Under the last row of a list or of the grid's hours: clear of the
   /// add button.
   static const double _fabClearance = AppSpacing.xxxl + AppSpacing.lg;
 

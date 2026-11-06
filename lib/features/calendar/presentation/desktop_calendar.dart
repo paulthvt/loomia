@@ -686,8 +686,8 @@ class WeekGrid extends StatelessWidget {
   /// A task chip in the strip; none opens the task, as [onOpenTask].
   final void Function(Task task)? onStripTask;
 
-  /// Room under the hours, so the last one scrolls clear of what floats
-  /// over the grid (a phone's add button).
+  /// Room under the hours, so the last one scrolls (or, fitting the height,
+  /// ends) clear of what floats over the grid (a phone's add button).
   final double bottomInset;
 
   @override
@@ -824,7 +824,8 @@ class WeekGrid extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, box) {
                   final hour =
-                      hourHeight ?? math.max(minHour, box.maxHeight / hours);
+                      hourHeight ??
+                      math.max(minHour, (box.maxHeight - bottomInset) / hours);
                   final grid = SizedBox(
                     height: hour * hours,
                     child: Row(
