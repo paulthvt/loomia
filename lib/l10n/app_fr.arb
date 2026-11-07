@@ -1593,7 +1593,7 @@
   "@contactSectionInfo": {
     "description": "Section header above the facts about a person: bio, concerns, favourite products, contact details, notes. Short and plural-neutral (French: 'Infos')."
   },
-  "factBio": "Bio",
+  "factBio": "Biographie",
   "@factBio": {
     "description": "Label of a few free lines about who a person is: age, children, job. First fact of 'Info'. Also the edit form field."
   },
@@ -1715,5 +1715,9 @@
   "bugReportUndo": "Annuler",
   "@bugReportUndo": {
     "description": "Snackbar action that shows the bug button again right after it was turned off."
+  },
+  "bugReportTitleLabel": "Titre",
+  "@bugReportTitleLabel": {
+    "description": "Label of the short, required field in the bug report panel; it becomes the title of the GitHub issue, e.g. 'Plan button missing on Today'."
   }
 }
