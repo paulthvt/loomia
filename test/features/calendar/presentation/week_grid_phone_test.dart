@@ -388,6 +388,76 @@ void main() {
     expect(find.text('Call the supplier'), findsOneWidget);
   });
 
+  testWidgets('mobile week at text scale 2: the strip stays one line', (
+    tester,
+  ) async {
+    final monday = DateTime(2026, 10, 19);
+    final wednesday = DateTime(2026, 10, 21);
+    await pumpGrid(tester, textScale: 2, tasks: [task('one', wednesday)]);
+    final oneTask = gridTop(tester);
+    await pumpGrid(
+      tester,
+      textScale: 2,
+      tasks: [...eight(monday), ...eight(wednesday)],
+    );
+    expect(tester.takeException(), isNull);
+    expect(gridTop(tester), moreOrLessEquals(oneTask));
+  });
+
+  testWidgets('mobile week at 328: the focused column under 60 counts only', (
+    tester,
+  ) async {
+    await pumpGrid(
+      tester,
+      size: const Size(328, 600),
+      tasks: eight(DateTime(2026, 10, 21)),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('2 tasks'), findsNothing);
+  });
+
+  testWidgets('a screen reader can tap the strip chip, a narrow task and a '
+      'header', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final opened = <DateTime>[];
+    await pumpGrid(
+      tester,
+      onDay: (day, _) => opened.add(day),
+      tasks: [
+        ...eight(DateTime(2026, 10, 21)),
+        task(
+          'n',
+          DateTime(2026, 10, 19),
+          at: (hour: 14, minute: 0),
+          title: 'Call the supplier',
+          done: true,
+        ),
+      ],
+    );
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('2 tasks')),
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Call the supplier')),
+      isSemantics(
+        isButton: true,
+        hasTapAction: true,
+        hasCheckedState: true,
+        isChecked: true,
+      ),
+    );
+    expect(
+      tester.getSemantics(header('Monday, October 19')),
+      isSemantics(isButton: true, hasTapAction: true),
+    );
+    // The action does what the tap does.
+    tester.semantics.tap(find.semantics.byLabel('2 tasks'));
+    expect(opened, [DateTime(2026, 10, 21)]);
+    semantics.dispose();
+  });
+
   Future<void> pumpView(
     WidgetTester tester, {
     Locale locale = const Locale('en'),

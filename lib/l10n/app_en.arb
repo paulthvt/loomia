@@ -2902,7 +2902,7 @@
   },
   "calendarOpenTasks": "{count, plural, =1{1 task} other{{count} tasks}}",
   "@calendarOpenTasks": {
-    "description": "The phone Calendar's 3 days and week grids, in the strip under a day's heading: how many open tasks are due that day. Tapping it opens the day. In a narrow column only the number shows.",
+    "description": "The phone and tablet Calendar's 3 days and week grids, in the strip under a day's heading: how many open tasks are due that day. Tapping it opens the day. In a narrow column only the number shows.",
     "placeholders": {
       "count": { "type": "int" }
     }

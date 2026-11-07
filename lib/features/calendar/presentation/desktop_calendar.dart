@@ -717,7 +717,7 @@ class WeekGrid extends StatelessWidget {
         narrow: (day) =>
             compact &&
             (focusing
-                ? day != selected
+                ? day != selected || wide < _wideColumn
                 : available / days.length < _wideColumn),
       );
     },
@@ -782,7 +782,7 @@ class WeekGrid extends StatelessWidget {
             ),
           ),
           if (compact)
-            _phoneStrip(context, cell, untimed, due, narrow)
+            _compactStrip(context, cell, untimed, due, narrow)
           else if (untimed.any((day) => day.isNotEmpty) ||
               due.any((n) => n > 0))
             ConstrainedBox(
@@ -933,7 +933,7 @@ class WeekGrid extends StatelessWidget {
 
   /// [compact]'s strip, one line whatever the day holds: "○ 2 tasks" (in a
   /// narrow column "○ 2"), open ones only, and "N people" where it fits.
-  Widget _phoneStrip(
+  Widget _compactStrip(
     BuildContext context,
     Widget Function(DateTime day, Widget child) cell,
     List<List<Task>> untimed,
@@ -1009,6 +1009,8 @@ class _OpenTasksChip extends StatelessWidget {
       button: true,
       label: label,
       excludeSemantics: true,
+      // Excluded, the InkWell's tap is not the screen reader's: given here.
+      onTap: onTap,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadii.sm),
@@ -1083,6 +1085,7 @@ class _ColumnHeader extends StatelessWidget {
         people,
       ),
       excludeSemantics: true,
+      onTap: () => onDay(day, _globalRect(context)),
       child: InkWell(
         onTap: () => onDay(day, _globalRect(context)),
         borderRadius: BorderRadius.circular(AppRadii.md),
@@ -1307,7 +1310,10 @@ class _WeekTask extends StatelessWidget {
       ? Semantics(
           button: true,
           label: task.title,
+          // Struck through on screen; read as ticked.
+          checked: task.done ? true : null,
           excludeSemantics: true,
+          onTap: onTap,
           child: CustomPaint(
             foregroundPainter: DashedBorderPainter(
               color: LoomiaColors.of(context).borderStrong,
