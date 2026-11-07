@@ -66,6 +66,9 @@ abstract final class AppTypography {
   /// the product — never a heading, never a button.
   static final overline = _style(11, 14, _bold, letterSpacing: 1.1);
 
+  /// The narrow week columns' titles (#448). The floor: nothing smaller.
+  static final micro = _style(10, 12, _medium);
+
   /// Stat-tile values. Capped at 30px so no numeral out-shouts the greeting.
   static final numericLarge = _style(
     30,

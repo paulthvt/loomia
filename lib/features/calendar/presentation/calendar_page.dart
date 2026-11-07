@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,8 +17,10 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/day_timeline.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
+import 'package:loomia/features/calendar/domain/week_grid.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
@@ -83,18 +86,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   /// A task's ring: an open one is done today, with Undo, and stays on its
   /// day crossed out; a done one opens again, with no snackbar. On desktop
   /// the ring only lives in the day popover, whose barrier would catch the
-  /// click on Undo: no Undo there, the ring unticks in one tap.
-  Future<void> _toggleTask(Task task) async {
+  /// click on Undo: no Undo there, nor in the phone's day sheet
+  /// ([withUndo] false); the ring unticks in one tap.
+  Future<void> _toggleTask(Task task, {required bool withUndo}) async {
     final key = task.key;
     if (!_busy.add(key)) return;
     setState(() {});
     try {
-      await toggleTask(
-        context,
-        ref,
-        task,
-        withUndo: !context.screenSize.isDesktop,
-      );
+      await toggleTask(context, ref, task, withUndo: withUndo);
     } finally {
       if (mounted) setState(() => _busy.remove(key));
     }
@@ -115,6 +114,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           last: last,
         );
         if (month != null) selector.showMonth(month);
+      // 3 days: a day off the page starts it (`select`).
+      case CalendarMode.threeDays:
       case CalendarMode.week:
         final day = await pickDay(
           context,
@@ -210,7 +211,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       onPickTitle: () => unawaited(_pickTitle(context, ref)),
       onOpen: (event) => openEvent(context, event.id),
       onAdd: (day) => unawaited(_add(context, ref, day)),
-      onToggleTask: (task) => unawaited(_toggleTask(task)),
+      onToggleTask: (task) => unawaited(_toggleTask(task, withUndo: !desktop)),
+      onToggleTaskQuiet: (task) =>
+          unawaited(_toggleTask(task, withUndo: false)),
       onAddTask: (day) => unawaited(_task(day)),
       onOpenTask: (task) => openTask(context, task.id),
       onRetry: () => ref.invalidate(provider),
@@ -231,8 +234,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 }
 
 /// The screen as a function of its inputs, for previews and tests. Mobile
-/// and tablet: the month and the selected day, or the week strip and the
-/// week's days, and an add button. Desktop (#366): the full-width month or
+/// and tablet: the month and the selected day, or 3 days or the week on an
+/// hour grid whose days open in a sheet, and an add button. Desktop (#366): the full-width month or
 /// the week's hour grid, a day's popover on click, and [pane] (an open
 /// event) on the right when there is one.
 class CalendarView extends StatelessWidget {
@@ -250,6 +253,7 @@ class CalendarView extends StatelessWidget {
     required this.tasks,
     required this.onToggleTask,
     required this.onOpenTask,
+    this.onToggleTaskQuiet,
     this.busy = const {},
     this.onMode,
     this.onPickTitle,
@@ -307,12 +311,16 @@ class CalendarView extends StatelessWidget {
 
   /// A task's ring: ticks an open one, unticks a done one.
   final void Function(Task task) onToggleTask;
+
+  /// The ring in a day's popover or sheet, whose barrier would catch Undo:
+  /// no Undo. [onToggleTask] without it.
+  final void Function(Task task)? onToggleTaskQuiet;
   final void Function(Task task) onOpenTask;
 
-  /// Month or week. None in previews.
+  /// Month, 3 days or week. None in previews.
   final ValueChanged<CalendarMode>? onMode;
 
-  /// The title's picker: a month, or a day whose week to show.
+  /// The title's picker: a month, or a day whose week (or 3 days) to show.
   final VoidCallback? onPickTitle;
 
   /// Pull to refresh, on mobile and tablet. None in previews.
@@ -329,16 +337,22 @@ class CalendarView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final week = selection.mode == CalendarMode.week;
+    // Desktop has no 3 days: it shows the week holding the selected day.
+    final mode = desktop && selection.mode == CalendarMode.threeDays
+        ? CalendarMode.week
+        : selection.mode;
     final firstDay = MaterialLocalizations.of(context).firstDayOfWeekIndex;
-    final days = weekDays(selection.day, firstDay);
-    final title = week
-        ? weekTitle(l10n, days)
-        : l10n.calendarMonth(selection.month);
+    final days = desktop
+        ? weekDays(selection.day, firstDay)
+        : shownDays(selection, firstDay);
+    final title = mode == CalendarMode.month
+        ? l10n.calendarMonth(selection.month)
+        : weekTitle(l10n, days);
     final modeSwitch = SegmentedButton<CalendarMode>(
       segments: [
         for (final (mode, label) in [
           (CalendarMode.month, l10n.calendarViewMonth),
+          if (!desktop) (CalendarMode.threeDays, l10n.calendarViewThreeDays),
           (CalendarMode.week, l10n.calendarViewWeek),
         ])
           ButtonSegment(
@@ -346,21 +360,40 @@ class CalendarView extends StatelessWidget {
             label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
       ],
-      selected: {selection.mode},
+      selected: {mode},
+      // Three segments on a phone: the tint says which, the tick would
+      // squeeze the labels out ("Semaine" in French).
+      showSelectedIcon: desktop,
+      // A phone's switch row is the switch alone.
+      expandedInsets: desktop ? null : EdgeInsets.zero,
       onSelectionChanged: (modes) => onMode?.call(modes.single),
     );
+    // Desktop in 3 days shows a week: its arrows turn weeks.
+    void turn(int delta) {
+      if (mode != selection.mode) onMode?.call(mode);
+      onShift(delta);
+    }
+
     final todayButton = TextButton(
       onPressed: onToday,
       child: Text(l10n.calendarToday),
     );
     final previous = IconButton(
-      onPressed: () => onShift(-1),
-      tooltip: week ? l10n.calendarPreviousWeek : l10n.calendarPreviousMonth,
+      onPressed: () => turn(-1),
+      tooltip: switch (mode) {
+        CalendarMode.month => l10n.calendarPreviousMonth,
+        CalendarMode.threeDays => l10n.calendarPreviousDays,
+        CalendarMode.week => l10n.calendarPreviousWeek,
+      },
       icon: const Icon(Icons.chevron_left_rounded),
     );
     final next = IconButton(
-      onPressed: () => onShift(1),
-      tooltip: week ? l10n.calendarNextWeek : l10n.calendarNextMonth,
+      onPressed: () => turn(1),
+      tooltip: switch (mode) {
+        CalendarMode.month => l10n.calendarNextMonth,
+        CalendarMode.threeDays => l10n.calendarNextDays,
+        CalendarMode.week => l10n.calendarNextWeek,
+      },
       icon: const Icon(Icons.chevron_right_rounded),
     );
     Widget titleButton(TextStyle? style) => Expanded(
@@ -368,9 +401,11 @@ class CalendarView extends StatelessWidget {
         alignment: AlignmentDirectional.centerStart,
         child: _TitleButton(
           title: title,
-          semantics: week
-              ? l10n.calendarChooseWeek(title)
-              : l10n.calendarChooseMonth(selection.month),
+          semantics: switch (mode) {
+            CalendarMode.month => l10n.calendarChooseMonth(selection.month),
+            CalendarMode.threeDays => l10n.calendarChooseDay(title),
+            CalendarMode.week => l10n.calendarChooseWeek(title),
+          },
           style: style,
           onTap: onPickTitle,
         ),
@@ -381,7 +416,7 @@ class CalendarView extends StatelessWidget {
       return _Latest(
         view: this,
         builder: (context, latest) =>
-            _desktop(context, latest, days, firstDay, [
+            _desktop(context, latest, mode, days, firstDay, [
               titleButton(theme.textTheme.headlineSmall),
               modeSwitch,
               const SizedBox(width: AppSpacing.sm),
@@ -396,172 +431,267 @@ class CalendarView extends StatelessWidget {
     final header = Row(
       children: [
         titleButton(theme.textTheme.headlineSmall),
+        // The switch row's room goes to the switch: Today is an icon.
+        IconButton(
+          onPressed: onToday,
+          tooltip: l10n.calendarToday,
+          icon: const Icon(Icons.today_rounded),
+        ),
         previous,
         next,
         ?accountAction,
       ],
     );
-    final switcher = Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      spacing: AppSpacing.sm,
-      children: [
-        // Shrinks before Today does, its labels cut with "…" if need be.
-        Flexible(child: modeSwitch),
-        todayButton,
-      ],
-    );
-    final counts = eventsPerDay(events.value ?? const []);
-    final taskCounts = openTasksPerDay(tasks);
-    final pager = week
-        ? _SwipePager(
-            anchor: days.first,
-            onShift: onShift,
-            builder: (delta) => WeekStrip(
-              days: weekDays(
-                DateTime(
-                  days.first.year,
-                  days.first.month,
-                  days.first.day + DateTime.daysPerWeek * delta,
-                ),
-                firstDay,
+    return _Latest(
+      view: this,
+      builder: (context, latest) => Scaffold(
+        floatingActionButton: Builder(
+          builder: (button) => FloatingActionButton(
+            onPressed: () => unawaited(
+              chooseAdd(
+                button,
+                day: selection.day,
+                onEvent: onAdd,
+                onTask: onAddTask,
               ),
-              selected: selection.day,
-              today: today,
-              counts: counts,
-              taskCounts: taskCounts,
-              people: people,
-              onSelect: onSelect,
             ),
-          )
-        : _SwipePager(
-            anchor: selection.month,
-            onShift: onShift,
-            builder: (delta) => MonthGrid(
-              month: DateTime(
-                selection.month.year,
-                selection.month.month + delta,
-              ),
-              selected: selection.day,
-              today: today,
-              counts: counts,
-              taskCounts: taskCounts,
-              people: people,
-              onSelect: onSelect,
-            ),
-          );
-
-    return Scaffold(
-      floatingActionButton: Builder(
-        builder: (button) => FloatingActionButton(
-          onPressed: () => unawaited(
-            chooseAdd(
-              button,
-              day: selection.day,
-              onEvent: onAdd,
-              onTask: onAddTask,
-            ),
+            tooltip: l10n.calendarAdd,
+            child: const Icon(Icons.add_rounded),
           ),
-          tooltip: l10n.calendarAdd,
-          child: const Icon(Icons.add_rounded),
         ),
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, box) {
-            final top = [
-              header,
-              const SizedBox(height: AppSpacing.sm),
-              switcher,
-              const SizedBox(height: AppSpacing.md),
-              pager,
-            ];
-            final below = FadeSwap(
-              duration: AppMotion.medium,
-              // The month's selected day: another day, another list. The
-              // week list holds every day, so picking one doesn't swap it.
-              child: KeyedSubtree(
-                key: ValueKey(week ? 'week' : selection.day),
-                child: week
-                    ? WeekList(
-                        events: events,
-                        tasks: tasks,
-                        busy: busy,
-                        days: days,
-                        selected: selection.day,
-                        today: today,
-                        onOpen: onOpen,
-                        onToggleTask: onToggleTask,
-                        onOpenTask: onOpenTask,
-                        onRetry: onRetry,
-                        people: people,
-                        model: model,
-                        onOpenPerson: onOpenPerson,
-                        now: now,
-                      )
-                    : DaySection(
-                        now: now,
-                        events: events,
-                        tasks: tasks,
-                        busy: busy,
-                        day: selection.day,
-                        onOpen: onOpen,
-                        onToggleTask: onToggleTask,
-                        onOpenTask: onOpenTask,
-                        onAdd: onAdd,
-                        onAddTask: onAddTask,
-                        onRetry: onRetry,
-                        people: people,
-                        model: model,
-                        onOpenPerson: onOpenPerson,
-                      ),
-              ),
-            );
-            const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
-            // The bottom inset keeps the last row clear of the add button.
-            const bottom = AppSpacing.xxxl + AppSpacing.lg;
-            Widget scrolling(EdgeInsets padding, List<Widget> children) =>
-                _refreshable(
-                  ListView(
-                    // Pull to refresh works on a short list too.
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: padding,
-                    children: children,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, box) {
+              // On its side the phone has no room to hold the calendar
+              // still: everything scrolls, and a curved swipe can still miss.
+              final pinned = box.maxHeight >= _pinnedMinHeight;
+              const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
+              const bottom = _fabClearance;
+              Widget scrolling(EdgeInsets padding, List<Widget> children) =>
+                  _refreshable(
+                    ListView(
+                      // Pull to refresh works on a short list too.
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: padding,
+                      children: children,
+                    ),
+                  );
+              final top = [
+                header,
+                const SizedBox(height: AppSpacing.sm),
+                modeSwitch,
+                const SizedBox(height: AppSpacing.md),
+              ];
+              if (mode != CalendarMode.month) {
+                final grids = _SwipePager(
+                  key: ValueKey(mode),
+                  anchor: days.first,
+                  onShift: onShift,
+                  builder: (delta) => _grid(
+                    context,
+                    latest,
+                    mode,
+                    firstDay,
+                    delta,
+                    scrolls: pinned,
                   ),
                 );
-            // On its side the phone has no room to hold the calendar still:
-            // everything scrolls, and a curved swipe can still miss.
-            if (box.maxHeight < _pinnedMinHeight) {
-              return scrolling(
-                sides.copyWith(top: AppSpacing.sm, bottom: bottom),
-                [...top, const Divider(height: AppSpacing.xl), below],
-              );
-            }
-            // Held still, the month or the strip has no vertical drag to
-            // lose a swipe to (#369); only the list below scrolls and pulls.
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
+                final waiting = eventsNotLoaded(context, events, onRetry);
+                if (!pinned) {
+                  return scrolling(
+                    sides.copyWith(top: AppSpacing.sm, bottom: bottom),
+                    [...top, ?waiting, grids],
+                  );
+                }
+                // The hours scroll inside the grid, and pull to refresh at
+                // its top; a sideways drag is the pager's (#357).
+                return Padding(
                   padding: sides.copyWith(top: AppSpacing.sm),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: top,
+                    children: [
+                      ...top,
+                      ?waiting,
+                      Expanded(
+                        child: _refreshable(
+                          ScrollConfiguration(
+                            behavior: ScrollConfiguration.of(context).copyWith(
+                              physics: AlwaysScrollableScrollPhysics(
+                                parent: ScrollConfiguration.of(context)
+                                    .getScrollPhysics(context),
+                              ),
+                            ),
+                            child: grids,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              final counts = eventsPerDay(events.value ?? const []);
+              final taskCounts = openTasksPerDay(tasks);
+              final pager = _SwipePager(
+                anchor: selection.month,
+                onShift: onShift,
+                builder: (delta) => MonthGrid(
+                  month: DateTime(
+                    selection.month.year,
+                    selection.month.month + delta,
+                  ),
+                  selected: selection.day,
+                  today: today,
+                  counts: counts,
+                  taskCounts: taskCounts,
+                  people: people,
+                  onSelect: onSelect,
+                ),
+              );
+              final below = FadeSwap(
+                duration: AppMotion.medium,
+                // The month's selected day: another day, another list.
+                child: KeyedSubtree(
+                  key: ValueKey(selection.day),
+                  child: DaySection(
+                    now: now,
+                    events: events,
+                    tasks: tasks,
+                    busy: busy,
+                    day: selection.day,
+                    onOpen: onOpen,
+                    onToggleTask: onToggleTask,
+                    onOpenTask: onOpenTask,
+                    onAdd: onAdd,
+                    onAddTask: onAddTask,
+                    onRetry: onRetry,
+                    people: people,
+                    model: model,
+                    onOpenPerson: onOpenPerson,
+                    timeline: true,
                   ),
                 ),
-                const Padding(
-                  padding: sides,
-                  child: Divider(height: AppSpacing.xl),
-                ),
-                Expanded(
-                  child: scrolling(sides.copyWith(bottom: bottom), [below]),
-                ),
-              ],
-            );
-          },
+              );
+              if (!pinned) {
+                return scrolling(
+                  sides.copyWith(top: AppSpacing.sm, bottom: bottom),
+                  [...top, pager, const Divider(height: AppSpacing.xl), below],
+                );
+              }
+              // Held still, the month has no vertical drag to lose a swipe
+              // to (#369); only the list below scrolls and pulls.
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: sides.copyWith(top: AppSpacing.sm),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [...top, pager],
+                    ),
+                  ),
+                  const Padding(
+                    padding: sides,
+                    child: Divider(height: AppSpacing.xl),
+                  ),
+                  Expanded(
+                    child: scrolling(sides.copyWith(bottom: bottom), [below]),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
+
+  /// The phone's 3 days or week (#448), [delta] pages from the selection's:
+  /// an hour grid whose day headers and strip open the day's sheet. Pinned
+  /// ([scrolls]), the hours scroll in it; on its side the page scrolls them.
+  Widget _grid(
+    BuildContext context,
+    ValueNotifier<CalendarView> latest,
+    CalendarMode mode,
+    int firstDay,
+    int delta, {
+    required bool scrolls,
+  }) {
+    final three = mode == CalendarMode.threeDays;
+    final start = shownDays(selection, firstDay).first;
+    final days = three
+        ? [
+            for (var i = 0; i < 3; i++)
+              DateTime(start.year, start.month, start.day + 3 * delta + i),
+          ]
+        : weekDays(
+            DateTime(start.year, start.month, start.day + 7 * delta),
+            firstDay,
+          );
+    final list = events.value ?? const <CalendarEvent>[];
+    void openDay(DateTime day) {
+      onSelect(day);
+      unawaited(showDaySheet(context, latest: latest, day: day));
+    }
+
+    return WeekGrid(
+      // Opened at its own minute: a new page reads it again.
+      key: ValueKey((mode, days.first)),
+      days: days,
+      events: list,
+      // The neighbour sliding in already shows the day it will select.
+      selected: delta == 0
+          ? selection.day
+          : shiftedDay(selection, delta, today, firstDay),
+      today: today,
+      now: now,
+      onOpen: onOpen,
+      tasks: tasks,
+      onOpenTask: onOpenTask,
+      onDay: (day, _) => openDay(day),
+      onSelect: onSelect,
+      people: people,
+      compact: true,
+      focus: !three,
+      gutter: _phoneGutter,
+      minHour: _phoneMinHour,
+      hourHeight: !scrolls
+          ? _sideHour
+          : three
+          ? _threeDaysHour
+          : null,
+      scrolls: scrolls,
+      scrollToMinute: scrolls ? _opensAt(days, list) : null,
+      // Week ends its hours above the button; the 3 days' scroll past it.
+      bottomInset: scrolls ? _fabClearance : 0,
+    );
+  }
+
+  /// Where a page of the grid opens, as a minute of the day it shows an
+  /// hour before: now on a page holding today, else its earliest event's
+  /// start; null (the top) when it has neither.
+  int? _opensAt(List<DateTime> days, List<CalendarEvent> list) {
+    final at = now?.toLocal();
+    if (at != null && days.contains(today)) return at.hour * 60 + at.minute;
+    final starts = [
+      for (final event in list)
+        if (days.contains(event.day)) startMinute(event),
+    ];
+    return starts.isEmpty ? null : starts.reduce(math.min);
+  }
+
+  /// Under the last row of a list or of the grid's hours: clear of the
+  /// add button.
+  static const double _fabClearance = AppSpacing.xxxl + AppSpacing.lg;
+
+  /// The phone grid's hour labels ("8 AM") and its least hour height.
+  static const double _phoneGutter = 32;
+  static const double _phoneMinHour = 28;
+
+  /// 3 days: a fixed hour, the hours scroll (Figma A).
+  static const double _threeDaysHour = 52;
+
+  /// A phone on its side: the whole grid scrolls with the page.
+  static const double _sideHour = 40;
 
   /// Below this height (a phone on its side) the calendar scrolls with the
   /// list instead of staying put above it: a six-week month, the header and
@@ -573,6 +703,7 @@ class CalendarView extends StatelessWidget {
   Widget _desktop(
     BuildContext context,
     ValueNotifier<CalendarView> latest,
+    CalendarMode mode,
     List<DateTime> days,
     int firstDay,
     List<Widget> header,
@@ -586,36 +717,7 @@ class CalendarView extends StatelessWidget {
           context,
           anchor: anchor,
           label: l10n.calendarDayTitle(day),
-          builder: (popover) {
-            void closing<T>(void Function(T) then, T value) {
-              Navigator.pop(popover);
-              then(value);
-            }
-
-            // The popover is a route of its own: it reads the view's latest
-            // build, so a ticked task crosses out in place.
-            return ValueListenableBuilder(
-              valueListenable: latest,
-              builder: (_, view, _) => DaySection(
-                now: view.now,
-                events: view.events,
-                tasks: view.tasks,
-                busy: view.busy,
-                day: day,
-                onOpen: (event) => closing(view.onOpen, event),
-                onToggleTask: view.onToggleTask,
-                onOpenTask: (task) => closing(view.onOpenTask, task),
-                onAdd: (day) => closing(view.onAdd, day),
-                onAddTask: (day) => closing(view.onAddTask, day),
-                onRetry: view.onRetry,
-                people: view.people,
-                model: view.model,
-                peopleFoldable: false,
-                onOpenPerson: (person) =>
-                    closing((Person p) => view.onOpenPerson?.call(p), person),
-              ),
-            );
-          },
+          builder: (popover) => _LatestDay(latest: latest, day: day),
         ),
       );
     }
@@ -639,7 +741,7 @@ class CalendarView extends StatelessWidget {
                     Row(children: header),
                     ?eventsNotLoaded(context, events, onRetry),
                     Expanded(
-                      child: selection.mode == CalendarMode.week
+                      child: mode == CalendarMode.week
                           ? WeekGrid(
                               days: days,
                               events: list,
@@ -692,6 +794,76 @@ class CalendarView extends StatelessWidget {
     return refresh == null
         ? list
         : RefreshIndicator(onRefresh: refresh, child: list);
+  }
+}
+
+/// The phone's day (#448), the desktop popover's counterpart: a modal
+/// bottom sheet holding [day] as a timeline, its tasks and people. Dragged
+/// down or tapped outside, it closes; what it opens, it closes first.
+Future<void> showDaySheet(
+  BuildContext context, {
+  required ValueNotifier<CalendarView> latest,
+  required DateTime day,
+}) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  showDragHandle: true,
+  useSafeArea: true,
+  builder: (_) => SingleChildScrollView(
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.md,
+      0,
+      AppSpacing.md,
+      AppSpacing.lg,
+    ),
+    child: _LatestDay(latest: latest, day: day, sheet: true),
+  ),
+);
+
+/// [day]'s [DaySection] in a route of its own (the desktop popover, the
+/// phone's sheet), from the view's latest build so a ticked task crosses out
+/// in place. What leaves the day closes the route first; the ring, with no
+/// Undo, keeps it open.
+class _LatestDay extends StatelessWidget {
+  const _LatestDay({
+    required this.latest,
+    required this.day,
+    this.sheet = false,
+  });
+
+  final ValueNotifier<CalendarView> latest;
+  final DateTime day;
+
+  /// The phone's sheet: a timeline, the people folded.
+  final bool sheet;
+
+  @override
+  Widget build(BuildContext context) {
+    void Function(T) closing<T>(void Function(T) then) => (value) {
+      Navigator.pop(context);
+      then(value);
+    };
+    return ValueListenableBuilder(
+      valueListenable: latest,
+      builder: (_, view, _) => DaySection(
+        now: view.now,
+        events: view.events,
+        tasks: view.tasks,
+        busy: view.busy,
+        day: day,
+        onOpen: closing(view.onOpen),
+        onToggleTask: view.onToggleTaskQuiet ?? view.onToggleTask,
+        onOpenTask: closing(view.onOpenTask),
+        onAdd: closing(view.onAdd),
+        onAddTask: closing(view.onAddTask),
+        onRetry: view.onRetry,
+        people: view.people,
+        model: view.model,
+        peopleFoldable: sheet,
+        timeline: sheet,
+        onOpenPerson: closing((Person p) => view.onOpenPerson?.call(p)),
+      ),
+    );
   }
 }
 
@@ -796,7 +968,7 @@ class _SidewaysDrag extends HorizontalDragGestureRecognizer {
       computeHitSlop(pointerDeviceKind, gestureSettings) / 2;
 }
 
-/// A page of the calendar (a month grid, a week strip) at [anchor], which
+/// A page of the calendar (a month grid, an hour grid) at [anchor], which
 /// follows the finger: dragged sideways, the neighbouring page comes in
 /// beside it, and on release the page turns (past halfway, or flung) or
 /// springs back. The arrows and Today slide the new page in from its side
@@ -806,6 +978,7 @@ class _SwipePager extends StatefulWidget {
     required this.anchor,
     required this.onShift,
     required this.builder,
+    super.key,
   });
 
   /// What the page shows: the month's 1st, or the week's first day.
@@ -955,11 +1128,14 @@ class _SwipePagerState extends State<_SwipePager>
                       page(0, at),
                       // Only while moving; it sizes nothing, so a taller
                       // neighbour is cut to this month's height meanwhile.
+                      // A page given its height (the phone's grid) gets it
+                      // too.
                       if (at != 0)
                         Positioned(
                           top: 0,
                           left: 0,
                           right: 0,
+                          bottom: constraints.hasBoundedHeight ? 0 : null,
                           child: ExcludeSemantics(
                             child: at < 0 ? page(1, at + 1) : page(-1, at - 1),
                           ),
@@ -978,7 +1154,7 @@ class _SwipePagerState extends State<_SwipePager>
 
 /// The selected day: its heading with Add, then its tasks and its events,
 /// or what is wrong with loading the events.
-class DaySection extends StatelessWidget {
+class DaySection extends StatefulWidget {
   const DaySection({
     required this.events,
     required this.day,
@@ -994,6 +1170,7 @@ class DaySection extends StatelessWidget {
     this.model = BusinessModel.other,
     this.onOpenPerson,
     this.peopleFoldable = true,
+    this.timeline = false,
     this.now,
     super.key,
   });
@@ -1014,6 +1191,9 @@ class DaySection extends StatelessWidget {
   /// False in the desktop popover: the people always show.
   final bool peopleFoldable;
 
+  /// True on mobile/tablet: events as a timeline with free time gaps.
+  final bool timeline;
+
   /// [Task.key]s whose write is in flight.
   final Set<String> busy;
   final DateTime day;
@@ -1029,39 +1209,102 @@ class DaySection extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
+  State<DaySection> createState() => _DaySectionState();
+}
+
+class _DaySectionState extends State<DaySection> {
+  final _peopleKey = GlobalKey<PeopleBlockState>();
+
+  List<Widget> _timelineRows(
+    BuildContext context,
+    List<CalendarEvent> events,
+    DateTime day,
+  ) {
+    final localNow = widget.now?.toLocal();
+    final isToday =
+        localNow != null &&
+        day.year == localNow.year &&
+        day.month == localNow.month &&
+        day.day == localNow.day;
+    final nowMinute = isToday ? localNow.hour * 60 + localNow.minute : null;
+    final rows = dayTimeline(events, nowMinute: nowMinute);
+    final peopleCount = widget.people.count(day);
+
+    return [
+      for (final row in rows)
+        switch (row) {
+          TimelineEvent(:final event) => EventRow(
+            key: ValueKey('event:${event.id}'),
+            event: event,
+            now: widget.now,
+            onTap: () => widget.onOpen(event),
+          ),
+          TimelineGap(:final start, :final end, :final untilOnly) => _GapRow(
+            key: untilOnly
+                ? ValueKey('gap:$end:until')
+                : ValueKey('gap:$start:$end'),
+            start: start,
+            end: end,
+            untilOnly: untilOnly,
+            showPeople: untilOnly && isToday && peopleCount > 0,
+            peopleCount: peopleCount,
+            onTapPeople: () {
+              _peopleKey.currentState?.unfold();
+              if (_peopleKey.currentContext != null) {
+                Scrollable.ensureVisible(
+                  _peopleKey.currentContext!,
+                  duration: context.motion(AppMotion.medium),
+                );
+              }
+            },
+          ),
+          TimelineNow(:final minute) => _NowRow(
+            key: const ValueKey('now'),
+            minute: minute,
+          ),
+        },
+    ];
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     // `.value` survives a failed refresh, so the rows stay on screen.
-    final list = events.value;
+    final list = widget.events.value;
     final List<Widget> body;
     if (list == null) {
-      body = [?eventsNotLoaded(context, events, onRetry)];
+      body = [?eventsNotLoaded(context, widget.events, widget.onRetry)];
     } else {
       final onDay = <Widget>[
-        for (final task in tasksOn(tasks, day))
+        for (final task in tasksOn(widget.tasks, widget.day))
           TaskRow(
             key: ValueKey('task:${task.id}'),
             task: task,
-            busy: busy.contains(task.key),
-            onOpen: () => onOpenTask?.call(task),
-            onToggle: () => onToggleTask?.call(task),
+            busy: widget.busy.contains(task.key),
+            onOpen: () => widget.onOpenTask?.call(task),
+            onToggle: () => widget.onToggleTask?.call(task),
           ),
-        if (people.on(day) case final due when due.isNotEmpty)
+        if (widget.people.on(widget.day) case final due when due.isNotEmpty)
           PeopleBlock(
-            key: ValueKey(day),
+            key: widget.timeline && widget.peopleFoldable
+                ? _peopleKey
+                : ValueKey(widget.day),
             people: due,
-            model: model,
-            foldable: peopleFoldable,
-            onOpen: (person) => onOpenPerson?.call(person),
+            model: widget.model,
+            foldable: widget.peopleFoldable,
+            onOpen: (person) => widget.onOpenPerson?.call(person),
           ),
-        for (final event in eventsOn(list, day))
-          EventRow(
-            key: ValueKey('event:${event.id}'),
-            event: event,
-            now: now,
-            onTap: () => onOpen(event),
-          ),
+        if (widget.timeline)
+          ..._timelineRows(context, eventsOn(list, widget.day), widget.day)
+        else
+          for (final event in eventsOn(list, widget.day))
+            EventRow(
+              key: ValueKey('event:${event.id}'),
+              event: event,
+              now: widget.now,
+              onTap: () => widget.onOpen(event),
+            ),
       ];
       body = onDay.isEmpty
           ? [
@@ -1076,7 +1319,7 @@ class DaySection extends StatelessWidget {
               // A task or event added or deleted grows in or folds out once
               // its sheet has closed; another day is a new list.
               AnimatedRows(
-                key: ValueKey(('rows', day)),
+                key: ValueKey(('rows', widget.day)),
                 spacing: AppSpacing.ms,
                 delay: context.motion(AppMotion.slow),
                 children: onDay,
@@ -1089,18 +1332,178 @@ class DaySection extends StatelessWidget {
       children: [
         Builder(
           builder: (header) => SectionHeader(
-            title: l10n.calendarDayTitle(day),
+            title: l10n.calendarDayTitle(widget.day),
             actionLabel: l10n.calendarAdd,
-            onAction: switch (onAddTask) {
+            onAction: switch (widget.onAddTask) {
               final onTask? => () => unawaited(
-                chooseAdd(header, day: day, onEvent: onAdd, onTask: onTask),
+                chooseAdd(
+                  header,
+                  day: widget.day,
+                  onEvent: widget.onAdd,
+                  onTask: onTask,
+                ),
               ),
-              null => () => onAdd(day),
+              null => () => widget.onAdd(widget.day),
             },
           ),
         ),
         const SizedBox(height: AppSpacing.ms),
         ...body,
+      ],
+    );
+  }
+}
+
+class _GapRow extends StatelessWidget {
+  const _GapRow({
+    required this.start,
+    required this.end,
+    required this.untilOnly,
+    required this.showPeople,
+    required this.peopleCount,
+    required this.onTapPeople,
+    super.key,
+  });
+
+  final int start;
+  final int end;
+  final bool untilOnly;
+  final bool showPeople;
+  final int peopleCount;
+  final VoidCallback onTapPeople;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colors = LoomiaColors.of(context);
+    final duration = end - start;
+    final hours = duration ~/ 60;
+    final minutes = duration % 60;
+
+    String durationLabel;
+    if (minutes == 0) {
+      durationLabel = l10n.calendarHours(hours);
+    } else {
+      durationLabel = l10n.calendarHoursMinutes(
+        hours,
+        minutes.toString().padLeft(2, '0'),
+      );
+    }
+
+    String gapText;
+    if (untilOnly) {
+      final endTime = DateTime(2026, 1, 1, end ~/ 60, end % 60);
+      gapText = l10n.calendarFreeUntil(timeLabel(context, endTime));
+    } else {
+      gapText = l10n.calendarFree(durationLabel);
+    }
+
+    final muted = theme.textTheme.labelSmall?.copyWith(color: colors.textMuted);
+    final people = theme.textTheme.labelSmall?.copyWith(
+      color: colors.primaryText,
+    );
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: EventRow.timeWidth + AppSpacing.ms,
+      ),
+      child: CustomPaint(
+        painter: DashedBorderPainter(
+          color: colors.borderStrong,
+          radius: AppRadii.md,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.ms),
+          // Figma D: "Free until 19:00 · 3 people to follow up ›" on one
+          // line, the people part on the next only when it doesn't fit.
+          child: Wrap(
+            spacing: AppSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(gapText, style: muted),
+              if (showPeople) ...[
+                Text('·', style: muted),
+                Semantics(
+                  button: true,
+                  label: l10n.calendarPeopleSummary(peopleCount),
+                  child: InkWell(
+                    onTap: onTapPeople,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: kMinInteractiveDimension,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              l10n.calendarPeopleSummary(peopleCount),
+                              style: people,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: people?.fontSize,
+                            color: colors.primaryText,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NowRow extends StatelessWidget {
+  const _NowRow({required this.minute, super.key});
+
+  static const double _nowDot = 8;
+  static const double _nowLine = 2;
+
+  final int minute;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = LoomiaColors.of(context);
+    final time = DateTime(2026, 1, 1, minute ~/ 60, minute % 60);
+
+    return Row(
+      children: [
+        SizedBox(
+          width: EventRow.timeWidth,
+          child: Text(
+            timeLabel(context, time),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colors.primaryText,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.ms),
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: _nowDot,
+                height: _nowDot,
+                decoration: BoxDecoration(
+                  color: colors.primaryText,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Expanded(
+                child: Container(height: _nowLine, color: colors.primaryText),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

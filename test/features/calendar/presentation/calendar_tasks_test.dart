@@ -82,7 +82,12 @@ Future<FakeTaskRepository> _pump(
         home: CalendarView(
           events: AsyncData(events),
           tasks: tasks,
-          selection: (mode: mode, month: DateTime(2026, 10), day: _day),
+          selection: (
+            mode: mode,
+            month: DateTime(2026, 10),
+            day: _day,
+            from: _day,
+          ),
           today: DateTime(2026, 10, 7),
           onSelect: (_) {},
           onShift: (_) {},
@@ -213,20 +218,37 @@ void main() {
     expect(find.text('Nothing planned'), findsNothing);
   });
 
-  testWidgets('the week list shows a day\'s tasks above its events', (
+  testWidgets('3 days: a timed task opens its page, a strip chip the day', (
     tester,
   ) async {
+    final opened = <String>[];
     await _pump(
       tester,
-      mode: CalendarMode.week,
-      events: [_event('e1', 10)],
-      tasks: [_task('t1')],
+      mode: CalendarMode.threeDays,
+      tasks: [
+        Task(
+          id: 'timed',
+          title: 'Timed call',
+          note: null,
+          dueOn: _day,
+          doneOn: null,
+          createdAt: DateTime(2026, 10),
+          dueTime: (hour: 10, minute: 0),
+        ),
+        _task('chip'),
+      ],
+      onOpenTask: (task) => opened.add(task.id),
     );
 
-    expect(
-      tester.getTopLeft(find.text('Task t1')).dy,
-      lessThan(tester.getTopLeft(find.byType(EventRow)).dy),
-    );
+    await tester.tap(find.text('Timed call'));
+    await tester.pumpAndSettle();
+    expect(opened, ['timed']);
+    expect(find.byType(BottomSheet), findsNothing);
+
+    await tester.tap(find.text('1 task'));
+    await tester.pumpAndSettle();
+    expect(opened, ['timed']);
+    expect(find.byType(BottomSheet), findsOneWidget);
   });
 
   testWidgets('the rings call back with their task', (tester) async {

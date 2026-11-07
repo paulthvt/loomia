@@ -16,7 +16,9 @@ import 'package:material_ui/material_ui.dart';
 
 /// The Calendar and an event, for `flutter widget-preview start`, on a fixed
 /// day so the goldens never follow the clock: the Figma's October 2026,
-/// today the 7th, the 8th selected. Nothing in the app imports this file.
+/// today the 7th, the 8th selected. Mobile shows the timeline with an
+/// afternoon gap holding now (15:30) and people due today. Nothing in the
+/// app imports this file.
 @Preview(group: 'Calendar', name: 'Mobile — light', size: Size(390, 844))
 Widget calendarMobileLight() => _app(AppTheme.light, _calendar());
 
@@ -25,6 +27,10 @@ Widget calendarMobileDark() => _app(AppTheme.dark, _calendar());
 
 @Preview(group: 'Calendar', name: 'Desktop — light', size: Size(1440, 900))
 Widget calendarDesktopLight() => _app(AppTheme.light, _calendar(desktop: true));
+
+@Preview(group: 'Calendar', name: '3 days — light', size: Size(390, 844))
+Widget calendarThreeDaysLight() =>
+    _app(AppTheme.light, _calendar(mode: CalendarMode.threeDays));
 
 @Preview(group: 'Calendar', name: 'Week — light', size: Size(390, 844))
 Widget calendarWeekLight() =>
@@ -138,6 +144,7 @@ final _done = CalendarEvent(
 
 final _today = DateTime(2026, 10, 7);
 final _selected = DateTime(2026, 10, 8);
+final _ninth = DateTime(2026, 10, 9);
 
 /// Five people as in the Figma: sorted by name.
 final _people = [
@@ -250,30 +257,31 @@ final _events = [
   ),
 ];
 
-/// An open (repeating, #376) and a done task on the 8th, above its events,
-/// and one at 14:00 (#377); one alone on the 10th (a hollow dot); one on the
+/// None on the 8th, so its timeline (free time, now, people due) shows
+/// within 844: an open (repeating, #376), a done one and one at 14:00
+/// (#377) on the 9th; one alone on the 10th (a hollow dot); one on the
 /// 21st, after its two events' dots.
 final _tasks = [
   Task(
     id: 't1',
     title: 'Order flyers',
     note: 'For the workshop',
-    dueOn: _selected,
+    dueOn: _ninth,
     doneOn: null,
     createdAt: DateTime(2026, 10, 1),
     repeat: (
       every: 1,
       unit: RepeatUnit.month,
-      from: _selected,
+      from: _ninth,
       until: null,
-      scheduledOn: _selected,
+      scheduledOn: _ninth,
     ),
   ),
   Task(
     id: 't2',
     title: 'Print the price list',
     note: null,
-    dueOn: _selected,
+    dueOn: _ninth,
     doneOn: _today,
     createdAt: DateTime(2026, 10, 2),
   ),
@@ -298,7 +306,7 @@ final _tasks = [
     id: 't5',
     title: 'Call the supplier',
     note: 'Ask about the 10 ml bottles',
-    dueOn: _selected,
+    dueOn: _ninth,
     doneOn: null,
     createdAt: DateTime(2026, 10, 5),
     dueTime: (hour: 14, minute: 0),
@@ -365,10 +373,21 @@ Widget _calendar({
     events: _events,
     today: _today,
   ),
-  selection: (mode: mode, month: DateTime(2026, 10), day: _selected),
+  selection: (
+    mode: mode,
+    month: DateTime(2026, 10),
+    day: _selected,
+    from: _selected,
+  ),
   today: _today,
-  // The desktop week's now line, mid-morning.
-  now: DateTime(2026, 10, 7, 11, 15),
+  // Month mode (mobile): Oct 8 15:30, in the afternoon gap between events,
+  // so "N people to follow up" shows. 3 days/week: Oct 7 15:30, visible in
+  // the hour grid. Desktop week: Oct 7 11:15.
+  now: mode == CalendarMode.month
+      ? DateTime(2026, 10, 8, 15, 30)
+      : (desktop
+            ? DateTime(2026, 10, 7, 11, 15)
+            : DateTime(2026, 10, 7, 15, 30)),
   onSelect: (_) {},
   onShift: (_) {},
   onToday: () {},

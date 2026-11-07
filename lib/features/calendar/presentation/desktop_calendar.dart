@@ -9,6 +9,7 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/domain/week_grid.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
+import 'package:loomia/features/calendar/presentation/fit_words.dart';
 import 'package:loomia/features/calendar/presentation/month_grid.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -521,6 +522,16 @@ class MonthTaskChip extends StatelessWidget {
   static TextStyle? _titleStyle(BuildContext context) =>
       MonthEventChip._titleStyle(context);
 
+  /// The hollow ring, in [color].
+  static Widget ring(Color color) => Container(
+    width: _ring,
+    height: _ring,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(color: color, width: _stroke),
+    ),
+  );
+
   static String _label(BuildContext context, Task task, bool showTime) =>
       switch (task.dueTime) {
         final time? when showTime =>
@@ -561,17 +572,7 @@ class MonthTaskChip extends StatelessWidget {
             child: Row(
               spacing: AppSpacing.sm,
               children: [
-                Container(
-                  width: _ring,
-                  height: _ring,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: done ? colors.textMuted : scheme.primary,
-                      width: _stroke,
-                    ),
-                  ),
-                ),
+                ring(done ? colors.textMuted : scheme.primary),
                 Expanded(
                   child: Text(
                     _label(context, task, showTime),
@@ -596,6 +597,10 @@ class MonthTaskChip extends StatelessWidget {
 /// at their start and as tall as they last, overlapping ones side by side.
 /// The selected column is tinted, today's has a line at [now]. A week with
 /// tasks has a strip under the headings: each day's, as in the month.
+///
+/// On a phone (#448) the same grid shows 3 days ([hourHeight], opened at
+/// [scrollToMinute]) or the week with the selected column wide ([focus]),
+/// its cards title only ([compact]).
 class WeekGrid extends StatelessWidget {
   const WeekGrid({
     required this.days,
@@ -608,17 +613,29 @@ class WeekGrid extends StatelessWidget {
     this.onOpenTask,
     this.now,
     this.people = const PeopleAhead.none(),
+    this.compact = false,
+    this.focus = false,
+    this.gutter = 72,
+    this.minHour = 40,
+    this.hourHeight,
+    this.scrollToMinute,
+    this.onSelect,
+    this.scrolls = true,
+    this.bottomInset = 0,
     super.key,
-  });
+  }) : assert(scrolls || hourHeight != null, 'no own scroll needs an hour');
 
-  /// Wider than the Figma's 56: "10:00 AM" in 12-hour locales.
-  static const double _gutter = 72;
+  /// A [focus] week's other columns.
+  static const double _narrow = 40;
 
-  /// Below this an hour gets, the grid scrolls instead of shrinking.
-  static const double _minHour = 40;
+  /// Below this, equal columns give way to [focus]'s wide one.
+  static const double _focusUnder = 90;
 
   /// The most of the window the task strip takes; past it, it scrolls.
   static const double _maxStrip = 1 / 3;
+
+  /// A [compact] column under this is narrow: numbers and whole words.
+  static const double _wideColumn = 60;
 
   /// The week's 7 days, as `weekDays`.
   final List<DateTime> days;
@@ -633,13 +650,84 @@ class WeekGrid extends StatelessWidget {
   /// Where the now line goes; none without it.
   final DateTime? now;
 
-  /// Who is due when (#378): "N people" in the strip, above the tasks.
+  /// Who is due when (#378): "N people" in the strip, above the tasks; on a
+  /// [compact] grid beside them, or, in a narrow column, when there are none.
   final PeopleAhead people;
   final void Function(CalendarEvent event) onOpen;
+
+  /// A heading's tap, and a column's when there is no [onSelect].
   final OpenDay onDay;
 
+  /// Cards show their title only: the hour axis gives the time. The strip
+  /// is one line: each day's open tasks counted, opening the day (#448).
+  final bool compact;
+
+  /// When equal columns would be under 90 dp, the selected day's takes what
+  /// the others leave at 40 dp each.
+  final bool focus;
+
+  /// The hour labels' width: wider than the Figma's 56 by default, for
+  /// "10:00 AM" in 12-hour locales.
+  final double gutter;
+
+  /// Below this an hour gets, the grid scrolls instead of shrinking.
+  final double minHour;
+
+  /// A fixed hour height; none fits the hours to the height, down to
+  /// [minHour].
+  final double? hourHeight;
+
+  /// Opens scrolled so an hour before this minute of the day is at the top.
+  final int? scrollToMinute;
+
+  /// A tap on an empty part of a column; none opens the day, as [onDay].
+  final ValueChanged<DateTime>? onSelect;
+
+  /// False: the hours take their full height, in a scroll around the grid
+  /// (a phone on its side); needs [hourHeight].
+  final bool scrolls;
+
+  /// Room under the hours, so the last one scrolls (or, fitting the height,
+  /// ends) clear of what floats over the grid (a phone's add button).
+  final double bottomInset;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final available = box.maxWidth - gutter;
+      final wide = available - (days.length - 1) * _narrow;
+      // Too narrow for even that: equal columns.
+      final focusing =
+          focus &&
+          days.contains(selected) &&
+          available / days.length < _focusUnder &&
+          wide >= _narrow;
+      final duration = context.motion(AppMotion.medium);
+      Widget cell(DateTime day, Widget child) => focusing
+          ? AnimatedContainer(
+              duration: duration,
+              curve: AppMotion.standard,
+              width: day == selected ? wide : _narrow,
+              child: child,
+            )
+          : Expanded(child: child);
+      return _grid(
+        context,
+        cell,
+        narrow: (day) =>
+            compact &&
+            (focusing
+                ? day != selected || wide < _wideColumn
+                : available / days.length < _wideColumn),
+      );
+    },
+  );
+
+  Widget _grid(
+    BuildContext context,
+    Widget Function(DateTime day, Widget child) cell, {
+    required bool Function(DateTime day) narrow,
+  }) {
     final colors = LoomiaColors.of(context);
     final week = [
       for (final event in events)
@@ -659,8 +747,15 @@ class WeekGrid extends StatelessWidget {
         for (final task in day) taskSpan(task.dueTime!),
     ]);
     final hours = range.last - range.first;
-    final hourStyle = Theme.of(context).textTheme.labelSmall
-        ?.copyWith(color: colors.textMuted);
+    // A phone's narrow gutter: the hour alone ("8 AM", "08 h", "14" in
+    // 24-hour), smaller.
+    final hourStyle =
+        (compact ? AppTypography.micro : Theme.of(context).textTheme.labelSmall)
+            ?.copyWith(color: colors.textMuted);
+    final locale = Localizations.localeOf(context).toString();
+    final hourOnly = MediaQuery.alwaysUse24HourFormatOf(context)
+        ? DateFormat.H(locale)
+        : DateFormat.j(locale);
     return _Board(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -669,10 +764,11 @@ class WeekGrid extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(
               children: [
-                const SizedBox(width: _gutter),
+                SizedBox(width: gutter),
                 for (final (index, day) in days.indexed)
-                  Expanded(
-                    child: _ColumnHeader(
+                  cell(
+                    day,
+                    _ColumnHeader(
                       day: day,
                       selected: day == selected,
                       today: day == today,
@@ -685,7 +781,10 @@ class WeekGrid extends StatelessWidget {
               ],
             ),
           ),
-          if (untimed.any((day) => day.isNotEmpty) || due.any((n) => n > 0))
+          if (compact)
+            _compactStrip(context, cell, untimed, due, narrow)
+          else if (untimed.any((day) => day.isNotEmpty) ||
+              due.any((n) => n > 0))
             ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.sizeOf(context).height * _maxStrip,
@@ -695,10 +794,11 @@ class WeekGrid extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(width: _gutter),
+                    SizedBox(width: gutter),
                     for (final (index, day) in untimed.indexed)
-                      Expanded(
-                        child: Padding(
+                      cell(
+                        days[index],
+                        Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.xs,
                           ),
@@ -727,71 +827,278 @@ class WeekGrid extends StatelessWidget {
                 ),
               ),
             ),
-          Expanded(
-            child: DecoratedBox(
+          _fill(
+            DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: colors.borderSubtle)),
               ),
               child: LayoutBuilder(
                 builder: (context, box) {
-                  final hour = math.max(_minHour, box.maxHeight / hours);
-                  return SingleChildScrollView(
-                    child: SizedBox(
-                      height: hour * hours,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            width: _gutter,
-                            child: ExcludeSemantics(
-                              child: Stack(
-                                children: [
-                                  for (var h = range.first; h < range.last; h++)
-                                    PositionedDirectional(
-                                      top: (h - range.first) * hour,
-                                      end: AppSpacing.sm,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: AppSpacing.xs,
-                                        ),
-                                        child: Text(
-                                          timeLabel(
-                                            context,
-                                            DateTime(2000, 1, 1, h),
-                                          ),
-                                          style: hourStyle,
-                                        ),
+                  final hour =
+                      hourHeight ??
+                      math.max(minHour, (box.maxHeight - bottomInset) / hours);
+                  final grid = SizedBox(
+                    height: hour * hours,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          width: gutter,
+                          child: ExcludeSemantics(
+                            child: Stack(
+                              children: [
+                                for (var h = range.first; h < range.last; h++)
+                                  PositionedDirectional(
+                                    top: (h - range.first) * hour,
+                                    // "10 AM" needs 28.4 of the 32.
+                                    end: compact
+                                        ? AppSpacing.xs / 2
+                                        : AppSpacing.sm,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: AppSpacing.xs,
+                                      ),
+                                      child: Text(
+                                        compact
+                                            ? hourOnly.format(
+                                                DateTime(2000, 1, 1, h),
+                                              )
+                                            : timeLabel(
+                                                context,
+                                                DateTime(2000, 1, 1, h),
+                                              ),
+                                        style: hourStyle,
                                       ),
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
                           ),
-                          for (final (index, day) in days.indexed)
-                            Expanded(
-                              child: _DayColumn(
-                                day: day,
-                                events: eventsOn(week, day),
-                                tasks: timed[index],
-                                onOpenTask: onOpenTask,
-                                firstHour: range.first,
-                                hours: hours,
-                                hour: hour,
-                                selected: day == selected,
-                                now: day == today ? now : null,
-                                onOpen: onOpen,
-                                onDay: onDay,
-                              ),
+                        ),
+                        for (final (index, day) in days.indexed)
+                          cell(
+                            day,
+                            _DayColumn(
+                              day: day,
+                              events: eventsOn(week, day),
+                              tasks: timed[index],
+                              onOpenTask: onOpenTask,
+                              firstHour: range.first,
+                              hours: hours,
+                              hour: hour,
+                              selected: day == selected,
+                              now: day == today ? now : null,
+                              onOpen: onOpen,
+                              onDay: onDay,
+                              onSelect: onSelect,
+                              compact: compact,
+                              narrow: narrow(day),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
+                  );
+                  if (!scrolls) return grid;
+                  final at = scrollToMinute;
+                  final padding = EdgeInsets.only(bottom: bottomInset);
+                  if (at == null) {
+                    return SingleChildScrollView(padding: padding, child: grid);
+                  }
+                  final top = (at - 60 - range.first * 60) / 60 * hour;
+                  return _OpenedAt(
+                    // Events loading later move the first hour or the
+                    // earliest start: open again. Not on today's minute,
+                    // which moves on with each rebuild.
+                    key: ValueKey((
+                      range.first,
+                      days.contains(today) ? null : at,
+                    )),
+                    padding: padding,
+                    offset: top.clamp(
+                      0,
+                      math.max(0, hour * hours + bottomInset - box.maxHeight),
+                    ),
+                    child: grid,
                   );
                 },
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _fill(Widget child) => scrolls ? Expanded(child: child) : child;
+
+  /// [compact]'s strip, one line whatever the day holds: [_StripCounts],
+  /// open tasks only.
+  Widget _compactStrip(
+    BuildContext context,
+    Widget Function(DateTime day, Widget child) cell,
+    List<List<Task>> untimed,
+    List<int> due,
+    bool Function(DateTime day) narrow,
+  ) {
+    final open = [for (final day in untimed) day.where((t) => !t.done).length];
+    if (!open.any((n) => n > 0) && !due.any((n) => n > 0)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: gutter),
+          for (final (index, day) in days.indexed)
+            cell(
+              day,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                child: open[index] == 0 && due[index] == 0
+                    ? const SizedBox.shrink()
+                    : Builder(
+                        builder: (line) => _StripCounts(
+                          tasks: open[index],
+                          // A narrow column holds one: tasks first.
+                          people: narrow(day) && open[index] > 0
+                              ? 0
+                              : due[index],
+                          narrow: narrow(day),
+                          onTap: () => onDay(day, _globalRect(line)),
+                        ),
+                      ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A phone grid's strip, one day (#448): a ring and the open [tasks]
+/// counted, a people icon and the [people] due counted, one tap opening the
+/// day. Alone and with room ("2 tasks", "5 people"), in words; together or
+/// [narrow], the numbers. Read in words either way.
+class _StripCounts extends StatelessWidget {
+  const _StripCounts({
+    required this.tasks,
+    required this.people,
+    required this.narrow,
+    required this.onTap,
+  });
+
+  final int tasks;
+  final int people;
+  final bool narrow;
+  final VoidCallback onTap;
+
+  static bool _fits(
+    BuildContext context,
+    String text,
+    TextStyle? style,
+    double width,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout(maxWidth: math.max(width, 0));
+    final fits = !painter.didExceedMaxLines && painter.width <= width;
+    painter.dispose();
+    return fits;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final taskStyle = MonthTaskChip._titleStyle(context)
+        ?.copyWith(color: scheme.onSurface);
+    final peopleStyle = CalendarPeopleLine._style(context);
+    final taskWords = l10n.calendarOpenTasks(tasks);
+    final peopleWords = l10n.calendarPeopleLine(people);
+    Widget item(String label, Widget? mark, String text, TextStyle? style) =>
+        Flexible(
+          child: Semantics(
+            label: label,
+            excludeSemantics: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: AppSpacing.xs,
+              children: [
+                ?mark,
+                Flexible(
+                  child: Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: style,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        onTap: onTap,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: MonthTaskChip._vertical,
+            ),
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final alone = (tasks > 0) != (people > 0) && !narrow;
+                final words =
+                    alone &&
+                    (tasks > 0
+                        ? _fits(
+                            context,
+                            taskWords,
+                            taskStyle,
+                            box.maxWidth - MonthTaskChip._ring - AppSpacing.xs,
+                          )
+                        : _fits(
+                            context,
+                            peopleWords,
+                            peopleStyle,
+                            box.maxWidth,
+                          ));
+                return Row(
+                  spacing: AppSpacing.sm,
+                  children: [
+                    if (tasks > 0)
+                      item(
+                        taskWords,
+                        MonthTaskChip.ring(scheme.primary),
+                        words ? taskWords : '$tasks',
+                        taskStyle,
+                      ),
+                    if (people > 0)
+                      item(
+                        l10n.calendarPeopleSummary(people),
+                        words
+                            ? null
+                            : Icon(
+                                Icons.people_outline_rounded,
+                                size: peopleStyle?.fontSize,
+                                color: peopleStyle?.color,
+                              ),
+                        words ? peopleWords : '$people',
+                        peopleStyle,
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -842,6 +1149,7 @@ class _ColumnHeader extends StatelessWidget {
         people,
       ),
       excludeSemantics: true,
+      onTap: () => onDay(day, _globalRect(context)),
       child: InkWell(
         onTap: () => onDay(day, _globalRect(context)),
         borderRadius: BorderRadius.circular(AppRadii.md),
@@ -897,6 +1205,9 @@ class _DayColumn extends StatelessWidget {
     required this.now,
     required this.onOpen,
     required this.onDay,
+    this.onSelect,
+    this.compact = false,
+    this.narrow = false,
   });
 
   /// Between a card and its column's edges, and between lanes.
@@ -919,6 +1230,15 @@ class _DayColumn extends StatelessWidget {
   final DateTime? now;
   final void Function(CalendarEvent event) onOpen;
   final OpenDay onDay;
+
+  /// A tap off the cards, instead of [onDay].
+  final ValueChanged<DateTime>? onSelect;
+
+  /// [_WeekCard.compact].
+  final bool compact;
+
+  /// [_WeekCard.narrow].
+  final bool narrow;
 
   double _y(int minute) => (minute - firstHour * 60) / 60 * hour;
 
@@ -954,12 +1274,20 @@ class _DayColumn extends StatelessWidget {
           excludeFromSemantics: true,
           canRequestFocus: false,
           onTap: () {
+            final select = onSelect;
+            if (select != null) return select(day);
             final column = _globalRect(context);
             onDay(day, Rect.fromLTWH(column.left, column.top, column.width, 0));
           },
           child: LayoutBuilder(
             builder: (context, box) {
               final width = box.maxWidth - 2 * _inset;
+              double cardWidth(int lanes) =>
+                  width / lanes - (lanes > 1 ? 2 : 0);
+              // A phone card under 60 dp, its column's or a shared lane:
+              // the narrow form (#448).
+              bool thin(int lanes) =>
+                  narrow || compact && cardWidth(lanes) < WeekGrid._wideColumn;
               return Stack(
                 children: [
                   for (var i = 1; i < hours; i++)
@@ -983,15 +1311,18 @@ class _DayColumn extends StatelessWidget {
                         minCard,
                       ),
                       left: _inset + item.lane * width / item.lanes,
-                      width: width / item.lanes - (item.lanes > 1 ? 2 : 0),
+                      width: cardWidth(item.lanes),
                       child: switch (item.item) {
                         final Task task => _WeekTask(
                           task: task,
                           onTap: () => onOpenTask?.call(task),
+                          narrow: thin(item.lanes),
                         ),
                         final event as CalendarEvent => _WeekCard(
                           event: event,
                           onTap: () => onOpen(event),
+                          compact: compact,
+                          narrow: thin(item.lanes),
                         ),
                       },
                     ),
@@ -1031,40 +1362,95 @@ class _DayColumn extends StatelessWidget {
 }
 
 /// A timed task on the desktop week's hour grid (#377): a card like
-/// [_WeekCard] around a [MonthTaskChip], its title only.
+/// [_WeekCard] around a [MonthTaskChip], its title only. In a [narrow]
+/// phone column (#448): no ring, the title in whole words, dashed around.
 class _WeekTask extends StatelessWidget {
-  const _WeekTask({required this.task, required this.onTap});
+  const _WeekTask({
+    required this.task,
+    required this.onTap,
+    this.narrow = false,
+  });
 
   final Task task;
   final VoidCallback onTap;
+  final bool narrow;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: LoomiaColors.of(context).surfaceDefault,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.sm),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: Padding(
-      padding: const EdgeInsetsDirectional.only(start: AppSpacing.sm),
-      child: Align(
-        alignment: AlignmentDirectional.topStart,
-        child: MonthTaskChip(task: task, onTap: onTap, showTime: false),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => narrow
+      ? Semantics(
+          button: true,
+          label: task.title,
+          // Struck through on screen; read as ticked.
+          checked: task.done ? true : null,
+          excludeSemantics: true,
+          onTap: onTap,
+          child: CustomPaint(
+            foregroundPainter: DashedBorderPainter(
+              color: LoomiaColors.of(context).borderStrong,
+              radius: AppRadii.sm,
+            ),
+            child: Material(
+              color: LoomiaColors.of(context).surfaceDefault,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: _WeekCard._vertical,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, box) => _WeekCard._title(
+                      context,
+                      task.title,
+                      box,
+                      task.done ? LoomiaColors.of(context).textMuted : null,
+                      narrow: true,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        )
+      : Material(
+          color: LoomiaColors.of(context).surfaceDefault,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(start: AppSpacing.sm),
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              child: MonthTaskChip(task: task, onTap: onTap, showTime: false),
+            ),
+          ),
+        );
 }
 
 /// A desktop week card: time and title, a start bar while upcoming; done,
 /// outlined and muted. Too short for both lines: "14:00 · Team check-in".
+///
+/// [compact] (a phone, #448): the title only, read with its times; in a
+/// [narrow] column, at 10 px, whole words.
 class _WeekCard extends StatelessWidget {
-  const _WeekCard({required this.event, required this.onTap});
+  const _WeekCard({
+    required this.event,
+    required this.onTap,
+    this.compact = false,
+    this.narrow = false,
+  });
 
   static const double _bar = 3;
   static const double _vertical = AppSpacing.xs / 2;
 
   final CalendarEvent event;
   final VoidCallback onTap;
+  final bool compact;
+  final bool narrow;
 
   static TextStyle _timeStyle(BuildContext context) =>
       (Theme.of(context).textTheme.labelSmall ?? AppTypography.caption)
@@ -1072,6 +1458,44 @@ class _WeekCard extends StatelessWidget {
 
   static TextStyle _titleStyle(BuildContext context) =>
       Theme.of(context).textTheme.labelMedium ?? AppTypography.label;
+
+  /// [compact]'s title alone, on as many lines as the card holds; [narrow],
+  /// at 10 px and whole words. Its semantics are the card's label.
+  static Widget _title(
+    BuildContext context,
+    String title,
+    BoxConstraints box,
+    Color? ink, {
+    required bool narrow,
+  }) {
+    final style =
+        (narrow
+                ? AppTypography.micro
+                : Theme.of(context).textTheme.labelSmall ??
+                      AppTypography.caption)
+            .copyWith(color: ink);
+    final lines = math.max(
+      1,
+      (box.maxHeight / _lineHeight(context, style)).floor(),
+    );
+    return ExcludeSemantics(
+      child: Text(
+        narrow
+            ? fitWords(
+                title,
+                style: style,
+                width: box.maxWidth,
+                maxLines: lines,
+                scaler: MediaQuery.textScalerOf(context),
+                direction: Directionality.of(context),
+              )
+            : title,
+        maxLines: lines,
+        overflow: narrow ? TextOverflow.clip : TextOverflow.ellipsis,
+        style: style,
+      ),
+    );
+  }
 
   /// The one-line card's height.
   static double minHeight(BuildContext context) =>
@@ -1086,9 +1510,17 @@ class _WeekCard extends StatelessWidget {
     final time = timeLabel(context, event.startsAt);
     final timeStyle = _timeStyle(context).copyWith(color: ink);
     final titleStyle = _titleStyle(context).copyWith(color: ink);
+    final ends = event.endsAt ?? event.startsAt.add(shownWithoutEnd);
     return MergeSemantics(
       child: Semantics(
         button: true,
+        label: compact
+            ? AppLocalizations.of(context).calendarCardSemantics(
+                event.title,
+                time,
+                timeLabel(context, ends),
+              )
+            : null,
         child: Material(
           color: colors.surfaceDefault,
           shape: RoundedRectangleBorder(
@@ -1108,12 +1540,22 @@ class _WeekCard extends StatelessWidget {
                         start: BorderSide(color: scheme.primary, width: _bar),
                       ),
                     ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
+              // A 40 dp column's title needs every point it can get.
+              padding: EdgeInsets.symmetric(
+                horizontal: narrow ? 0 : AppSpacing.sm,
                 vertical: _vertical,
               ),
               child: LayoutBuilder(
                 builder: (context, box) {
+                  if (compact) {
+                    return _title(
+                      context,
+                      event.title,
+                      box,
+                      ink,
+                      narrow: narrow,
+                    );
+                  }
                   final lines =
                       ((box.maxHeight - _lineHeight(context, timeStyle)) /
                               _lineHeight(context, titleStyle))
@@ -1149,6 +1591,83 @@ class _WeekCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A dashed outline of [radius]: the timeline's free time, a narrow phone
+/// column's timed task.
+class DashedBorderPainter extends CustomPainter {
+  const DashedBorderPainter({required this.color, required this.radius});
+
+  static const double _strokeWidth = 1.0;
+  static const double _dashWidth = 4.0;
+  static const double _dashSpace = 4.0;
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final pathMetrics = path.computeMetrics();
+
+    for (final metric in pathMetrics) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final start = metric.getTangentForOffset(distance)!.position;
+        distance += _dashWidth;
+        final end = metric.getTangentForOffset(distance)!.position;
+        canvas.drawLine(start, end, paint);
+        distance += _dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(DashedBorderPainter oldDelegate) =>
+      color != oldDelegate.color || radius != oldDelegate.radius;
+}
+
+/// [child] in a vertical scroll that opens at [offset].
+class _OpenedAt extends StatefulWidget {
+  const _OpenedAt({
+    required this.offset,
+    super.key,
+    required this.padding,
+    required this.child,
+  });
+
+  final double offset;
+  final EdgeInsets padding;
+  final Widget child;
+
+  @override
+  State<_OpenedAt> createState() => _OpenedAtState();
+}
+
+class _OpenedAtState extends State<_OpenedAt> {
+  late final _controller = ScrollController(initialScrollOffset: widget.offset);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    controller: _controller,
+    padding: widget.padding,
+    child: widget.child,
+  );
 }
 
 /// Shows [builder]'s content in a popover hung under [anchor] (above it when

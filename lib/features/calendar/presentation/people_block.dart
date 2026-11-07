@@ -31,11 +31,17 @@ class PeopleBlock extends StatefulWidget {
   final bool foldable;
 
   @override
-  State<PeopleBlock> createState() => _PeopleBlockState();
+  State<PeopleBlock> createState() => PeopleBlockState();
 }
 
-class _PeopleBlockState extends State<PeopleBlock> {
+class PeopleBlockState extends State<PeopleBlock> {
   bool _folded = true;
+
+  void unfold() {
+    if (_folded) {
+      setState(() => _folded = false);
+    }
+  }
 
   void _toggle() => setState(() => _folded = !_folded);
 

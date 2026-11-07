@@ -111,6 +111,7 @@ void main() {
         mode: CalendarMode.month,
         month: DateTime(now.year, now.month),
         day: now,
+        from: now,
       ));
     });
 
@@ -125,6 +126,7 @@ void main() {
         mode: CalendarMode.month,
         month: DateTime(2026, 9),
         day: DateTime(2026, 9, 28),
+        from: DateTime(2026, 9, 28),
       ));
     });
 
@@ -154,6 +156,7 @@ void main() {
         mode: CalendarMode.month,
         month: DateTime(2031, 3),
         day: DateTime(2031, 3),
+        from: DateTime(2031, 3),
       ));
 
       final now = today();
@@ -183,6 +186,7 @@ void main() {
         mode: CalendarMode.week,
         month: DateTime(day.year, day.month),
         day: day,
+        from: day,
       );
 
       test('a week later keeps the weekday', () {
@@ -212,9 +216,218 @@ void main() {
           mode: CalendarMode.month,
           month: DateTime(2026, 9),
           day: DateTime(2026, 9, 14),
+          from: DateTime(2026, 9, 14),
         );
         expect(shiftedDay(month, 1, now, 1), now);
         expect(shiftedDay(month, -1, now, 1), DateTime(2026, 8));
+      });
+    });
+
+    group('3 days', () {
+      test('setMode(threeDays) from day Oct 22 sets from = day', () {
+        final container = ProviderContainer.test();
+        container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 22))
+          ..setMode(CalendarMode.threeDays);
+
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 22));
+        expect(selection.day, DateTime(2026, 10, 22));
+      });
+
+      test('select within page keeps from, outside page moves from', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 22))
+          ..setMode(CalendarMode.threeDays);
+
+        selector.select(DateTime(2026, 10, 24));
+        var selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 22));
+        expect(selection.day, DateTime(2026, 10, 24));
+
+        selector.select(DateTime(2026, 10, 26));
+        selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 26));
+        expect(selection.day, DateTime(2026, 10, 26));
+      });
+
+      test('shift(1) moves page by 3 days, keeps same column', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 22))
+          ..setMode(CalendarMode.threeDays)
+          ..select(DateTime(2026, 10, 23));
+
+        selector.shift(1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 25));
+        expect(selection.day, DateTime(2026, 10, 26));
+      });
+
+      test('shift(-1) moves page by -3 days, selects today when shown', () {
+        final container = ProviderContainer.test();
+        final now = today();
+        // Pick a day 3 days after today so shift(-1) lands on today.
+        final future = DateTime(now.year, now.month, now.day + 3);
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(future)
+          ..setMode(CalendarMode.threeDays);
+
+        selector.shift(-1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, now);
+        expect(selection.day, now);
+      });
+
+      test('toToday() sets from = day = today', () {
+        final container = ProviderContainer.test();
+        final now = today();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 27))
+          ..setMode(CalendarMode.threeDays);
+
+        selector.toToday();
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, now);
+        expect(selection.day, now);
+      });
+
+      test('toToday() starts the page on today when it already shows', () {
+        final container = ProviderContainer.test();
+        final now = today();
+        final yesterday = DateTime(now.year, now.month, now.day - 1);
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(yesterday)
+          ..setMode(CalendarMode.threeDays);
+        expect(container.read(calendarSelectionProvider).from, yesterday);
+
+        selector.toToday();
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, now);
+        expect(selection.day, now);
+      });
+
+      test('shownDays for from Oct 24 returns 3 days', () {
+        final selection = (
+          mode: CalendarMode.threeDays,
+          month: DateTime(2026, 10),
+          day: DateTime(2026, 10, 24),
+          from: DateTime(2026, 10, 24),
+        );
+        final days = shownDays(selection, 1);
+        expect(days, [
+          DateTime(2026, 10, 24),
+          DateTime(2026, 10, 25),
+          DateTime(2026, 10, 26),
+        ]);
+      });
+
+      test('shownDays spans month boundary', () {
+        final selection = (
+          mode: CalendarMode.threeDays,
+          month: DateTime(2026, 12),
+          day: DateTime(2026, 12, 30),
+          from: DateTime(2026, 12, 30),
+        );
+        final days = shownDays(selection, 1);
+        expect(days, [
+          DateTime(2026, 12, 30),
+          DateTime(2026, 12, 31),
+          DateTime(2027, 1, 1),
+        ]);
+      });
+
+      test('select across month boundary keeps from when within page', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 12, 30))
+          ..setMode(CalendarMode.threeDays);
+
+        selector.select(DateTime(2027, 1, 1));
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 12, 30));
+        expect(selection.day, DateTime(2027, 1, 1));
+      });
+
+      test('shift(1) across month boundary, same column', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 12, 30))
+          ..setMode(CalendarMode.threeDays)
+          ..select(DateTime(2026, 12, 31));
+
+        selector.shift(1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2027, 1, 2));
+        expect(selection.day, DateTime(2027, 1, 3));
+      });
+
+      test('shift(1) across month boundary, today shown selects today', () {
+        final container = ProviderContainer.test();
+        // Mock today as Jan 2, 2027 by using a date close to actual today
+        final now = today();
+        // We'll use shift to a future date, then back
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(now.year, now.month, now.day + 3))
+          ..setMode(CalendarMode.threeDays)
+          ..select(DateTime(now.year, now.month, now.day + 4));
+
+        selector.shift(-1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.day, now);
+      });
+
+      test('shift(-1) across month boundary with today in page', () {
+        final container = ProviderContainer.test();
+        final now = today();
+        // Set from to 3 days ahead, so shift(-1) lands on today
+        final future = DateTime(now.year, now.month, now.day + 3);
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(future)
+          ..setMode(CalendarMode.threeDays);
+
+        selector.shift(-1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, now);
+        expect(selection.day, now);
+      });
+
+      test('DST: shift(1) from Oct 24, same column', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 24))
+          ..setMode(CalendarMode.threeDays)
+          ..select(DateTime(2026, 10, 25));
+
+        selector.shift(1);
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 27));
+        expect(selection.day, DateTime(2026, 10, 28));
+      });
+
+      test('DST: select within page keeps from', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 24))
+          ..setMode(CalendarMode.threeDays);
+
+        selector.select(DateTime(2026, 10, 26));
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.from, DateTime(2026, 10, 24));
+        expect(selection.day, DateTime(2026, 10, 26));
+      });
+
+      test('setMode(week) after 3 days keeps day', () {
+        final container = ProviderContainer.test();
+        container.read(calendarSelectionProvider.notifier)
+          ..select(DateTime(2026, 10, 24))
+          ..setMode(CalendarMode.threeDays)
+          ..setMode(CalendarMode.week);
+
+        final selection = container.read(calendarSelectionProvider);
+        expect(selection.mode, CalendarMode.week);
+        expect(selection.day, DateTime(2026, 10, 24));
       });
     });
   });

@@ -78,6 +78,7 @@ Future<List<String>> _pump(
             mode: mode,
             month: DateTime(2026, 10),
             day: selected ?? _day,
+            from: selected ?? _day,
           ),
           today: _today,
           onSelect: onSelect ?? (_) {},
@@ -169,12 +170,6 @@ void main() {
         findsOneWidget,
       );
       semantics.dispose();
-    });
-
-    testWidgets('the week strip has it too', (tester) async {
-      await _pump(tester, people: _people, mode: CalendarMode.week);
-
-      expect(_marker(_day), findsOneWidget);
     });
   });
 
@@ -306,11 +301,35 @@ void main() {
       expect(find.text('Nothing planned'), findsNothing);
     });
 
-    testWidgets('the week list folds each day with people', (tester) async {
-      await _pump(tester, people: _people, mode: CalendarMode.week);
+    testWidgets("'N people' in the strip opens the day's sheet", (
+      tester,
+    ) async {
+      final selected = <DateTime>[];
+      await _pump(
+        tester,
+        people: _people,
+        mode: CalendarMode.threeDays,
+        selected: _today,
+        onSelect: selected.add,
+      );
+      expect(find.byType(DaySection), findsNothing);
 
-      expect(find.text('5 people to follow up'), findsOneWidget);
-      expect(find.text('Nothing planned'), findsNWidgets(6));
+      await tester.tap(find.text('5 people'));
+      await tester.pumpAndSettle();
+
+      expect(selected, [_day]);
+      final sheet = find.byType(BottomSheet);
+      expect(
+        find.descendant(of: sheet, matching: find.byType(DaySection)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: sheet,
+          matching: find.text('5 people to follow up'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('nobody shows while people are not loaded', (tester) async {

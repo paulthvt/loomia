@@ -2784,6 +2784,63 @@
       "title": { "type": "String" }
     }
   },
+  "calendarViewThreeDays": "3 days",
+  "@calendarViewThreeDays": {
+    "description": "Calendar screen: the switch segment that shows three days side by side."
+  },
+  "calendarPreviousDays": "Previous 3 days",
+  "@calendarPreviousDays": {
+    "description": "Tooltip on the left arrow of the 3-day view: navigates to the previous 3 days."
+  },
+  "calendarNextDays": "Next 3 days",
+  "@calendarNextDays": {
+    "description": "Tooltip on the right arrow of the 3-day view: navigates to the next 3 days."
+  },
+  "calendarChooseDay": "{days}, choose a day",
+  "@calendarChooseDay": {
+    "description": "Screen-reader label of the 3 days view's title, a button that opens a day picker. {days} is the range shown, e.g. 'Oct 21 – Oct 23'.",
+    "placeholders": {
+      "days": { "type": "String" }
+    }
+  },
+  "calendarFree": "Free · {duration}",
+  "@calendarFree": {
+    "description": "Free time of an hour or more between two events, in the day under the month and in the day sheet: 'Free · 4 h 30'. {duration} is like '4 h 30' (calendarHours or calendarHoursMinutes).",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+  "calendarFreeUntil": "Free until {time}",
+  "@calendarFreeUntil": {
+    "description": "Today's free time from now to the next event, in the day under the month and in the day sheet: 'Free until 7:00 PM'. {time} is the next event's start.",
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "calendarHours": "{hours} h",
+  "@calendarHours": {
+    "description": "Duration on a free time block, only the hour part: '4 h'. Shown when minutes are 0 or omitted. {hours} is an int.",
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "calendarHoursMinutes": "{hours} h {minutes}",
+  "@calendarHoursMinutes": {
+    "description": "Duration on a free time block, hours and minutes: '4 h 30'. {minutes} is a String, already 2 digits.",
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "String" }
+    }
+  },
+  "calendarCardSemantics": "{title}, {start} to {end}",
+  "@calendarCardSemantics": {
+    "description": "What a screen reader says for an event card: its title, then the time range, e.g. 'Team check-in, 2:00 PM to 3:00 PM'.",
+    "placeholders": {
+      "title": { "type": "String" },
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
   "calendarNothingPlanned": "Nothing planned",
   "@calendarNothingPlanned": {
     "description": "Shown under the selected day on the Calendar screen when it has no event and no task."
@@ -2830,7 +2887,7 @@
   },
   "calendarPeopleSummary": "{count, plural, =1{One person to follow up} other{{count} people to follow up}}",
   "@calendarPeopleSummary": {
-    "description": "The folded People block under a day in the Calendar: how many people are due to be followed up that day. Tapping it shows them.",
+    "description": "The folded People block under a day in the Calendar, and today's free time after now in the day under the month and the day sheet: how many people are due to be followed up that day. Tapping it shows them.",
     "placeholders": {
       "count": { "type": "int" }
     }
@@ -2840,6 +2897,13 @@
     "description": "A person's row in the Calendar's People block when more than one thing is due with them that day: the first one, then how many more.",
     "placeholders": {
       "reason": { "type": "String", "example": "Book the unboxing call" },
+      "count": { "type": "int" }
+    }
+  },
+  "calendarOpenTasks": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@calendarOpenTasks": {
+    "description": "The phone and tablet Calendar's 3 days and week grids, in the strip under a day's heading: how many open tasks are due that day. Tapping it opens the day. In a narrow column only the number shows.",
+    "placeholders": {
       "count": { "type": "int" }
     }
   },

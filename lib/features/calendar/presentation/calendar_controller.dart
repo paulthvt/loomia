@@ -215,17 +215,49 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
   }
 }
 
-/// The Calendar's two views.
-enum CalendarMode { month, week }
+/// The Calendar's views.
+enum CalendarMode { month, threeDays, week }
 
 /// The view, the month the grid shows (its 1st) and the selected day, both
-/// local midnights. In week view, [month] is the selected day's.
-typedef CalendarSelection = ({CalendarMode mode, DateTime month, DateTime day});
+/// local midnights. In week view, [month] is the selected day's. [from] is the
+/// first day of the 3-day page; equals [day] outside 3 days mode.
+typedef CalendarSelection = ({
+  CalendarMode mode,
+  DateTime month,
+  DateTime day,
+  DateTime from,
+});
+
+/// The days shown in the calendar grid. 3 days mode: [from] to [from]+2.
+/// Week mode: the 7 days of [day]'s week. Month mode: whole weeks of [month].
+List<DateTime> shownDays(CalendarSelection s, int firstDayOfWeek) {
+  switch (s.mode) {
+    case CalendarMode.threeDays:
+      return [
+        for (var i = 0; i < 3; i++)
+          DateTime(s.from.year, s.from.month, s.from.day + i),
+      ];
+    case CalendarMode.week:
+    case CalendarMode.month:
+      return weekDays(s.day, firstDayOfWeek);
+  }
+}
+
+/// Calendar days between [a] and [b], counting from midnight to midnight.
+/// Across DST changes, local midnights are 23 h or 25 h apart, so
+/// a.difference(b).inDays gives 0 when it should be 1. UTC day arithmetic
+/// avoids this.
+int _calendarDays(DateTime a, DateTime b) => DateTime.utc(
+  a.year,
+  a.month,
+  a.day,
+).difference(DateTime.utc(b.year, b.month, b.day)).inDays;
 
 /// The day [delta] pages away from [from]'s. Month view: that month's 1st,
 /// or [today] in the current month. Week view: the same weekday, or
 /// [today] in the current week, weeks starting on [firstDayOfWeek] (0 is
-/// Sunday). Calendar dates, never 24-hour steps.
+/// Sunday). 3 days view: same offset from the new [from], or [today] when the
+/// new page shows it. Calendar dates, never 24-hour steps.
 DateTime shiftedDay(
   CalendarSelection from,
   int delta,
@@ -238,6 +270,21 @@ DateTime shiftedDay(
       return month.year == today.year && month.month == today.month
           ? today
           : month;
+    case CalendarMode.threeDays:
+      final newFrom = DateTime(
+        from.from.year,
+        from.from.month,
+        from.from.day + 3 * delta,
+      );
+      final offset = _calendarDays(from.day, from.from);
+      final newDay = DateTime(
+        newFrom.year,
+        newFrom.month,
+        newFrom.day + offset,
+      );
+      // If today is in the new page, select it.
+      final todayOffset = _calendarDays(today, newFrom);
+      return todayOffset >= 0 && todayOffset < 3 ? today : newDay;
     case CalendarMode.week:
       final day = from.day;
       final moved = DateTime(day.year, day.month, day.day + 7 * delta);
@@ -257,18 +304,57 @@ class CalendarSelector extends Notifier<CalendarSelection> {
   @override
   CalendarSelection build() => _on(today(), CalendarMode.month);
 
-  static CalendarSelection _on(DateTime day, CalendarMode mode) =>
-      (mode: mode, month: DateTime(day.year, day.month), day: day);
+  static CalendarSelection _on(
+    DateTime day,
+    CalendarMode mode, {
+    DateTime? from,
+  }) => (
+    mode: mode,
+    month: DateTime(day.year, day.month),
+    day: day,
+    from: from ?? day,
+  );
 
-  /// A day of a neighbouring month shows that month.
-  void select(DateTime day) => state = _on(day, state.mode);
+  /// A day of a neighbouring month shows that month. In 3 days mode, keeps
+  /// [from] when [day] is within the page.
+  void select(DateTime day) {
+    if (state.mode == CalendarMode.threeDays) {
+      final offset = _calendarDays(day, state.from);
+      state = offset >= 0 && offset < 3
+          ? _on(day, state.mode, from: state.from)
+          : _on(day, state.mode);
+    } else {
+      state = _on(day, state.mode);
+    }
+  }
 
-  /// Month or week; the selected day stays.
+  /// Month, 3 days, or week; the selected day stays.
   void setMode(CalendarMode mode) => state = _on(state.day, mode);
 
   /// The page [delta] away: see [shiftedDay].
-  void shift(int delta, {int firstDayOfWeek = 0}) =>
+  void shift(int delta, {int firstDayOfWeek = 0}) {
+    if (state.mode == CalendarMode.threeDays) {
+      final newFrom = DateTime(
+        state.from.year,
+        state.from.month,
+        state.from.day + 3 * delta,
+      );
+      final offset = _calendarDays(state.day, state.from);
+      final newDay = DateTime(
+        newFrom.year,
+        newFrom.month,
+        newFrom.day + offset,
+      );
+      // If today is in the new page, select it.
+      final now = today();
+      final todayOffset = _calendarDays(now, newFrom);
+      state = todayOffset >= 0 && todayOffset < 3
+          ? _on(now, state.mode, from: newFrom)
+          : _on(newDay, state.mode, from: newFrom);
+    } else {
       select(shiftedDay(state, delta, today(), firstDayOfWeek));
+    }
+  }
 
   /// [month] (its 1st) with its 1st selected, or today when it is the
   /// current month.
@@ -277,5 +363,6 @@ class CalendarSelector extends Notifier<CalendarSelection> {
     select(month.year == now.year && month.month == now.month ? now : month);
   }
 
-  void toToday() => select(today());
+  /// Today; in 3 days, a page starting on it, even when it already shows.
+  void toToday() => state = _on(today(), state.mode);
 }
