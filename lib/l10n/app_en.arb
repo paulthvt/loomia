@@ -2900,6 +2900,13 @@
       "count": { "type": "int" }
     }
   },
+  "calendarOpenTasks": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@calendarOpenTasks": {
+    "description": "The phone Calendar's 3 days and week grids, in the strip under a day's heading: how many open tasks are due that day. Tapping it opens the day. In a narrow column only the number shows.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "calendarPeopleLine": "{count, plural, =1{1 person} other{{count} people}}",
   "@calendarPeopleLine": {
     "description": "Quiet line at the top of a day in the desktop Calendar (month cell, week strip): how many people are due to be followed up that day.",

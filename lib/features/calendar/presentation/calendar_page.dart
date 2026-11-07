@@ -364,6 +364,8 @@ class CalendarView extends StatelessWidget {
       // Three segments on a phone: the tint says which, the tick would
       // squeeze the labels out ("Semaine" in French).
       showSelectedIcon: desktop,
+      // A phone's switch row is the switch alone.
+      expandedInsets: desktop ? null : EdgeInsets.zero,
       onSelectionChanged: (modes) => onMode?.call(modes.single),
     );
     // Desktop in 3 days shows a week: its arrows turn weeks.
@@ -429,18 +431,15 @@ class CalendarView extends StatelessWidget {
     final header = Row(
       children: [
         titleButton(theme.textTheme.headlineSmall),
+        // The switch row's room goes to the switch: Today is an icon.
+        IconButton(
+          onPressed: onToday,
+          tooltip: l10n.calendarToday,
+          icon: const Icon(Icons.today_rounded),
+        ),
         previous,
         next,
         ?accountAction,
-      ],
-    );
-    final switcher = Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      spacing: AppSpacing.sm,
-      children: [
-        // Shrinks before Today does, its labels cut with "…" if need be.
-        Flexible(child: modeSwitch),
-        todayButton,
       ],
     );
     return _Latest(
@@ -480,7 +479,7 @@ class CalendarView extends StatelessWidget {
               final top = [
                 header,
                 const SizedBox(height: AppSpacing.sm),
-                switcher,
+                modeSwitch,
                 const SizedBox(height: AppSpacing.md),
               ];
               if (mode != CalendarMode.month) {
@@ -648,7 +647,6 @@ class CalendarView extends StatelessWidget {
       onOpen: onOpen,
       tasks: tasks,
       onOpenTask: onOpenTask,
-      onStripTask: (task) => openDay(task.dueOn),
       onDay: (day, _) => openDay(day),
       onSelect: onSelect,
       people: people,
@@ -1411,7 +1409,7 @@ class _GapRow extends StatelessWidget {
         start: EventRow.timeWidth + AppSpacing.ms,
       ),
       child: CustomPaint(
-        painter: _DashedBorderPainter(
+        painter: DashedBorderPainter(
           color: colors.borderStrong,
           radius: AppRadii.md,
         ),
@@ -1461,47 +1459,6 @@ class _GapRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter({required this.color, required this.radius});
-
-  static const double _strokeWidth = 1.0;
-  static const double _dashWidth = 4.0;
-  static const double _dashSpace = 4.0;
-
-  final Color color;
-  final double radius;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _strokeWidth;
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Radius.circular(radius),
-    );
-
-    final path = Path()..addRRect(rrect);
-    final pathMetrics = path.computeMetrics();
-
-    for (final metric in pathMetrics) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final start = metric.getTangentForOffset(distance)!.position;
-        distance += _dashWidth;
-        final end = metric.getTangentForOffset(distance)!.position;
-        canvas.drawLine(start, end, paint);
-        distance += _dashSpace;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
-      color != oldDelegate.color || radius != oldDelegate.radius;
 }
 
 class _NowRow extends StatelessWidget {

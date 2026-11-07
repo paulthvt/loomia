@@ -522,6 +522,16 @@ class MonthTaskChip extends StatelessWidget {
   static TextStyle? _titleStyle(BuildContext context) =>
       MonthEventChip._titleStyle(context);
 
+  /// The hollow ring, in [color].
+  static Widget ring(Color color) => Container(
+    width: _ring,
+    height: _ring,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(color: color, width: _stroke),
+    ),
+  );
+
   static String _label(BuildContext context, Task task, bool showTime) =>
       switch (task.dueTime) {
         final time? when showTime =>
@@ -562,17 +572,7 @@ class MonthTaskChip extends StatelessWidget {
             child: Row(
               spacing: AppSpacing.sm,
               children: [
-                Container(
-                  width: _ring,
-                  height: _ring,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: done ? colors.textMuted : scheme.primary,
-                      width: _stroke,
-                    ),
-                  ),
-                ),
+                ring(done ? colors.textMuted : scheme.primary),
                 Expanded(
                   child: Text(
                     _label(context, task, showTime),
@@ -621,7 +621,6 @@ class WeekGrid extends StatelessWidget {
     this.scrollToMinute,
     this.onSelect,
     this.scrolls = true,
-    this.onStripTask,
     this.bottomInset = 0,
     super.key,
   }) : assert(scrolls || hourHeight != null, 'no own scroll needs an hour');
@@ -634,6 +633,9 @@ class WeekGrid extends StatelessWidget {
 
   /// The most of the window the task strip takes; past it, it scrolls.
   static const double _maxStrip = 1 / 3;
+
+  /// A [compact] column under this is narrow: numbers and whole words.
+  static const double _wideColumn = 60;
 
   /// The week's 7 days, as `weekDays`.
   final List<DateTime> days;
@@ -648,14 +650,16 @@ class WeekGrid extends StatelessWidget {
   /// Where the now line goes; none without it.
   final DateTime? now;
 
-  /// Who is due when (#378): "N people" in the strip, above the tasks.
+  /// Who is due when (#378): "N people" in the strip, above the tasks; on a
+  /// [compact] grid beside them, or, in a narrow column, when there are none.
   final PeopleAhead people;
   final void Function(CalendarEvent event) onOpen;
 
   /// A heading's tap, and a column's when there is no [onSelect].
   final OpenDay onDay;
 
-  /// Cards show their title only: the hour axis gives the time.
+  /// Cards show their title only: the hour axis gives the time. The strip
+  /// is one line: each day's open tasks counted, opening the day (#448).
   final bool compact;
 
   /// When equal columns would be under 90 dp, the selected day's takes what
@@ -683,9 +687,6 @@ class WeekGrid extends StatelessWidget {
   /// (a phone on its side); needs [hourHeight].
   final bool scrolls;
 
-  /// A task chip in the strip; none opens the task, as [onOpenTask].
-  final void Function(Task task)? onStripTask;
-
   /// Room under the hours, so the last one scrolls (or, fitting the height,
   /// ends) clear of what floats over the grid (a phone's add button).
   final double bottomInset;
@@ -710,7 +711,15 @@ class WeekGrid extends StatelessWidget {
               child: child,
             )
           : Expanded(child: child);
-      return _grid(context, cell, narrow: (day) => focusing && day != selected);
+      return _grid(
+        context,
+        cell,
+        narrow: (day) =>
+            compact &&
+            (focusing
+                ? day != selected
+                : available / days.length < _wideColumn),
+      );
     },
   );
 
@@ -772,7 +781,10 @@ class WeekGrid extends StatelessWidget {
               ],
             ),
           ),
-          if (untimed.any((day) => day.isNotEmpty) || due.any((n) => n > 0))
+          if (compact)
+            _phoneStrip(context, cell, untimed, due, narrow)
+          else if (untimed.any((day) => day.isNotEmpty) ||
+              due.any((n) => n > 0))
             ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.sizeOf(context).height * _maxStrip,
@@ -805,8 +817,7 @@ class WeekGrid extends StatelessWidget {
                               for (final task in day)
                                 MonthTaskChip(
                                   task: task,
-                                  onTap: () =>
-                                      (onStripTask ?? onOpenTask)?.call(task),
+                                  onTap: () => onOpenTask?.call(task),
                                 ),
                             ],
                           ),
@@ -919,6 +930,112 @@ class WeekGrid extends StatelessWidget {
   }
 
   Widget _fill(Widget child) => scrolls ? Expanded(child: child) : child;
+
+  /// [compact]'s strip, one line whatever the day holds: "○ 2 tasks" (in a
+  /// narrow column "○ 2"), open ones only, and "N people" where it fits.
+  Widget _phoneStrip(
+    BuildContext context,
+    Widget Function(DateTime day, Widget child) cell,
+    List<List<Task>> untimed,
+    List<int> due,
+    bool Function(DateTime day) narrow,
+  ) {
+    final open = [for (final day in untimed) day.where((t) => !t.done).length];
+    if (!open.any((n) => n > 0) && !due.any((n) => n > 0)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: gutter),
+          for (final (index, day) in days.indexed)
+            cell(
+              day,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                child: Builder(
+                  builder: (line) {
+                    void openDay() => onDay(day, _globalRect(line));
+                    return Row(
+                      spacing: AppSpacing.xs,
+                      children: [
+                        if (open[index] > 0)
+                          Flexible(
+                            child: _OpenTasksChip(
+                              count: open[index],
+                              short: narrow(day),
+                              onTap: openDay,
+                            ),
+                          ),
+                        if (due[index] > 0 &&
+                            (open[index] == 0 || !narrow(day)))
+                          Flexible(
+                            child: CalendarPeopleLine(
+                              count: due[index],
+                              onTap: openDay,
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A phone grid's strip chip (#448): a ring and the day's open tasks
+/// counted, "2 tasks", or [short] "2". Opens the day.
+class _OpenTasksChip extends StatelessWidget {
+  const _OpenTasksChip({
+    required this.count,
+    required this.short,
+    required this.onTap,
+  });
+
+  final int count;
+  final bool short;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = AppLocalizations.of(context).calendarOpenTasks(count);
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: MonthTaskChip._vertical,
+          ),
+          child: Row(
+            spacing: AppSpacing.xs,
+            children: [
+              MonthTaskChip.ring(Theme.of(context).colorScheme.primary),
+              Flexible(
+                child: Text(
+                  short ? '$count' : label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: MonthTaskChip._titleStyle(
+                    context,
+                  )?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// A desktop week column's heading: weekday, then the date in a circle,
@@ -1126,6 +1243,7 @@ class _DayColumn extends StatelessWidget {
                         final Task task => _WeekTask(
                           task: task,
                           onTap: () => onOpenTask?.call(task),
+                          narrow: narrow,
                         ),
                         final event as CalendarEvent => _WeekCard(
                           event: event,
@@ -1171,28 +1289,70 @@ class _DayColumn extends StatelessWidget {
 }
 
 /// A timed task on the desktop week's hour grid (#377): a card like
-/// [_WeekCard] around a [MonthTaskChip], its title only.
+/// [_WeekCard] around a [MonthTaskChip], its title only. In a [narrow]
+/// phone column (#448): no ring, the title in whole words, dashed around.
 class _WeekTask extends StatelessWidget {
-  const _WeekTask({required this.task, required this.onTap});
+  const _WeekTask({
+    required this.task,
+    required this.onTap,
+    this.narrow = false,
+  });
 
   final Task task;
   final VoidCallback onTap;
+  final bool narrow;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: LoomiaColors.of(context).surfaceDefault,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.sm),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: Padding(
-      padding: const EdgeInsetsDirectional.only(start: AppSpacing.sm),
-      child: Align(
-        alignment: AlignmentDirectional.topStart,
-        child: MonthTaskChip(task: task, onTap: onTap, showTime: false),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => narrow
+      ? Semantics(
+          button: true,
+          label: task.title,
+          excludeSemantics: true,
+          child: CustomPaint(
+            foregroundPainter: DashedBorderPainter(
+              color: LoomiaColors.of(context).borderStrong,
+              radius: AppRadii.sm,
+            ),
+            child: Material(
+              color: LoomiaColors.of(context).surfaceDefault,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: _WeekCard._vertical,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, box) => _WeekCard._title(
+                      context,
+                      task.title,
+                      box,
+                      task.done ? LoomiaColors.of(context).textMuted : null,
+                      narrow: true,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        )
+      : Material(
+          color: LoomiaColors.of(context).surfaceDefault,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.sm),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(start: AppSpacing.sm),
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              child: MonthTaskChip(task: task, onTap: onTap, showTime: false),
+            ),
+          ),
+        );
 }
 
 /// A desktop week card: time and title, a start bar while upcoming; done,
@@ -1225,7 +1385,13 @@ class _WeekCard extends StatelessWidget {
 
   /// [compact]'s title alone, on as many lines as the card holds; [narrow],
   /// at 10 px and whole words. Its semantics are the card's label.
-  Widget _title(BuildContext context, BoxConstraints box, Color? ink) {
+  static Widget _title(
+    BuildContext context,
+    String title,
+    BoxConstraints box,
+    Color? ink, {
+    required bool narrow,
+  }) {
     final style =
         (narrow
                 ? AppTypography.micro
@@ -1240,14 +1406,14 @@ class _WeekCard extends StatelessWidget {
       child: Text(
         narrow
             ? fitWords(
-                event.title,
+                title,
                 style: style,
                 width: box.maxWidth,
                 maxLines: lines,
                 scaler: MediaQuery.textScalerOf(context),
                 direction: Directionality.of(context),
               )
-            : event.title,
+            : title,
         maxLines: lines,
         overflow: narrow ? TextOverflow.clip : TextOverflow.ellipsis,
         style: style,
@@ -1305,7 +1471,15 @@ class _WeekCard extends StatelessWidget {
               ),
               child: LayoutBuilder(
                 builder: (context, box) {
-                  if (compact) return _title(context, box, ink);
+                  if (compact) {
+                    return _title(
+                      context,
+                      event.title,
+                      box,
+                      ink,
+                      narrow: narrow,
+                    );
+                  }
                   final lines =
                       ((box.maxHeight - _lineHeight(context, timeStyle)) /
                               _lineHeight(context, titleStyle))
@@ -1341,6 +1515,49 @@ class _WeekCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A dashed outline of [radius]: the timeline's free time, a narrow phone
+/// column's timed task.
+class DashedBorderPainter extends CustomPainter {
+  const DashedBorderPainter({required this.color, required this.radius});
+
+  static const double _strokeWidth = 1.0;
+  static const double _dashWidth = 4.0;
+  static const double _dashSpace = 4.0;
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth;
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final pathMetrics = path.computeMetrics();
+
+    for (final metric in pathMetrics) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final start = metric.getTangentForOffset(distance)!.position;
+        distance += _dashWidth;
+        final end = metric.getTangentForOffset(distance)!.position;
+        canvas.drawLine(start, end, paint);
+        distance += _dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(DashedBorderPainter oldDelegate) =>
+      color != oldDelegate.color || radius != oldDelegate.radius;
 }
 
 /// [child] in a vertical scroll that opens at [offset].

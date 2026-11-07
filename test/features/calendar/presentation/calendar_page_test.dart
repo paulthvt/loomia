@@ -254,7 +254,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Next month'));
     await tester.tap(find.byTooltip('Previous month'));
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.byTooltip('Today'));
 
     expect(shifts, [1, -1]);
     expect(backToToday, isTrue);

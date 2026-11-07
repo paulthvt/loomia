@@ -138,6 +138,25 @@ Common to both views:
 - **Tablet and wide phones**: when 7 equal columns would each be at least
   90 dp, all columns are equal and the focus rule is off (same widget).
 
+### B4 — device feedback (2026-11-07)
+
+Figma "B4 — Week, one-line task strip — mobile". Applies to the phone and
+tablet grids (3 days and week); desktop is unchanged.
+
+- **Strip, one line**: per day, open untimed tasks only, as one chip: a
+  ring and "2 tasks" (`calendarOpenTasks`) in a wide column (60 dp or
+  more: the focused day, every 3 days column), "2" in a narrow one. No
+  chip without open tasks; done tasks only in the day's sheet. "N people"
+  sits beside the chip in a wide column, and in a narrow one only when the
+  day has no open task. Fixed one-line height, no scroll. A tap opens the
+  day's sheet.
+- **Timed tasks**: wide column, ring and title as before; narrow column,
+  no ring, the title in whole words at 10 px (`fitWords`), a dashed
+  outline (the timeline's free-time dashes). A tap opens the task.
+- **Today as an icon**: `Icons.today_rounded` (tooltip "Today") in the
+  title row before ‹ ›; the switch row is the switch alone, full width,
+  so "Semaine" fits on a 360 dp phone. Desktop keeps its Today button.
+
 ## 3. D — the day as a timeline (mobile and tablet month)
 
 `DaySection` under the month changes its event list; tasks and the People

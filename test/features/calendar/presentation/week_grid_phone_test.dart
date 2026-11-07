@@ -1,9 +1,14 @@
+import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
+import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
+import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -49,6 +54,7 @@ void main() {
     Locale locale = const Locale('en'),
     bool use24 = true,
     List<CalendarEvent> more = const [],
+    List<Task> tasks = const [],
   }) async {
     tester.view
       ..physicalSize = size
@@ -67,6 +73,8 @@ void main() {
         home: WeekGrid(
           days: shown ?? days,
           events: [...events, ...more],
+          tasks: tasks,
+          onOpenTask: (_) {},
           selected: DateTime(2026, 10, 21),
           today: DateTime(2026, 10, 21),
           now: now,
@@ -88,6 +96,33 @@ void main() {
   }
 
   Finder header(String day) => find.bySemanticsLabel(RegExp('^$day'));
+
+  Task task(
+    String id,
+    DateTime on, {
+    bool done = false,
+    TaskTime? at,
+    String? title,
+  }) => Task(
+    id: id,
+    title: title ?? 'Task $id',
+    note: null,
+    dueOn: on,
+    doneOn: done ? on : null,
+    createdAt: DateTime(2026, 10),
+    dueTime: at,
+  );
+
+  /// 6 done and 2 open on [on].
+  List<Task> eight(DateTime on) => [
+    for (var i = 0; i < 6; i++) task('d$i$on', on, done: true),
+    task('o1$on', on),
+    task('o2$on', on),
+  ];
+
+  // The hours' top: under the strip.
+  double gridTop(WidgetTester tester) =>
+      tester.getTopLeft(find.byType(SingleChildScrollView).last).dy;
 
   testWidgets('mobile week: the selected column is wide, the others 40', (
     tester,
@@ -250,6 +285,180 @@ void main() {
       moreOrLessEquals(monday),
     );
   });
+
+  testWidgets('mobile week: one chip of open tasks a day, one line high', (
+    tester,
+  ) async {
+    final monday = DateTime(2026, 10, 19);
+    final wednesday = DateTime(2026, 10, 21);
+    await pumpGrid(tester, tasks: [task('one', wednesday)]);
+    final oneTask = gridTop(tester);
+    expect(find.text('1 task'), findsOneWidget);
+
+    await pumpGrid(tester, tasks: [...eight(monday), ...eight(wednesday)]);
+    // Narrow: the number; wide: the words.
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('2 tasks'), findsOneWidget);
+    expect(find.textContaining('Task '), findsNothing);
+    expect(gridTop(tester), moreOrLessEquals(oneTask));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mobile week: a day with only done tasks has no chip', (
+    tester,
+  ) async {
+    await pumpGrid(tester);
+    final none = gridTop(tester);
+    await pumpGrid(
+      tester,
+      tasks: [task('d', DateTime(2026, 10, 21), done: true)],
+    );
+    expect(find.textContaining('task'), findsNothing);
+    expect(find.textContaining('Task'), findsNothing);
+    expect(gridTop(tester), moreOrLessEquals(none));
+  });
+
+  testWidgets('mobile week: a strip chip opens its day', (tester) async {
+    final opened = <DateTime>[];
+    await pumpGrid(
+      tester,
+      onDay: (day, _) => opened.add(day),
+      tasks: eight(DateTime(2026, 10, 19)),
+    );
+    await tester.tap(find.text('2'));
+    expect(opened, [DateTime(2026, 10, 19)]);
+  });
+
+  testWidgets('3 days: one chip of open tasks a column, one line high', (
+    tester,
+  ) async {
+    final shown = days.sublist(1, 4);
+    final wednesday = DateTime(2026, 10, 21);
+    await pumpGrid(
+      tester,
+      shown: shown,
+      threeDays: true,
+      tasks: [task('one', wednesday)],
+    );
+    final oneTask = gridTop(tester);
+
+    await pumpGrid(
+      tester,
+      shown: shown,
+      threeDays: true,
+      tasks: eight(wednesday),
+    );
+    expect(find.text('2 tasks'), findsOneWidget);
+    expect(find.textContaining('Task '), findsNothing);
+    expect(gridTop(tester), moreOrLessEquals(oneTask));
+  });
+
+  testWidgets('mobile week: a narrow timed task is its title in whole words, '
+      'no ring; the wide one keeps its ring', (tester) async {
+    await pumpGrid(
+      tester,
+      tasks: [
+        task(
+          'n',
+          DateTime(2026, 10, 19),
+          at: (hour: 14, minute: 0),
+          title: 'Call the supplier',
+        ),
+      ],
+    );
+    expect(find.byType(MonthTaskChip), findsNothing);
+    expect(find.text('Call the supplier'), findsNothing);
+    final cut = tester
+        .widget<Text>(find.textContaining(RegExp(r'^Cal.*…$')))
+        .data!;
+    expect('Call the supplier'.startsWith(cut.replaceAll('…', '')), isTrue);
+
+    await pumpGrid(
+      tester,
+      tasks: [
+        task(
+          'w',
+          DateTime(2026, 10, 21),
+          at: (hour: 14, minute: 0),
+          title: 'Call the supplier',
+        ),
+      ],
+    );
+    expect(find.byType(MonthTaskChip), findsOneWidget);
+    expect(find.text('Call the supplier'), findsOneWidget);
+  });
+
+  Future<void> pumpView(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+    VoidCallback? onToday,
+    double width = 390,
+  }) async {
+    tester.view
+      ..physicalSize = Size(width, 844)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: locale,
+        localizationsDelegates: localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: AppTheme.light,
+        home: CalendarView(
+          events: const AsyncData([]),
+          selection: (
+            mode: CalendarMode.week,
+            month: DateTime(2026, 10),
+            day: DateTime(2026, 10, 28),
+            from: DateTime(2026, 10, 28),
+          ),
+          today: DateTime(2026, 10, 7),
+          onSelect: (_) {},
+          onShift: (_) {},
+          onToday: onToday ?? () {},
+          onOpen: (_) {},
+          onAdd: (_) {},
+          onAddTask: (_) {},
+          onRetry: () {},
+          tasks: const [],
+          onToggleTask: (_) {},
+          onOpenTask: (_) {},
+          onMode: (_) {},
+          accountAction: IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.person_rounded),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('phone: Today is an icon beside the arrows', (tester) async {
+    var today = 0;
+    await pumpView(tester, onToday: () => today++);
+    expect(find.text('Today'), findsNothing);
+    await tester.tap(find.byTooltip('Today'));
+    expect(today, 1);
+    expect(
+      tester.getCenter(find.byTooltip('Today')).dy,
+      moreOrLessEquals(tester.getCenter(find.byTooltip('Next week')).dy),
+    );
+  });
+
+  for (final width in const [390.0, 360.0]) {
+    testWidgets('phone in French at $width: the title row fits, "Semaine" '
+        'whole', (tester) async {
+      await pumpView(tester, locale: const Locale('fr'), width: width);
+      expect(tester.takeException(), isNull);
+      final week = find.text('Semaine');
+      expect(week, findsOneWidget);
+      expect(
+        tester.renderObject<RenderParagraph>(week).didExceedMaxLines,
+        isFalse,
+      );
+    });
+  }
 
   for (final locale in const [Locale('en', 'US'), Locale('fr')]) {
     testWidgets('the hour labels fit the gutter in $locale', (tester) async {

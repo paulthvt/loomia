@@ -245,7 +245,7 @@ void main() {
     expect(opened, ['timed']);
     expect(find.byType(BottomSheet), findsNothing);
 
-    await tester.tap(find.text('Task chip'));
+    await tester.tap(find.text('1 task'));
     await tester.pumpAndSettle();
     expect(opened, ['timed']);
     expect(find.byType(BottomSheet), findsOneWidget);
