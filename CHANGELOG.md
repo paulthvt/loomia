@@ -1,5 +1,21 @@
 # Changelog
 
+## [v2026.11.6](https://github.com/paulthvt/loomia/compare/v2026.11.5...v2026.11.6) (2026-11-07)
+
+### ✨ Features
+
+- **calendar:** 3 days, a focus week and the day as a timeline on the phone (#473) ([9ebddbf](https://github.com/paulthvt/loomia/commit/9ebddbfb13b01875eff3250187fa8a4117dd6779))
+- **bug-reports:** a title field, snackbars that close, room under the version (#468) ([9042bab](https://github.com/paulthvt/loomia/commit/9042bab32686aadbd3e918b0565c7652e0adafd2))
+
+### 🐛 Bug Fixes
+
+- **calendar:** an event's end follows its start (#471) ([94dbbfa](https://github.com/paulthvt/loomia/commit/94dbbfaf94435666450226cac8b1c27009a34d97))
+- **contacts:** put the workflow name under Change workflow (#470) ([f90e5da](https://github.com/paulthvt/loomia/commit/f90e5da74d1a1c7ea54a8e5af867e0bc2ec5eaf2))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#472) ([30414a3](https://github.com/paulthvt/loomia/commit/30414a3a16fb9bd209204fd411cf21de475e2ffa))
+
 ## [v2026.11.5](https://github.com/paulthvt/loomia/compare/v2026.11.4...v2026.11.5) (2026-11-05)
 
 ### ✨ Features
