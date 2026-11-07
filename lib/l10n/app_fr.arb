@@ -1715,5 +1715,93 @@
   "bugReportUndo": "Annuler",
   "@bugReportUndo": {
     "description": "Snackbar action that shows the bug button again right after it was turned off."
+  },
+  "bugReportTitleLabel": "Titre",
+  "@bugReportTitleLabel": {
+    "description": "Label of the short, required field in the bug report panel; it becomes the title of the GitHub issue, e.g. 'Plan button missing on Today'."
+  },
+  "calendarViewThreeDays": "3 jours",
+  "@calendarViewThreeDays": {
+    "description": "Calendar screen: the switch segment that shows three days side by side."
+  },
+  "calendarPreviousDays": "3 jours précédents",
+  "@calendarPreviousDays": {
+    "description": "Tooltip on the left arrow of the 3-day view: navigates to the previous 3 days."
+  },
+  "calendarNextDays": "3 jours suivants",
+  "@calendarNextDays": {
+    "description": "Tooltip on the right arrow of the 3-day view: navigates to the next 3 days."
+  },
+  "calendarChooseDay": "{days}, choisis un jour",
+  "@calendarChooseDay": {
+    "description": "Screen-reader label of the 3 days view's title, a button that opens a day picker. {days} is the range shown, e.g. 'Oct 21 – Oct 23'.",
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarFree": "Libre · {duration}",
+  "@calendarFree": {
+    "description": "Free time of an hour or more between two events, in the day under the month and in the day sheet: 'Free · 4 h 30'. {duration} is like '4 h 30' (calendarHours or calendarHoursMinutes).",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarFreeUntil": "Libre jusqu’à {time}",
+  "@calendarFreeUntil": {
+    "description": "Today's free time from now to the next event, in the day under the month and in the day sheet: 'Free until 7:00 PM'. {time} is the next event's start.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarHours": "{hours} h",
+  "@calendarHours": {
+    "description": "Duration on a free time block, only the hour part: '4 h'. Shown when minutes are 0 or omitted. {hours} is an int.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarHoursMinutes": "{hours} h {minutes}",
+  "@calendarHoursMinutes": {
+    "description": "Duration on a free time block, hours and minutes: '4 h 30'. {minutes} is a String, already 2 digits.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarCardSemantics": "{title}, {start} à {end}",
+  "@calendarCardSemantics": {
+    "description": "What a screen reader says for an event card: its title, then the time range, e.g. 'Team check-in, 2:00 PM to 3:00 PM'.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarOpenTasks": "{count, plural, =1{1 tâche} other{{count} tâches}}",
+  "@calendarOpenTasks": {
+    "description": "The phone and tablet Calendar's 3 days and week grids, in the strip under a day's heading: how many open tasks are due that day. Tapping it opens the day. In a narrow column only the number shows.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
