@@ -5,9 +5,11 @@ import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
+import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -55,6 +57,7 @@ void main() {
     bool use24 = true,
     List<CalendarEvent> more = const [],
     List<Task> tasks = const [],
+    PeopleAhead people = const PeopleAhead.none(),
   }) async {
     tester.view
       ..physicalSize = size
@@ -75,6 +78,7 @@ void main() {
           events: [...events, ...more],
           tasks: tasks,
           onOpenTask: (_) {},
+          people: people,
           selected: DateTime(2026, 10, 21),
           today: DateTime(2026, 10, 21),
           now: now,
@@ -456,6 +460,93 @@ void main() {
     tester.semantics.tap(find.semantics.byLabel('2 tasks'));
     expect(opened, [DateTime(2026, 10, 21)]);
     semantics.dispose();
+  });
+
+  /// Five people due on [on].
+  PeopleAhead fiveDue(DateTime on) => PeopleAhead(
+    people: [
+      for (var i = 0; i < 5; i++)
+        Person(
+          id: 'p$i',
+          name: 'Person $i',
+          stage: Stage.prospect,
+          stageSince: DateTime(2026, 9),
+          reminders: [
+            (
+              id: 'r$i',
+              text: 'Call back',
+              dueOn: on,
+              createdAt: DateTime(2026, 10),
+            ),
+          ],
+        ),
+    ],
+    workflows: const [],
+    today: DateTime(2026, 10, 19),
+  );
+
+  for (final threeDays in [false, true]) {
+    testWidgets('${threeDays ? '3 days' : 'mobile week at 358'}: tasks and '
+        'people together are two counts, whole', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final wednesday = DateTime(2026, 10, 21);
+      await pumpGrid(
+        tester,
+        shown: threeDays ? days.sublist(1, 4) : null,
+        threeDays: threeDays,
+        tasks: [task('a', wednesday)],
+        people: fiveDue(wednesday),
+      );
+      expect(tester.takeException(), isNull);
+      for (final count in ['1', '5']) {
+        expect(
+          tester
+              .renderObject<RenderParagraph>(find.text(count))
+              .didExceedMaxLines,
+          isFalse,
+          reason: count,
+        );
+      }
+      expect(find.byIcon(Icons.people_outline_rounded), findsOneWidget);
+      expect(find.text('1 task'), findsNothing);
+      expect(find.text('5 people'), findsNothing);
+      // Read in words, one button.
+      expect(
+        tester.getSemantics(
+          find.bySemanticsLabel(
+            RegExp('1 task.*5 people to follow up', dotAll: true),
+          ),
+        ),
+        isSemantics(isButton: true, hasTapAction: true),
+      );
+      semantics.dispose();
+    });
+  }
+
+  testWidgets('mobile week: a timed task beside an event at its time keeps '
+      'its title, no bare ring', (tester) async {
+    final wednesday = DateTime(2026, 10, 21);
+    await pumpGrid(
+      tester,
+      more: [
+        CalendarEvent(
+          id: 'same',
+          title: 'Team check-in',
+          startsAt: DateTime(2026, 10, 21, 14),
+          endsAt: DateTime(2026, 10, 21, 15),
+        ),
+      ],
+      tasks: [
+        task(
+          'call',
+          wednesday,
+          at: (hour: 14, minute: 0),
+          title: 'Call the supplier',
+        ),
+      ],
+    );
+    expect(find.byType(MonthTaskChip), findsNothing);
+    expect(find.textContaining(RegExp(r'^Cal')), findsOneWidget);
   });
 
   Future<void> pumpView(

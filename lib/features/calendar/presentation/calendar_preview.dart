@@ -144,6 +144,7 @@ final _done = CalendarEvent(
 
 final _today = DateTime(2026, 10, 7);
 final _selected = DateTime(2026, 10, 8);
+final _ninth = DateTime(2026, 10, 9);
 
 /// Five people as in the Figma: sorted by name.
 final _people = [
@@ -256,30 +257,31 @@ final _events = [
   ),
 ];
 
-/// An open (repeating, #376) and a done task on the 8th, above its events,
-/// and one at 14:00 (#377); one alone on the 10th (a hollow dot); one on the
+/// None on the 8th, so its timeline (free time, now, people due) shows
+/// within 844: an open (repeating, #376), a done one and one at 14:00
+/// (#377) on the 9th; one alone on the 10th (a hollow dot); one on the
 /// 21st, after its two events' dots.
 final _tasks = [
   Task(
     id: 't1',
     title: 'Order flyers',
     note: 'For the workshop',
-    dueOn: _selected,
+    dueOn: _ninth,
     doneOn: null,
     createdAt: DateTime(2026, 10, 1),
     repeat: (
       every: 1,
       unit: RepeatUnit.month,
-      from: _selected,
+      from: _ninth,
       until: null,
-      scheduledOn: _selected,
+      scheduledOn: _ninth,
     ),
   ),
   Task(
     id: 't2',
     title: 'Print the price list',
     note: null,
-    dueOn: _selected,
+    dueOn: _ninth,
     doneOn: _today,
     createdAt: DateTime(2026, 10, 2),
   ),
@@ -304,7 +306,7 @@ final _tasks = [
     id: 't5',
     title: 'Call the supplier',
     note: 'Ask about the 10 ml bottles',
-    dueOn: _selected,
+    dueOn: _ninth,
     doneOn: null,
     createdAt: DateTime(2026, 10, 5),
     dueTime: (hour: 14, minute: 0),

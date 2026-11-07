@@ -931,8 +931,8 @@ class WeekGrid extends StatelessWidget {
 
   Widget _fill(Widget child) => scrolls ? Expanded(child: child) : child;
 
-  /// [compact]'s strip, one line whatever the day holds: "○ 2 tasks" (in a
-  /// narrow column "○ 2"), open ones only, and "N people" where it fits.
+  /// [compact]'s strip, one line whatever the day holds: [_StripCounts],
+  /// open tasks only.
   Widget _compactStrip(
     BuildContext context,
     Widget Function(DateTime day, Widget child) cell,
@@ -955,32 +955,19 @@ class WeekGrid extends StatelessWidget {
               day,
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                child: Builder(
-                  builder: (line) {
-                    void openDay() => onDay(day, _globalRect(line));
-                    return Row(
-                      spacing: AppSpacing.xs,
-                      children: [
-                        if (open[index] > 0)
-                          Flexible(
-                            child: _OpenTasksChip(
-                              count: open[index],
-                              short: narrow(day),
-                              onTap: openDay,
-                            ),
-                          ),
-                        if (due[index] > 0 &&
-                            (open[index] == 0 || !narrow(day)))
-                          Flexible(
-                            child: CalendarPeopleLine(
-                              count: due[index],
-                              onTap: openDay,
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                ),
+                child: open[index] == 0 && due[index] == 0
+                    ? const SizedBox.shrink()
+                    : Builder(
+                        builder: (line) => _StripCounts(
+                          tasks: open[index],
+                          // A narrow column holds one: tasks first.
+                          people: narrow(day) && open[index] > 0
+                              ? 0
+                              : due[index],
+                          narrow: narrow(day),
+                          onTap: () => onDay(day, _globalRect(line)),
+                        ),
+                      ),
               ),
             ),
         ],
@@ -989,50 +976,127 @@ class WeekGrid extends StatelessWidget {
   }
 }
 
-/// A phone grid's strip chip (#448): a ring and the day's open tasks
-/// counted, "2 tasks", or [short] "2". Opens the day.
-class _OpenTasksChip extends StatelessWidget {
-  const _OpenTasksChip({
-    required this.count,
-    required this.short,
+/// A phone grid's strip, one day (#448): a ring and the open [tasks]
+/// counted, a people icon and the [people] due counted, one tap opening the
+/// day. Alone and with room ("2 tasks", "5 people"), in words; together or
+/// [narrow], the numbers. Read in words either way.
+class _StripCounts extends StatelessWidget {
+  const _StripCounts({
+    required this.tasks,
+    required this.people,
+    required this.narrow,
     required this.onTap,
   });
 
-  final int count;
-  final bool short;
+  final int tasks;
+  final int people;
+  final bool narrow;
   final VoidCallback onTap;
+
+  static bool _fits(
+    BuildContext context,
+    String text,
+    TextStyle? style,
+    double width,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout(maxWidth: math.max(width, 0));
+    final fits = !painter.didExceedMaxLines && painter.width <= width;
+    painter.dispose();
+    return fits;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final label = AppLocalizations.of(context).calendarOpenTasks(count);
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      // Excluded, the InkWell's tap is not the screen reader's: given here.
-      onTap: onTap,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: MonthTaskChip._vertical,
-          ),
-          child: Row(
-            spacing: AppSpacing.xs,
-            children: [
-              MonthTaskChip.ring(Theme.of(context).colorScheme.primary),
-              Flexible(
-                child: Text(
-                  short ? '$count' : label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: MonthTaskChip._titleStyle(
-                    context,
-                  )?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final taskStyle = MonthTaskChip._titleStyle(context)
+        ?.copyWith(color: scheme.onSurface);
+    final peopleStyle = CalendarPeopleLine._style(context);
+    final taskWords = l10n.calendarOpenTasks(tasks);
+    final peopleWords = l10n.calendarPeopleLine(people);
+    Widget item(String label, Widget? mark, String text, TextStyle? style) =>
+        Flexible(
+          child: Semantics(
+            label: label,
+            excludeSemantics: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: AppSpacing.xs,
+              children: [
+                ?mark,
+                Flexible(
+                  child: Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: style,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+        );
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        onTap: onTap,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: MonthTaskChip._vertical,
+            ),
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final alone = (tasks > 0) != (people > 0) && !narrow;
+                final words =
+                    alone &&
+                    (tasks > 0
+                        ? _fits(
+                            context,
+                            taskWords,
+                            taskStyle,
+                            box.maxWidth - MonthTaskChip._ring - AppSpacing.xs,
+                          )
+                        : _fits(
+                            context,
+                            peopleWords,
+                            peopleStyle,
+                            box.maxWidth,
+                          ));
+                return Row(
+                  spacing: AppSpacing.sm,
+                  children: [
+                    if (tasks > 0)
+                      item(
+                        taskWords,
+                        MonthTaskChip.ring(scheme.primary),
+                        words ? taskWords : '$tasks',
+                        taskStyle,
+                      ),
+                    if (people > 0)
+                      item(
+                        l10n.calendarPeopleSummary(people),
+                        words
+                            ? null
+                            : Icon(
+                                Icons.people_outline_rounded,
+                                size: peopleStyle?.fontSize,
+                                color: peopleStyle?.color,
+                              ),
+                        words ? peopleWords : '$people',
+                        peopleStyle,
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -1218,6 +1282,12 @@ class _DayColumn extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, box) {
               final width = box.maxWidth - 2 * _inset;
+              double cardWidth(int lanes) =>
+                  width / lanes - (lanes > 1 ? 2 : 0);
+              // A phone card under 60 dp, its column's or a shared lane:
+              // the narrow form (#448).
+              bool thin(int lanes) =>
+                  narrow || compact && cardWidth(lanes) < WeekGrid._wideColumn;
               return Stack(
                 children: [
                   for (var i = 1; i < hours; i++)
@@ -1241,18 +1311,18 @@ class _DayColumn extends StatelessWidget {
                         minCard,
                       ),
                       left: _inset + item.lane * width / item.lanes,
-                      width: width / item.lanes - (item.lanes > 1 ? 2 : 0),
+                      width: cardWidth(item.lanes),
                       child: switch (item.item) {
                         final Task task => _WeekTask(
                           task: task,
                           onTap: () => onOpenTask?.call(task),
-                          narrow: narrow,
+                          narrow: thin(item.lanes),
                         ),
                         final event as CalendarEvent => _WeekCard(
                           event: event,
                           onTap: () => onOpen(event),
                           compact: compact,
-                          narrow: narrow,
+                          narrow: thin(item.lanes),
                         ),
                       },
                     ),
