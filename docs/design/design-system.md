@@ -318,12 +318,13 @@ screens (Android, iOS, web) draw the same ring at the same 96px, so the hand-off
 to Flutter is invisible.
 
 **And the month review** (principle #5, *acknowledge, don't celebrate*). When
-the month just closed reached its own target, the ring on the review screen
-draws from where the month stood to closed (320ms, decelerate, no overshoot)
-and holds, closed. It plays once, on the first showing of that month's review,
-never again on a revisit. Nothing else on the screen moves, and a miss gets no
-motion at all, only its facts. Reduce motion shows the ring already closed,
-with the 120ms opacity change.
+the month just closed reached every target the user set, the ring on the
+review screen draws closed from the top, its check with it (320ms, decelerate,
+no overshoot), and holds, closed. It plays once, when the review shows right
+after closing; a closed month is never reviewed again. Nothing else on the
+screen moves, and a month with an objective still on its way gets no ring at
+all, only its facts. Reduce motion shows the ring already closed, with the
+120ms opacity change.
 
 ---
 
