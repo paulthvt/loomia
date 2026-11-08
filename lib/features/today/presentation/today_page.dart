@@ -211,6 +211,30 @@ class _TodayPageState extends ConsumerState<TodayPage> {
     }
   }
 
+  /// Not now on Catch up: out of it for a month, with Undo (#481). False
+  /// when the write failed, and said so.
+  Future<bool> _notNow(List<Person> people) async {
+    final l10n = AppLocalizations.of(context);
+    final owner = ref.read(accountProvider)?.email;
+    final ok = await writePeople(
+      context,
+      ref,
+      (controller) => controller.dismissCatchUp(people, today()),
+    );
+    if (ok && mounted) {
+      offerUndo(
+        context,
+        people.length == 1
+            ? l10n.todayCatchUpPutOff(people.single.name)
+            : l10n.todayCatchUpPutOffAll(people.length),
+        (container) => container
+            .read(peopleProvider(owner).notifier)
+            .dismissCatchUp(people, null),
+      );
+    }
+    return ok;
+  }
+
   /// Going, Followed up or Remove on a follow-up row: the row leaves once
   /// the events reload; a failure keeps it and says so.
   Future<void> _invite(
@@ -432,6 +456,7 @@ class _TodayPageState extends ConsumerState<TodayPage> {
           if (person.stage == Stage.team) person,
       ], today()),
       onCheckIn: (person) => unawaited(showLogActivity(context, person)),
+      onNotNow: _notNow,
       events: events,
       onOpenEvent: (event) => openEvent(context, event.id),
       onMarkDone: (event) {
@@ -554,6 +579,7 @@ class TodayView extends StatefulWidget {
     this.onRitual,
     this.checkIns = const [],
     this.onCheckIn,
+    this.onNotNow,
     this.events = noTodayEvents,
     this.onOpenEvent,
     this.onMarkDone,
@@ -624,6 +650,10 @@ class TodayView extends StatefulWidget {
 
   /// A check-in row's button: opens Log something.
   final void Function(Person person)? onCheckIn;
+
+  /// Not now on Catch up, for one row or the folded line's everyone; true
+  /// when it went through.
+  final Future<bool> Function(List<Person> people)? onNotNow;
 
   /// Today's events, events to mark, and steps due.
   final TodayEvents events;
@@ -713,6 +743,7 @@ class _TodayViewState extends State<TodayView> {
             widget.checkIns,
             onOpen: widget.onOpen,
             onCheckIn: widget.onCheckIn ?? (_) {},
+            onNotNow: widget.onNotNow ?? (_) async => false,
           ),
         ),
     ];
@@ -885,6 +916,7 @@ class _TodayViewState extends State<TodayView> {
                         widget.checkIns,
                         onOpen: widget.onOpen,
                         onCheckIn: widget.onCheckIn ?? (_) {},
+                        onNotNow: widget.onNotNow ?? (_) async => false,
                         collapsed: !_catchUpShown,
                         onToggle: () =>
                             setState(() => _catchUpOpen = !_catchUpShown),

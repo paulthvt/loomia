@@ -39,6 +39,9 @@ const graceDays = 30;
 /// Quiet from this many days without contact.
 const quietAfterDays = 30;
 
+/// Not now on Catch up leaves them out for this many days (#481).
+const notNowDays = 30;
+
 /// The day they were added to Loomia, on the device's calendar.
 DateTime addedOn(Person person) {
   final local = person.createdAt.toLocal();
@@ -52,10 +55,17 @@ bool joinedInLoomia(Person person) =>
 
 /// Who on [team] could use a catch-up on [today] (local midnight): moved to
 /// the team in Loomia and not talked to yet, or quiet for a month, once they
-/// have been in Loomia for a month. One row each, oldest first.
+/// have been in Loomia for a month, and not put off with Not now in the
+/// last month. One row each, oldest first.
 List<CheckIn> checkIns(List<Person> team, DateTime today) {
   final rows = <CheckIn>[];
   for (final person in team) {
+    // The reason stays the true one when they come back: Not now logs
+    // nothing.
+    if (person.catchUpDismissedOn case final dismissed?
+        when daysBetween(dismissed, today) < notNowDays) {
+      continue;
+    }
     final joined = joinedOn(person);
     final sinceJoining = daysBetween(joined, today);
     if (sinceJoining < newForDays &&

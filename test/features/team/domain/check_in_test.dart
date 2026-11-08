@@ -16,6 +16,7 @@ Person _member(
   DateTime? talked,
   DateTime? added,
   bool movedHere = false,
+  DateTime? notNow,
 }) => Person(
   id: name,
   name: name,
@@ -24,6 +25,7 @@ Person _member(
   stageSince: movedHere ? joined.add(const Duration(hours: 12)) : joined,
   createdAt: added ?? _ago(365),
   lastContactOn: talked,
+  catchUpDismissedOn: notNow,
 );
 
 void main() {
@@ -164,5 +166,26 @@ void main() {
       [for (final row in rows) row.person.name],
       ['Bruno', 'Émile', 'Zoé'],
     );
+  });
+
+  group('not now', () {
+    test('out for 29 days, back on day 30 with the true reason', () {
+      Person ana(int daysAgo) =>
+          _member('Ana', _ago(400), talked: _ago(90), notNow: _ago(daysAgo));
+
+      expect(checkIns([ana(0)], _today), isEmpty);
+      expect(checkIns([ana(29)], _today), isEmpty);
+      final [row] = checkIns([ana(30)], _today);
+      expect((row.since, row.days), (_ago(90), 90));
+    });
+
+    test('also puts off New', () {
+      expect(
+        checkIns([
+          _member('Ana', _ago(1), movedHere: true, notNow: _today),
+        ], _today),
+        isEmpty,
+      );
+    });
   });
 }

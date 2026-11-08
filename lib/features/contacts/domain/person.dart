@@ -55,6 +55,7 @@ class Person {
     this.loyaltySince,
     this.loyaltyDay,
     this.loyaltyCheckedFor,
+    this.catchUpDismissedOn,
     this.tagIds = const {},
     this.updatedAt,
     DateTime? createdAt,
@@ -169,6 +170,10 @@ class Person {
   /// Read-only: `check_loyalty` writes it.
   final DateTime? loyaltyCheckedFor;
 
+  /// The day the user last said Not now to catching up with them, local
+  /// midnight (#481). Catch up leaves them out for a month from it.
+  final DateTime? catchUpDismissedOn;
+
   /// Their tags' ids, from `person_tag` (#332). Read-only: written by
   /// `set_person_tags`. May hold a tag deleted on another device until the
   /// next load, so readers resolve ids through the account's tags.
@@ -236,6 +241,7 @@ class Person {
     loyaltySince: loyaltySince,
     loyaltyDay: loyaltyDay,
     loyaltyCheckedFor: loyaltyCheckedFor,
+    catchUpDismissedOn: catchUpDismissedOn,
     tagIds: tagIds,
     updatedAt: updatedAt,
   );
