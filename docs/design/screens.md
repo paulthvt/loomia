@@ -184,9 +184,17 @@ From the last 3 days of a month to the 5th of the next, a card at the top
 opens `/goals/close` ([#143](https://github.com/paulthvt/loomia/issues/143)):
 "How did September go?" (each counted objective against its plan, a check
 when reached, a neutral bar under it; team volume and rank typed), `Next`
-closes it, then "What are you aiming for in October?" starts from the last 3
-closed months. A month never planned skips to the plan; a closed month's plan
-no longer changes.
+closes it, then the month review
+([#475](https://github.com/paulthvt/loomia/issues/475)): every objective
+with a target, same layout whatever happened. All reached: "Bravo, you
+reached your goals!", the ring drawn closed (design system §7.4) and `YOU
+REACHED`. Some: "Well done on September", `YOU REACHED` then `ON ITS WAY`.
+None: "September is behind you" and `WHAT YOU BUILT`. Rank counts as reached
+at or above the one aimed for; a typed figure left empty reads "Not filled
+in". `Plan October` goes on to "What are you aiming for in October?", which
+starts from the last 3 closed months. A month planned with no targets skips
+the review (2 steps instead of 3); a month never planned skips to the plan; a
+closed month's plan no longer changes.
 
 ## 6. Auth — welcome, sign in, register, reset
 

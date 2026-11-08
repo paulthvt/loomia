@@ -2211,6 +2211,51 @@
   "@closeNothingBody": { "description": "Under 'Nothing to close or plan right now.'" },
   "closeBackToGoals": "Back to Goals",
   "@closeBackToGoals": { "description": "Button under 'Nothing to close or plan right now.'" },
+  "reviewTitleAll": "Bravo, you reached your goals!",
+  "@reviewTitleAll": { "description": "Title of the month review (step 2 of closing a month) when every objective the user set was reached. Warm, personal praise; informal." },
+  "reviewBodyAll": "Everything you set out to do in {month}, you did. You can be proud of yourself.",
+  "@reviewBodyAll": {
+    "description": "Under the title of the month review when every objective was reached. Loomia doesn't know the user's gender: use a wording with no gender agreement (in French, not 'fier' or 'fière': e.g. 'C'est une vraie réussite').",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "reviewTitleSome": "Well done on {month}",
+  "@reviewTitleSome": {
+    "description": "Title of the month review when some objectives were reached and others not. Praise, never a verdict.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "reviewBodySome": "You reached {reached} of your {total} goals. Be proud of those, the rest is already on its way.",
+  "@reviewBodySome": {
+    "description": "Under the title of the month review when some objectives were reached. reached is at least 1, total at least 2. No gender agreement in the translation.",
+    "placeholders": { "reached": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "reviewTitleNone": "{month} is behind you",
+  "@reviewTitleNone": {
+    "description": "Title of the month review when no objective was reached. Encouraging, turned forward; never 'missed' or 'failed'.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "reviewBodyNone": "Not the month you planned, and that's okay. Look at what you built anyway: it carries into {next}.",
+  "@reviewBodyNone": {
+    "description": "Under the title of the month review when no objective was reached. next is the month about to be planned.",
+    "placeholders": { "next": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "reviewPlan": "Plan {month}",
+  "@reviewPlan": {
+    "description": "Button of the month review: goes on to planning the next month.",
+    "placeholders": { "month": { "type": "DateTime", "format": "MMMM" } }
+  },
+  "reviewReached": "You reached",
+  "@reviewReached": { "description": "Month review section header, shown in capitals: the objectives that were reached." },
+  "reviewOnItsWay": "On its way",
+  "@reviewOnItsWay": { "description": "Month review section header, shown in capitals: the objectives not reached yet, when some others were. Forward-looking, never 'missed'." },
+  "reviewBuilt": "What you built",
+  "@reviewBuilt": { "description": "Month review section header, shown in capitals, when no objective was reached: what the user still did that month." },
+  "reviewNotFilledIn": "Not filled in",
+  "@reviewNotFilledIn": { "description": "Month review, right of the team volume or rank when the user left it empty at close." },
+  "reviewLevel": "{level}, aiming for {target}",
+  "@reviewLevel": {
+    "description": "Month review, right of the rank or level when it is below the one aimed for, e.g. 'Executive, aiming for Elite'. Ranks are proper nouns, not translated.",
+    "placeholders": { "level": { "type": "String" }, "target": { "type": "String" } }
+  },
   "goalLineToGo": "{model, select, doterra{{amount} PV to go · {days, plural, =0{last day} =1{1 day left} other{{days} days left}}} other{{amount} to go · {days, plural, =0{last day} =1{1 day left} other{{days} days left}}}}",
   "@goalLineToGo": {
     "description": "Today, under the hero: own volume left to reach the month's plan, and days left after today. dōTERRA: PV, not translated.",

@@ -78,6 +78,8 @@ void main() {
     'goals_plan_light': (const Size(390, 844), goalsPlanLight),
     'goals_plan_desktop_light': (const Size(1440, 900), goalsPlanDesktopLight),
     'goals_close_light': (const Size(390, 844), goalsCloseLight),
+    'goals_review_all_light': (const Size(390, 844), goalsReviewAllLight),
+    'goals_review_some_light': (const Size(390, 844), goalsReviewSomeLight),
     'contacts_mobile_light': (const Size(390, 844), contactsMobileLight),
     'contacts_mobile_dark': (const Size(390, 844), contactsMobileDark),
     'contact_mobile_light': (const Size(390, 844), contactMobileLight),

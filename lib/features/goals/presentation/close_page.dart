@@ -9,15 +9,18 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/goals/data/goals_repository.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
+import 'package:loomia/features/goals/domain/month_review.dart';
 import 'package:loomia/features/goals/presentation/close_form.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
+import 'package:loomia/features/goals/presentation/month_review.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The month-end ritual, full screen: step 1 closes the month (when it was
-/// planned and isn't closed yet), step 2 plans the next. The step is local
-/// state: closing can't be undone, so back on step 2 leaves.
+/// planned and isn't closed yet), step 2 looks back on it when it had
+/// targets (#475), the last step plans the next. The step is local state:
+/// closing can't be undone, so back after step 1 leaves.
 class ClosePage extends ConsumerStatefulWidget {
   const ClosePage({this.day, this.onDone, super.key});
 
@@ -38,6 +41,9 @@ class _ClosePageState extends ConsumerState<ClosePage> {
   /// What step 1 closed this visit; null before.
   MonthPlan? _closed;
 
+  /// Past the month review.
+  bool _reviewed = false;
+
   void _done() => (widget.onDone ?? () => backOr(context, Routes.goals))();
 
   @override
@@ -48,6 +54,18 @@ class _ClosePageState extends ConsumerState<ClosePage> {
     final provider = closingProvider((email: account?.email, day: _day));
     final closing = ref.watch(provider);
     final container = ProviderScope.containerOf(context, listen: false);
+    // A month with targets gets its review between closing and planning:
+    // known before closing, so step 1 already says "of 3".
+    final value = closing.value;
+    final closed = _closed;
+    final open = value?.closing;
+    final reviews = closed != null
+        ? goalsOf(closed, model).isNotEmpty
+        : value != null &&
+              value.ritual.closes &&
+              open != null &&
+              goalsOf(open, model).isNotEmpty;
+    final steps = reviews ? 3 : 2;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,6 +85,7 @@ class _ClosePageState extends ConsumerState<ClosePage> {
             CloseForm(
               closing: value,
               model: model,
+              steps: steps,
               onClose: ({teamVolume, level}) async {
                 final closed = await container
                     .read(goalsRepositoryProvider)
@@ -79,8 +98,17 @@ class _ClosePageState extends ConsumerState<ClosePage> {
                 if (mounted) setState(() => _closed = closed);
               },
             ),
+          AsyncValue(value: final value?)
+              when reviews && closed != null && !_reviewed =>
+            MonthReview(
+              closed: closed,
+              next: value.ritual.plan,
+              model: model,
+              onNext: () => setState(() => _reviewed = true),
+            ),
           AsyncValue(value: final value?) => PlanForm(
-            step: value.ritual.closes ? 2 : null,
+            step: value.ritual.closes ? steps : null,
+            steps: steps,
             month: (
               month: value.ritual.plan,
               plan: value.plans
