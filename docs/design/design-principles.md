@@ -45,10 +45,16 @@ own intent, never against other people.
 leaderboards, no ranks, no streaks that break, no trophies. Behind-pace uses the
 warm secondary, not error red.
 
-*The one exception:* a rank, when the user's company has ranks (dōTERRA), is a
-private target the user sets for themselves — "Aiming for Elite" — or a fact
+*First exception, ranks:* a rank, when the user's company has ranks (dōTERRA),
+is a private target the user sets for themselves — "Aiming for Elite" — or a fact
 they write on a team member's page. Never a badge, never shown outside Goals
 and that page, never compared or ranked against anyone.
+
+*Second exception, acknowledge, don't celebrate:* when a month closes,
+reaching your own target may be marked once — the ring draws closed and holds.
+The month review has the same screen, tone and layout for a miss; only the
+facts differ. No confetti, no sound, no loop, no shareable card. A celebration
+for a hit would make the quiet screen for a miss read as a verdict.
 
 ## 6. Structure from space and type, not from chrome
 

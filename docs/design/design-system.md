@@ -305,7 +305,8 @@ Bounce, overshoot, elastic and spring curves. Scale above 1.02. Parallax.
 Looping animation of any kind except an indeterminate loader. Staggered or
 sequenced entrances — a list appears at once, or it is not ready. Page-load
 fades on content that was already there. Any motion that reads as celebration:
-counting numbers up, filling a ring, confetti, a streak (principle #5).
+counting numbers up, filling a ring (except the month review below), confetti, a
+streak (principle #5).
 
 **One exception: the launch splash** (`lib/app/launch_splash.dart`). The ring
 of the mark on brand ochre, the three dots growing in smallest first (400ms
@@ -315,6 +316,15 @@ It is a brand moment on cold start, not UI, and it is the only staggered
 entrance in the product. Reduce motion leaves only the fade. The native launch
 screens (Android, iOS, web) draw the same ring at the same 96px, so the hand-off
 to Flutter is invisible.
+
+**And the month review** (principle #5, *acknowledge, don't celebrate*). When
+the month just closed reached every target the user set, the ring on the
+review screen draws closed from the top, its check with it (320ms, decelerate,
+no overshoot), and holds, closed. It plays once, when the review shows right
+after closing; a closed month is never reviewed again. Nothing else on the
+screen moves, and a month with an objective still on its way gets no ring at
+all, only its facts. Reduce motion shows the ring already closed, with the
+120ms opacity change.
 
 ---
 
