@@ -9,6 +9,7 @@ import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/close_form.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/features/goals/presentation/goals_page.dart';
+import 'package:loomia/features/goals/presentation/month_review.dart';
 import 'package:loomia/features/goals/presentation/plan_page.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -83,7 +84,70 @@ Widget goalsCloseLight() => _app(
           plans: _past,
         ),
         model: BusinessModel.doterra,
+        steps: 3,
         onClose: ({teamVolume, level}) async {},
+      ),
+    ),
+  ),
+);
+
+@Preview(
+  group: 'Goals',
+  name: 'Review, all reached — light',
+  size: Size(390, 844),
+)
+Widget goalsReviewAllLight() => _review(
+  MonthPlan(
+    month: _september,
+    ownVolumeTarget: 2800,
+    prospectsTarget: 8,
+    customersTarget: 6,
+    levelTarget: 'Elite',
+    actual: const Progress(
+      ownVolume: 2850,
+      prospects: 8,
+      customers: 6,
+      teamMembers: 1,
+      loyalty: 2,
+    ),
+    levelActual: 'Elite',
+    closedAt: DateTime(2026, 10),
+  ),
+);
+
+@Preview(
+  group: 'Goals',
+  name: 'Review, some reached — light',
+  size: Size(390, 844),
+)
+Widget goalsReviewSomeLight() => _review(
+  MonthPlan(
+    month: _september,
+    ownVolumeTarget: 2800,
+    prospectsTarget: 8,
+    customersTarget: 6,
+    teamMembersTarget: 1,
+    loyaltyTarget: 2,
+    actual: const Progress(
+      ownVolume: 2650,
+      prospects: 7,
+      customers: 6,
+      teamMembers: 1,
+      loyalty: 2,
+    ),
+    closedAt: DateTime(2026, 10),
+  ),
+);
+
+Widget _review(MonthPlan closed) => _app(
+  AppTheme.light,
+  Scaffold(
+    body: SafeArea(
+      child: MonthReview(
+        closed: closed,
+        next: DateTime(2026, 10),
+        model: BusinessModel.doterra,
+        onNext: () {},
       ),
     ),
   ),

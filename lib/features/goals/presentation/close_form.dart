@@ -23,8 +23,12 @@ class CloseForm extends StatefulWidget {
     required this.closing,
     required this.model,
     required this.onClose,
+    this.steps = 2,
     super.key,
   });
+
+  /// 3 when the month review follows (the month had targets).
+  final int steps;
 
   /// With `closing` and `done` set: there's a planned month to close.
   final Closing closing;
@@ -87,35 +91,15 @@ class _CloseFormState extends State<CloseForm> {
     final done = widget.closing.done!;
     final failure = _failure;
 
-    Widget row(String label, String value, num doneValue, num? target) {
-      final reached = target != null && doneValue >= target;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: AppSpacing.xs,
-        children: [
-          Row(
-            spacing: AppSpacing.xs,
-            children: [
-              Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
-              Text(
-                value,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.textMuted,
-                ),
-              ),
-              if (reached)
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: theme.colorScheme.primary,
-                  semanticLabel: l10n.closeReached,
-                ),
-            ],
-          ),
-          if (target != null && target > 0)
-            LoomiaProgressBar(value: (doneValue / target).clamp(0, 1)),
-        ],
-      );
-    }
+    Widget row(String label, String value, num doneValue, num? target) =>
+        ResultRow(
+          label: label,
+          value: value,
+          reached: target != null && doneValue >= target,
+          progress: target != null && target > 0
+              ? (doneValue / target).clamp(0, 1).toDouble()
+              : null,
+        );
 
     Widget count(String label, int doneValue, int? target) => row(
       label,
@@ -140,11 +124,11 @@ class _CloseFormState extends State<CloseForm> {
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
               LoomiaTopBar(
-                eyebrow: l10n.closeStep(1, 2),
+                eyebrow: l10n.closeStep(1, widget.steps),
                 title: l10n.closeTitle(widget.closing.ritual.close),
                 gap: AppSpacing.sm,
               ),
-              const StepBar(step: 1),
+              StepBar(step: 1, total: widget.steps),
               const SizedBox(height: AppSpacing.md),
               Text(
                 l10n.closeIntroFinal,
@@ -266,6 +250,64 @@ class _CloseFormState extends State<CloseForm> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// One objective against its plan: label, figures, a check when reached, and
+/// a neutral bar when there's a target. Shared by closing and the review.
+class ResultRow extends StatelessWidget {
+  const ResultRow({
+    required this.label,
+    required this.value,
+    required this.reached,
+    this.progress,
+    super.key,
+  });
+
+  final String label;
+  final String value;
+  final bool reached;
+
+  /// 0 to 1; no bar when null.
+  final double? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final progress = this.progress;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.xs,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) => Row(
+            spacing: AppSpacing.xs,
+            children: [
+              Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
+              // Its own width, up to half the row: a long value ("Executive,
+              // aiming for Elite") wraps instead of overflowing.
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth / 2),
+                child: Text(
+                  value,
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: LoomiaColors.of(context).textMuted,
+                  ),
+                ),
+              ),
+              if (reached)
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: theme.colorScheme.primary,
+                  semanticLabel: AppLocalizations.of(context).closeReached,
+                ),
+            ],
+          ),
+        ),
+        if (progress != null) LoomiaProgressBar(value: progress),
+      ],
     );
   }
 }

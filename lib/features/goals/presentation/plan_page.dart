@@ -75,14 +75,16 @@ class PlanForm extends StatefulWidget {
     required this.onSave,
     required this.onSaved,
     this.step,
+    this.steps = 2,
     this.reminder = false,
     super.key,
   });
 
   final GoalsMonth month;
 
-  /// In the close-and-plan flow: which step this is.
+  /// In the close-and-plan flow: which step this is, of [steps].
   final int? step;
+  final int steps;
 
   /// Above Save: the month-end push offer (`RitualReminder`), applied once
   /// the plan is saved.
@@ -279,14 +281,14 @@ class _PlanFormState extends State<PlanForm> {
             children: [
               LoomiaTopBar(
                 eyebrow: switch (widget.step) {
-                  final step? => l10n.closeStep(step, 2),
+                  final step? => l10n.closeStep(step, widget.steps),
                   null => null,
                 },
                 title: l10n.planTitle(widget.month.month),
                 gap: AppSpacing.sm,
               ),
               if (widget.step case final step?) ...[
-                StepBar(step: step),
+                StepBar(step: step, total: widget.steps),
                 const SizedBox(height: AppSpacing.md),
               ],
               Text(
