@@ -74,6 +74,7 @@ Person withServerFields(
     loyaltySince: person.loyaltySince,
     loyaltyDay: person.loyaltyDay,
     loyaltyCheckedFor: person.loyaltyCheckedFor,
+    catchUpDismissedOn: person.catchUpDismissedOn,
     tagIds: person.tagIds,
     updatedAt: person.updatedAt,
   );
@@ -117,6 +118,7 @@ Person withLastContact(Person person, DateTime? day) => Person(
   loyaltySince: person.loyaltySince,
   loyaltyDay: person.loyaltyDay,
   loyaltyCheckedFor: person.loyaltyCheckedFor,
+  catchUpDismissedOn: person.catchUpDismissedOn,
   reminders: person.reminders,
   updatedAt: person.updatedAt,
 );

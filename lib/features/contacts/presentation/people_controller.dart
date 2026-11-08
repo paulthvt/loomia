@@ -142,6 +142,12 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     if (ref.mounted) ref.invalidate(historyProvider(person.id));
   }
 
+  /// Not now on Catch up for [people], on [day]: out of it for a month
+  /// (#481). Null takes it back, for Undo: anyone shown had none in the last
+  /// month, so none at all reads the same.
+  Future<void> dismissCatchUp(List<Person> people, DateTime? day) async =>
+      _replaceAll(await _repository.dismissCatchUp(_ids(people), day));
+
   /// Their LRP renews on [day] of the month.
   Future<void> setLoyaltyDay(Person person, int day) async =>
       _replace(await _repository.setLoyaltyDay(person.id, day));

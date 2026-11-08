@@ -482,13 +482,80 @@ void main() {
     // Nothing else is due: the section is open.
     expect(find.text('CATCH UP'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Log something with Bea'));
+    await tester.tap(find.text('Log something'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField), 'Welcome call');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(find.text('CATCH UP'), findsNothing);
+  });
+
+  group('Not now on Catch up', () {
+    /// On the team for a year, quiet for two months.
+    Person quiet(String id, String name) => Person(
+      id: id,
+      name: name,
+      stage: Stage.team,
+      stageSince: addDays(today(), -365).toUtc(),
+      createdAt: addDays(today(), -365).toUtc(),
+      lastContactOn: addDays(today(), -60),
+    );
+
+    testWidgets('a row: out for a month, Undo brings it back', (tester) async {
+      final people = FakePeopleRepository([quiet('bea', 'Bea Martin')]);
+      await pumpLoomia(tester, size: _tallPhone, people: people);
+
+      await tester.tap(find.text('Not now'));
+      await tester.pumpAndSettle();
+      expect(people.calls, contains('dismissCatchUp(bea, ${today()})'));
+      expect(find.text('CATCH UP'), findsNothing);
+      expect(
+        find.text('Bea Martin is back in Catch up in a month'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+      expect(people.calls, contains('dismissCatchUp(bea, null)'));
+      expect(find.text('CATCH UP'), findsOneWidget);
+    });
+
+    testWidgets('the folded line puts off everyone in it', (tester) async {
+      final people = FakePeopleRepository([
+        quiet('bea', 'Bea Martin'),
+        quiet('cyr', 'Cyril Roux'),
+      ]);
+      await pumpLoomia(tester, size: _tallPhone, people: people);
+      await tester.tap(find.text('Hide'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Not now'));
+      await tester.pumpAndSettle();
+      expect(people.calls, contains('dismissCatchUp(bea, cyr, ${today()})'));
+      expect(find.text('CATCH UP'), findsNothing);
+      expect(
+        find.text('2 people are back in Catch up in a month'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a swipe puts the row off; a failure brings it back', (
+      tester,
+    ) async {
+      final people = FakePeopleRepository([quiet('bea', 'Bea Martin')]);
+      await pumpLoomia(tester, size: _tallPhone, people: people);
+
+      people.failWith = PeopleFailure.network;
+      await tester.drag(find.text('Bea Martin'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Bea Martin'), findsOneWidget);
+
+      people.failWith = null;
+      await tester.drag(find.text('Bea Martin'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('CATCH UP'), findsNothing);
+    });
   });
 
   testWidgets('Mark who was there with people loading opens event page', (

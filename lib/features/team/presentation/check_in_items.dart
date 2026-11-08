@@ -5,7 +5,6 @@ import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
-import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -14,11 +13,17 @@ import 'package:material_ui/material_ui.dart';
 /// Nothing when [due] is empty. With [onToggle] (Today's single column) the
 /// header says Show or Hide and, [collapsed], one summary line stands in for
 /// the rows; without it (the desktop side column) the rows always show.
+///
+/// [onNotNow] puts people off for a month (#481): a row's Not now, a swipe on
+/// a row where there is [onToggle] (a phone or tablet), or the summary's Not
+/// now for all of them. It answers whether the write went through, so a
+/// swiped row comes back when it did not.
 List<Widget> checkInItems(
   AppLocalizations l10n,
   List<CheckIn> due, {
   required void Function(Person person) onOpen,
   required void Function(Person person) onCheckIn,
+  required Future<bool> Function(List<Person> people) onNotNow,
   bool collapsed = false,
   VoidCallback? onToggle,
 }) => [
@@ -38,27 +43,88 @@ List<Widget> checkInItems(
         names: [for (final checkIn in due) checkIn.person.name],
         label: l10n.todayCatchUpSummary(due.length),
         onTap: onToggle ?? () {},
+        trailing: TextButton(
+          onPressed: () => onNotNow([for (final c in due) c.person]),
+          child: Text(l10n.todayCatchUpNotNow),
+        ),
       ),
       rows: [
         for (final checkIn in due)
-          ActionItem(
-            name: checkIn.person.name,
-            photoPath: checkIn.person.photoPath,
-            reason: checkInReason(l10n, checkIn),
-            chip: DateChip(switch (checkIn.reason) {
-              CheckInReason.isNew => l10n.teamChipNew,
-              CheckInReason.quiet => l10n.teamChipQuiet(
-                checkIn.days ~/ quietAfterDays,
+          _swipeable(
+            checkIn.person,
+            enabled: onToggle != null,
+            onNotNow: onNotNow,
+            label: l10n.todayCatchUpNotNow,
+            child: Builder(
+              builder: (context) => ActionItem(
+                name: checkIn.person.name,
+                photoPath: checkIn.person.photoPath,
+                reason: checkInReason(l10n, checkIn),
+                chip: DateChip(switch (checkIn.reason) {
+                  CheckInReason.isNew => l10n.teamChipNew,
+                  CheckInReason.quiet => l10n.teamChipQuiet(
+                    checkIn.days ~/ quietAfterDays,
+                  ),
+                }),
+                onOpen: () => onOpen(checkIn.person),
+                actions: [
+                  FilledButton.tonal(
+                    style: AppTheme.tonal(context),
+                    onPressed: () => onCheckIn(checkIn.person),
+                    child: Text(l10n.contactLogSomething),
+                  ),
+                  TextButton(
+                    onPressed: () => onNotNow([checkIn.person]),
+                    child: Text(l10n.todayCatchUpNotNow),
+                  ),
+                ],
               ),
-            }),
-            onOpen: () => onOpen(checkIn.person),
-            onResolve: () => onCheckIn(checkIn.person),
-            resolveLabel: l10n.logTitle(firstName(checkIn.person)),
+            ),
           ),
       ],
     ),
   ],
 ];
+
+/// A swipe either way says Not now; the row slides back if it failed.
+Widget _swipeable(
+  Person person, {
+  required bool enabled,
+  required Future<bool> Function(List<Person> people) onNotNow,
+  required String label,
+  required Widget child,
+}) => !enabled
+    ? child
+    : Dismissible(
+        key: ValueKey('catch-up-${person.id}'),
+        confirmDismiss: (_) => onNotNow([person]),
+        background: _SwipeBackground(label, Alignment.centerLeft),
+        secondaryBackground: _SwipeBackground(label, Alignment.centerRight),
+        child: child,
+      );
+
+/// What a swiped row uncovers: Not now, on the side it leaves from.
+class _SwipeBackground extends StatelessWidget {
+  const _SwipeBackground(this.label, this.alignment);
+
+  final String label;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: LoomiaColors.of(context).surfaceSunken,
+      borderRadius: BorderRadius.circular(AppRadii.lg),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Align(
+        alignment: alignment,
+        child: Text(label, style: Theme.of(context).textTheme.labelLarge),
+      ),
+    ),
+  );
+}
 
 /// A folded section's body (Catch up, the Calendar's People block): the
 /// summary line, or the rows. The height eases between the two, so what's
@@ -98,6 +164,7 @@ class PeopleSummary extends StatelessWidget {
     required this.names,
     required this.label,
     required this.onTap,
+    this.trailing,
     super.key,
   });
 
@@ -105,13 +172,15 @@ class PeopleSummary extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
+  /// A button at the line's end, outside its tap: Catch up's Not now.
+  final Widget? trailing;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: label,
-    excludeSemantics: true,
-    child: Card(
-      clipBehavior: Clip.antiAlias,
+  Widget build(BuildContext context) {
+    final line = Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
         // As on the rows it stands for.
@@ -132,8 +201,22 @@ class PeopleSummary extends StatelessWidget {
           ),
         ),
       ),
-    ),
-  );
+    );
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: trailing == null
+          ? line
+          : Row(
+              children: [
+                Expanded(child: line),
+                Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                  child: trailing,
+                ),
+              ],
+            ),
+    );
+  }
 }
 
 /// Why [checkIn]'s member is worth catching up with, in plain words.

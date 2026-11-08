@@ -1,11 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/team/presentation/check_in_items.dart';
+import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/app_localizations_en.dart';
+import 'package:material_ui/material_ui.dart';
 
 final _l10n = AppLocalizationsEn();
 final _today = DateTime(2026, 10, 8);
@@ -24,8 +27,9 @@ String _reason({DateTime? talked, required DateTime joined, DateTime? added}) {
   return checkInReason(_l10n, row);
 }
 
-String _chip(int days) {
-  final [header, row] = checkInItems(
+/// The chip of a quiet row, [days] quiet, as shown.
+Future<String> _chip(WidgetTester tester, int days) async {
+  final [header, body] = checkInItems(
     _l10n,
     [
       (
@@ -42,10 +46,17 @@ String _chip(int days) {
     ],
     onOpen: (_) {},
     onCheckIn: (_) {},
+    onNotNow: (_) async => true,
   );
   expect(header, isA<SectionHeader>());
-  final item = (row as FoldBody).rows.single as ActionItem;
-  return (item.chip! as DateChip).label;
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: AppTheme.light,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      home: Scaffold(body: body),
+    ),
+  );
+  return tester.widget<DateChip>(find.byType(DateChip)).label;
 }
 
 void main() {
@@ -66,9 +77,9 @@ void main() {
     );
   });
 
-  test('the chip counts whole months', () {
-    expect(_chip(30), 'Quiet a month');
-    expect(_chip(59), 'Quiet a month');
-    expect(_chip(60), 'Quiet 2 months');
+  testWidgets('the chip counts whole months', (tester) async {
+    expect(await _chip(tester, 30), 'Quiet a month');
+    expect(await _chip(tester, 59), 'Quiet a month');
+    expect(await _chip(tester, 60), 'Quiet 2 months');
   });
 }

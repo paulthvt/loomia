@@ -423,6 +423,21 @@ class FakePeopleRepository implements PeopleRepository {
   }
 
   @override
+  Future<List<Person>> dismissCatchUp(List<String> ids, DateTime? day) async {
+    await _record('dismissCatchUp(${ids.join(', ')}, $day)');
+    return [
+      for (final id in ids)
+        if (store[id] case final before?)
+          _with(
+            before,
+            place: before.place,
+            pausedAt: before.pausedAt,
+            catchUpDismissedOn: () => day,
+          ),
+    ];
+  }
+
+  @override
   Future<Person> setLoyaltyDay(String id, int day) async {
     await _record('setLoyaltyDay($id, $day)');
     final before = store[id]!;
@@ -566,6 +581,7 @@ class FakePeopleRepository implements PeopleRepository {
     DateTime? Function()? loyaltySince,
     int? Function()? loyaltyDay,
     DateTime? Function()? loyaltyCheckedFor,
+    DateTime? Function()? catchUpDismissedOn,
   }) {
     final newStage = stage ?? before.stage;
     final person = Person(
@@ -603,6 +619,9 @@ class FakePeopleRepository implements PeopleRepository {
       loyaltyCheckedFor: loyaltyCheckedFor == null
           ? before.loyaltyCheckedFor
           : loyaltyCheckedFor(),
+      catchUpDismissedOn: catchUpDismissedOn == null
+          ? before.catchUpDismissedOn
+          : catchUpDismissedOn(),
       tagIds: before.tagIds,
       // Every write moves updated_at, as the trigger does.
       updatedAt: 'v${_next++}',

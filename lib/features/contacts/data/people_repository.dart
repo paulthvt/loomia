@@ -174,6 +174,13 @@ class PeopleRepository {
         return personFromRow(row);
       });
 
+  /// Not now on Catch up for all of [ids] on [day]; null takes it back
+  /// (#481).
+  Future<List<Person>> dismissCatchUp(List<String> ids, DateTime? day) =>
+      _writeAll(ids, {
+        'catch_up_dismissed_on': day == null ? null : dayColumn(day),
+      });
+
   /// Their LRP renews on [day] of the month, 1 to 28 (#317).
   Future<Person> setLoyaltyDay(String id, int day) =>
       _write(id, {'loyalty_day': day});
@@ -503,6 +510,10 @@ Person personFromRow(Map<String, dynamic> row) {
     },
     loyaltyDay: row['loyalty_day'] as int?,
     loyaltyCheckedFor: switch (row['loyalty_checked_for']) {
+      final String day => DateTime.parse(day),
+      _ => null,
+    },
+    catchUpDismissedOn: switch (row['catch_up_dismissed_on']) {
       final String day => DateTime.parse(day),
       _ => null,
     },

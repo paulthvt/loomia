@@ -571,6 +571,30 @@
   "@todayCatchUpHide": {
     "description": "Button in the Catch up section header on Today: folds the list of team members back to one line."
   },
+  "todayCatchUpNotNow": "Not now",
+  "@todayCatchUpNotNow": {
+    "description": "Button on a Catch up row on Today, and on the folded Catch up line for everyone in it; also shown under a row being swiped away. Leaves the team member(s) out of Catch up for a month, without logging anything. Not a refusal: just not today."
+  },
+  "todayCatchUpPutOff": "{name} is back in Catch up in a month",
+  "@todayCatchUpPutOff": {
+    "description": "Snackbar on Today after Not now on one Catch up row, next to an Undo button. {name} is the team member's full name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Sophie Martin"
+      }
+    }
+  },
+  "todayCatchUpPutOffAll": "{count, plural, =1{1 person is back in Catch up in a month} other{{count} people are back in Catch up in a month}}",
+  "@todayCatchUpPutOffAll": {
+    "description": "Snackbar on Today after Not now on the folded Catch up line, which puts off everyone in it, next to an Undo button.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
   "teamReasonQuietNothing": "Nothing is logged since they joined on {date}",
   "@teamReasonQuietNothing": {
     "description": "Why the user could catch up with a team member: they joined more than 30 days ago and nothing was ever logged with them, e.g. '… joined on August 3'.",
