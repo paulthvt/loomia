@@ -27,15 +27,15 @@ select lives_ok(
   'a second seed runs'
 );
 select is(
-  (select count(*)::int from public.workflow), 8,
-  'seeding twice inserts the eight workflows once'
+  (select count(*)::int from public.workflow), 5,
+  'seeding twice inserts the five workflows once'
 );
 select is(
   (select count(*)::int from public.workflow where is_default), 3,
   'one default per stage'
 );
 select is(
-  (select count(*)::int from public.workflow_step), 16,
+  (select count(*)::int from public.workflow_step), 14,
   'the steps come along'
 );
 select is(
@@ -140,7 +140,7 @@ set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
 
 select is(
-  (select count(*)::int from public.workflow where name <> 'Stolen'), 9,
+  (select count(*)::int from public.workflow where name <> 'Stolen'), 6,
   'another user cannot update or delete the workflows'
 );
 

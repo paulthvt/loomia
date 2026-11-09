@@ -28,7 +28,7 @@ select is(
 );
 select public.seed_workflows('en', '2026-09-29');
 select is(
-  (select count(*)::int from public.workflow), 8,
+  (select count(*)::int from public.workflow), 5,
   'a second seed no-ops'
 );
 -- The seed places nobody (#319): Sarah starts Samples here.
