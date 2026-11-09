@@ -31,4 +31,19 @@ void main() {
       isTrue,
     );
   });
+
+  test('reads report_fields; missing is empty list', () {
+    expect(
+      eventWorkflowFromRow({
+        'id': 'w1',
+        'name': 'Workshop',
+        'report_fields': ['Highlights', 'Next steps'],
+      }).reportFields,
+      ['Highlights', 'Next steps'],
+    );
+    expect(
+      eventWorkflowFromRow({'id': 'w2', 'name': 'Training'}).reportFields,
+      isEmpty,
+    );
+  });
 }

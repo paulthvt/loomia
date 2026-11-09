@@ -190,4 +190,28 @@ void main() {
       {'happened_on': '2026-10-02', 'text': null, 'amount': 55},
     );
   });
+
+  test('reads event_id and report from event embed', () {
+    final activity = activityFromRow(
+      _row({
+        'event_id': 'e1',
+        'event': {
+          'report': [
+            {'label': 'A', 'text': 'x'},
+            {'label': 'B', 'text': 'y'},
+          ],
+        },
+      }),
+    );
+
+    expect(activity.eventId, 'e1');
+    expect(activity.report, [(label: 'A', text: 'x'), (label: 'B', text: 'y')]);
+  });
+
+  test('null event_id and no event embed map to null', () {
+    final activity = activityFromRow(_row({'event_id': null, 'event': null}));
+
+    expect(activity.eventId, null);
+    expect(activity.report, null);
+  });
 }

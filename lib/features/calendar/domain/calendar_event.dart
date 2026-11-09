@@ -133,7 +133,7 @@ class CalendarEvent {
     return DateTime(local.year, local.month, local.day);
   }
 
-  CalendarEvent copyWith({List<ReportEntry>? report}) => CalendarEvent(
+  CalendarEvent withReport(List<ReportEntry>? report) => CalendarEvent(
     id: id,
     title: title,
     startsAt: startsAt,
@@ -146,7 +146,7 @@ class CalendarEvent {
     eventWorkflowId: eventWorkflowId,
     stepsDone: stepsDone,
     series: series,
-    report: report ?? this.report,
+    report: report,
   );
 }
 

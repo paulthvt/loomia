@@ -203,7 +203,7 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
         .where((e) => e.id == eventId)
         .firstOrNull;
     if (event != null) {
-      _put(event.copyWith(report: normalised));
+      _put(event.withReport(normalised));
     }
   }
 
