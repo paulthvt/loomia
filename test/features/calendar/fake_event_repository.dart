@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 
 import '../workflows/server_rule.dart';
 
@@ -45,6 +46,7 @@ class FakeEventRepository implements EventRepository {
     DateTime? doneAt,
     Map<String, DateTime> stepsDone = const {},
     EventSeries? series,
+    List<ReportEntry>? report,
   }) => CalendarEvent(
     id: id,
     title: draft.title,
@@ -58,6 +60,7 @@ class FakeEventRepository implements EventRepository {
     eventWorkflowId: draft.eventWorkflowId,
     stepsDone: stepsDone,
     series: series,
+    report: report,
   );
 
   @override
@@ -311,6 +314,7 @@ class FakeEventRepository implements EventRepository {
     List<Attendee> Function(List<Attendee>) change, {
     DateTime? doneAt,
     Map<String, DateTime>? stepsDone,
+    List<ReportEntry>? report,
   }) {
     final index = store.indexWhere((event) => event.id == eventId);
     final event = store[index];
@@ -340,6 +344,7 @@ class FakeEventRepository implements EventRepository {
       eventWorkflowId: event.eventWorkflowId,
       stepsDone: stepsDone ?? event.stepsDone,
       series: event.series,
+      report: report ?? event.report,
     );
     store[index] = changed;
     return changed;
@@ -491,5 +496,29 @@ class FakeEventRepository implements EventRepository {
           if (entry.key != stepId) entry.key: entry.value,
       },
     );
+  }
+
+  @override
+  Future<void> saveReport(String eventId, List<ReportEntry>? report) async {
+    _record('saveReport($eventId)');
+    _with(eventId, (attendees) => attendees, report: report);
+  }
+
+  @override
+  Future<CalendarEvent?> previousReport({
+    required String eventWorkflowId,
+    required String personId,
+    required DateTime before,
+  }) async {
+    _record('previousReport($eventWorkflowId:$personId)');
+    return byStart([
+      for (final event in store)
+        if (event.eventWorkflowId == eventWorkflowId &&
+            event.doneAt != null &&
+            event.report != null &&
+            event.startsAt.isBefore(before) &&
+            event.attendees.any((a) => a.personId == personId))
+          event,
+    ]).lastOrNull;
   }
 }

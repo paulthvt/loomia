@@ -75,6 +75,14 @@ class EventWorkflowRepository {
   Future<void> removeStep(String stepId) => guardPeople(() async {
     await _client.from('event_workflow_step').delete().eq('id', stepId);
   });
+
+  Future<void> setReportFields(String id, List<String> fields) =>
+      guardPeople(() async {
+        await _client
+            .from('event_workflow')
+            .update({'report_fields': fields})
+            .eq('id', id);
+      });
 }
 
 final eventWorkflowRepositoryProvider = Provider<EventWorkflowRepository>(
@@ -85,6 +93,7 @@ EventWorkflow eventWorkflowFromRow(Map<String, dynamic> row) => EventWorkflow(
   id: row['id'] as String,
   name: row['name'] as String,
   isGroup: row['is_group'] as bool? ?? true,
+  reportFields: (row['report_fields'] as List?)?.cast<String>() ?? const [],
   steps: [
     for (final step
         in ((row['event_workflow_step'] as List?) ?? const [])

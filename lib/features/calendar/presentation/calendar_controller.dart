@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/history_controller.dart';
@@ -190,6 +191,20 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
   Future<void> untick(String eventId, String stepId) async {
     await ref.read(eventRepositoryProvider).untick(eventId, stepId);
     await _reload();
+  }
+
+  /// Saves the report for [eventId], normalised, and updates the event in
+  /// state without a full reload. Throws `PeopleFailure`.
+  Future<void> saveReport(String eventId, List<ReportEntry> entries) async {
+    final normalised = normaliseReport(entries);
+    await ref.read(eventRepositoryProvider).saveReport(eventId, normalised);
+    if (!ref.mounted) return;
+    final event = (state.value ?? const <CalendarEvent>[])
+        .where((e) => e.id == eventId)
+        .firstOrNull;
+    if (event != null) {
+      _put(event.copyWith(report: normalised));
+    }
   }
 
   /// The embed is the truth for attendance: read it again.

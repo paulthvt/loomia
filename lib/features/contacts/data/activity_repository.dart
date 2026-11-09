@@ -131,6 +131,7 @@ const _kindFromColumn = {
 
 Activity activityFromRow(Map<String, dynamic> row) {
   final stage = row['stage'] as String?;
+  final event = row['event'] as Map<String, dynamic>?;
   return Activity(
     id: row['id'] as String,
     personId: row['person_id'] as String?,
@@ -146,6 +147,19 @@ Activity activityFromRow(Map<String, dynamic> row) {
         ? null
         : Stage.values.asNameMap()[stage] ?? (throw PeopleFailure.unknown),
     createdAt: DateTime.parse(row['created_at'] as String),
+    eventId: row['event_id'] as String?,
+    report: event == null
+        ? null
+        : switch (event['report']) {
+            final List<dynamic> report => [
+              for (final entry in report.cast<Map<String, dynamic>>())
+                (
+                  label: entry['label'] as String,
+                  text: entry['text'] as String,
+                ),
+            ],
+            _ => null,
+          },
   );
 }
 

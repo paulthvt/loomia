@@ -21,6 +21,7 @@ class EventWorkflow {
     required this.name,
     required List<EventWorkflowStep> steps,
     this.isGroup = true,
+    this.reportFields = const [],
   }) : steps = byDays(steps);
 
   final String id;
@@ -31,6 +32,11 @@ class EventWorkflow {
 
   /// Several people per event: people added start invited (#314).
   final bool isGroup;
+
+  /// Report field labels; empty when no report.
+  final List<String> reportFields;
+
+  bool get hasReport => !isGroup && reportFields.isNotEmpty;
 }
 
 /// Chronological: by days, then by label.

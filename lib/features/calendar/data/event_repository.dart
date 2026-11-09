@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -227,6 +228,41 @@ class EventRepository {
         .eq('event_id', eventId)
         .eq('step_id', stepId),
   );
+
+  Future<void> saveReport(String eventId, List<ReportEntry>? report) =>
+      guardPeople(() async {
+        await _client
+            .from(_table)
+            .update({
+              'report': report == null
+                  ? null
+                  : [
+                      for (final entry in report)
+                        {'label': entry.label, 'text': entry.text},
+                    ],
+            })
+            .eq('id', eventId);
+      });
+
+  /// The newest done event with a report for [personId] and [eventWorkflowId]
+  /// before [before].
+  Future<CalendarEvent?> previousReport({
+    required String eventWorkflowId,
+    required String personId,
+    required DateTime before,
+  }) => guardPeople(() async {
+    final rows = await _client
+        .from(_table)
+        .select('$_columns, who:event_attendee!inner(person_id)')
+        .eq('who.person_id', personId)
+        .eq('event_workflow_id', eventWorkflowId)
+        .not('done_at', 'is', null)
+        .not('report', 'is', null)
+        .lt('starts_at', before.toUtc().toIso8601String())
+        .order('starts_at', ascending: false)
+        .limit(1);
+    return rows.isEmpty ? null : eventFromRow(rows.first);
+  });
 }
 
 final eventRepositoryProvider = Provider<EventRepository>(
@@ -291,6 +327,13 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
         _ => null,
       },
     ),
+    _ => null,
+  },
+  report: switch (row['report']) {
+    final List<dynamic> report => [
+      for (final entry in report.cast<Map<String, dynamic>>())
+        (label: entry['label'] as String, text: entry['text'] as String),
+    ],
     _ => null,
   },
 );
