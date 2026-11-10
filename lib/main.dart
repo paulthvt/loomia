@@ -53,6 +53,9 @@ Future<void> main() async {
         // SEVERE (docs/architecture.md → Logging).
         ..addIntegration(LoggingIntegration(minSentryLogLevel: Level.WARNING))
         ..enableLogs = true
+        // No tracing: without this, every request carries `sentry-trace`,
+        // which the Edge Functions' CORS preflight rejects on web (#489).
+        ..tracePropagationTargets.clear()
         // Signed Storage URLs carry a token in the query; PostgREST filters
         // can carry values.
         ..beforeBreadcrumb = (breadcrumb, hint) {
