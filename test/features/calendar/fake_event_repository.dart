@@ -31,6 +31,9 @@ class FakeEventRepository implements EventRepository {
   /// A [tick] started while set waits on it.
   Completer<void>? gate;
 
+  /// Each [saveReport] takes the first one left and lands once it completes.
+  final List<Completer<void>> reportGates = [];
+
   var _next = 0;
 
   void _record(String call) {
@@ -501,6 +504,7 @@ class FakeEventRepository implements EventRepository {
   @override
   Future<void> saveReport(String eventId, List<ReportEntry>? report) async {
     _record('saveReport($eventId)');
+    if (reportGates.isNotEmpty) await reportGates.removeAt(0).future;
     _with(eventId, (attendees) => attendees, report: report);
   }
 

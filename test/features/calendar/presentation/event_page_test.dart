@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
@@ -970,6 +972,51 @@ void main() {
       );
     });
 
+    testWidgets('an older save landing last never wins', (tester) async {
+      final events = await open(tester, [call()]);
+      final first = Completer<void>();
+      events.reportGates.add(first);
+
+      await tester.enterText(field('Topics covered'), 'Her');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.enterText(field('Topics covered'), 'Her kit');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      // The first save is still out: nothing is saved yet.
+      expect(find.text('Saved'), findsNothing);
+
+      first.complete();
+      await tester.pumpAndSettle();
+
+      expect(
+        events.calls.where((call) => call == 'saveReport(e1)'),
+        hasLength(2),
+      );
+      expect(events.store.last.report?.first.text, 'Her kit');
+      expect(find.text('Saved'), findsOneWidget);
+    });
+
+    testWidgets('a failed save goes out again as the screen goes', (
+      tester,
+    ) async {
+      final events = await open(tester, [
+        call(),
+      ], failWith: PeopleFailure.network);
+
+      await tester.enterText(field('To do'), 'Send the guide');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(find.text('Saved'), findsNothing);
+      events.failWith = null;
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(
+        events.store.last.report?.firstWhere((e) => e.label == 'To do').text,
+        'Send the guide',
+      );
+    });
+
     testWidgets('scrolled away and back, what was typed is still there', (
       tester,
     ) async {
@@ -984,7 +1031,7 @@ void main() {
             stageSince: DateTime.utc(2026, 9),
           ),
       ];
-      await open(
+      final events = await open(
         tester,
         [
           call(attendees: [for (final p in book) Attendee(personId: p.id)]),
@@ -1015,6 +1062,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Her kit'), findsOneWidget);
+      // The unsaved words go out again as the test tears the app down, with
+      // no Scaffold left for a failure's snack bar.
+      events.failWith = null;
     });
 
     testWidgets('a new type with more fields: its fields, no error', (

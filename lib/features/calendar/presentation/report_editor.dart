@@ -44,6 +44,14 @@ class _ReportEditorState extends ConsumerState<ReportEditor>
   Timer? _pending;
   var _saved = false;
 
+  // One save at a time, whole report each: overlapping ones could land out
+  // of order. [_version] counts edits, [_savedVersion] is the last one a
+  // save succeeded with.
+  Future<void>? _inFlight;
+  var _version = 0;
+  var _savedVersion = 0;
+  bool get _dirty => _version != _savedVersion;
+
   // Read on the first keystroke, as `ref` and the context are gone by
   // dispose, where a pending save still has to go out.
   EventsController? _events;
@@ -61,16 +69,31 @@ class _ReportEditorState extends ConsumerState<ReportEditor>
     );
     _messenger ??= ScaffoldMessenger.maybeOf(context);
     _failed ??= AppLocalizations.of(context).eventReportSaveFailed;
+    _version++;
     _pending?.cancel();
     _pending = Timer(const Duration(seconds: 1), _save);
     if (_saved) setState(() => _saved = false);
   }
 
-  Future<void> _save() async {
+  /// Sends the fields now, or once the save out lands.
+  void _save() {
     _pending = null;
+    if (_inFlight != null) return;
+    final version = _version;
+    _inFlight = _send(_entries, version).whenComplete(() {
+      _inFlight = null;
+      if (!mounted) return;
+      // Typed while it was out: those words go next. A failure on the same
+      // words waits for the next keystroke or the screen going, not a loop.
+      if (version != _version && _pending == null) _save();
+      setState(() => _saved = !_dirty);
+    });
+  }
+
+  Future<void> _send(List<ReportEntry> entries, int version) async {
     try {
-      await _events?.saveReport(widget.event.id, _entries);
-      if (mounted) setState(() => _saved = true);
+      await _events?.saveReport(widget.event.id, entries);
+      _savedVersion = version;
     } on PeopleFailure {
       _messenger?.showSnackBar(SnackBar(content: Text(_failed ?? '')));
     }
@@ -78,9 +101,21 @@ class _ReportEditorState extends ConsumerState<ReportEditor>
 
   @override
   void dispose() {
-    if (_pending != null) {
+    // Unsaved words, a failed save's included, go out after any save still
+    // out, read now as the fields go with this state.
+    if (_dirty) {
       _pending?.cancel();
-      unawaited(_save());
+      final entries = _entries;
+      final version = _version;
+      final inFlight = _inFlight;
+      // Now when nothing is out: the controller may go with this screen.
+      unawaited(
+        inFlight == null
+            ? _send(entries, version)
+            : inFlight.then((_) async {
+                if (_dirty) await _send(entries, version);
+              }),
+      );
     }
     for (final field in _fields) {
       field.dispose();
