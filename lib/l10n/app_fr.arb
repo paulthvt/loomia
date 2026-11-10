@@ -1593,7 +1593,7 @@
   "@contactSectionInfo": {
     "description": "Section header above the facts about a person: bio, concerns, favourite products, contact details, notes. Short and plural-neutral (French: 'Infos')."
   },
-  "factBio": "Bio",
+  "factBio": "Biographie",
   "@factBio": {
     "description": "Label of a few free lines about who a person is: age, children, job. First fact of 'Info'. Also the edit form field."
   },
@@ -1803,5 +1803,181 @@
         "type": "int"
       }
     }
+  },
+  "reviewTitleAll": "Bravo, tu as atteint tes objectifs !",
+  "@reviewTitleAll": {
+    "description": "Title of the month review (step 2 of closing a month) when every objective the user set was reached. Warm, personal praise; informal."
+  },
+  "reviewBodyAll": "Tout ce que tu avais prévu de faire en {month}, tu l’as fait. Tu peux t’en féliciter.",
+  "@reviewBodyAll": {
+    "description": "Under the title of the month review when every objective was reached. Loomia doesn't know the user's gender: use a wording with no gender agreement (in French, not 'fier' or 'fière': e.g. 'C'est une vraie réussite').",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "reviewTitleSome": "Bravo pour {month}",
+  "@reviewTitleSome": {
+    "description": "Title of the month review when some objectives were reached and others not. Praise, never a verdict.",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "reviewBodySome": "Tu as atteint {reached} de tes {total} objectifs. Savoure ces réussites, le reste est déjà en chemin.",
+  "@reviewBodySome": {
+    "description": "Under the title of the month review when some objectives were reached. reached is at least 1, total at least 2. No gender agreement in the translation.",
+    "placeholders": {
+      "reached": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewTitleNone": "{month} est derrière toi",
+  "@reviewTitleNone": {
+    "description": "Title of the month review when no objective was reached. Encouraging, turned forward; never 'missed' or 'failed'.",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "reviewBodyNone": "Ce n’est pas le mois que tu avais prévu, et ce n’est pas grave. Regarde ce que tu as construit malgré tout : cela continue en {next}.",
+  "@reviewBodyNone": {
+    "description": "Under the title of the month review when no objective was reached. next is the month about to be planned.",
+    "placeholders": {
+      "next": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "reviewPlan": "Planifie {month}",
+  "@reviewPlan": {
+    "description": "Button of the month review: goes on to planning the next month.",
+    "placeholders": {
+      "month": {
+        "type": "DateTime",
+        "format": "MMMM"
+      }
+    }
+  },
+  "reviewReached": "Tu as atteint",
+  "@reviewReached": {
+    "description": "Month review section header, shown in capitals: the objectives that were reached."
+  },
+  "reviewOnItsWay": "En chemin",
+  "@reviewOnItsWay": {
+    "description": "Month review section header, shown in capitals: the objectives not reached yet, when some others were. Forward-looking, never 'missed'."
+  },
+  "reviewBuilt": "Ce que tu as construit",
+  "@reviewBuilt": {
+    "description": "Month review section header, shown in capitals, when no objective was reached: what the user still did that month."
+  },
+  "reviewNotFilledIn": "Non rempli",
+  "@reviewNotFilledIn": {
+    "description": "Month review, right of the team volume or rank when the user left it empty at close."
+  },
+  "reviewLevel": "{level}, en visant {target}",
+  "@reviewLevel": {
+    "description": "Month review, right of the rank or level when it is below the one aimed for, e.g. 'Executive, aiming for Elite'. Ranks are proper nouns, not translated.",
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCatchUpNotNow": "Pas maintenant",
+  "@todayCatchUpNotNow": {
+    "description": "Button on a Catch up row on Today, and on the folded Catch up line for everyone in it; also shown under a row being swiped away. Leaves the team member(s) out of Catch up for a month, without logging anything. Not a refusal: just not today."
+  },
+  "todayCatchUpPutOff": "{name} revient dans Prendre des nouvelles dans un mois",
+  "@todayCatchUpPutOff": {
+    "description": "Snackbar on Today after Not now on one Catch up row, next to an Undo button. {name} is the team member's full name.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Sophie Martin"
+      }
+    }
+  },
+  "todayCatchUpPutOffAll": "{count, plural, =1{1 personne revient dans Prendre des nouvelles dans un mois} other{{count} personnes reviennent dans Prendre des nouvelles dans un mois}}",
+  "@todayCatchUpPutOffAll": {
+    "description": "Snackbar on Today after Not now on the folded Catch up line, which puts off everyone in it, next to an Undo button.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "historyReadReport": "Lire le compte-rendu",
+  "@historyReadReport": {
+    "description": "What a screen reader says a tap does on a history entry that has an event report: it opens the report to read."
+  },
+  "eventWorkflowReport": "Compte-rendu",
+  "@eventWorkflowReport": {
+    "description": "Section header in an event type editor for report fields: labels filled after an event."
+  },
+  "eventWorkflowReportAdd": "Ajouter un champ",
+  "@eventWorkflowReportAdd": {
+    "description": "Action that adds a report field to an event type."
+  },
+  "eventWorkflowReportNew": "Nouveau",
+  "@eventWorkflowReportNew": {
+    "description": "Label of a newly added report field, before the user renames it."
+  },
+  "eventPrepNotes": "Notes de préparation",
+  "@eventPrepNotes": {
+    "description": "Heading above an event's notes on an event type with a report (e.g. a mentoring call): what to bring up during it."
+  },
+  "eventReport": "Compte-rendu",
+  "@eventReport": {
+    "description": "Heading of an event's report fields (e.g. topics covered, to do), filled in during or after a one-to-one call. Also the title of the sheet that shows a report."
+  },
+  "eventReportSaved": "Enregistré",
+  "@eventReportSaved": {
+    "description": "Muted hint beside eventReport once what was typed in the report has been saved on its own (there is no Save button)."
+  },
+  "eventReportSaveFailed": "Ton compte-rendu n’a pas pu être enregistré. Vérifie ta connexion et recommence à taper.",
+  "@eventReportSaveFailed": {
+    "description": "Snackbar when the report typed on an event could not be saved."
+  },
+  "eventPreviousReport": "Compte-rendu précédent",
+  "@eventPreviousReport": {
+    "description": "Row on an event (and title of the sheet it opens): the report of the last call of the same type with the same person."
+  },
+  "reportDay": "{day}",
+  "@reportDay": {
+    "description": "The day of the event a report belongs to, e.g. 'Thursday, October 8', under the report's title.",
+    "placeholders": {
+      "day": {
+        "type": "DateTime",
+        "format": "MMMMEEEEd"
+      }
+    }
+  },
+  "reportOpenEvent": "Ouvrir l’événement",
+  "@reportOpenEvent": {
+    "description": "Button under a report: opens the event it was written on."
+  },
+  "eventDeleteReportBody": "Il disparaît de ton calendrier, avec le compte-rendu que tu as écrit. Personne d’autre n’est prévenu.",
+  "@eventDeleteReportBody": {
+    "description": "Body of the dialog that confirms deleting an event, in place of eventDeleteBody, when a report was written on it."
+  },
+  "eventScopeReportLost": "Cela supprime aussi un compte-rendu que tu as écrit.",
+  "@eventScopeReportLost": {
+    "description": "Warning in the dialog that asks 'This event' or 'This and following events' (on delete, or on a new repeat or day) when the chosen one removes an event that has a report."
   }
 }
