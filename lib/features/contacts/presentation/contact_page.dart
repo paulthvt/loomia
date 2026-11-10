@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/photos/photo_picker.dart';
@@ -13,6 +14,7 @@ import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/presentation/report_view.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/tag.dart';
@@ -75,13 +77,23 @@ class ContactsNoSelection extends StatelessWidget {
 /// A person found in the loaded book (there is no second fetch), wired to
 /// saving, navigation and the other apps. Shared by [ContactPage] and the
 /// desktop pane.
-class ContactPane extends ConsumerWidget {
+class ContactPane extends ConsumerStatefulWidget {
   const ContactPane({required this.id, super.key});
 
   final String id;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ContactPane> createState() => _ContactPaneState();
+}
+
+class _ContactPaneState extends ConsumerState<ContactPane> {
+  /// Desktop: the history entry whose report is open beside it.
+  String? _reportId;
+
+  String get id => widget.id;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final book = peopleProvider(ref.watch(accountProvider)?.email);
     final people = ref.watch(book);
@@ -120,6 +132,16 @@ class ContactPane extends ConsumerWidget {
     // Loads the history as the page opens, and keeps it while the section
     // scrolls out of the lazy list.
     ref.listen(historyProvider(person.id), (_, _) {});
+    final model =
+        ref.watch(accountProvider)?.businessModel ?? BusinessModel.other;
+    // Gone when the entry is, or when another person opens.
+    final report = context.screenSize.isDesktop
+        ? ref
+              .watch(historyProvider(person.id))
+              .value
+              ?.where((entry) => entry.id == _reportId && entry.report != null)
+              .firstOrNull
+        : null;
 
     // Only a team member can share; null while it loads or if it fails, so
     // the Invite button never flashes for someone already sharing.
@@ -134,7 +156,7 @@ class ContactPane extends ConsumerWidget {
         showInviteSheet(context, personId: person.id, name: firstName(person)),
       ),
       onStopSharing: () => unawaited(_stopSharing(context, ref, person.id)),
-      model: ref.watch(accountProvider)?.businessModel ?? BusinessModel.other,
+      model: model,
       onStatus: (status) => unawaited(
         writePeople(context, ref, (people) => people.setStatus(person, status)),
       ),
@@ -186,7 +208,36 @@ class ContactPane extends ConsumerWidget {
         key: ValueKey('history-${person.id}'),
         person: person,
         onAdd: () => unawaited(showLogActivity(context, person)),
+        reportId: report?.id,
+        onReport: (activity) {
+          if (context.screenSize.isDesktop) {
+            setState(() => _reportId = activity.id);
+          } else {
+            unawaited(
+              showReportSheet(
+                context,
+                report: activity.report!,
+                day: activity.happenedOn,
+                title: activityTitle(l10n, activity, model),
+                onOpenEvent: () =>
+                    context.go(Routes.eventLocation(activity.eventId!)),
+              ),
+            );
+          }
+        },
       ),
+      report: report == null
+          ? null
+          : _ReportPanel(
+              title: activityTitle(l10n, report, model),
+              onClose: () => setState(() => _reportId = null),
+              child: ReportView(
+                report: report.report!,
+                day: report.happenedOn,
+                onOpenEvent: () =>
+                    context.go(Routes.eventLocation(report.eventId!)),
+              ),
+            ),
     );
   }
 
@@ -235,5 +286,38 @@ class ContactPane extends ConsumerWidget {
         SnackBar(content: Text(peopleFailureCopy(l10n, failure))),
       );
     }
+  }
+}
+
+/// A report read from the history, under [title], with ✕ to put the side
+/// column back.
+class _ReportPanel extends StatelessWidget {
+  const _ReportPanel({
+    required this.title,
+    required this.onClose,
+    required this.child,
+  });
+
+  final String title;
+  final VoidCallback onClose;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.sm,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+            ),
+            CloseButton(onPressed: onClose),
+          ],
+        ),
+        child,
+      ],
+    );
   }
 }

@@ -83,6 +83,7 @@ class ContactDetails extends StatelessWidget {
     this.workflowName,
     this.nextStep,
     this.history,
+    this.report,
     super.key,
   });
 
@@ -147,6 +148,9 @@ class ContactDetails extends StatelessWidget {
 
   /// The `HISTORY` section, below what you know.
   final Widget? history;
+
+  /// Desktop: a report read from the history, in place of the side column.
+  final Widget? report;
 
   List<_Action> _actions(AppLocalizations l10n) => [
     (
@@ -712,7 +716,11 @@ class ContactDetails extends StatelessWidget {
                     [?nextStep],
                     [?history],
                   ]),
-                  side: spaced([sharedGoals, aimingFor, whatYouKnow]),
+                  side: [
+                    ?report,
+                    if (report == null)
+                      ...spaced([sharedGoals, aimingFor, whatYouKnow]),
+                  ],
                 ),
               ]
             : spaced([

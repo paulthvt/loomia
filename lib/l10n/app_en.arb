@@ -1251,6 +1251,10 @@
       "note": { "type": "String" }
     }
   },
+  "historyReadReport": "Read the report",
+  "@historyReadReport": {
+    "description": "What a screen reader says a tap does on a history entry that has an event report: it opens the report to read."
+  },
   "historyDeleteTitle": "Delete this entry?",
   "@historyDeleteTitle": {
     "description": "Title of the confirmation before deleting a history entry."

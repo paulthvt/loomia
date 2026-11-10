@@ -11,6 +11,7 @@ class ActivityItem extends StatelessWidget {
     required this.meta,
     this.showRailLine = true,
     this.dimmed = false,
+    this.preview,
     super.key,
   });
 
@@ -24,6 +25,10 @@ class ActivityItem extends StatelessWidget {
 
   /// Greyed, for what is behind: a workflow's steps before the current one.
   final bool dimmed;
+
+  /// The first line of its report, under [title], with the report icon at
+  /// the end; null when there is none.
+  final String? preview;
 
   @override
   Widget build(BuildContext context) {
@@ -65,14 +70,36 @@ class ActivityItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: dimmed
-                          ? colors.textDisabled
-                          : theme.colorScheme.onSurface,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: dimmed
+                                ? colors.textDisabled
+                                : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      if (preview != null)
+                        Icon(
+                          Icons.description_outlined,
+                          size: 20,
+                          color: theme.colorScheme.primary,
+                        ),
+                    ],
                   ),
+                  if (preview case final preview?)
+                    Text(
+                      preview,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.textMuted,
+                      ),
+                    ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     meta,
