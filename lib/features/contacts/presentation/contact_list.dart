@@ -285,10 +285,12 @@ class _ContactListState extends State<ContactList> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (sideNavigation && people.isNotEmpty)
-                    TextButton.icon(
+                    // Icon only: a label leaves the title too little room
+                    // in the list pane once translated.
+                    IconButton(
                       onPressed: () => _setPicked({}),
+                      tooltip: l10n.contactsSelect,
                       icon: const Icon(Icons.checklist_rounded),
-                      label: Text(l10n.contactsSelect),
                     ),
                   if (widget.onImport case final onImport?)
                     IconButton(

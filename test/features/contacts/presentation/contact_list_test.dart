@@ -398,10 +398,10 @@ void main() {
       tester,
     ) async {
       await _pump(tester, size: _phone);
-      expect(find.text('Select'), findsNothing);
+      expect(find.byTooltip('Select'), findsNothing);
 
       await _pump(tester);
-      await tester.tap(find.text('Select'));
+      await tester.tap(find.byTooltip('Select'));
       await tester.pumpAndSettle();
 
       expect(find.text('0 selected'), findsOneWidget);
@@ -412,7 +412,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(ChoiceChip, 'Customers'));
       await tester.pump();
-      await tester.tap(find.text('Select'));
+      await tester.tap(find.byTooltip('Select'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Select all'));
       await tester.pumpAndSettle();

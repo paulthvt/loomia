@@ -827,7 +827,7 @@ void main() {
     await tester.tap(find.text('Marie Dupont'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Select'));
+    await tester.tap(find.byTooltip('Select'));
     await tester.pump();
     await tester.tap(find.text('Select all'));
     await tester.pump();

@@ -2605,7 +2605,7 @@
   },
   "contactsSelect": "Select",
   "@contactsSelect": {
-    "description": "Button with a checklist icon at the top of the Contacts list, where there is a mouse, that starts picking several people to act on at once. On touch screens a long press does the same."
+    "description": "Tooltip of the checklist icon button at the top of the Contacts list, where there is a mouse, that starts picking several people to act on at once. On touch screens a long press does the same."
   },
   "contactsSelected": "{count} selected",
   "@contactsSelected": {
