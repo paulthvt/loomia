@@ -10,6 +10,7 @@ import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/calendar/presentation/report_editor.dart';
 import 'package:loomia/features/calendar/presentation/report_view.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -899,13 +900,18 @@ void main() {
       List<CalendarEvent> list, {
       String id = 'e1',
       List<EventWorkflow>? types,
+      List<Person>? people,
+      Size size = const Size(390, 1600),
+      Object? failWith,
     }) async {
-      final events = FakeEventRepository(list);
+      final events = FakeEventRepository(list)
+        ..failWith = failWith
+        ..failOnly = 'saveReport';
       final container = await pumpLoomia(
         tester,
-        size: const Size(390, 1600),
+        size: size,
         events: events,
-        people: FakePeopleRepository([_claire]),
+        people: FakePeopleRepository(people ?? [_claire]),
         eventWorkflows: FakeEventWorkflowRepository(types ?? [mentorat]),
       );
       container.read(routerProvider).go(Routes.eventLocation(id));
@@ -962,6 +968,85 @@ void main() {
         events.store.last.report?.firstWhere((e) => e.label == 'To do').text,
         'Send the guide',
       );
+    });
+
+    testWidgets('scrolled away and back, what was typed is still there', (
+      tester,
+    ) async {
+      // Enough people that the report leaves the list as it scrolls; the
+      // save fails, so only the field holds the text.
+      final book = [
+        for (var i = 0; i < 20; i++)
+          Person(
+            id: 'p$i',
+            name: 'Person ${i.toString().padLeft(2, '0')}',
+            stage: Stage.prospect,
+            stageSince: DateTime.utc(2026, 9),
+          ),
+      ];
+      await open(
+        tester,
+        [
+          call(attendees: [for (final p in book) Attendee(personId: p.id)]),
+        ],
+        people: book,
+        size: const Size(390, 700),
+        failWith: PeopleFailure.network,
+      );
+
+      await tester.enterText(field('Topics covered'), 'Her kit');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      final list = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Person 19'),
+        300,
+        scrollable: list,
+      );
+      await tester.pumpAndSettle();
+      // Out of view: a lazy list would have let it go.
+      expect(find.byType(ReportEditor), findsNothing);
+      await tester.scrollUntilVisible(
+        field('Topics covered'),
+        -300,
+        scrollable: list,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Her kit'), findsOneWidget);
+    });
+
+    testWidgets('a new type with more fields: its fields, no error', (
+      tester,
+    ) async {
+      await open(
+        tester,
+        [call(type: 'short')],
+        types: [
+          mentorat,
+          EventWorkflow(
+            id: 'short',
+            name: 'Short call',
+            steps: const [],
+            isGroup: false,
+            reportFields: const ['Topics covered'],
+          ),
+        ],
+      );
+      expect(field('Other'), findsNothing);
+
+      await tester.tap(find.byTooltip('Edit event'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Mentoring'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      for (final label in mentorat.reportFields) {
+        expect(field(label), findsOneWidget);
+      }
     });
 
     testWidgets('done: the fields can still be written', (tester) async {

@@ -16,7 +16,9 @@ import 'package:material_ui/material_ui.dart';
 
 /// [event]'s report, one field per entry, saved on its own a second after
 /// the last keystroke and when the screen goes, so nothing typed is lost.
-/// Its labels are [entries]' as it opens: key it by the event.
+/// Kept alive in a scrolling list, so its fields keep what was typed even
+/// when a save failed. Its labels are [entries]' as it opens: key it by the
+/// event and the labels (see [reportEditorKey]).
 class ReportEditor extends ConsumerStatefulWidget {
   const ReportEditor({required this.event, required this.entries, super.key});
 
@@ -27,7 +29,15 @@ class ReportEditor extends ConsumerStatefulWidget {
   ConsumerState<ReportEditor> createState() => _ReportEditorState();
 }
 
-class _ReportEditorState extends ConsumerState<ReportEditor> {
+/// A new template (the event's type changed) builds a new editor.
+Key reportEditorKey(CalendarEvent event, List<ReportEntry> entries) =>
+    ValueKey((event.id, [for (final entry in entries) entry.label].join('\n')));
+
+class _ReportEditorState extends ConsumerState<ReportEditor>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late final _fields = [
     for (final entry in widget.entries) TextEditingController(text: entry.text),
   ];
@@ -80,6 +90,7 @@ class _ReportEditorState extends ConsumerState<ReportEditor> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final l10n = AppLocalizations.of(context);
     final muted = LoomiaColors.of(context).textMuted;
     return Column(

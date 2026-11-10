@@ -509,7 +509,11 @@ class EventView extends StatelessWidget {
         ],
         if (report.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.lg),
-          ReportEditor(key: ValueKey(event.id), event: event, entries: report),
+          ReportEditor(
+            key: reportEditorKey(event, report),
+            event: event,
+            entries: report,
+          ),
         ],
         if (steps.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.lg),
