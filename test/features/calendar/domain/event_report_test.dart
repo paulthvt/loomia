@@ -110,14 +110,18 @@ void main() {
       expect(normaliseReport(const []), null);
     });
 
-    test('keeps entries with non-empty text only', () {
+    test('keeps the blank entries, so their fields stay to fill in', () {
       expect(
         normaliseReport(const [
           (label: 'A', text: '  '),
           (label: 'B', text: 'content'),
           (label: 'C', text: ''),
         ]),
-        const [(label: 'B', text: 'content')],
+        const [
+          (label: 'A', text: ''),
+          (label: 'B', text: 'content'),
+          (label: 'C', text: ''),
+        ],
       );
     });
   });

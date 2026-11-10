@@ -1,11 +1,13 @@
 import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/calendar/presentation/report_view.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_page.dart';
@@ -88,6 +90,101 @@ Widget eventDoneMobileLight() => _app(
       onTick: (_, _) {},
     ),
   ),
+);
+
+/// A mentoring call (#483): prep notes, the previous report, the report
+/// partly written.
+@Preview(group: 'Calendar', name: 'Event report — light', size: Size(390, 1339))
+Widget eventReportMobileLight() => ProviderScope(
+  child: _app(
+    AppTheme.light,
+    Scaffold(
+      appBar: AppBar(leading: const BackButton()),
+      body: EventView(
+        event: _call,
+        people: eventPeople(_call, _people),
+        now: DateTime(2026, 10, 22, 18, 10),
+        onAddPeople: () {},
+        onRemove: (_) {},
+        onGoing: (_) {},
+        onFollowedUp: (_) {},
+        onOpenPerson: (_) {},
+        onMarkDone: () {},
+        onEdit: () {},
+        onDelete: () {},
+        onOpenPlace: (_) {},
+        onJoin: (_) {},
+        steps: const [],
+        onTick: (_, _) {},
+        report: _call.report!,
+        previousReport: _previousCall,
+      ),
+    ),
+  ),
+);
+
+/// The previous call's report, as its sheet shows it: the empty section
+/// left out.
+@Preview(group: 'Calendar', name: 'Report — light', size: Size(390, 844))
+Widget reportViewLight() => _app(
+  AppTheme.light,
+  Scaffold(
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: ReportView(
+          report: _previousCall.report!,
+          day: _previousCall.day,
+          onOpenEvent: () {},
+        ),
+      ),
+    ),
+  ),
+);
+
+final _call = CalendarEvent(
+  id: 'm2',
+  title: 'Mentoring Claire',
+  startsAt: DateTime(2026, 10, 22, 18),
+  endsAt: DateTime(2026, 10, 22, 18, 45),
+  link: 'https://meet.google.com/abc-defg-hij',
+  notes:
+      'Getting started: which kit?\nTraining, any questions?\nGoals '
+      'this month',
+  attendees: const [Attendee(personId: 'p1')],
+  eventWorkflowId: 'mentorat',
+  report: const [
+    (
+      label: 'Topics covered',
+      text: 'Her starter kit, this week\'s training, her November goals.',
+    ),
+    (label: 'Actions done, in progress and planned', text: 'Kit chosen.'),
+    (label: 'Issues encountered', text: ''),
+    (label: 'To do', text: 'Send her the workshop guide'),
+    (label: 'Other', text: ''),
+  ],
+);
+
+final _previousCall = CalendarEvent(
+  id: 'm1',
+  title: 'Mentoring Claire',
+  startsAt: DateTime(2026, 10, 8, 18),
+  attendees: const [Attendee(personId: 'p1', came: true)],
+  eventWorkflowId: 'mentorat',
+  doneAt: DateTime(2026, 10, 8, 19),
+  report: const [
+    (
+      label: 'Topics covered',
+      text: 'Getting started, her first orders, the December workshop.',
+    ),
+    (
+      label: 'Actions done, in progress and planned',
+      text: 'First order placed. Training module 1 started.',
+    ),
+    (label: 'Issues encountered', text: 'Short on time in the evenings.'),
+    (label: 'To do', text: 'Pick her kit. Set a date for the workshop.'),
+    (label: 'Other', text: ''),
+  ],
 );
 
 /// A task's page (#390): timed, its bell on, repeating, with a note.

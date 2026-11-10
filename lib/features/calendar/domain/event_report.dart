@@ -11,16 +11,29 @@ List<ReportEntry> reportFor(CalendarEvent event, EventWorkflow? type) {
   return [for (final label in type.reportFields) (label: label, text: '')];
 }
 
-/// Texts trimmed; `null` when every text is empty.
+/// Texts trimmed; `null` when every text is empty. Blank entries stay, so
+/// their fields are still there to fill in when the event opens again.
 List<ReportEntry>? normaliseReport(List<ReportEntry> entries) {
   final normalised = [
-    for (final entry in entries)
-      if (entry.text.trim().isNotEmpty)
-        (label: entry.label, text: entry.text.trim()),
+    for (final entry in entries) (label: entry.label, text: entry.text.trim()),
   ];
-  if (normalised.isEmpty) return null;
+  if (normalised.every((entry) => entry.text.isEmpty)) return null;
   return normalised;
 }
+
+/// Whether deleting from [from] on, as "This and following events" does,
+/// takes a report with it: [from] or a later, not done occurrence of its
+/// series in [events] has one.
+bool reportsFrom(Iterable<CalendarEvent> events, CalendarEvent from) =>
+    from.report != null ||
+    events.any(
+      (event) =>
+          event.series != null &&
+          event.series?.id == from.series?.id &&
+          !event.done &&
+          !event.startsAt.isBefore(from.startsAt) &&
+          event.report != null,
+    );
 
 /// First line of the first non-empty text.
 String? reportPreview(List<ReportEntry>? report) {

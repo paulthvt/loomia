@@ -18,11 +18,16 @@ import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
+import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/people_picker.dart';
+import 'package:loomia/features/calendar/presentation/report_editor.dart';
+import 'package:loomia/features/calendar/presentation/report_view.dart';
 import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/calendar/presentation/who_was_there_sheet.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -52,6 +57,23 @@ List<EventPerson> eventPeople(CalendarEvent event, List<Person> book) {
     (a, b) => searchKey(a.person.name).compareTo(searchKey(b.person.name)),
   );
 }
+
+/// The last done event of the type with the person, before the day, that
+/// has a report: what was said on the previous call. Null when none.
+final previousReportProvider = FutureProvider.autoDispose
+    .family<
+      CalendarEvent?,
+      ({String eventWorkflowId, String personId, DateTime before})
+    >(
+      (ref, key) => ref
+          .watch(eventRepositoryProvider)
+          .previousReport(
+            eventWorkflowId: key.eventWorkflowId,
+            personId: key.personId,
+            before: key.before,
+          ),
+      retry: (error, _) => null,
+    );
 
 /// One event on mobile and tablet: a screen of its own above the month.
 class EventPage extends StatelessWidget {
@@ -121,10 +143,24 @@ class EventPane extends ConsumerWidget {
     final eventWorkflows =
         ref.watch(eventWorkflowsProvider(owner)).value ??
         const <EventWorkflow>[];
-    final steps =
-        findEventWorkflow(eventWorkflows, event.eventWorkflowId)?.steps ??
-        const <EventWorkflowStep>[];
+    final type = findEventWorkflow(eventWorkflows, event.eventWorkflowId);
+    final steps = type?.steps ?? const <EventWorkflowStep>[];
+    final report = reportFor(event, type);
+    final attendee = event.attendees.singleOrNull;
+    final previous = type == null || report.isEmpty || attendee == null
+        ? null
+        : ref
+              .watch(
+                previousReportProvider((
+                  eventWorkflowId: type.id,
+                  personId: attendee.personId,
+                  before: event.startsAt,
+                )),
+              )
+              .value;
     return EventView(
+      report: report,
+      previousReport: previous,
       event: event,
       people: people,
       now: DateTime.now(),
@@ -287,14 +323,25 @@ class EventPane extends ConsumerWidget {
     );
     final bool following;
     if (event.series != null && !event.done) {
-      final scope = await pickScope(context, delete: true);
+      final loaded = ref.read(eventsProvider(ref.read(accountProvider)?.email));
+      final scope = await pickScope(
+        context,
+        delete: true,
+        losesReport: {
+          if (event.report != null) EventScope.one,
+          if (reportsFrom(loaded.value ?? const [], event))
+            EventScope.following,
+        },
+      );
       if (scope == null || !context.mounted) return;
       following = scope == EventScope.following;
     } else {
       final confirmed = await confirmDestructive(
         context,
         title: l10n.eventDeleteTitle(event.title),
-        body: l10n.eventDeleteBody,
+        body: event.report == null
+            ? l10n.eventDeleteBody
+            : l10n.eventDeleteReportBody,
         action: l10n.eventDeleteAction,
       );
       if (!confirmed || !context.mounted) return;
@@ -335,6 +382,8 @@ class EventView extends StatelessWidget {
     required this.onJoin,
     required this.steps,
     required this.onTick,
+    this.report = const [],
+    this.previousReport,
     super.key,
   });
 
@@ -360,6 +409,14 @@ class EventView extends StatelessWidget {
   final void Function(Uri link) onJoin;
   final List<EventWorkflowStep> steps;
   final void Function(EventWorkflowStep step, bool done) onTick;
+
+  /// Its fields, from `reportFor`: none outside a one-person type with a
+  /// report, and then the notes read as prep notes.
+  final List<ReportEntry> report;
+
+  /// The last call's report with the same person, from
+  /// [previousReportProvider].
+  final CalendarEvent? previousReport;
 
   @override
   Widget build(BuildContext context) {
@@ -421,9 +478,13 @@ class EventView extends StatelessWidget {
               child: Text(l10n.eventJoin),
             ),
           ),
+        if (notes != null && report.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          SectionHeader(title: l10n.eventPrepNotes),
+        ],
         if (notes != null)
           Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.md),
+            padding: EdgeInsets.only(top: report.isEmpty ? AppSpacing.md : 0),
             child: Text(
               notes,
               style: theme.textTheme.bodyLarge?.copyWith(
@@ -431,6 +492,25 @@ class EventView extends StatelessWidget {
               ),
             ),
           ),
+        if (previousReport case final previous?) ...[
+          const SizedBox(height: AppSpacing.md),
+          _PreviousReportRow(
+            day: previous.day,
+            onTap: () => unawaited(
+              showReportSheet(
+                context,
+                title: l10n.eventPreviousReport,
+                report: previous.report ?? const [],
+                day: previous.day,
+                onOpenEvent: () => openEvent(context, previous.id),
+              ),
+            ),
+          ),
+        ],
+        if (report.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          ReportEditor(key: ValueKey(event.id), event: event, entries: report),
+        ],
         if (steps.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.lg),
           SectionHeader(title: l10n.eventChecklist),
@@ -535,6 +615,31 @@ class EventView extends StatelessWidget {
       ),
       _ => l10n.eventPersonInvited(stage),
     };
+  }
+}
+
+/// "Previous report" and its day, opening it.
+class _PreviousReportRow extends StatelessWidget {
+  const _PreviousReportRow({required this.day, required this.onTap});
+
+  final DateTime day;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = LoomiaColors.of(context);
+    return ListTile(
+      onTap: onTap,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: colors.borderSubtle),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      leading: Icon(Icons.history_rounded, color: colors.primaryText),
+      title: Text(l10n.eventPreviousReport),
+      subtitle: Text(l10n.reportDay(day)),
+      trailing: const Icon(Icons.chevron_right_rounded),
+    );
   }
 }
 

@@ -6,9 +6,11 @@ import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/calendar/presentation/desktop_calendar.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
+import 'package:loomia/features/calendar/presentation/report_view.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
@@ -19,6 +21,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../../contacts/fake_people_repository.dart';
+import '../../workflows/fake_event_workflow_repository.dart';
 import '../../workflows/fake_workflow_repository.dart';
 import '../fake_event_repository.dart';
 
@@ -840,6 +843,298 @@ void main() {
         find.text('Continues New customer → Give VIP access'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('a report', () {
+    final mentorat = EventWorkflow(
+      id: 'mentorat',
+      name: 'Mentoring',
+      steps: const [],
+      isGroup: false,
+      reportFields: const [
+        'Topics covered',
+        'Actions done, in progress and planned',
+        'Issues encountered',
+        'To do',
+        'Other',
+      ],
+    );
+
+    CalendarEvent call({
+      String id = 'e1',
+      DateTime? startsAt,
+      String? type = 'mentorat',
+      List<Attendee> attendees = const [Attendee(personId: 'p1')],
+      DateTime? doneAt,
+      List<ReportEntry>? report,
+    }) {
+      final day = today();
+      return CalendarEvent(
+        id: id,
+        title: 'Mentoring Claire',
+        startsAt: startsAt ?? DateTime(day.year, day.month, day.day, 19),
+        notes: 'Ask about her kit',
+        attendees: attendees,
+        eventWorkflowId: type,
+        doneAt: doneAt,
+        report: report,
+      );
+    }
+
+    /// Two weeks ago, done, with a report.
+    CalendarEvent before() {
+      final day = today();
+      return call(
+        id: 'e0',
+        startsAt: DateTime(day.year, day.month, day.day - 14, 19),
+        attendees: const [Attendee(personId: 'p1', came: true)],
+        doneAt: DateTime(day.year, day.month, day.day - 14, 20),
+        report: const [(label: 'Topics covered', text: 'Her first orders')],
+      );
+    }
+
+    Future<FakeEventRepository> open(
+      WidgetTester tester,
+      List<CalendarEvent> list, {
+      String id = 'e1',
+      List<EventWorkflow>? types,
+    }) async {
+      final events = FakeEventRepository(list);
+      final container = await pumpLoomia(
+        tester,
+        size: const Size(390, 1600),
+        events: events,
+        people: FakePeopleRepository([_claire]),
+        eventWorkflows: FakeEventWorkflowRepository(types ?? [mentorat]),
+      );
+      container.read(routerProvider).go(Routes.eventLocation(id));
+      await tester.pumpAndSettle();
+      return events;
+    }
+
+    Finder field(String label) => find.descendant(
+      of: find.widgetWithText(LabeledField, label),
+      matching: find.byType(TextField),
+    );
+
+    testWidgets('prep notes, five fields, saved a second after typing', (
+      tester,
+    ) async {
+      final events = await open(tester, [call()]);
+
+      expect(find.text('PREP NOTES'), findsOneWidget);
+      expect(find.text('Ask about her kit'), findsOneWidget);
+      expect(find.text('REPORT'), findsOneWidget);
+      for (final label in mentorat.reportFields) {
+        expect(field(label), findsOneWidget);
+      }
+
+      await tester.enterText(field('Topics covered'), 'Her kit');
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(events.calls, isNot(contains('saveReport(e1)')));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump();
+
+      expect(events.calls, contains('saveReport(e1)'));
+      expect(events.store.last.report?.first, (
+        label: 'Topics covered',
+        text: 'Her kit',
+      ));
+      expect(find.text('Saved'), findsOneWidget);
+      // The blank fields stay to fill in later.
+      for (final label in mentorat.reportFields) {
+        expect(field(label), findsOneWidget);
+      }
+    });
+
+    testWidgets('leaving before the second is up still saves', (tester) async {
+      final events = await open(tester, [call()]);
+
+      await tester.enterText(field('To do'), 'Send the guide');
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CalendarView), findsOneWidget);
+      expect(events.calls, contains('saveReport(e1)'));
+      expect(
+        events.store.last.report?.firstWhere((e) => e.label == 'To do').text,
+        'Send the guide',
+      );
+    });
+
+    testWidgets('done: the fields can still be written', (tester) async {
+      final day = today();
+      final events = await open(tester, [
+        call(
+          attendees: const [Attendee(personId: 'p1', came: true)],
+          doneAt: DateTime(day.year, day.month, day.day, 20),
+        ),
+      ]);
+
+      await tester.enterText(field('Other'), 'Lovely call');
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(events.calls, contains('saveReport(e1)'));
+    });
+
+    testWidgets('the previous report opens from its row', (tester) async {
+      final events = await open(tester, [before(), call()]);
+
+      expect(events.calls, contains('previousReport(mentorat:p1)'));
+      await tester.tap(find.text('Previous report'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReportView), findsOneWidget);
+      expect(find.text('Her first orders'), findsOneWidget);
+    });
+
+    testWidgets('no previous report: no row', (tester) async {
+      await open(tester, [call()]);
+
+      expect(find.text('Previous report'), findsNothing);
+    });
+
+    testWidgets('nobody invited: no previous report row', (tester) async {
+      await open(tester, [before(), call(attendees: const [])]);
+
+      expect(find.text('Previous report'), findsNothing);
+    });
+
+    testWidgets('a type without fields: no report', (tester) async {
+      await open(
+        tester,
+        [call(type: 'plain')],
+        types: [
+          EventWorkflow(
+            id: 'plain',
+            name: 'Plain',
+            steps: const [],
+            isGroup: false,
+          ),
+        ],
+      );
+      expect(find.text('REPORT'), findsNothing);
+      expect(find.text('PREP NOTES'), findsNothing);
+      expect(find.text('Ask about her kit'), findsOneWidget);
+    });
+
+    testWidgets('a group type with fields: no report', (tester) async {
+      await open(
+        tester,
+        [call(type: 'workshop')],
+        types: [
+          EventWorkflow(
+            id: 'workshop',
+            name: 'Workshop',
+            steps: const [],
+            reportFields: const ['Topics covered'],
+          ),
+        ],
+      );
+      expect(find.text('REPORT'), findsNothing);
+      expect(find.text('PREP NOTES'), findsNothing);
+    });
+
+    testWidgets('delete warns when the report goes with it', (tester) async {
+      await open(tester, [
+        call(report: const [(label: 'Topics covered', text: 'Her kit')]),
+      ]);
+
+      await tester.tap(find.byTooltip('Delete event'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'It goes from your calendar, with the report you wrote. '
+          'Nobody else is told.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    group('on a repeating one', () {
+      /// A weekly call from tonight; the third occurrence has a report.
+      /// Returns the repository and the second occurrence's id.
+      Future<(FakeEventRepository, String)> weekly() async {
+        final events = FakeEventRepository();
+        final day = today();
+        await events.addSeries(
+          (
+            title: 'Team call',
+            startsAt: DateTime(day.year, day.month, day.day, 19),
+            endsAt: null,
+            place: null,
+            link: null,
+            notes: null,
+            eventWorkflowId: null,
+          ),
+          (everyWeeks: 1, untilOn: null),
+          'Europe/Paris',
+        );
+        events.store[2] = events.store[2].withReport(const [
+          (label: 'Topics covered', text: 'Her kit'),
+        ]);
+        return (events, events.store[1].id);
+      }
+
+      Future<void> openOccurrence(
+        WidgetTester tester,
+        FakeEventRepository events,
+        String id,
+      ) async {
+        final container = await pumpLoomia(
+          tester,
+          size: const Size(390, 1000),
+          events: events,
+        );
+        container.read(routerProvider).go(Routes.eventLocation(id));
+        await tester.pumpAndSettle();
+      }
+
+      const warning = 'This also deletes a report you wrote.';
+
+      testWidgets('delete, This and following warns', (tester) async {
+        final (events, id) = await weekly();
+        await openOccurrence(tester, events, id);
+
+        await tester.tap(find.byTooltip('Delete event'));
+        await tester.pumpAndSettle();
+        expect(find.text(warning), findsNothing);
+        await tester.tap(find.text('This and following events'));
+        await tester.pumpAndSettle();
+
+        expect(find.text(warning), findsOneWidget);
+      });
+
+      testWidgets('a new repeat warns', (tester) async {
+        final (events, id) = await weekly();
+        await openOccurrence(tester, events, id);
+
+        await tester.tap(find.byTooltip('Edit event'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(ChoiceChip, 'Every 2 weeks'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+        await tester.pumpAndSettle();
+
+        expect(find.text(warning), findsOneWidget);
+      });
+
+      testWidgets('a new title does not warn', (tester) async {
+        final (events, id) = await weekly();
+        await openOccurrence(tester, events, id);
+
+        await tester.tap(find.byTooltip('Edit event'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('This and following events'));
+        await tester.pumpAndSettle();
+
+        expect(find.text(warning), findsNothing);
+      });
     });
   });
 }
