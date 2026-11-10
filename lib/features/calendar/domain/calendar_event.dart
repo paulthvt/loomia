@@ -1,3 +1,4 @@
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
 /// Someone invited to an event: going or not yet (#314), and whether they
@@ -76,6 +77,7 @@ class CalendarEvent {
     this.eventWorkflowId,
     this.stepsDone = const {},
     this.series,
+    this.report,
   });
 
   final String id;
@@ -107,6 +109,9 @@ class CalendarEvent {
   /// The series it is an occurrence of; null for a single event.
   final EventSeries? series;
 
+  /// The report filled after the event, frozen to its type's labels at save.
+  final List<ReportEntry>? report;
+
   bool get done => doneAt != null;
 
   /// Over by [now] (#451): it has ended, or started when it has no end.
@@ -127,6 +132,22 @@ class CalendarEvent {
     final local = startsAt.toLocal();
     return DateTime(local.year, local.month, local.day);
   }
+
+  CalendarEvent withReport(List<ReportEntry>? report) => CalendarEvent(
+    id: id,
+    title: title,
+    startsAt: startsAt,
+    endsAt: endsAt,
+    place: place,
+    link: link,
+    notes: notes,
+    attendees: attendees,
+    doneAt: doneAt,
+    eventWorkflowId: eventWorkflowId,
+    stepsDone: stepsDone,
+    series: series,
+    report: report,
+  );
 }
 
 /// Someone who was there, as Who was there sends them (#318): a prospect

@@ -19,10 +19,13 @@ class ActivityRepository {
   static const String _table = 'activity';
 
   /// Unordered: the controller sorts by the local day, which the server
-  /// doesn't know.
+  /// doesn't know. Embeds the event's report, for a call entry.
   // ponytail: whole history in one fetch, paginate when a person has hundreds.
   Future<List<Activity>> list(String personId) => guardPeople(() async {
-    final rows = await _client.from(_table).select().eq('person_id', personId);
+    final rows = await _client
+        .from(_table)
+        .select('*, event(report)')
+        .eq('person_id', personId);
     return rows.map(activityFromRow).toList();
   });
 
@@ -131,6 +134,7 @@ const _kindFromColumn = {
 
 Activity activityFromRow(Map<String, dynamic> row) {
   final stage = row['stage'] as String?;
+  final event = row['event'] as Map<String, dynamic>?;
   return Activity(
     id: row['id'] as String,
     personId: row['person_id'] as String?,
@@ -146,6 +150,19 @@ Activity activityFromRow(Map<String, dynamic> row) {
         ? null
         : Stage.values.asNameMap()[stage] ?? (throw PeopleFailure.unknown),
     createdAt: DateTime.parse(row['created_at'] as String),
+    eventId: row['event_id'] as String?,
+    report: event == null
+        ? null
+        : switch (event['report']) {
+            final List<dynamic> report => [
+              for (final entry in report.cast<Map<String, dynamic>>())
+                (
+                  label: entry['label'] as String,
+                  text: entry['text'] as String,
+                ),
+            ],
+            _ => null,
+          },
   );
 }
 

@@ -11,6 +11,7 @@ import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
 import 'package:loomia/features/calendar/presentation/people_picker.dart';
@@ -293,13 +294,19 @@ class _EventFormState extends ConsumerState<_EventForm> {
     final series = event?.series;
     EventScope? scope;
     if (event != null && series != null && !event.done) {
-      // An occurrence: a new rule or day only reaches the following ones.
+      // An occurrence: a new rule or day only reaches the following ones,
+      // generated again, and their reports go.
+      final ruleChanged =
+          repeatWeeks != series.everyWeeks ||
+          until != series.untilOn ||
+          _day != event.day;
+      final loaded = ref.read(eventsProvider(owner)).value ?? const [];
       scope = await pickScope(
         context,
-        ruleChanged:
-            repeatWeeks != series.everyWeeks ||
-            until != series.untilOn ||
-            _day != event.day,
+        ruleChanged: ruleChanged,
+        losesReport: {
+          if (ruleChanged && reportsFrom(loaded, event)) EventScope.following,
+        },
       );
       if (scope == null || !mounted) return;
     }

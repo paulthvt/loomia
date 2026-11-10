@@ -1,8 +1,8 @@
--- New defaults (#319): what seed_workflows creates, as spec §2 lists it.
+-- New defaults (#319, #483): what seed_workflows creates, as spec §2 lists it.
 -- Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -20,9 +20,10 @@ select results_eq(
             (select count(*)::int from public.event_workflow_step s
               where s.event_workflow_id = w.id)
      from public.event_workflow w order by name $$,
-  $$ values ('Unboxing call', false, 0), ('Wellness check', false, 3),
-            ('Wellness consultation', false, 0), ('Workshop', true, 4) $$,
-  'four event types: one group, three for one person'
+  $$ values ('Mentoring', false, 0), ('Unboxing call', false, 0),
+            ('Wellness check', false, 3), ('Wellness consultation', false, 0),
+            ('Workshop', true, 4) $$,
+  'five event types: one group, four for one person'
 );
 select results_eq(
   $$ select s.label, s.days from public.event_workflow_step s
@@ -42,11 +43,8 @@ select results_eq(
             ('prospect', 'Wellness check invite', false, false),
             ('prospect', 'Workshop invite', false, false),
             ('customer', 'New customer', true, false),
-            ('team', 'Onboarding', true, false),
-            ('team', 'Team check-in — every 2 weeks', false, true),
-            ('team', 'Team check-in — monthly', false, true),
-            ('team', 'Team check-in — weekly', false, true) $$,
-  'the eight workflows, one default per stage, the check-ins repeat'
+            ('team', 'Onboarding', true, false) $$,
+  'the five workflows, one default per stage, no check-ins'
 );
 select results_eq(
   $$ select s.position, s.label, s.days from public.workflow_step s
@@ -85,13 +83,10 @@ select results_eq(
      join public.workflow f on f.id = n.workflow_id
      join public.workflow t on t.id = n.next_workflow_id
      order by f.name, t.name $$,
-  $$ values ('Onboarding', 'Team check-in — every 2 weeks'),
-            ('Onboarding', 'Team check-in — monthly'),
-            ('Onboarding', 'Team check-in — weekly'),
-            ('Samples', 'Wellness check invite'),
+  $$ values ('Samples', 'Wellness check invite'),
             ('Samples', 'Workshop invite'),
             ('Workshop invite', 'Wellness check invite') $$,
-  'Samples and Workshop invite lead on; Onboarding to a check-in'
+  'Samples and Workshop invite lead on; Onboarding to nothing'
 );
 
 -- 8: no loyalty step: What's next asks.
@@ -100,15 +95,33 @@ select is(
   'no loyalty step'
 );
 
--- 9-10: in French, for B.
+-- 9-10: Mentoring's report, and onboarding plans it.
+select is(
+  (select report_fields from public.event_workflow where name = 'Mentoring'),
+  array['Topics covered', 'Actions done, in progress and planned',
+        'Issues encountered', 'To do', 'Other'],
+  'Mentoring: the five report fields, in order'
+);
+select results_eq(
+  $$ select s.label, s.days, e.name from public.workflow_step s
+     join public.workflow w on w.id = s.workflow_id
+     left join public.event_workflow e on e.id = s.event_workflow_id
+     where w.name = 'Onboarding' order by s.position $$,
+  $$ values ('Book the unboxing call', 0, 'Unboxing call'),
+            ('Give access to the training', 0, null),
+            ('Offer a wellness consultation', 7, 'Wellness consultation'),
+            ('Plan the mentoring', 0, 'Mentoring') $$,
+  'Onboarding: four steps, the last plans the mentoring'
+);
+
+-- 11-14: in French, for B.
 set local request.jwt.claims =
   '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
 select public.seed_workflows('fr', '2026-10-15');
 select results_eq(
   $$ select name from public.workflow order by name $$,
   $$ select unnest(array['Échantillons', 'Invitation atelier', 'Invitation bilan bien-être',
-            'Nouveau client', 'Onboarding', 'Suivi équipe — hebdo',
-            'Suivi équipe — mensuel', 'Suivi équipe — toutes les 2 semaines'])
+            'Nouveau client', 'Onboarding'])
      order by 1 $$,
   'the French names'
 );
@@ -119,6 +132,23 @@ select results_eq(
   $$ values ('Rappel (J-3)'), ('Rappel (la veille)'), ('Rappel (le matin)'),
             ('Message de remerciement') $$,
   'the French checklist'
+);
+select results_eq(
+  $$ select report_fields from public.event_workflow where name = 'Mentorat' $$,
+  $$ values (array['Sujets abordés', 'Actions faites / en cours et prévues',
+       'Problématiques rencontrées', 'À faire', 'Divers']) $$,
+  'Mentorat: the French report fields'
+);
+select results_eq(
+  $$ select s.label, s.days, e.name from public.workflow_step s
+     join public.workflow w on w.id = s.workflow_id
+     left join public.event_workflow e on e.id = s.event_workflow_id
+     where w.name = 'Onboarding' order by s.position $$,
+  $$ values ('Caler l''appel d''unboxing', 0, 'Appel d''unboxing'),
+            ('Donner l''accès à la formation', 0, null),
+            ('Proposer une consultation bien-être', 7, 'Consultation bien-être'),
+            ('Planifier le mentorat', 0, 'Mentorat') $$,
+  'Onboarding in French: the mentoring planned last'
 );
 
 select * from finish();

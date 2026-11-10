@@ -57,6 +57,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         id: workflow.id,
         name: name,
         isGroup: workflow.isGroup,
+        reportFields: workflow.reportFields,
         steps: workflow.steps,
       ),
     );
@@ -71,6 +72,22 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         id: workflow.id,
         name: workflow.name,
         isGroup: on,
+        reportFields: workflow.reportFields,
+        steps: workflow.steps,
+      ),
+    );
+  }
+
+  @override
+  Future<void> setReportFields(String id, List<String> fields) async {
+    await _record('setReportFields($id, $fields)');
+    _change(
+      id,
+      (workflow) => EventWorkflow(
+        id: workflow.id,
+        name: workflow.name,
+        isGroup: workflow.isGroup,
+        reportFields: fields,
         steps: workflow.steps,
       ),
     );
@@ -96,6 +113,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         id: workflow.id,
         name: workflow.name,
         isGroup: workflow.isGroup,
+        reportFields: workflow.reportFields,
         steps: [
           ...workflow.steps,
           EventWorkflowStep(
@@ -154,6 +172,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         id: workflow.id,
         name: workflow.name,
         isGroup: workflow.isGroup,
+        reportFields: workflow.reportFields,
         steps: [
           for (final step in workflow.steps)
             if (step.id != stepId) step else ?change(step),

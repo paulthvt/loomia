@@ -693,6 +693,32 @@ void main() {
     );
     expect(fake.calls, containsAll(['tick(e1:s1)', 'untick(e1:s1)']));
   });
+
+  test(
+    'saveReport with all-blank entries clears the report in state',
+    () async {
+      final fake = FakeEventRepository([_workshop]);
+      final container = _container(fake);
+      await container.read(eventsProvider(_owner).future);
+      final events = container.read(eventsProvider(_owner).notifier);
+
+      await events.saveReport('e1', const [
+        (label: 'A', text: 'filled'),
+        (label: 'B', text: 'content'),
+      ]);
+      expect(
+        container.read(eventsProvider(_owner)).value!.single.report,
+        const [(label: 'A', text: 'filled'), (label: 'B', text: 'content')],
+      );
+
+      await events.saveReport('e1', const [
+        (label: 'A', text: '  '),
+        (label: 'B', text: ''),
+      ]);
+      expect(container.read(eventsProvider(_owner)).value!.single.report, null);
+      expect(fake.calls, ['list()', 'saveReport(e1)', 'saveReport(e1)']);
+    },
+  );
 }
 
 /// Fails list() once after close.

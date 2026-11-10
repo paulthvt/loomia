@@ -43,6 +43,10 @@ class EventWorkflowsController extends AsyncNotifier<List<EventWorkflow>> {
     }
     return result;
   }
+
+  /// Updates report fields, then reloads. Rethrows `PeopleFailure`.
+  Future<void> setReportFields(String id, List<String> fields) =>
+      edit((repository) => repository.setReportFields(id, fields));
 }
 
 /// [EventWorkflowsController.edit] on the signed-in account, read at call

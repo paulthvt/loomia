@@ -193,4 +193,47 @@ void main() {
       'event_workflow_id': null,
     });
   });
+
+  test('reads report from jsonb array', () {
+    final event = eventFromRow({
+      'id': 'e1',
+      'title': 'Workshop',
+      'starts_at': '2026-11-09T19:00:00Z',
+      'report': [
+        {'label': 'A', 'text': 'x'},
+        {'label': 'B', 'text': 'y'},
+      ],
+    });
+
+    expect(event.report, [(label: 'A', text: 'x'), (label: 'B', text: 'y')]);
+  });
+
+  test('null report maps to null', () {
+    final event = eventFromRow({
+      'id': 'e1',
+      'title': 'Workshop',
+      'starts_at': '2026-11-09T19:00:00Z',
+      'report': null,
+    });
+
+    expect(event.report, null);
+  });
+
+  test('draftToEventRow has no report key', () {
+    final draft = (
+      title: 'Workshop',
+      startsAt: DateTime(2026, 11, 9, 19),
+      endsAt: DateTime(2026, 11, 9, 21),
+      place: 'Office',
+      link: 'https://meet.example.com',
+      notes: 'Bring laptop',
+      eventWorkflowId: 'wf1',
+    );
+
+    final row = draftToEventRow(draft);
+
+    expect(row.containsKey('report'), false);
+    expect(row['title'], 'Workshop');
+    expect(row['event_workflow_id'], 'wf1');
+  });
 }

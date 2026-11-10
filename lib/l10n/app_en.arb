@@ -1251,6 +1251,10 @@
       "note": { "type": "String" }
     }
   },
+  "historyReadReport": "Read the report",
+  "@historyReadReport": {
+    "description": "What a screen reader says a tap does on a history entry that has an event report: it opens the report to read."
+  },
   "historyDeleteTitle": "Delete this entry?",
   "@historyDeleteTitle": {
     "description": "Title of the confirmation before deleting a history entry."
@@ -1855,6 +1859,18 @@
   "eventWorkflowFooter": "Each step comes due a number of days before or after the event.",
   "@eventWorkflowFooter": {
     "description": "Footer of an event workflow's editor."
+  },
+  "eventWorkflowReport": "Report",
+  "@eventWorkflowReport": {
+    "description": "Section header in an event type editor for report fields: labels filled after an event."
+  },
+  "eventWorkflowReportAdd": "Add field",
+  "@eventWorkflowReportAdd": {
+    "description": "Action that adds a report field to an event type."
+  },
+  "eventWorkflowReportNew": "New",
+  "@eventWorkflowReportNew": {
+    "description": "Label of a newly added report field, before the user renames it."
   },
   "eventType": "Type",
   "@eventType": {
@@ -3755,5 +3771,44 @@
   "bugReportUndo": "Undo",
   "@bugReportUndo": {
     "description": "Snackbar action that shows the bug button again right after it was turned off."
+  },
+  "eventPrepNotes": "Prep notes",
+  "@eventPrepNotes": {
+    "description": "Heading above an event's notes on an event type with a report (e.g. a mentoring call): what to bring up during it."
+  },
+  "eventReport": "Report",
+  "@eventReport": {
+    "description": "Heading of an event's report fields (e.g. topics covered, to do), filled in during or after a one-to-one call. Also the title of the sheet that shows a report."
+  },
+  "eventReportSaved": "Saved",
+  "@eventReportSaved": {
+    "description": "Muted hint beside eventReport once what was typed in the report has been saved on its own (there is no Save button)."
+  },
+  "eventReportSaveFailed": "Your report couldn't be saved. Check your connection and type again.",
+  "@eventReportSaveFailed": {
+    "description": "Snackbar when the report typed on an event could not be saved."
+  },
+  "eventPreviousReport": "Previous report",
+  "@eventPreviousReport": {
+    "description": "Row on an event (and title of the sheet it opens): the report of the last call of the same type with the same person."
+  },
+  "reportDay": "{day}",
+  "@reportDay": {
+    "description": "The day of the event a report belongs to, e.g. 'Thursday, October 8', under the report's title.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMMEEEEd" }
+    }
+  },
+  "reportOpenEvent": "Open event",
+  "@reportOpenEvent": {
+    "description": "Button under a report: opens the event it was written on."
+  },
+  "eventDeleteReportBody": "It goes from your calendar, with the report you wrote. Nobody else is told.",
+  "@eventDeleteReportBody": {
+    "description": "Body of the dialog that confirms deleting an event, in place of eventDeleteBody, when a report was written on it."
+  },
+  "eventScopeReportLost": "This also deletes a report you wrote.",
+  "@eventScopeReportLost": {
+    "description": "Warning in the dialog that asks 'This event' or 'This and following events' (on delete, or on a new repeat or day) when the chosen one removes an event that has a report."
   }
 }

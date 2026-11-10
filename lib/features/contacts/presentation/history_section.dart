@@ -10,6 +10,7 @@ import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -22,10 +23,22 @@ import 'package:material_ui/material_ui.dart';
 /// `HISTORY`: the latest entries, the rest a tap away. It loads on its own,
 /// so a failure here leaves the rest of the page working.
 class HistorySection extends ConsumerStatefulWidget {
-  const HistorySection({required this.person, required this.onAdd, super.key});
+  const HistorySection({
+    required this.person,
+    required this.onAdd,
+    required this.onReport,
+    this.reportId,
+    super.key,
+  });
 
   final Person person;
   final VoidCallback onAdd;
+
+  /// Tapped an entry with a report: the page shows it.
+  final ValueChanged<Activity> onReport;
+
+  /// The entry whose report is open beside the history, highlighted.
+  final String? reportId;
 
   @override
   ConsumerState<HistorySection> createState() => _HistorySectionState();
@@ -169,12 +182,15 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
                 today: today,
                 model: model,
                 last: index == shown.length - 1,
+                selected: activity.id == widget.reportId,
+                // A report opens to be read; the event is where it changes.
                 // A loyalty entry follows the person's LRP: changed from
                 // the LRP line, never here.
-                onTap:
-                    activity.kind.isLoyalty ||
-                        (activity.kind == ActivityKind.stage &&
-                            activity != latestStage)
+                onTap: activity.eventId != null && activity.report != null
+                    ? () => widget.onReport(activity)
+                    : activity.kind.isLoyalty ||
+                          (activity.kind == ActivityKind.stage &&
+                              activity != latestStage)
                     ? null
                     : () => _edit(activity),
                 onDelete:
@@ -198,7 +214,7 @@ class _HistorySectionState extends ConsumerState<HistorySection> {
   }
 }
 
-/// One entry. Tap edits it. Long-press, right-click, or the screen reader's
+/// One entry. Tap edits it, or reads its report when it has one. Long-press, right-click, or the screen reader's
 /// Delete action removes it; stage entries can't be removed, and only the
 /// latest opens; loyalty entries do neither.
 class _Entry extends StatelessWidget {
@@ -207,6 +223,7 @@ class _Entry extends StatelessWidget {
     required this.today,
     required this.model,
     required this.last,
+    required this.selected,
     required this.onTap,
     required this.onDelete,
     super.key,
@@ -216,17 +233,39 @@ class _Entry extends StatelessWidget {
   final DateTime today;
   final BusinessModel model;
   final bool last;
+  final bool selected;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final item = ActivityItem(
+    final report = activity.eventId == null ? null : activity.report;
+    Widget item = ActivityItem(
       title: activityTitle(l10n, activity, model),
       meta: activityMeta(l10n, activity, today),
       showRailLine: !last,
+      preview: reportPreview(report),
     );
+    if (selected) {
+      // Wider than the row, as in Figma, so the text doesn't move.
+      item = Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            left: -AppSpacing.sm,
+            right: -AppSpacing.sm,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+            ),
+          ),
+          item,
+        ],
+      );
+    }
     final onDelete = this.onDelete;
     final onTap = this.onTap;
     if (onDelete == null && onTap == null) return item;
@@ -234,7 +273,11 @@ class _Entry extends StatelessWidget {
       container: true,
       onTap: onTap,
       // "Double tap to edit", not a bare "double tap to activate".
-      onTapHint: onTap == null ? null : l10n.editActivityTitle,
+      onTapHint: onTap == null
+          ? null
+          : report == null
+          ? l10n.editActivityTitle
+          : l10n.historyReadReport,
       customSemanticsActions: onDelete == null
           ? null
           : {CustomSemanticsAction(label: l10n.historyDeleteConfirm): onDelete},

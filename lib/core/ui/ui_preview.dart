@@ -198,6 +198,11 @@ class _Gallery extends StatelessWidget {
         const SectionHeader(title: 'Activity'),
         const ActivityItem(title: 'Sophie Renard', meta: 'Yesterday · Message'),
         const ActivityItem(
+          title: 'Mentoring Julie',
+          meta: 'October 8 · Event',
+          preview: 'Her start, her first orders, the December workshop',
+        ),
+        const ActivityItem(
           title: 'Karim Benali',
           meta: '2 days ago · Call',
           showRailLine: false,

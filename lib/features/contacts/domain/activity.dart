@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 
 /// What an entry records. [stage] entries are written by the database when a
@@ -46,6 +47,8 @@ class Activity {
     this.text,
     this.stage,
     this.amount,
+    this.eventId,
+    this.report,
   }) : assert(
          kind == ActivityKind.stage
              ? stage != null && text == null && amount == null
@@ -84,6 +87,12 @@ class Activity {
   /// The stage moved to; stage entries only.
   final Stage? stage;
   final DateTime createdAt;
+
+  /// The event it came from; event entries only.
+  final String? eventId;
+
+  /// The event's report; from `select('*, event(report)')`.
+  final List<ReportEntry>? report;
 
   /// The day it shows under. A stage entry's [happenedOn] is the server's UTC
   /// day, and "today" is decided on the device, so it uses the local day of

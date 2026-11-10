@@ -1,4 +1,5 @@
 import 'package:loomia/app/theme/app_colors.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -10,15 +11,22 @@ enum EventScope { one, following }
 /// occurrence: Save, Add people and Remove ([delete] false), or Delete,
 /// confirmed here with no second dialog. [ruleChanged]: a new repeat only
 /// reaches the following ones, so "This event" is off. [task]: worded for
-/// a repeating task (#376) instead. Null when cancelled.
+/// a repeating task (#376) instead. [losesReport]: the choices that remove
+/// an event with a report, warned about once chosen. Null when cancelled.
 Future<EventScope?> pickScope(
   BuildContext context, {
   bool delete = false,
   bool ruleChanged = false,
   bool task = false,
+  Set<EventScope> losesReport = const {},
 }) => LoomiaDialog.show<EventScope>(
   context,
-  (_) => _ScopeDialog(delete: delete, ruleChanged: ruleChanged, task: task),
+  (_) => _ScopeDialog(
+    delete: delete,
+    ruleChanged: ruleChanged,
+    task: task,
+    losesReport: losesReport,
+  ),
 );
 
 class _ScopeDialog extends StatefulWidget {
@@ -26,11 +34,13 @@ class _ScopeDialog extends StatefulWidget {
     this.delete = false,
     this.ruleChanged = false,
     this.task = false,
+    this.losesReport = const {},
   });
 
   final bool delete;
   final bool ruleChanged;
   final bool task;
+  final Set<EventScope> losesReport;
 
   @override
   State<_ScopeDialog> createState() => _ScopeDialogState();
@@ -110,6 +120,16 @@ class _ScopeDialogState extends State<_ScopeDialog> {
                   : l10n.eventScopeRuleChanged,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: LoomiaColors.of(context).textMuted,
+              ),
+            ),
+          if (widget.losesReport.contains(_scope))
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
+              child: Text(
+                l10n.eventScopeReportLost,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.error,
+                ),
               ),
             ),
         ],

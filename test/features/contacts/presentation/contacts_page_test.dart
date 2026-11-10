@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
@@ -11,6 +12,7 @@ import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -57,6 +59,29 @@ Activity _note(String id, String text, int day) => Activity(
   createdAt: DateTime.utc(2026, 9, day, 12),
 );
 
+Activity _event(
+  String id,
+  String text,
+  int day, {
+  String? eventId,
+  List<ReportEntry>? report,
+}) => Activity(
+  id: id,
+  personId: 'p1',
+  kind: ActivityKind.event,
+  happenedOn: DateTime(2026, 9, day),
+  text: text,
+  createdAt: DateTime.utc(2026, 9, day, 12),
+  eventId: eventId,
+  report: report,
+);
+
+const _mentoring = [
+  (label: 'Topics', text: 'Her start, her first orders\nand the workshop'),
+  (label: 'Blockers', text: ''),
+  (label: 'To do', text: 'Pick her kit'),
+];
+
 Person _marieOn(num position, {DateTime? pausedAt}) => Person(
   id: 'p1',
   name: 'Marie Dupont',
@@ -86,6 +111,7 @@ void main() {
   late FakeActivityRepository activities;
   late FakePhotoRepository photos;
   late FakePhotoPicker picker;
+  late ProviderContainer container;
 
   setUp(() {
     photos = FakePhotoRepository();
@@ -100,7 +126,7 @@ void main() {
     FakeWorkflowRepository? workflows,
     FakeAuthRepository? auth,
   }) async {
-    final container = await pumpLoomia(
+    container = await pumpLoomia(
       tester,
       size: size,
       auth: auth,
@@ -832,6 +858,125 @@ void main() {
 
     expect(activities.calls, contains('delete(a1)'));
     expect(find.text('Ordered the cream'), findsNothing);
+  });
+
+  group('report', () {
+    String path() => container
+        .read(routerProvider)
+        .routerDelegate
+        .currentConfiguration
+        .uri
+        .path;
+
+    testWidgets('an entry with a report shows its first line and opens it', (
+      tester,
+    ) async {
+      activities.store.add(
+        _event('a1', 'Mentoring Marie', 8, eventId: 'ev1', report: _mentoring),
+      );
+      await openMarie(tester);
+
+      await reveal(tester, find.text('Mentoring Marie'));
+      expect(find.text('Her start, her first orders'), findsOneWidget);
+      expect(find.byIcon(Icons.description_outlined), findsOneWidget);
+      await tester.tap(find.text('Mentoring Marie'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(
+        find.text('Her start, her first orders\nand the workshop'),
+        findsOneWidget,
+      );
+      expect(find.text('To do'), findsOneWidget);
+      expect(find.text('Blockers'), findsNothing);
+      expect(find.widgetWithText(FilledButton, 'Save'), findsNothing);
+
+      await tester.tap(find.text('Open event'));
+      await tester.pumpAndSettle();
+      expect(path(), Routes.eventLocation('ev1'));
+    });
+
+    testWidgets('an event entry without a report, or without an event, '
+        'still edits and deletes', (tester) async {
+      activities.store.addAll([
+        _event('a1', 'Came to the workshop', 8, eventId: 'ev1'),
+        _event('a2', 'Old event', 4, report: _mentoring),
+      ]);
+      await openMarie(tester);
+
+      for (final title in ['Came to the workshop', 'Old event']) {
+        await reveal(tester, find.text(title));
+        await tester.tap(find.text(title));
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Save'), findsOneWidget);
+        Navigator.pop(tester.element(find.text('Save')));
+        await tester.pumpAndSettle();
+      }
+      expect(find.byIcon(Icons.description_outlined), findsNothing);
+
+      await reveal(tester, find.text('Old event'));
+      await tester.longPress(find.text('Old event'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete this entry?'), findsOneWidget);
+    });
+
+    testWidgets('long-press on an entry with a report still deletes', (
+      tester,
+    ) async {
+      activities.store.add(
+        _event('a1', 'Mentoring Marie', 8, eventId: 'ev1', report: _mentoring),
+      );
+      await openMarie(tester);
+
+      await reveal(tester, find.text('Mentoring Marie'));
+      await tester.longPress(find.text('Mentoring Marie'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete this entry?'), findsOneWidget);
+    });
+
+    testWidgets('desktop: the report takes the place of What you know, '
+        'swaps, and closes', (tester) async {
+      activities.store.addAll([
+        _event('a1', 'Mentoring Marie', 8, eventId: 'ev1', report: _mentoring),
+        _event(
+          'a2',
+          'Second call',
+          4,
+          eventId: 'ev2',
+          report: const [
+            (label: 'Topics', text: 'Her questions\nabout the kit'),
+          ],
+        ),
+      ]);
+      await openContacts(tester, size: _desktop);
+      await tester.tap(find.text('Marie Dupont'));
+      await tester.pumpAndSettle();
+      expect(find.text('INFO'), findsOneWidget);
+
+      await tester.tap(find.text('Mentoring Marie'));
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('INFO'), findsNothing);
+      expect(find.text('Pick her kit'), findsOneWidget);
+      // The history stays.
+      expect(find.text('Second call'), findsOneWidget);
+
+      await tester.tap(find.text('Second call'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pick her kit'), findsNothing);
+      expect(find.text('Her questions\nabout the kit'), findsOneWidget);
+
+      await tester.tap(find.byType(CloseButton));
+      await tester.pumpAndSettle();
+      expect(find.text('Her questions\nabout the kit'), findsNothing);
+      expect(find.text('INFO'), findsOneWidget);
+
+      await tester.tap(find.text('Second call'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open event'));
+      await tester.pumpAndSettle();
+      expect(path(), Routes.eventLocation('ev2'));
+    });
   });
 
   const markFirst = 'Mark "Send a first message" done';
