@@ -1,5 +1,22 @@
 # Changelog
 
+## [v2026.11.7](https://github.com/paulthvt/loomia/compare/v2026.11.6...v2026.11.7) (2026-11-10)
+
+### ✨ Features
+
+- **calendar:** event reports, and the mentorat as a recurring event (#485) ([16ca01b](https://github.com/paulthvt/loomia/commit/16ca01b885caa7659cce0e10c2f488e15aaf4345))
+- **today:** Not now on Catch up, for a row, a swipe or everyone (#482) ([b49a4f6](https://github.com/paulthvt/loomia/commit/b49a4f61788e97e18f59858742a04e126ceb009c))
+- **goals:** a month review between closing the month and planning the next (#477) ([06c4972](https://github.com/paulthvt/loomia/commit/06c4972324ba0d1d3c7523cdec340f033402b0bb))
+
+### 📚 Documentation
+
+- **design:** acknowledge a reached month, don't celebrate it (#476) ([23b2f9a](https://github.com/paulthvt/loomia/commit/23b2f9ae699b25b6a3182b070685638888d70f39))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#484) ([a269774](https://github.com/paulthvt/loomia/commit/a269774d02be0346e76dbf94fdaaa8bc95fe9dfe))
+- **auth:** keep sign-ups off until launch in config.toml (#480) ([016dccf](https://github.com/paulthvt/loomia/commit/016dccf37ca1fe57db063d0def918b81cc8d3184))
+
 ## [v2026.11.6](https://github.com/paulthvt/loomia/compare/v2026.11.5...v2026.11.6) (2026-11-07)
 
 ### ✨ Features
