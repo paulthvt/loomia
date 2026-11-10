@@ -19,10 +19,13 @@ class ActivityRepository {
   static const String _table = 'activity';
 
   /// Unordered: the controller sorts by the local day, which the server
-  /// doesn't know.
+  /// doesn't know. Embeds the event's report, for a call entry.
   // ponytail: whole history in one fetch, paginate when a person has hundreds.
   Future<List<Activity>> list(String personId) => guardPeople(() async {
-    final rows = await _client.from(_table).select().eq('person_id', personId);
+    final rows = await _client
+        .from(_table)
+        .select('*, event(report)')
+        .eq('person_id', personId);
     return rows.map(activityFromRow).toList();
   });
 
