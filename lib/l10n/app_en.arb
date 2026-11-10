@@ -1856,6 +1856,18 @@
   "@eventWorkflowFooter": {
     "description": "Footer of an event workflow's editor."
   },
+  "eventWorkflowReport": "Report",
+  "@eventWorkflowReport": {
+    "description": "Section header in an event type editor for report fields: labels filled after an event."
+  },
+  "eventWorkflowReportAdd": "Add field",
+  "@eventWorkflowReportAdd": {
+    "description": "Action that adds a report field to an event type."
+  },
+  "eventWorkflowReportNew": "New",
+  "@eventWorkflowReportNew": {
+    "description": "Label of a newly added report field, before the user renames it."
+  },
   "eventType": "Type",
   "@eventType": {
     "description": "Label of the event form's choice of event workflow: what kind of event it is (e.g. Workshop, Training). Choosing one fills the title and the after-the-event workflows. Optional: None by default."

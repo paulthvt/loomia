@@ -116,7 +116,7 @@ class EventWorkflowEditor extends ConsumerWidget {
   }
 }
 
-enum _Control { name, group, delete }
+enum _Control { name, group, reportFields, delete }
 
 /// The editor, fed the saved workflow and callbacks per write; each write
 /// callback throws `PeopleFailure`.
@@ -252,6 +252,45 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
     }
   }
 
+  void _addReportField() {
+    final l10n = AppLocalizations.of(context);
+    final fields = [
+      ...widget.workflow.reportFields,
+      l10n.eventWorkflowReportNew,
+    ];
+    unawaited(_saveReportFields(fields));
+  }
+
+  void _reorderReportFields(int from, int to) {
+    final fields = [...widget.workflow.reportFields];
+    final item = fields.removeAt(from);
+    fields.insert(to > from ? to - 1 : to, item);
+    unawaited(_saveReportFields(fields));
+  }
+
+  void _renameReportField(int index, String label) {
+    final trimmed = label.trim();
+    if (trimmed.isEmpty) return;
+    final fields = [...widget.workflow.reportFields];
+    fields[index] = trimmed;
+    unawaited(_saveReportFields(fields));
+  }
+
+  void _deleteReportField(int index) {
+    final fields = [...widget.workflow.reportFields];
+    fields.removeAt(index);
+    unawaited(_saveReportFields(fields));
+  }
+
+  Future<void> _saveReportFields(List<String> fields) async {
+    final notifier = _notifier;
+    if (notifier == null) return;
+    await _run(
+      _Control.reportFields,
+      () => notifier.setReportFields(widget.workflow.id, fields),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -313,6 +352,23 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        if (!workflow.isGroup) ...[
+          const SizedBox(height: AppSpacing.lg),
+          SectionHeader(
+            title: l10n.eventWorkflowReport,
+            actionLabel: l10n.eventWorkflowReportAdd,
+            onAction: _busy.contains(_Control.reportFields)
+                ? null
+                : () => _addReportField(),
+          ),
+          _ReportFieldsList(
+            fields: workflow.reportFields,
+            busy: _busy.contains(_Control.reportFields),
+            onReorder: (from, to) => _reorderReportFields(from, to),
+            onRename: (index, label) => _renameReportField(index, label),
+            onDelete: (index) => _deleteReportField(index),
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
         Text(
           l10n.eventWorkflowFooter,
@@ -335,6 +391,144 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _ReportFieldsList extends StatelessWidget {
+  const _ReportFieldsList({
+    required this.fields,
+    required this.busy,
+    required this.onReorder,
+    required this.onRename,
+    required this.onDelete,
+  });
+
+  final List<String> fields;
+  final bool busy;
+  final void Function(int from, int to) onReorder;
+  final void Function(int index, String label) onRename;
+  final void Function(int index) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    if (fields.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        onReorderItem: (from, to) {
+          if (!busy) onReorder(from, to);
+        },
+        itemCount: fields.length,
+        buildDefaultDragHandles: false,
+        itemBuilder: (context, index) => _ReportFieldItem(
+          key: ValueKey(fields[index] + index.toString()),
+          index: index,
+          label: fields[index],
+          busy: busy,
+          onRename: (label) => onRename(index, label),
+          onDelete: () => onDelete(index),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportFieldItem extends StatefulWidget {
+  const _ReportFieldItem({
+    required this.index,
+    required this.label,
+    required this.busy,
+    required this.onRename,
+    required this.onDelete,
+    super.key,
+  });
+
+  final int index;
+  final String label;
+  final bool busy;
+  final ValueChanged<String> onRename;
+  final VoidCallback onDelete;
+
+  @override
+  State<_ReportFieldItem> createState() => _ReportFieldItemState();
+}
+
+class _ReportFieldItemState extends State<_ReportFieldItem> {
+  bool _editing = false;
+  late TextEditingController _controller;
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.label);
+    _focus.addListener(() {
+      if (!_focus.hasFocus && _editing) {
+        _save();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(_ReportFieldItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.label != oldWidget.label && !_editing) {
+      _controller.text = widget.label;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final label = _controller.text.trim();
+    if (label.isNotEmpty && label != widget.label) {
+      widget.onRename(label);
+    } else {
+      _controller.text = widget.label;
+    }
+    setState(() => _editing = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_editing) {
+      return ListTile(
+        leading: const Icon(Icons.drag_handle_rounded),
+        title: TextField(
+          controller: _controller,
+          focusNode: _focus,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _save(),
+        ),
+      );
+    }
+
+    return ListTile(
+      leading: ReorderableDelayedDragStartListener(
+        index: widget.index,
+        enabled: !widget.busy,
+        child: const Icon(Icons.drag_handle_rounded),
+      ),
+      title: Text(widget.label),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete_outline_rounded),
+        onPressed: widget.busy ? null : widget.onDelete,
+      ),
+      onTap: widget.busy
+          ? null
+          : () => setState(() {
+              _editing = true;
+            }),
     );
   }
 }

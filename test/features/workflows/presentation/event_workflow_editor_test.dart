@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
@@ -269,5 +270,172 @@ void main() {
       hasLength(1),
     );
     expect(find.text('EVENTS'), findsOneWidget);
+  });
+
+  testWidgets('Report section: hidden for group, shown for one-person', (
+    tester,
+  ) async {
+    final eventWorkflows = FakeEventWorkflowRepository([
+      EventWorkflow(
+        id: 'workshop',
+        name: 'Workshop',
+        steps: const [],
+        isGroup: true,
+      ),
+    ]);
+    await _openWorkshop(tester, eventWorkflows);
+
+    expect(find.text('Add field'), findsNothing);
+
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Several people'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Add field'));
+    expect(find.text('Add field'), findsOneWidget);
+  });
+
+  testWidgets('Report section: add a field', (tester) async {
+    final eventWorkflows = FakeEventWorkflowRepository([
+      EventWorkflow(
+        id: 'workshop',
+        name: 'Workshop',
+        steps: const [],
+        isGroup: false,
+        reportFields: const ['Topic'],
+      ),
+    ]);
+    await _openWorkshop(tester, eventWorkflows);
+
+    await tester.ensureVisible(find.text('Add field'));
+    await tester.tap(find.text('Add field'));
+    await tester.pumpAndSettle();
+
+    expect(
+      eventWorkflows.calls,
+      contains('setReportFields(workshop, [Topic, New])'),
+    );
+  });
+
+  testWidgets('Report section: rename a field', (tester) async {
+    final eventWorkflows = FakeEventWorkflowRepository([
+      EventWorkflow(
+        id: 'workshop',
+        name: 'Workshop',
+        steps: const [],
+        isGroup: false,
+        reportFields: const ['Topic'],
+      ),
+    ]);
+    await _openWorkshop(tester, eventWorkflows);
+
+    await tester.ensureVisible(find.text('Topic'));
+    await tester.tap(find.text('Topic'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).last, 'Subject');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(
+      eventWorkflows.calls,
+      contains('setReportFields(workshop, [Subject])'),
+    );
+  });
+
+  testWidgets('Report section: delete a field', (tester) async {
+    final eventWorkflows = FakeEventWorkflowRepository([
+      EventWorkflow(
+        id: 'workshop',
+        name: 'Workshop',
+        steps: const [],
+        isGroup: false,
+        reportFields: const ['Topic', 'Attendance'],
+      ),
+    ]);
+    await _openWorkshop(tester, eventWorkflows);
+
+    await tester.ensureVisible(find.text('Topic'));
+    final topicTile = find.ancestor(
+      of: find.text('Topic'),
+      matching: find.byType(ListTile),
+    );
+    final deleteIcon = find.descendant(
+      of: topicTile,
+      matching: find.byIcon(Icons.delete_outline_rounded),
+    );
+
+    await tester.tap(deleteIcon);
+    await tester.pumpAndSettle();
+
+    expect(
+      eventWorkflows.calls,
+      contains('setReportFields(workshop, [Attendance])'),
+    );
+  });
+
+  testWidgets('Report section: reorder fields', (tester) async {
+    final eventWorkflows = FakeEventWorkflowRepository([
+      EventWorkflow(
+        id: 'workshop',
+        name: 'Workshop',
+        steps: const [],
+        isGroup: false,
+        reportFields: const ['Topic', 'Attendance', 'Notes'],
+      ),
+    ]);
+    await _openWorkshop(tester, eventWorkflows);
+
+    await tester.ensureVisible(find.text('Topic'));
+    expect(find.text('Topic'), findsOneWidget);
+    expect(find.text('Attendance'), findsOneWidget);
+    expect(find.text('Notes'), findsOneWidget);
+
+    final topicTile = find.ancestor(
+      of: find.text('Topic'),
+      matching: find.byType(ListTile),
+    );
+    final dragHandle = find.descendant(
+      of: topicTile,
+      matching: find.byIcon(Icons.drag_handle_rounded),
+    );
+    expect(dragHandle, findsOneWidget);
+
+    final gesture = await tester.startGesture(tester.getCenter(dragHandle));
+    await tester.pump(kLongPressTimeout);
+    await gesture.moveBy(const Offset(0, 150));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(
+      eventWorkflows.calls.any((c) => c.startsWith('setReportFields')),
+      isTrue,
+    );
+  });
+
+  testWidgets('Report section: blank label refused', (tester) async {
+    final eventWorkflows = FakeEventWorkflowRepository([
+      EventWorkflow(
+        id: 'workshop',
+        name: 'Workshop',
+        steps: const [],
+        isGroup: false,
+        reportFields: const ['Topic'],
+      ),
+    ]);
+    await _openWorkshop(tester, eventWorkflows);
+
+    await tester.ensureVisible(find.text('Topic'));
+    await tester.tap(find.text('Topic'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).last, '   ');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(
+      eventWorkflows.calls,
+      isNot(contains(startsWith('setReportFields'))),
+    );
+    expect(find.text('Topic'), findsOneWidget);
   });
 }
