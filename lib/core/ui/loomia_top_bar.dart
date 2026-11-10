@@ -60,8 +60,6 @@ class LoomiaTopBar extends StatelessWidget {
                 ],
                 Text(
                   title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: large
                       ? theme.textTheme.displaySmall
                       : theme.textTheme.headlineSmall,
