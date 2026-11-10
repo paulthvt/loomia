@@ -147,7 +147,7 @@ void main() {
     );
   });
 
-  test('not paused: what they do, else what they need', () {
+  test('not paused: their bio, never what they need', () {
     final nurse = Person(
       id: 'p1',
       name: 'Sarah',
@@ -157,6 +157,19 @@ void main() {
       needs: 'Sleep',
     );
     expect(contactSubtitle(l10n, nurse), 'Nurse');
+    expect(
+      contactSubtitle(
+        l10n,
+        Person(
+          id: 'p2',
+          name: 'Léa',
+          stage: Stage.prospect,
+          stageSince: DateTime.utc(2026),
+          needs: 'Sleep',
+        ),
+      ),
+      isNull,
+    );
   });
 
   test('a step entry reads its label, then day · Step', () {
