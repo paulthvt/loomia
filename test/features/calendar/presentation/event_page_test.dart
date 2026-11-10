@@ -1017,6 +1017,71 @@ void main() {
       );
     });
 
+    /// [mentorat] with a step, whose tick reloads the events.
+    final withStep = EventWorkflow(
+      id: 'mentorat',
+      name: 'Mentoring',
+      steps: const [
+        EventWorkflowStep(id: 'notes', label: 'Send the notes', days: 1),
+      ],
+      isGroup: false,
+      reportFields: mentorat.reportFields,
+    );
+
+    testWidgets('typed, then a step ticked: the report still saves', (
+      tester,
+    ) async {
+      final events = await open(tester, [call()], types: [withStep]);
+
+      await tester.enterText(field('Topics covered'), 'Her kit');
+      await tester.tap(find.byTooltip('Mark "Send the notes" done'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+
+      expect(events.calls, contains('tick(e1:notes)'));
+      expect(tester.takeException(), isNull);
+      expect(events.store.last.report?.first.text, 'Her kit');
+      expect(find.text('Saved'), findsOneWidget);
+    });
+
+    testWidgets('typed, a step ticked, then left: the edit still goes out', (
+      tester,
+    ) async {
+      final events = await open(tester, [call()], types: [withStep]);
+
+      await tester.enterText(field('Topics covered'), 'Her');
+      await tester.tap(find.byTooltip('Mark "Send the notes" done'));
+      await tester.pumpAndSettle();
+      await tester.enterText(field('Topics covered'), 'Her kit');
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(events.store.last.report?.first.text, 'Her kit');
+    });
+
+    testWidgets('a save failing with anything else: no crash, saved on leave', (
+      tester,
+    ) async {
+      final events = await open(tester, [call()], failWith: StateError('x'));
+
+      await tester.enterText(field('To do'), 'Send the guide');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Saved'), findsNothing);
+      events.failWith = null;
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(
+        events.store.last.report?.firstWhere((e) => e.label == 'To do').text,
+        'Send the guide',
+      );
+    });
+
     testWidgets('scrolled away and back, what was typed is still there', (
       tester,
     ) async {

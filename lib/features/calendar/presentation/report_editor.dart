@@ -10,7 +10,6 @@ import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
-import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -53,8 +52,10 @@ class _ReportEditorState extends ConsumerState<ReportEditor>
   bool get _dirty => _version != _savedVersion;
 
   // Read on the first keystroke, as `ref` and the context are gone by
-  // dispose, where a pending save still has to go out.
-  EventsController? _events;
+  // dispose, where a pending save still has to go out. The controller is
+  // read from the container at each save, never kept.
+  ProviderContainer? _container;
+  String? _owner;
   ScaffoldMessengerState? _messenger;
   String? _failed;
 
@@ -64,9 +65,10 @@ class _ReportEditorState extends ConsumerState<ReportEditor>
   ];
 
   void _changed(String _) {
-    _events ??= ref.read(
-      eventsProvider(ref.read(accountProvider)?.email).notifier,
-    );
+    if (_container == null) {
+      _container = ProviderScope.containerOf(context, listen: false);
+      _owner = ref.read(accountProvider)?.email;
+    }
     _messenger ??= ScaffoldMessenger.maybeOf(context);
     _failed ??= AppLocalizations.of(context).eventReportSaveFailed;
     _version++;
@@ -92,10 +94,16 @@ class _ReportEditorState extends ConsumerState<ReportEditor>
 
   Future<void> _send(List<ReportEntry> entries, int version) async {
     try {
-      await _events?.saveReport(widget.event.id, entries);
+      await _container
+          ?.read(eventsProvider(_owner).notifier)
+          .saveReport(widget.event.id, entries);
       _savedVersion = version;
-    } on PeopleFailure {
-      _messenger?.showSnackBar(SnackBar(content: Text(_failed ?? '')));
+      // Anything thrown, not only a PeopleFailure: the words stay unsaved for
+      // the next try, and nothing escapes uncaught.
+    } on Object {
+      if (_messenger?.mounted ?? false) {
+        _messenger?.showSnackBar(SnackBar(content: Text(_failed ?? '')));
+      }
     }
   }
 
