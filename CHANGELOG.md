@@ -1,5 +1,12 @@
 # Changelog
 
+## [v2026.11.8](https://github.com/paulthvt/loomia/compare/v2026.11.7...v2026.11.8) (2026-11-10)
+
+### 🐛 Bug Fixes
+
+- **contacts:** bio only on the row, and a header that fits in French (#493) ([01ada65](https://github.com/paulthvt/loomia/commit/01ada6502018084cdecb77a20648e58acf49546b))
+- **bug-reports:** stop sending sentry-trace so web reports pass CORS (#490) ([33cb110](https://github.com/paulthvt/loomia/commit/33cb1101b55ca8c535031c3d3d3b3ec7d10405a7))
+
 ## [v2026.11.7](https://github.com/paulthvt/loomia/compare/v2026.11.6...v2026.11.7) (2026-11-10)
 
 ### ✨ Features
