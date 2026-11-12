@@ -185,6 +185,23 @@ void main() {
       expect(find.text('Log something with Claire'), findsNothing);
     });
 
+    testWidgets('Today first, and no repeat (#486)', (tester) async {
+      await open(tester);
+      await tester.tap(find.text('Remind me'));
+      await tester.pumpAndSettle();
+
+      final remindOn = find.widgetWithText(LabeledField, 'Remind me on');
+      final chips = tester
+          .widgetList<ChoiceChip>(
+            find.descendant(of: remindOn, matching: find.byType(ChoiceChip)),
+          )
+          .map((chip) => (chip.label as Text).data)
+          .toList();
+      expect(chips.first, 'Today');
+      expect(chips[1], 'Tomorrow');
+      expect(find.widgetWithText(SwitchListTile, 'Repeat'), findsNothing);
+    });
+
     testWidgets('the text follows the kind until it is typed in', (
       tester,
     ) async {

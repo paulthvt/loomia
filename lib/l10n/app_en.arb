@@ -1279,6 +1279,10 @@
   "@reminderWhatRequired": {
     "description": "Error under an empty reminder text."
   },
+  "reminderToday": "Today",
+  "@reminderToday": {
+    "description": "First choice of the day a reminder is due (#486): today. Followed by reminderTomorrow."
+  },
   "reminderTomorrow": "Tomorrow",
   "@reminderTomorrow": {
     "description": "Chip that sets a reminder for tomorrow."
