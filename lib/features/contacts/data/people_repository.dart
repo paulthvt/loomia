@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -25,7 +26,9 @@ class PeopleRepository {
       'last_contact_on, '
       'reminder($_reminderColumns), person_tag(tag_id)';
 
-  static const String _reminderColumns = 'id, text, due_on, created_at';
+  static const String _reminderColumns =
+      'id, text, due_on, created_at, repeat_every, repeat_unit, repeat_from, '
+      'repeat_until, scheduled_on';
 
   /// Unordered: the controller sorts by `searchKey`, which Postgres collation
   /// does not match.
@@ -229,30 +232,44 @@ class PeopleRepository {
       });
 
   /// A reminder for [personId], as saved.
-  Future<Reminder> addReminder(String personId, String text, DateTime dueOn) =>
-      guardPeople(() async {
-        final row = await _client
-            .from('reminder')
-            .insert({
-              'person_id': personId,
-              'text': text.trim(),
-              'due_on': dayColumn(dueOn),
-            })
-            .select(_reminderColumns)
-            .single();
-        return reminderFromRow(row);
-      });
+  Future<Reminder> addReminder(
+    String personId,
+    String text,
+    DateTime dueOn, {
+    Repeat? repeat,
+  }) => guardPeople(() async {
+    final row = await _client
+        .from('reminder')
+        .insert({
+          'person_id': personId,
+          'text': text.trim(),
+          'due_on': dayColumn(dueOn),
+          ...repeatColumns(repeat),
+        })
+        .select(_reminderColumns)
+        .single();
+    return reminderFromRow(row);
+  });
 
-  Future<Reminder> updateReminder(String id, String text, DateTime dueOn) =>
-      guardPeople(() async {
-        final row = await _client
-            .from('reminder')
-            .update({'text': text.trim(), 'due_on': dayColumn(dueOn)})
-            .eq('id', id)
-            .select(_reminderColumns)
-            .single();
-        return reminderFromRow(row);
-      });
+  /// Writes the repeat too: null clears it.
+  Future<Reminder> updateReminder(
+    String id,
+    String text,
+    DateTime dueOn, {
+    Repeat? repeat,
+  }) => guardPeople(() async {
+    final row = await _client
+        .from('reminder')
+        .update({
+          'text': text.trim(),
+          'due_on': dayColumn(dueOn),
+          ...repeatColumns(repeat),
+        })
+        .eq('id', id)
+        .select(_reminderColumns)
+        .single();
+    return reminderFromRow(row);
+  });
 
   Future<void> deleteReminder(String id) =>
       guardPeople(() => _client.from('reminder').delete().eq('id', id));
@@ -267,6 +284,15 @@ class PeopleRepository {
   Future<void> completeReminder(String id, DateTime on) => guardPeople(
     () => _client.rpc<Object?>(
       'complete_reminder',
+      params: {'p_reminder': id, 'p_on': dayColumn(on)},
+    ),
+  );
+
+  /// Delete, This reminder (#486): a repeating reminder moves to its next
+  /// day with no history entry, or goes past the end of its schedule.
+  Future<void> skipReminder(String id, DateTime on) => guardPeople(
+    () => _client.rpc<Object?>(
+      'skip_reminder',
       params: {'p_reminder': id, 'p_on': dayColumn(on)},
     ),
   );
@@ -299,7 +325,7 @@ class PeopleRepository {
   });
 
   /// Brings back [reminder], ticked on [on] for [personId], with its entry
-  /// gone. Returns nothing, as [completeReminder]: the caller reads again.
+  /// gone; a repeating one back on its day, rule included (#486). Returns nothing, as [completeReminder]: the caller reads again.
   Future<void> undoReminder(
     String personId,
     Reminder reminder,
@@ -307,13 +333,16 @@ class PeopleRepository {
     String updatedAt,
   ) => _undo(
     () => _client.rpc<Object?>(
-      'undo_reminder',
+      reminder.repeat == null ? 'undo_reminder' : 'undo_repeating_reminder',
       params: {
         'p_reminder': reminder.id,
         'p_person': personId,
         'p_text': reminder.text,
         'p_due_on': dayColumn(reminder.dueOn),
         'p_created_at': reminder.createdAt.toIso8601String(),
+        if (reminder.repeat case final repeat?)
+          ...repeatColumns(repeat)
+              .map((key, value) => MapEntry('p_$key', value)),
         'p_on': dayColumn(on),
         'p_updated_at': updatedAt,
       },
@@ -534,6 +563,7 @@ Reminder reminderFromRow(Map<String, dynamic> row) => (
   // A bare date parses as local midnight.
   dueOn: DateTime.parse(row['due_on'] as String),
   createdAt: DateTime.parse(row['created_at'] as String),
+  repeat: repeatFromRow(row),
 );
 
 /// What an update writes: everything the user can edit, except the stage and
@@ -592,4 +622,33 @@ Map<String, dynamic> placeToRow(WorkflowPlace? place) => {
 String dayColumn(DateTime day) {
   String two(int value) => value.toString().padLeft(2, '0');
   return '${day.year}-${two(day.month)}-${two(day.day)}';
+}
+
+/// The five repeat columns of a task or reminder (#376, #486); all null
+/// when it doesn't repeat.
+Map<String, Object?> repeatColumns(Repeat? repeat) => {
+  'repeat_every': repeat?.every,
+  'repeat_unit': repeat?.unit.name,
+  'repeat_from': repeat == null ? null : dayColumn(repeat.from),
+  'repeat_until': switch (repeat?.until) {
+    final until? => dayColumn(until),
+    null => null,
+  },
+  'scheduled_on': repeat == null ? null : dayColumn(repeat.scheduledOn),
+};
+
+/// [repeatColumns] read back; null when it doesn't repeat.
+Repeat? repeatFromRow(Map<String, dynamic> row) {
+  DateTime? day(Object? column) =>
+      column == null ? null : DateTime.parse(column as String);
+  return switch (row['repeat_every']) {
+    final int every => (
+      every: every,
+      unit: RepeatUnit.values.byName(row['repeat_unit'] as String),
+      from: day(row['repeat_from'])!,
+      until: day(row['repeat_until']),
+      scheduledOn: day(row['scheduled_on'])!,
+    ),
+    _ => null,
+  };
 }

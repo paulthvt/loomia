@@ -1444,6 +1444,7 @@ void main() {
             text: 'Follow up',
             dueOn: oct21,
             createdAt: DateTime.utc(2026),
+            repeat: null,
           ),
         ],
       ),
@@ -1453,7 +1454,13 @@ void main() {
         stage: Stage.prospect,
         stageSince: DateTime.utc(2026),
         reminders: [
-          (id: 'r2', text: 'Call', dueOn: oct21, createdAt: DateTime.utc(2026)),
+          (
+            id: 'r2',
+            text: 'Call',
+            dueOn: oct21,
+            createdAt: DateTime.utc(2026),
+            repeat: null,
+          ),
         ],
       ),
       Person(
@@ -1467,6 +1474,7 @@ void main() {
             text: 'Meeting',
             dueOn: oct21,
             createdAt: DateTime.utc(2026),
+            repeat: null,
           ),
         ],
       ),

@@ -166,10 +166,14 @@ Due _due(String name, int step, DateTime due) => DueStep(
   ),
 );
 
-Due _reminder(String name, String text, DateTime due) => DueReminder(
-  _sample(name),
-  (id: 'r-$name', text: text, dueOn: due, createdAt: DateTime.utc(2026, 9)),
-);
+Due _reminder(String name, String text, DateTime due) =>
+    DueReminder(_sample(name), (
+      id: 'r-$name',
+      text: text,
+      dueOn: due,
+      createdAt: DateTime.utc(2026, 9),
+      repeat: null,
+    ));
 
 /// Invited to a workshop on Thursday, not going yet, due a follow-up [due].
 Due _followUp(String name, DateTime due) => DueFollowUp(

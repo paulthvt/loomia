@@ -32,7 +32,13 @@ void main() {
         stage: Stage.prospect,
         stageSince: DateTime.utc(2026),
         reminders: [
-          (id: id, text: 'Call', dueOn: day, createdAt: DateTime.utc(2026)),
+          (
+            id: id,
+            text: 'Call',
+            dueOn: day,
+            createdAt: DateTime.utc(2026),
+            repeat: null,
+          ),
         ],
       ),
   ];

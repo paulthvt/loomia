@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -497,14 +498,16 @@ class FakePeopleRepository implements PeopleRepository {
   Future<Reminder> addReminder(
     String personId,
     String text,
-    DateTime dueOn,
-  ) async {
+    DateTime dueOn, {
+    Repeat? repeat,
+  }) async {
     await _record('addReminder($personId)');
     final Reminder reminder = (
       id: 'r-${_next++}',
       text: text.trim(),
       dueOn: dueOn,
       createdAt: DateTime.utc(2026, 10, 8, 12, 0, _next),
+      repeat: repeat,
     );
     (reminders[personId] ??= []).add(reminder);
     return reminder;
@@ -514,8 +517,9 @@ class FakePeopleRepository implements PeopleRepository {
   Future<Reminder> updateReminder(
     String id,
     String text,
-    DateTime dueOn,
-  ) async {
+    DateTime dueOn, {
+    Repeat? repeat,
+  }) async {
     await _record('updateReminder($id)');
     for (final list in reminders.values) {
       final index = list.indexWhere((reminder) => reminder.id == id);
@@ -525,6 +529,7 @@ class FakePeopleRepository implements PeopleRepository {
         text: text.trim(),
         dueOn: dueOn,
         createdAt: list[index].createdAt,
+        repeat: repeat,
       );
       list[index] = saved;
       return saved;
@@ -540,8 +545,8 @@ class FakePeopleRepository implements PeopleRepository {
     }
   }
 
-  /// As `complete_reminder`: the entry, the delete; one already gone is
-  /// refused.
+  /// As `complete_reminder`: the entry, then the delete, or a repeating one
+  /// moved to its next day (#486); one already gone is refused.
   @override
   Future<void> completeReminder(String id, DateTime on) async {
     await _record('completeReminder($id)');
@@ -550,7 +555,7 @@ class FakePeopleRepository implements PeopleRepository {
       orElse: () => throw PeopleFailure.unknown,
     );
     final reminder = list.firstWhere((reminder) => reminder.id == id);
-    list.remove(reminder);
+    _moveOn(list, reminder, on);
     final history = activities;
     if (history == null) {
       store[personId] = withLastContact(store[personId]!, on);
@@ -563,6 +568,42 @@ class FakePeopleRepository implements PeopleRepository {
           happenedOn: on,
           text: reminder.text,
           createdAt: DateTime.utc(2026, 10, 8, 12),
+        ),
+      );
+    }
+  }
+
+  /// As `skip_reminder` (#486): a repeating one to its next day, no entry.
+  @override
+  Future<void> skipReminder(String id, DateTime on) async {
+    await _record('skipReminder($id)');
+    final list = reminders.values.firstWhere(
+      (list) =>
+          list.any((reminder) => reminder.id == id && reminder.repeat != null),
+      orElse: () => throw PeopleFailure.unknown,
+    );
+    _moveOn(list, list.firstWhere((reminder) => reminder.id == id), on);
+  }
+
+  /// [reminder] out of [list], or on its next day when it repeats.
+  void _moveOn(List<Reminder> list, Reminder reminder, DateTime on) {
+    final repeat = reminder.repeat;
+    final next = repeat == null ? null : nextRepeatDay(repeat, on);
+    final index = list.indexOf(reminder);
+    if (repeat == null || next == null) {
+      list.removeAt(index);
+    } else {
+      list[index] = (
+        id: reminder.id,
+        text: reminder.text,
+        dueOn: next,
+        createdAt: reminder.createdAt,
+        repeat: (
+          every: repeat.every,
+          unit: repeat.unit,
+          from: repeat.from,
+          until: repeat.until,
+          scheduledOn: next,
         ),
       );
     }
@@ -671,7 +712,8 @@ class FakePeopleRepository implements PeopleRepository {
     return _undoTo(personId, updatedAt);
   }
 
-  /// As `undo_reminder`: back with its id, its entry gone.
+  /// As `undo_reminder`: back with its id, its entry gone; a repeating one,
+  /// as `undo_repeating_reminder`, back on its day.
   @override
   Future<void> undoReminder(
     String personId,
@@ -682,10 +724,38 @@ class FakePeopleRepository implements PeopleRepository {
     await _record('undoReminder(${reminder.id})');
     final open = reminders[personId] ??= [];
     if ((store[personId]?.updatedAt ?? '') != updatedAt ||
-        open.any((other) => other.id == reminder.id)) {
+        (reminder.repeat == null &&
+            open.any((other) => other.id == reminder.id))) {
       throw const UndoStale();
     }
-    open.add(reminder);
+    // A repeating one may still be there, on its next day.
+    open
+      ..removeWhere((other) => other.id == reminder.id)
+      ..add(reminder);
     activities?.store.removeWhere((entry) => entry.id == 'a-${reminder.id}');
+  }
+}
+
+/// `repeat_next_on`, for the fakes: the first day of [repeat]'s schedule
+/// after both its scheduled day and [on]; null past its end.
+DateTime? nextRepeatDay(Repeat repeat, DateTime on) {
+  final after = repeat.scheduledOn.isAfter(on) ? repeat.scheduledOn : on;
+  final from = repeat.from;
+  DateTime clamped(int year, int month) {
+    final last = DateTime(year, month + 1, 0).day;
+    return DateTime(year, month, from.day < last ? from.day : last);
+  }
+
+  for (var k = 1; ; k++) {
+    final n = k * repeat.every;
+    final day = switch (repeat.unit) {
+      RepeatUnit.day => DateTime(from.year, from.month, from.day + n),
+      RepeatUnit.week => DateTime(from.year, from.month, from.day + 7 * n),
+      RepeatUnit.month => clamped(from.year, from.month + n),
+      RepeatUnit.year => clamped(from.year + n, from.month),
+    };
+    if (!day.isAfter(after)) continue;
+    final until = repeat.until;
+    return until != null && day.isAfter(until) ? null : day;
   }
 }

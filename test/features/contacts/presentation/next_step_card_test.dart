@@ -27,17 +27,19 @@ Person _sarah({
   reminders: reminders,
 );
 
-final _late = (
+final Reminder _late = (
   id: 'r1',
   text: 'Call back about the diffuser',
   dueOn: DateTime(2026, 9, 27),
   createdAt: DateTime.utc(2026, 9),
+  repeat: null,
 );
-final _later = (
+final Reminder _later = (
   id: 'r2',
   text: 'Send her the price list',
   dueOn: DateTime(2026, 10, 4),
   createdAt: DateTime.utc(2026, 9),
+  repeat: null,
 );
 
 class _Calls {

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -259,8 +260,18 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     await _repository.postponeStep(person.id, progress.step.id, until),
   );
 
-  Future<void> addReminder(Person person, String text, DateTime dueOn) async {
-    final added = await _repository.addReminder(person.id, text, dueOn);
+  Future<void> addReminder(
+    Person person,
+    String text,
+    DateTime dueOn, {
+    Repeat? repeat,
+  }) async {
+    final added = await _repository.addReminder(
+      person.id,
+      text,
+      dueOn,
+      repeat: repeat,
+    );
     _changeReminders(person.id, (reminders) => [...reminders, added]);
   }
 
@@ -268,9 +279,15 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     Person person,
     Reminder reminder,
     String text,
-    DateTime dueOn,
-  ) async {
-    final saved = await _repository.updateReminder(reminder.id, text, dueOn);
+    DateTime dueOn, {
+    Repeat? repeat,
+  }) async {
+    final saved = await _repository.updateReminder(
+      reminder.id,
+      text,
+      dueOn,
+      repeat: repeat,
+    );
     _changeReminders(
       person.id,
       (reminders) => [
@@ -287,9 +304,25 @@ class PeopleController extends AsyncNotifier<List<Person>> {
     );
   }
 
+  /// Delete, This reminder, on a repeating one (#486): it goes at once and
+  /// the book reloads behind with it on its next day.
+  Future<void> skipReminder(
+    Person person,
+    Reminder reminder,
+    DateTime today,
+  ) async {
+    await _repository.skipReminder(reminder.id, today);
+    _changeReminders(
+      person.id,
+      (reminders) => [...reminders.where((other) => other.id != reminder.id)],
+    );
+    if (ref.mounted) ref.invalidateSelf();
+  }
+
   /// The history entry and the delete, on the server. The reminder goes at
   /// once; the book reloads behind for the contact it counts as (the RPC's
-  /// own answer can't carry it, see [PeopleRepository.completeReminder]).
+  /// own answer can't carry it, see [PeopleRepository.completeReminder]),
+  /// and with a repeating one on its next day (#486).
   Future<void> completeReminder(
     Person person,
     Reminder reminder,
@@ -318,7 +351,14 @@ class PeopleController extends AsyncNotifier<List<Person>> {
       today,
       person.updatedAt ?? '',
     );
-    _changeReminders(person.id, (reminders) => [...reminders, reminder]);
+    // A repeating one was still there, on its next day: replaced.
+    _changeReminders(
+      person.id,
+      (reminders) => [
+        ...reminders.where((other) => other.id != reminder.id),
+        reminder,
+      ],
+    );
     if (!ref.mounted) return;
     ref
       ..invalidate(historyProvider(person.id))

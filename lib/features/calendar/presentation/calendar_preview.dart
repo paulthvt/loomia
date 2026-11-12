@@ -441,6 +441,7 @@ Person _remind(String id, String name, List<(String, DateTime)> reminders) =>
             text: text,
             dueOn: on,
             createdAt: DateTime(2026, 10, 1, index),
+            repeat: null,
           ),
       ],
     );

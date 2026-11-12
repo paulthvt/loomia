@@ -10,8 +10,13 @@ Person _person(String id, String name, List<Reminder> reminders) => Person(
   reminders: reminders,
 );
 
-Reminder _reminder(String id, DateTime due) =>
-    (id: id, text: 'Text $id', dueOn: due, createdAt: DateTime.utc(2026));
+Reminder _reminder(String id, DateTime due) => (
+  id: id,
+  text: 'Text $id',
+  dueOn: due,
+  createdAt: DateTime.utc(2026),
+  repeat: null,
+);
 
 void main() {
   final today = DateTime(2026, 10, 6);

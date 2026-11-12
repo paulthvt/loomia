@@ -62,6 +62,7 @@ Reminder _reminder(String text, int inDays) => (
   text: text,
   dueOn: addDays(today(), inDays),
   createdAt: DateTime.utc(2026),
+  repeat: null,
 );
 
 const _markPriceList = 'Mark "Send her the price list" done';

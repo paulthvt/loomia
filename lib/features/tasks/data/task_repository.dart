@@ -97,21 +97,11 @@ Map<String, Object?> _draftColumns(TaskDraft draft) {
     'title': draft.title.trim(),
     'note': draft.note?.trim(),
     'due_on': dayColumn(draft.dueOn),
-    'repeat_every': repeat?.every,
-    'repeat_unit': repeat?.unit.name,
-    'repeat_from': repeat == null ? null : dayColumn(repeat.from),
-    'repeat_until': switch (repeat?.until) {
-      final until? => dayColumn(until),
-      null => null,
-    },
-    'scheduled_on': repeat == null ? null : dayColumn(repeat.scheduledOn),
+    ...repeatColumns(repeat),
     'due_time': timeColumn(draft.dueTime),
     'alert': draft.alert,
   };
 }
-
-DateTime? _day(Object? column) =>
-    column == null ? null : DateTime.parse(column as String);
 
 Task taskFromRow(Map<String, dynamic> row) => Task(
   id: row['id'] as String,
@@ -122,16 +112,7 @@ Task taskFromRow(Map<String, dynamic> row) => Task(
       ? null
       : DateTime.parse(row['done_on'] as String),
   createdAt: DateTime.parse(row['created_at'] as String),
-  repeat: switch (row['repeat_every']) {
-    final int every => (
-      every: every,
-      unit: RepeatUnit.values.byName(row['repeat_unit'] as String),
-      from: _day(row['repeat_from'])!,
-      until: _day(row['repeat_until']),
-      scheduledOn: _day(row['scheduled_on'])!,
-    ),
-    _ => null,
-  },
+  repeat: repeatFromRow(row),
   dueTime: timeFromColumn(row['due_time'] as String?),
   alert: row['alert'] as bool? ?? true,
 );

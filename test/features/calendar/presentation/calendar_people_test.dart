@@ -19,8 +19,13 @@ import 'package:material_ui/material_ui.dart';
 final _today = DateTime(2026, 10, 7);
 final _day = DateTime(2026, 10, 8);
 
-Reminder _reminder(String id, DateTime on) =>
-    (id: id, text: 'Call $id', dueOn: on, createdAt: DateTime.utc(2026));
+Reminder _reminder(String id, DateTime on) => (
+  id: id,
+  text: 'Call $id',
+  dueOn: on,
+  createdAt: DateTime.utc(2026),
+  repeat: null,
+);
 
 Person _person(String id, String name, List<Reminder> reminders) => Person(
   id: id,

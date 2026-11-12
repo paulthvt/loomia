@@ -198,12 +198,14 @@ Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
               text: 'Call back about the diffuser',
               dueOn: DateTime(2026, 9, 27),
               createdAt: DateTime.utc(2026, 9),
+              repeat: null,
             ),
             (
               id: 'r2',
               text: 'Send her the price list',
               dueOn: DateTime(2026, 10, 4),
               createdAt: DateTime.utc(2026, 9),
+              repeat: null,
             ),
           ]),
           progress: OnStep(

@@ -69,6 +69,7 @@ void main() {
             text: 'Send her the price list',
             dueOn: today(),
             createdAt: DateTime.utc(2026),
+            repeat: null,
           ),
         ],
       ),
