@@ -2,6 +2,7 @@ import 'package:flutter/widget_previews.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/core/ui/preview_photo.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/domain/tag.dart';
@@ -191,7 +192,7 @@ Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
   nextStep: person != null
       ? null
       : NextStepCard(
-          // As in Figma "Reminders — #217": one late, one later.
+          // As in Figma "Reminders — #217": one late, one later that repeats.
           person: _sample.first.withReminders([
             (
               id: 'r1',
@@ -205,7 +206,14 @@ Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
               text: 'Send her the price list',
               dueOn: DateTime(2026, 10, 4),
               createdAt: DateTime.utc(2026, 9),
-              repeat: null,
+              // Repeating (#486): the row shows the repeat icon.
+              repeat: (
+                every: 1,
+                unit: RepeatUnit.month,
+                from: DateTime(2026, 9, 4),
+                until: null,
+                scheduledOn: DateTime(2026, 10, 4),
+              ),
             ),
           ]),
           progress: OnStep(

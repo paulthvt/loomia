@@ -387,6 +387,16 @@
   "@todayReminderDetail": {
     "description": "Quiet line under a reminder on Today, below what the user wrote for themselves: says the row is a reminder they set, not a workflow step."
   },
+  "todayReminderRepeats": "Reminder · {repeat}",
+  "@todayReminderRepeats": {
+    "description": "Replaces todayReminderDetail under a repeating reminder on Today (#486): it is a reminder, and how it repeats.",
+    "placeholders": {
+      "repeat": {
+        "type": "String",
+        "example": "Every month on the 3rd"
+      }
+    }
+  },
   "todayShowMore": "{count, plural, =1{And one more waiting} other{And {count} more waiting}}",
   "@todayShowMore": {
     "description": "Button under the first rows on Today; shows the rest in place. count is how many are not shown yet.",

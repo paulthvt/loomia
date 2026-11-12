@@ -41,6 +41,18 @@ String repeatRuleLine(AppLocalizations l10n, Repeat repeat) {
         );
 }
 
+/// After the title of a repeating task or reminder: it comes back once
+/// ticked. Null when [repeat] is.
+Widget? repeatBadge(BuildContext context, Repeat? repeat) {
+  if (repeat == null) return null;
+  return Icon(
+    Icons.repeat_rounded,
+    size: Theme.of(context).textTheme.titleMedium?.fontSize,
+    color: LoomiaColors.of(context).textMuted,
+    semanticLabel: repeatRuleLine(AppLocalizations.of(context), repeat),
+  );
+}
+
 /// The repeat block of a task or reminder form (#376, #486): the Repeat
 /// switch and, on, Repeats every [n] [unit], the line saying what it means,
 /// and Ends Never / On a day. The form keeps the values.

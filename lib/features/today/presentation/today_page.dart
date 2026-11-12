@@ -9,6 +9,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
+import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/empty_state.dart';
@@ -1177,7 +1178,15 @@ class _TodayViewState extends State<TodayView> {
         step.step.id,
         l10n.nextStepProgress(step.workflow.name, step.index, step.total),
       ),
-      DueReminder(:final reminder) => (reminder.id, l10n.todayReminderDetail),
+      DueReminder(:final reminder) => (
+        reminder.id,
+        switch (reminder.repeat) {
+          final repeat? => l10n.todayReminderRepeats(
+            repeatRuleLine(l10n, repeat),
+          ),
+          null => l10n.todayReminderDetail,
+        },
+      ),
       DueFollowUp() => throw StateError('built by _followUp'),
       DueNext() => throw StateError('built by _whatsNext'),
       DueLoyalty() => (due.key, null),

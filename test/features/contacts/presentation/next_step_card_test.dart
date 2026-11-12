@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -224,6 +225,31 @@ void main() {
       expect(find.byType(DateChip), findsNothing);
       expect(find.text('NEXT STEP'), findsOneWidget);
       expect(find.text('Add a reminder'), findsOneWidget);
+    });
+
+    testWidgets('a repeating one shows the repeat icon (#486)', (tester) async {
+      final Reminder monthly = (
+        id: 'r3',
+        text: 'Ask how the oils go',
+        dueOn: DateTime(2026, 10, 4),
+        createdAt: DateTime.utc(2026, 9),
+        repeat: (
+          every: 1,
+          unit: RepeatUnit.month,
+          from: DateTime(2026, 9, 3),
+          until: null,
+          scheduledOn: DateTime(2026, 10, 3),
+        ),
+      );
+      await _pump(
+        tester,
+        onStep(4, _today),
+        person: _sarah(reminders: [_late, monthly]),
+      );
+
+      final icon = tester.widget<Icon>(find.byIcon(Icons.repeat_rounded));
+      expect(icon.semanticLabel, 'Every month on the 3rd');
+      expect(find.byIcon(Icons.repeat_rounded), findsOneWidget);
     });
 
     testWidgets('on the same day, the step first', (tester) async {

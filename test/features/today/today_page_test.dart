@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -238,6 +239,36 @@ void main() {
     expect(find.text('Anna'), findsOneWidget);
     expect(find.byTooltip(_markFirst), findsOneWidget);
     expect(find.text('0 of 1 done'), findsOneWidget);
+  });
+
+  testWidgets('a repeating reminder says how it repeats (#486)', (
+    tester,
+  ) async {
+    final reminder = _reminder('Ask how the oils go', 0);
+    final people = FakePeopleRepository([
+      _on(
+        'p1',
+        'Anna',
+        reminders: [
+          (
+            id: reminder.id,
+            text: reminder.text,
+            dueOn: reminder.dueOn,
+            createdAt: reminder.createdAt,
+            repeat: (
+              every: 1,
+              unit: RepeatUnit.month,
+              from: DateTime(2026, 10, 3),
+              until: null,
+              scheduledOn: reminder.dueOn,
+            ),
+          ),
+        ],
+      ),
+    ]);
+    await pumpLoomia(tester, size: _tallPhone, people: people);
+
+    expect(find.text('Reminder · Every month on the 3rd'), findsOneWidget);
   });
 
   testWidgets('a reminder joins Priority beside the step; the person counts '

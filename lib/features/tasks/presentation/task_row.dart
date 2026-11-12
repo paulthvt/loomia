@@ -1,4 +1,3 @@
-import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart';
@@ -56,13 +55,5 @@ Widget? timeChip(BuildContext context, Task task) => switch (task.dueTime) {
 
 /// After the title of an open repeating task: it comes back once ticked.
 /// Null for a plain or done one (a done task keeps its rule unseen).
-Widget? repeatIcon(BuildContext context, Task task) {
-  final repeat = task.repeat;
-  if (repeat == null || task.done) return null;
-  return Icon(
-    Icons.repeat_rounded,
-    size: Theme.of(context).textTheme.titleMedium?.fontSize,
-    color: LoomiaColors.of(context).textMuted,
-    semanticLabel: repeatRuleLine(AppLocalizations.of(context), repeat),
-  );
-}
+Widget? repeatIcon(BuildContext context, Task task) =>
+    task.done ? null : repeatBadge(context, task.repeat);

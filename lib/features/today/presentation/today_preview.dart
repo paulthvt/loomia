@@ -166,13 +166,13 @@ Due _due(String name, int step, DateTime due) => DueStep(
   ),
 );
 
-Due _reminder(String name, String text, DateTime due) =>
+Due _reminder(String name, String text, DateTime due, {Repeat? repeat}) =>
     DueReminder(_sample(name), (
       id: 'r-$name',
       text: text,
       dueOn: due,
       createdAt: DateTime.utc(2026, 9),
-      repeat: null,
+      repeat: repeat,
     ));
 
 /// Invited to a workshop on Thursday, not going yet, due a follow-up [due].
@@ -268,6 +268,14 @@ final _book = [
     'Julie Bernard',
     'Call back about the diffuser',
     DateTime(2026, 9, 29),
+    // Repeating (#486): its line says how.
+    repeat: (
+      every: 1,
+      unit: RepeatUnit.month,
+      from: DateTime(2026, 8, 29),
+      until: null,
+      scheduledOn: DateTime(2026, 9, 29),
+    ),
   ),
   _due('Julie Bernard', 1, DateTime(2026, 9, 29)),
   _due('Léa Petit', 2, DateTime(2026, 9, 29)),
