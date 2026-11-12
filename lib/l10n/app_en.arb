@@ -1419,6 +1419,26 @@
   "@taskScopeRuleChanged": {
     "description": "Note under the choices of taskScopeChangeTitle when the repeat changed too: taskScopeThis is then disabled."
   },
+  "reminderScopeChangeTitle": "Change a repeating reminder",
+  "@reminderScopeChangeTitle": {
+    "description": "Title of the dialog asked before saving a repeating reminder whose day changed: does the new day move only this reminder (postpone) or the schedule too."
+  },
+  "reminderScopeDeleteTitle": "Delete a repeating reminder",
+  "@reminderScopeDeleteTitle": {
+    "description": "Title of the dialog asked before deleting a repeating reminder. Its Delete button confirms, with no second dialog."
+  },
+  "reminderScopeThis": "This reminder",
+  "@reminderScopeThis": {
+    "description": "Choice in the reminderScopeChangeTitle / reminderScopeDeleteTitle dialogs: only this reminder changes (or, deleting, it is skipped); the next one still comes on its usual day. Selected by default."
+  },
+  "reminderScopeFollowing": "This and following reminders",
+  "@reminderScopeFollowing": {
+    "description": "Choice in the reminderScopeChangeTitle / reminderScopeDeleteTitle dialogs: the schedule moves to the new day, or (delete) the reminder goes and stops repeating."
+  },
+  "reminderScopeRuleChanged": "A new repeat applies to this and the following reminders.",
+  "@reminderScopeRuleChanged": {
+    "description": "Note under the choices of reminderScopeChangeTitle when the repeat changed too: reminderScopeThis is then disabled."
+  },
   "taskRepeat": "Repeat",
   "@taskRepeat": {
     "description": "Switch in the task form: the task comes back on a schedule once ticked."

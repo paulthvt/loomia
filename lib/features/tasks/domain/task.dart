@@ -1,16 +1,6 @@
-/// How often a repeating task comes back (#376).
-enum RepeatUnit { day, week, month, year }
+import 'package:loomia/core/repeat/repeat.dart';
 
-/// A task's repeat: every [every] [unit]s counted from [from], until [until]
-/// (null: never). [scheduledOn] is the day the schedule gave this task;
-/// the task's `dueOn` differs from it once postponed. All local midnight.
-typedef TaskRepeat = ({
-  int every,
-  RepeatUnit unit,
-  DateTime from,
-  DateTime? until,
-  DateTime scheduledOn,
-});
+export 'package:loomia/core/repeat/repeat.dart';
 
 /// A task with a due date, open or done.
 class Task {
@@ -41,7 +31,7 @@ class Task {
 
   /// Null when it doesn't repeat. A done task keeps the rule it was ticked
   /// with; only an open one comes back.
-  final TaskRepeat? repeat;
+  final Repeat? repeat;
 
   /// The time it is due at, a wall clock in the user's settings zone
   /// (#377); null: any time that day. A push goes at that time.
@@ -64,7 +54,7 @@ typedef TaskDraft = ({
   DateTime dueOn,
   TaskTime? dueTime,
   bool alert,
-  TaskRepeat? repeat,
+  Repeat? repeat,
 });
 
 /// A wall-clock time of day, 24 h.
