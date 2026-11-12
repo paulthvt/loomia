@@ -32,8 +32,13 @@ Person _person(
   reminders: reminders,
 );
 
-Reminder _reminder(String id, DateTime due) =>
-    (id: id, text: 'Text $id', dueOn: due, createdAt: DateTime.utc(2026));
+Reminder _reminder(String id, DateTime due) => (
+  id: id,
+  text: 'Text $id',
+  dueOn: due,
+  createdAt: DateTime.utc(2026),
+  repeat: null,
+);
 
 List<String> _keys(List<Due> due) => [for (final row in due) row.key];
 

@@ -7,21 +7,21 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
+import 'package:loomia/core/ui/scope_dialog.dart';
 import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart'
     show timeLabel;
-import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
-import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/features/tasks/presentation/toggle_task.dart';
@@ -122,7 +122,11 @@ class _TaskPaneState extends ConsumerState<TaskPane> {
     final tasks = _tasks;
     bool? following;
     if (task.repeats) {
-      final scope = await pickScope(context, delete: true, task: true);
+      final scope = await pickScope(
+        context,
+        delete: true,
+        wording: ScopeWording.task,
+      );
       if (scope == null || !mounted) return;
       following = scope == EventScope.following;
     } else {
@@ -302,7 +306,7 @@ class TaskView extends StatelessWidget {
         if (repeat != null && !task.done)
           line(
             Icon(Icons.repeat_rounded, color: muted),
-            repeatLine(l10n, repeat),
+            repeatRuleLine(l10n, repeat),
           ),
         if (note != null) line(Icon(Icons.notes_rounded, color: muted), note),
       ],

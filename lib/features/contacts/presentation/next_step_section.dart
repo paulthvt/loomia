@@ -6,6 +6,7 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -274,7 +275,7 @@ class NextStepCard extends StatelessWidget {
           slideOut: true,
           children: [
             for (final reminder in reminders.take(before))
-              _reminder(l10n, reminder),
+              _reminder(context, l10n, reminder),
           ],
         ),
         // A new state (the last step ticked: Done) slides in whole; a new
@@ -372,7 +373,7 @@ class NextStepCard extends StatelessWidget {
           slideOut: true,
           children: [
             for (final reminder in reminders.skip(before))
-              _reminder(l10n, reminder),
+              _reminder(context, l10n, reminder),
           ],
         ),
         if (onAddReminder case final add?)
@@ -392,7 +393,11 @@ class NextStepCard extends StatelessWidget {
   }
 
   /// No date chip: the reason already says "2 days late", as on the step.
-  Widget _reminder(AppLocalizations l10n, Reminder reminder) {
+  Widget _reminder(
+    BuildContext context,
+    AppLocalizations l10n,
+    Reminder reminder,
+  ) {
     final tick = onTickReminder;
     final edit = onEditReminder;
     return ActionItem(
@@ -400,6 +405,7 @@ class NextStepCard extends StatelessWidget {
       name: person.name,
       icon: Icons.schedule_rounded,
       title: reminder.text,
+      tag: repeatBadge(context, reminder.repeat),
       reason: dueLabel(l10n, reminder.dueOn, today),
       onOpen: edit == null ? null : () => edit(reminder),
       onResolve: tick == null ? null : () => tick(reminder),

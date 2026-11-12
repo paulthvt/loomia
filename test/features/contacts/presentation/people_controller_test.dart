@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
@@ -962,6 +963,88 @@ void main() {
         expect(history.single.kind, ActivityKind.reminder);
       },
     );
+
+    group('repeating (#486)', () {
+      Future<Person> withMonthly(_World world, {DateTime? until}) async {
+        final book = _book(world.container);
+        await world.container.read(book.future);
+        await world.container
+            .read(book.notifier)
+            .addReminder(
+              world.container.read(book).value!.single,
+              'Call about the order',
+              DateTime(2027, 1, 31),
+              repeat: (
+                every: 1,
+                unit: RepeatUnit.month,
+                from: DateTime(2027, 1, 31),
+                until: until,
+                scheduledOn: DateTime(2027, 1, 31),
+              ),
+            );
+        return world.container.read(book).value!.single;
+      }
+
+      test('a tick keeps it, on its next day', () async {
+        final world = _world([_person('p1', 'Marie')]);
+        final marie = await withMonthly(world);
+        final book = _book(world.container);
+
+        await world.container
+            .read(book.notifier)
+            .completeReminder(
+              marie,
+              marie.reminders.single,
+              DateTime(2027, 1, 31),
+            );
+
+        final [after] = await world.container.read(book.future);
+        expect(after.reminders.single.id, marie.reminders.single.id);
+        expect(after.reminders.single.dueOn, DateTime(2027, 2, 28));
+        expect(
+          after.reminders.single.repeat?.scheduledOn,
+          DateTime(2027, 2, 28),
+        );
+      });
+
+      test('skip moves it to its next day, no history', () async {
+        final world = _world([_person('p1', 'Marie')]);
+        final marie = await withMonthly(world);
+        final book = _book(world.container);
+
+        await world.container
+            .read(book.notifier)
+            .skipReminder(marie, marie.reminders.single, DateTime(2027, 1, 31));
+
+        final [after] = await world.container.read(book.future);
+        expect(
+          world.people.calls,
+          contains('skipReminder(${marie.reminders.single.id})'),
+        );
+        expect(after.reminders.single.dueOn, DateTime(2027, 2, 28));
+        expect(world.activities.store, isEmpty);
+      });
+
+      test('undo of the last tick brings it back with its rule', () async {
+        final world = _world([_person('p1', 'Marie')]);
+        final marie = await withMonthly(world, until: DateTime(2027, 2, 15));
+        final book = _book(world.container);
+        final notifier = world.container.read(book.notifier);
+        final reminder = marie.reminders.single;
+
+        await notifier.completeReminder(marie, reminder, DateTime(2027, 1, 31));
+        expect(
+          (await world.container.read(book.future)).single.reminders,
+          isEmpty,
+        );
+        await notifier.undoReminder(marie, reminder, DateTime(2027, 1, 31));
+
+        final [after] = await world.container.read(book.future);
+        expect(after.reminders.single.id, reminder.id);
+        expect(after.reminders.single.repeat?.until, DateTime(2027, 2, 15));
+        expect(world.activities.store, isEmpty);
+      });
+    });
 
     test('a failed add rethrows and changes nothing', () async {
       final world = _world([_person('p1', 'Marie')]);

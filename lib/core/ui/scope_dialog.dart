@@ -7,24 +7,28 @@ import 'package:material_ui/material_ui.dart';
 /// What a change on an occurrence of a repeating event reaches (#299).
 enum EventScope { one, following }
 
+/// Whose wording the scope dialog uses: a repeating event, task (#376) or
+/// reminder (#486).
+enum ScopeWording { event, task, reminder }
+
 /// "This event" or "This and following events", before a change on an
 /// occurrence: Save, Add people and Remove ([delete] false), or Delete,
 /// confirmed here with no second dialog. [ruleChanged]: a new repeat only
-/// reaches the following ones, so "This event" is off. [task]: worded for
-/// a repeating task (#376) instead. [losesReport]: the choices that remove
+/// reaches the following ones, so "This event" is off. [wording]: an
+/// event's, a task's or a reminder's. [losesReport]: the choices that remove
 /// an event with a report, warned about once chosen. Null when cancelled.
 Future<EventScope?> pickScope(
   BuildContext context, {
   bool delete = false,
   bool ruleChanged = false,
-  bool task = false,
+  ScopeWording wording = ScopeWording.event,
   Set<EventScope> losesReport = const {},
 }) => LoomiaDialog.show<EventScope>(
   context,
   (_) => _ScopeDialog(
     delete: delete,
     ruleChanged: ruleChanged,
-    task: task,
+    wording: wording,
     losesReport: losesReport,
   ),
 );
@@ -33,13 +37,13 @@ class _ScopeDialog extends StatefulWidget {
   const _ScopeDialog({
     this.delete = false,
     this.ruleChanged = false,
-    this.task = false,
+    this.wording = ScopeWording.event,
     this.losesReport = const {},
   });
 
   final bool delete;
   final bool ruleChanged;
-  final bool task;
+  final ScopeWording wording;
   final Set<EventScope> losesReport;
 
   @override
@@ -57,11 +61,13 @@ class _ScopeDialogState extends State<_ScopeDialog> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return LoomiaDialog(
-      title: switch ((widget.task, widget.delete)) {
-        (false, false) => l10n.eventScopeChangeTitle,
-        (false, true) => l10n.eventScopeDeleteTitle,
-        (true, false) => l10n.taskScopeChangeTitle,
-        (true, true) => l10n.taskScopeDeleteTitle,
+      title: switch ((widget.wording, widget.delete)) {
+        (ScopeWording.event, false) => l10n.eventScopeChangeTitle,
+        (ScopeWording.event, true) => l10n.eventScopeDeleteTitle,
+        (ScopeWording.task, false) => l10n.taskScopeChangeTitle,
+        (ScopeWording.task, true) => l10n.taskScopeDeleteTitle,
+        (ScopeWording.reminder, false) => l10n.reminderScopeChangeTitle,
+        (ScopeWording.reminder, true) => l10n.reminderScopeDeleteTitle,
       },
       actions: [
         TextButton(
@@ -97,27 +103,31 @@ class _ScopeDialogState extends State<_ScopeDialog> {
                   value: EventScope.one,
                   enabled: !widget.ruleChanged,
                   contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    widget.task ? l10n.taskScopeThis : l10n.eventScopeThis,
-                  ),
+                  title: Text(switch (widget.wording) {
+                    ScopeWording.event => l10n.eventScopeThis,
+                    ScopeWording.task => l10n.taskScopeThis,
+                    ScopeWording.reminder => l10n.reminderScopeThis,
+                  }),
                 ),
                 RadioListTile<EventScope>(
                   value: EventScope.following,
                   contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    widget.task
-                        ? l10n.taskScopeFollowing
-                        : l10n.eventScopeFollowing,
-                  ),
+                  title: Text(switch (widget.wording) {
+                    ScopeWording.event => l10n.eventScopeFollowing,
+                    ScopeWording.task => l10n.taskScopeFollowing,
+                    ScopeWording.reminder => l10n.reminderScopeFollowing,
+                  }),
                 ),
               ],
             ),
           ),
           if (widget.ruleChanged)
             Text(
-              widget.task
-                  ? l10n.taskScopeRuleChanged
-                  : l10n.eventScopeRuleChanged,
+              switch (widget.wording) {
+                ScopeWording.event => l10n.eventScopeRuleChanged,
+                ScopeWording.task => l10n.taskScopeRuleChanged,
+                ScopeWording.reminder => l10n.reminderScopeRuleChanged,
+              },
               style: theme.textTheme.bodySmall?.copyWith(
                 color: LoomiaColors.of(context).textMuted,
               ),

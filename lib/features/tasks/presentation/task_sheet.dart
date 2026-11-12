@@ -1,27 +1,24 @@
 import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
+import 'package:loomia/core/ui/scope_dialog.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
-import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
 import 'package:loomia/features/contacts/presentation/reminder_sheet.dart';
 import 'package:loomia/features/notifications/data/push.dart';
 import 'package:loomia/features/notifications/presentation/notifications_controller.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
-import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
-import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -103,7 +100,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
   }
 
   // The repeat fields (#376). A done task keeps its rule unseen: no fields.
-  late final TaskRepeat? _old = widget.editing?.repeat;
+  late final Repeat? _old = widget.editing?.repeat;
   late bool _repeatOn = _old != null;
   late final _every = TextEditingController(text: '${_old?.every ?? 1}');
   late RepeatUnit _unit = _old?.unit ?? RepeatUnit.week;
@@ -122,7 +119,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
   int get _everyValue => int.tryParse(_every.text) ?? 1;
 
   /// The rule as the fields read, counted from [day].
-  TaskRepeat _ruleFrom(DateTime day) => (
+  Repeat _ruleFrom(DateTime day) => (
     every: _everyValue,
     unit: _unit,
     from: day,
@@ -130,26 +127,20 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
     scheduledOn: day,
   );
 
-  /// What Save writes as the repeat, after the scope dialog when the day of
-  /// a repeating task moved (spec: Saving an edit). Null result: cancelled.
-  Future<(TaskRepeat?,)?> _repeatToSave() async {
+  /// What Save writes as the repeat (spec: Saving an edit). A done task
+  /// keeps its rule unseen. Null result: cancelled.
+  Future<(Repeat?,)?> _repeatToSave() async {
     final editing = widget.editing;
     if (editing != null && editing.done) return (_old,);
-    if (!_repeatOn) return (null,);
-    final old = _old;
-    if (editing == null || old == null) return (_ruleFrom(_day),);
-    final ruleChanged =
-        old.every != _everyValue || old.unit != _unit || old.until != _until;
-    final dayChanged = _day != editing.dueOn;
-    if (!dayChanged) return (ruleChanged ? _ruleFrom(_day) : old,);
-    final scope = await pickScope(
+    return repeatToSave(
       context,
-      ruleChanged: ruleChanged,
-      task: true,
+      on: _repeatOn,
+      old: _old,
+      oldDay: editing?.dueOn,
+      day: _day,
+      ruleFrom: _ruleFrom,
+      wording: ScopeWording.task,
     );
-    if (scope == null) return null;
-    // This task: postponed, the schedule stays.
-    return (scope == EventScope.one ? old : _ruleFrom(_day),);
   }
 
   Future<void> _write(
@@ -207,120 +198,18 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
     });
   }
 
-  List<Widget> _repeatFields(AppLocalizations l10n) {
-    final count = _everyValue;
-    return [
-      // The app's one switch style, as in the log sheet.
-      SwitchListTile(
-        value: _repeatOn,
-        title: Text(l10n.taskRepeat),
-        contentPadding: EdgeInsets.zero,
-        onChanged: _saving ? null : (on) => setState(() => _repeatOn = on),
-      ),
-      if (_repeatOn) ...[
-        LabeledField(
-          label: l10n.taskRepeatsEvery,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AppSpacing.sm,
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _every,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onChanged: (_) => setState(() {}),
-                  validator: (value) => switch (int.tryParse(value ?? '')) {
-                    final n? when n >= 1 && n <= 99 => null,
-                    _ => l10n.taskRepeatEveryInvalid,
-                  },
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<RepeatUnit>(
-                  initialValue: _unit,
-                  // The menu lists the units as words, the field reads them
-                  // after the number: "3 months".
-                  items: [
-                    for (final unit in RepeatUnit.values)
-                      DropdownMenuItem(
-                        value: unit,
-                        child: Text(_unitLabel(l10n, unit, 1)),
-                      ),
-                  ],
-                  selectedItemBuilder: (context) => [
-                    for (final unit in RepeatUnit.values)
-                      Text(_unitLabel(l10n, unit, count)),
-                  ],
-                  onChanged: (unit) => setState(() => _unit = unit ?? _unit),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Text(
-          repeatLine(l10n, _ruleFrom(_old?.from ?? _day)),
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: LoomiaColors.of(context).textMuted),
-        ),
-        LabeledField(
-          label: l10n.taskRepeatEnds,
-          child: RadioGroup<bool>(
-            groupValue: _until != null,
-            onChanged: (ends) async {
-              if (ends ?? false) {
-                await _pickUntil();
-              } else {
-                setState(() => _until = null);
-              }
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<bool>(
-                  value: false,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.taskRepeatNever),
-                ),
-                RadioListTile<bool>(
-                  value: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Row(
-                    spacing: AppSpacing.sm,
-                    children: [
-                      Text(l10n.taskRepeatOn),
-                      Flexible(
-                        child: OutlinedButton(
-                          onPressed: _until == null
-                              ? null
-                              : () => unawaited(_pickUntil()),
-                          child: Text(switch (_until) {
-                            final until? => DateFormat.yMMMd(
-                              l10n.localeName,
-                            ).format(until),
-                            null => l10n.taskRepeatPickDay,
-                          }, overflow: TextOverflow.ellipsis),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ];
-  }
-
-  String _unitLabel(AppLocalizations l10n, RepeatUnit unit, int count) =>
-      switch (unit) {
-        RepeatUnit.day => l10n.taskRepeatUnitDay(count),
-        RepeatUnit.week => l10n.taskRepeatUnitWeek(count),
-        RepeatUnit.month => l10n.taskRepeatUnitMonth(count),
-        RepeatUnit.year => l10n.taskRepeatUnitYear(count),
-      };
+  Widget _repeatFields() => RepeatFields(
+    on: _repeatOn,
+    onOn: _saving ? null : (on) => setState(() => _repeatOn = on),
+    every: _every,
+    onEvery: () => setState(() {}),
+    unit: _unit,
+    onUnit: (unit) => setState(() => _unit = unit),
+    until: _until,
+    onUntil: (until) => setState(() => _until = until),
+    day: _day,
+    lineFrom: _old?.from ?? _day,
+  );
 
   /// Add a time, or the time with ✕ and the bell (#377, #389). Under it, the
   /// line saying why it won't push: task pushes off in Settings, else this
@@ -413,17 +302,6 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
         alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
       );
 
-  /// Ends On: picks a day not before the task's. Cancelled leaves it as is.
-  Future<void> _pickUntil() async {
-    final day = await pickDay(
-      context,
-      initial: _until ?? addDays(_day, 30),
-      first: _day,
-      last: addDays(_day, 365 * 10),
-    );
-    if (day != null && mounted) setState(() => _until = day);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -479,7 +357,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
               }),
             ),
             _timeField(l10n),
-            if (_showsRepeat) ..._repeatFields(l10n),
+            if (_showsRepeat) _repeatFields(),
             LabeledField(
               label: l10n.taskNote,
               child: TextFormField(

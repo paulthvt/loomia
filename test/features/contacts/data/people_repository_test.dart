@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
+import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -290,6 +291,42 @@ void main() {
       'phone': null,
       'email': 'lucas@example.com',
       'instagram': null,
+    });
+  });
+
+  group('a reminder\'s repeat (#486)', () {
+    final Repeat monthly = (
+      every: 2,
+      unit: RepeatUnit.month,
+      from: DateTime(2027, 1, 31),
+      until: DateTime(2027, 12, 31),
+      scheduledOn: DateTime(2027, 3, 31),
+    );
+
+    test('reads back what it writes', () {
+      final row = {
+        'id': 'r1',
+        'text': 'Call about the order',
+        'due_on': '2027-04-02',
+        'created_at': '2027-01-10T09:00:00Z',
+        ...repeatColumns(monthly),
+      };
+      expect(row['repeat_unit'], 'month');
+      expect(row['scheduled_on'], '2027-03-31');
+      expect(reminderFromRow(row).repeat, monthly);
+    });
+
+    test('no repeat writes nulls and reads null', () {
+      final row = {
+        'id': 'r1',
+        'text': 'Price list',
+        'due_on': '2027-04-02',
+        'created_at': '2027-01-10T09:00:00Z',
+        ...repeatColumns(null),
+      };
+      expect(row['repeat_every'], isNull);
+      expect(row['repeat_until'], isNull);
+      expect(reminderFromRow(row).repeat, isNull);
     });
   });
 

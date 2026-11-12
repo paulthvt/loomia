@@ -477,6 +477,7 @@ void main() {
               text: 'Call back',
               dueOn: on,
               createdAt: DateTime(2026, 10),
+              repeat: null,
             ),
           ],
         ),

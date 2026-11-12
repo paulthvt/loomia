@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
-import 'package:loomia/features/tasks/presentation/task_row.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -10,7 +10,7 @@ void main() {
   final l10n = lookupAppLocalizations(const Locale('en'));
 
   String line(int every, RepeatUnit unit, DateTime from, {DateTime? until}) =>
-      repeatLine(l10n, (
+      repeatRuleLine(l10n, (
         every: every,
         unit: unit,
         from: from,

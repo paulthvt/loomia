@@ -1025,6 +1025,7 @@ void main() {
         text: 'Call back about the diffuser',
         dueOn: today(),
         createdAt: DateTime.utc(2026),
+        repeat: null,
       ),
     ];
     await openMarie(tester);
@@ -1062,6 +1063,7 @@ void main() {
         text: 'Call back about the diffuser',
         dueOn: today(),
         createdAt: DateTime.utc(2026),
+        repeat: null,
       ),
     ];
     await openMarie(tester);

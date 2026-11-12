@@ -1,3 +1,5 @@
+import 'package:loomia/core/repeat/repeat.dart';
+
 /// Where someone is in the relationship. One stage at a time; people move
 /// forward and sometimes back.
 enum Stage { prospect, customer, team }
@@ -248,7 +250,8 @@ class Person {
 }
 
 /// Something the user promised to do with one person, due on a day, outside
-/// any workflow (#217). Ticked once: the history keeps it, the row goes.
+/// any workflow (#217). Ticked: the history keeps it, and the row goes, or
+/// moves to its next day when it repeats (#486).
 typedef Reminder = ({
   String id,
   String text,
@@ -258,6 +261,10 @@ typedef Reminder = ({
 
   /// Breaks a tie between reminders due the same day.
   DateTime createdAt,
+
+  /// Null when it doesn't repeat (#486). Repeating: a tick writes the
+  /// history and moves it to its next day.
+  Repeat? repeat,
 });
 
 /// Soonest first; the same day, the oldest first.
