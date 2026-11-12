@@ -253,6 +253,33 @@ void main() {
       expect(saved.repeat?.scheduledOn, tomorrow);
     });
 
+    testWidgets('a day past its end drops the end', (tester) async {
+      final due = addDays(today(), 1);
+      final reminder = await people.addReminder(
+        'p1',
+        'Ask how the oils go',
+        due,
+        repeat: (
+          every: 1,
+          unit: RepeatUnit.day,
+          from: due,
+          until: addDays(today(), 3),
+          scheduledOn: due,
+        ),
+      );
+      await open(tester, editing: reminder);
+      await tester.ensureVisible(find.text('In a week'));
+      await tester.tap(find.text('In a week'));
+      await tester.pumpAndSettle();
+      await save(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Save').last);
+      await tester.pumpAndSettle();
+
+      final saved = people.reminders['p1']!.single;
+      expect(saved.dueOn, addDays(today(), 7));
+      expect(saved.repeat?.until, isNull);
+    });
+
     testWidgets('turning it off clears the repeat', (tester) async {
       final reminder = await monthly();
       await open(tester, editing: reminder);

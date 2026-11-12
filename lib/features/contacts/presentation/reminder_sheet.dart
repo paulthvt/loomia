@@ -197,7 +197,13 @@ class _ReminderFormState extends ConsumerState<_ReminderForm> {
             ReminderDayField(
               label: l10n.logWhen,
               value: _day,
-              onChanged: (day) => setState(() => _day = day),
+              onChanged: (day) => setState(() {
+                _day = day;
+                // An end before the reminder's day ends nothing: drop it.
+                if (_until case final until? when until.isBefore(day)) {
+                  _until = null;
+                }
+              }),
             ),
             RepeatFields(
               on: _repeatOn,
