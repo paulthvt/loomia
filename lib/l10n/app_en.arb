@@ -3776,6 +3776,10 @@
   "@eventPrepNotes": {
     "description": "Heading above an event's notes on an event type with a report (e.g. a mentoring call): what to bring up during it."
   },
+  "eventCopyNotes": "Copy to every occurrence",
+  "@eventCopyNotes": {
+    "description": "Checkbox under the notes of a new repeating event. Unticked, the notes go on the first occurrence only; ticked, every occurrence gets them."
+  },
   "eventReport": "Report",
   "@eventReport": {
     "description": "Heading of an event's report fields (e.g. topics covered, to do), filled in during or after a one-to-one call. Also the title of the sheet that shows a report."

@@ -7,9 +7,11 @@ import 'package:loomia/features/calendar/presentation/event_form.dart';
 import 'package:loomia/features/calendar/presentation/scope_dialog.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/workflows/domain/event_workflow.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../contacts/fake_people_repository.dart';
+import '../../workflows/fake_event_workflow_repository.dart';
 import '../calendar_harness.dart';
 import '../fake_event_repository.dart';
 
@@ -240,6 +242,36 @@ void main() {
     expect(events.store.single.title, 'Coffee');
   });
 
+  testWidgets('a type with a report calls its notes Prep notes (#495)', (
+    tester,
+  ) async {
+    await pumpCalendarHarness(
+      tester,
+      events: FakeEventRepository(),
+      eventWorkflows: FakeEventWorkflowRepository([
+        EventWorkflow(
+          id: 'm',
+          name: 'Mentoring',
+          steps: const [],
+          isGroup: false,
+          reportFields: const ['Topics covered'],
+        ),
+        EventWorkflow(id: 'w', name: 'Workshop', steps: const []),
+      ]),
+      open: (context) => showEventForm(context, day: _day),
+      result: (_) {},
+    );
+
+    expect(find.widgetWithText(LabeledField, 'Notes'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Mentoring'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(LabeledField, 'Prep notes'), findsOneWidget);
+    expect(find.widgetWithText(LabeledField, 'Notes'), findsNothing);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Workshop'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(LabeledField, 'Notes'), findsOneWidget);
+  });
+
   group('Repeat', () {
     Future<void> open(
       WidgetTester tester,
@@ -436,6 +468,94 @@ void main() {
           isEmpty,
         );
         expect(find.text('Edit event'), findsOneWidget);
+      });
+    });
+
+    group('notes on a repeating event (#495)', () {
+      final copy = find.widgetWithText(
+        CheckboxListTile,
+        'Copy to every occurrence',
+      );
+
+      testWidgets('only the first occurrence gets them', (tester) async {
+        final events = FakeEventRepository();
+        await open(tester, events);
+
+        await tester.enterText(_field('Title'), 'Team call');
+        await tester.tap(find.widgetWithText(ChoiceChip, 'Every week'));
+        await tester.pumpAndSettle();
+        await tester.enterText(_field('Notes'), 'Bring the kit');
+        await tester.pumpAndSettle();
+        expect(tester.widget<CheckboxListTile>(copy).value, isFalse);
+        await save(tester);
+
+        final sorted = byStart(events.store);
+        expect(sorted.first.notes, 'Bring the kit');
+        expect(sorted.skip(1).every((event) => event.notes == null), isTrue);
+      });
+
+      testWidgets('Copy to every occurrence: all of them get them', (
+        tester,
+      ) async {
+        final events = FakeEventRepository();
+        await open(tester, events);
+
+        await tester.enterText(_field('Title'), 'Workshop');
+        await tester.tap(find.widgetWithText(ChoiceChip, 'Every week'));
+        await tester.pumpAndSettle();
+        await tester.enterText(_field('Notes'), 'Bring the flyers');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(copy);
+        await tester.tap(copy);
+        await tester.pumpAndSettle();
+        await save(tester);
+
+        expect(events.store.length, greaterThan(1));
+        expect(
+          events.store.every((event) => event.notes == 'Bring the flyers'),
+          isTrue,
+        );
+      });
+
+      testWidgets('offered only when it repeats and has notes', (tester) async {
+        await open(tester, FakeEventRepository());
+
+        await tester.enterText(_field('Notes'), 'Bring the kit');
+        await tester.pumpAndSettle();
+        expect(copy, findsNothing);
+        await tester.tap(find.widgetWithText(ChoiceChip, 'Every week'));
+        await tester.pumpAndSettle();
+        expect(copy, findsOneWidget);
+        await tester.enterText(_field('Notes'), '');
+        await tester.pumpAndSettle();
+        expect(copy, findsNothing);
+      });
+
+      testWidgets('a single event made to repeat keeps its notes to itself', (
+        tester,
+      ) async {
+        final event = CalendarEvent(
+          id: 'e1',
+          title: 'Coffee',
+          startsAt: DateTime(2026, 10, 8, 10),
+          notes: 'Ask about her goals',
+        );
+        final events = FakeEventRepository([event]);
+        await pumpCalendarHarness(
+          tester,
+          events: events,
+          open: (context) => showEventForm(context, event: event),
+          result: (_) {},
+        );
+
+        await tester.tap(find.widgetWithText(ChoiceChip, 'Every week'));
+        await tester.pumpAndSettle();
+        await save(tester);
+
+        final sorted = byStart(events.store);
+        expect(sorted.first.notes, 'Ask about her goals');
+        expect(sorted.length, greaterThan(1));
+        expect(sorted.skip(1).every((event) => event.notes == null), isTrue);
       });
     });
   });

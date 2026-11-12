@@ -40,22 +40,26 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
   }
 
   /// Saves a series repeating by [rule] in [zone], then reloads: Postgres
-  /// generates the occurrences. Resolves to the first one. Throws
-  /// `PeopleFailure`.
+  /// generates the occurrences. Resolves to the first one. Without
+  /// [copyNotes], the draft's notes go on that first one only (#495).
+  /// Throws `PeopleFailure`.
   Future<CalendarEvent> addRepeating(
     EventDraft draft,
     RepeatRule rule,
-    String zone,
-  ) async {
+    String zone, {
+    bool copyNotes = true,
+  }) async {
+    final firstOnly = !copyNotes && draft.notes != null;
     final id = await ref
         .read(eventRepositoryProvider)
-        .addSeries(draft, rule, zone);
+        .addSeries(firstOnly ? _withoutNotes(draft) : draft, rule, zone);
     await _reload();
     final first = (state.value ?? const <CalendarEvent>[])
         .where((event) => event.series?.id == id)
         .firstOrNull;
     // The series saved, the reload failed: the list says so.
-    return first ?? (throw PeopleFailure.network);
+    if (first == null) throw PeopleFailure.network;
+    return firstOnly ? save(first.id, draft) : first;
   }
 
   /// Saves [id] as [draft]. Throws `PeopleFailure`.
@@ -77,16 +81,22 @@ class EventsController extends AsyncNotifier<List<CalendarEvent>> {
 
   /// Saves the single event [id] as [draft], then makes it the first
   /// occurrence of a series repeating by [rule] in [zone] (#299). Resolves
-  /// to it, reloaded. Throws `PeopleFailure`.
+  /// to it, reloaded. Without [copyNotes], its notes stay on it alone: the
+  /// series starts without them (#495). Throws `PeopleFailure`.
   Future<CalendarEvent> repeat(
     String id,
     EventDraft draft,
     RepeatRule rule,
-    String zone,
-  ) async {
+    String zone, {
+    bool copyNotes = true,
+  }) async {
+    final firstOnly = !copyNotes && draft.notes != null;
     final repository = ref.read(eventRepositoryProvider);
-    await repository.update(id, draft);
+    // ponytail: two updates around repeat_event, which copies the event's
+    // notes into the series; a p_copy_notes parameter if the extra write bites.
+    await repository.update(id, firstOnly ? _withoutNotes(draft) : draft);
     await repository.repeat(id, rule, zone);
+    if (firstOnly) await repository.update(id, draft);
     return _reloadTo(id);
   }
 
@@ -381,3 +391,13 @@ class CalendarSelector extends Notifier<CalendarSelection> {
   /// Today; in 3 days, a page starting on it, even when it already shows.
   void toToday() => state = _on(today(), state.mode);
 }
+
+EventDraft _withoutNotes(EventDraft draft) => (
+  title: draft.title,
+  startsAt: draft.startsAt,
+  endsAt: draft.endsAt,
+  place: draft.place,
+  link: draft.link,
+  notes: null,
+  eventWorkflowId: draft.eventWorkflowId,
+);

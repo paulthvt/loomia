@@ -109,6 +109,9 @@ class _EventFormState extends ConsumerState<_EventForm> {
   DateTime? _until;
   bool _untilBeforeStart = false;
 
+  /// A new series' notes reach every occurrence; off, the first only (#495).
+  bool _copyNotes = false;
+
   /// Invited once a new event is saved, in the order picked.
   late final List<Person> _people = [...widget.people];
 
@@ -334,8 +337,19 @@ class _EventFormState extends ConsumerState<_EventForm> {
             (throw PeopleFailure.unknown);
         final RepeatRule rule = (everyWeeks: repeatWeeks, untilOn: until);
         saved = event == null
-            ? await events.addRepeating(draft, rule, zone)
-            : await events.repeat(event.id, draft, rule, zone);
+            ? await events.addRepeating(
+                draft,
+                rule,
+                zone,
+                copyNotes: _copyNotes,
+              )
+            : await events.repeat(
+                event.id,
+                draft,
+                rule,
+                zone,
+                copyNotes: _copyNotes,
+              );
       } else {
         saved = await events.add(draft);
       }
@@ -500,6 +514,7 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 label: l10n.eventType,
                 child: Wrap(
                   spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
                   children: [
                     // Plain events (#300): no checklist, nothing after.
                     ChoiceChip(
@@ -620,7 +635,15 @@ class _EventFormState extends ConsumerState<_EventForm> {
               ),
             ),
             LabeledField(
-              label: l10n.eventNotes,
+              // The notes a type with a report prepares its call with (#495).
+              label:
+                  findEventWorkflow(
+                        eventWorkflows,
+                        _eventWorkflowId,
+                      )?.hasReport ??
+                      false
+                  ? l10n.eventPrepNotes
+                  : l10n.eventNotes,
               child: TextFormField(
                 controller: _notes,
                 minLines: 2,
@@ -628,6 +651,21 @@ class _EventFormState extends ConsumerState<_EventForm> {
                 textCapitalization: TextCapitalization.sentences,
               ),
             ),
+            // Only as a series starts: an occurrence's notes are its own.
+            if (_repeatWeeks != null && widget.event?.series == null)
+              ListenableBuilder(
+                listenable: _notes,
+                builder: (context, _) => _notes.text.trim().isEmpty
+                    ? const SizedBox.shrink()
+                    : CheckboxListTile(
+                        value: _copyNotes,
+                        onChanged: (on) =>
+                            setState(() => _copyNotes = on ?? false),
+                        title: Text(l10n.eventCopyNotes),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+              ),
           ],
         ),
       ),
