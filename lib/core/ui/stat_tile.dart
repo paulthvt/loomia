@@ -29,7 +29,7 @@ class StatTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final colors = LoomiaColors.of(context);
     final (background, ink) = switch (tone) {
-      StatTone.plain => (colors.surfaceDefault, scheme.onSurface),
+      StatTone.plain => (scheme.surfaceContainerLowest, scheme.onSurface),
       StatTone.primary => (scheme.primaryContainer, scheme.onPrimaryContainer),
       StatTone.secondary => (
         scheme.secondaryContainer,
