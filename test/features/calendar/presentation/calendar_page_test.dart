@@ -622,7 +622,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel(RegExp('^Saturday, October 10')));
     await tester.pumpAndSettle();
     expect(selected, DateTime(2026, 10, 10));
-    expect(find.text('SATURDAY, OCTOBER 10'), findsOneWidget);
+    expect(find.text('Saturday, October 10'), findsOneWidget);
     expect(find.text('Nothing planned'), findsOneWidget);
   });
 
@@ -636,7 +636,7 @@ void main() {
       onOpen: (event) => opened = event,
     );
 
-    expect(find.text('THURSDAY, OCTOBER 8'), findsOneWidget);
+    expect(find.text('Thursday, October 8'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('New member training')).dy,
       lessThan(tester.getTopLeft(find.text('Essential oils for sleep')).dy),
@@ -777,7 +777,7 @@ void main() {
     expect(selected, DateTime(2026, 10, 8));
     // Under the day: its heading, its events as rows.
     expect(
-      tester.getTopLeft(find.text('THURSDAY, OCTOBER 8')).dy,
+      tester.getTopLeft(find.text('Thursday, October 8')).dy,
       greaterThan(tester.getBottomLeft(find.text('8')).dy),
     );
     expect(find.byType(EventRow), findsNWidgets(2));
@@ -1360,10 +1360,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The selected day should now be the 20th, with the event listed.
-    expect(
-      find.text(DateFormat('EEEE, MMMM d').format(day20).toUpperCase()),
-      findsOneWidget,
-    );
+    expect(find.text(DateFormat('EEEE, MMMM d').format(day20)), findsOneWidget);
     expect(find.text('Workshop'), findsOneWidget);
   });
 

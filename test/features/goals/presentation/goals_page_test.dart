@@ -181,7 +181,7 @@ void main() {
     );
 
     expect(find.text('of 2,800'), findsOneWidget);
-    expect(find.text('LOYALTY ORDERS'), findsOneWidget);
+    expect(find.text('Loyalty orders'), findsOneWidget);
     expect(find.text('Aiming for Elite · Team volume 6,000'), findsOneWidget);
     expect(find.textContaining('PV'), findsNothing);
     expect(find.textContaining('OV'), findsNothing);
@@ -229,7 +229,7 @@ void main() {
     );
 
     await tester.scrollUntilVisible(find.text('2,180 PV · Executive'), 200);
-    expect(find.text('PAST MONTHS'), findsOneWidget);
+    expect(find.text('Past months'), findsOneWidget);
     expect(find.text('August 2026'), findsOneWidget);
     expect(find.text('2,410 of 2,500 PV · Elite reached'), findsOneWidget);
     expect(find.text('2,180 PV · Executive'), findsOneWidget);

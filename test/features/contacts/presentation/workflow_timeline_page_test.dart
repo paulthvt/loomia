@@ -55,7 +55,7 @@ void main() {
   ) async {
     await open(tester, _marie(position: 3));
 
-    expect(find.text('MARIE DUPONT · STEP 3 OF 5'), findsOneWidget);
+    expect(find.text('Marie Dupont · Step 3 of 5'), findsOneWidget);
     expect(find.text('Samples'), findsOneWidget);
     expect(_dimmed(tester, 'Send a first message'), isTrue);
     expect(_dimmed(tester, 'Send the samples'), isTrue);
@@ -74,7 +74,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(people.calls, contains('completeStep(p1, samples-3)'));
-    expect(find.text('MARIE DUPONT · STEP 4 OF 5'), findsOneWidget);
+    expect(find.text('Marie Dupont · Step 4 of 5'), findsOneWidget);
     expect(_dimmed(tester, 'Samples arrived'), isTrue);
     expect(find.byTooltip('Mark "Ask how the samples went" done'), findsOne);
   });
@@ -97,7 +97,7 @@ void main() {
   testWidgets('finished: every step greyed, nothing to tick', (tester) async {
     await open(tester, _marie(position: 1e9));
 
-    expect(find.text('MARIE DUPONT · FINISHED'), findsOneWidget);
+    expect(find.text('Marie Dupont · Finished'), findsOneWidget);
     expect(_dimmed(tester, 'Follow up'), isTrue);
     expect(find.byIcon(Icons.check_rounded), findsNothing);
   });
@@ -171,6 +171,6 @@ void main() {
 
     expect(find.byType(WorkflowTimelinePage), findsOneWidget);
     expect(find.text('Marie Dupont'), findsWidgets);
-    expect(find.text('MARIE DUPONT · STEP 1 OF 5'), findsOneWidget);
+    expect(find.text('Marie Dupont · Step 1 of 5'), findsOneWidget);
   });
 }

@@ -88,7 +88,7 @@ void main() {
 
     final tiles = tester.getTopLeft(find.text('NEW PROSPECTS')).dx;
     expect(
-      tester.getTopLeft(find.text('ORDERS IN SEPTEMBER')).dx,
+      tester.getTopLeft(find.text('Orders in September')).dx,
       greaterThan(tiles + 600),
     );
     expect(find.text('Order · 100 PV'), findsOneWidget);

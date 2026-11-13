@@ -202,7 +202,8 @@ class PeopleSummary extends StatelessWidget {
         ),
       ),
     );
-    return Card(
+    return Container(
+      decoration: AppTheme.card(context),
       clipBehavior: Clip.antiAlias,
       child: trailing == null
           ? line

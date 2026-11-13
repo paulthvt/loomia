@@ -54,7 +54,7 @@ void main() {
       ),
     );
 
-    expect(find.text('STEP 2 OF 3'), findsOneWidget);
+    expect(find.text('Step 2 of 3'), findsOneWidget);
     expect(find.text('Bravo, you reached your goals!'), findsOneWidget);
     expect(find.textContaining('You can be proud of yourself'), findsOneWidget);
     expect(find.byType(ReachedRing), findsOneWidget);
@@ -111,7 +111,7 @@ void main() {
     expect(find.text('September is behind you'), findsOneWidget);
     expect(find.textContaining('it carries into October'), findsOneWidget);
     expect(find.byType(ReachedRing), findsNothing);
-    expect(find.text('WHAT YOU BUILT'), findsOneWidget);
+    expect(find.text('What you built'), findsOneWidget);
     expect(find.text('YOU REACHED'), findsNothing);
     expect(find.text('7 of 8'), findsOneWidget);
     expect(find.text('Not filled in'), findsOneWidget);

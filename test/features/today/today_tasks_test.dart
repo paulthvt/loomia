@@ -107,8 +107,8 @@ void main() {
       await pumpView(tester, due: [_due('Anna')], tasks: AsyncData(tasks));
       await tester.pumpAndSettle();
 
-      final peopleFinder = find.text('PEOPLE');
-      final tasksFinder = find.text('TASKS');
+      final peopleFinder = find.text('People');
+      final tasksFinder = find.text('Tasks');
       expect(peopleFinder, findsOneWidget);
       expect(tasksFinder, findsOneWidget);
 
@@ -124,7 +124,7 @@ void main() {
       await pumpView(tester, due: [_due('Anna')], tasks: const AsyncData([]));
       await tester.pumpAndSettle();
 
-      expect(find.text('TASKS'), findsOneWidget);
+      expect(find.text('Tasks'), findsOneWidget);
       expect(find.text('Add a task'), findsOneWidget);
     });
 
@@ -513,10 +513,10 @@ void main() {
 
       // People section should work
       expect(find.text('Anna'), findsOneWidget);
-      expect(find.text('PEOPLE'), findsOneWidget);
+      expect(find.text('People'), findsOneWidget);
 
       // Tasks section shows LoadFailed
-      expect(find.text('TASKS'), findsOneWidget);
+      expect(find.text('Tasks'), findsOneWidget);
       expect(find.text("Couldn't load your tasks."), findsOneWidget);
       expect(find.text("Couldn't load today."), findsNothing);
       expect(

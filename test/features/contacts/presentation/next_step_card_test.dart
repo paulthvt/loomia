@@ -117,7 +117,7 @@ void main() {
   ) async {
     final calls = await _pump(tester, onStep(4, _today));
 
-    expect(find.text('NEXT STEP'), findsOneWidget);
+    expect(find.text('Next step'), findsOneWidget);
     expect(find.text('Ask how the samples went'), findsOneWidget);
     // Where it is goes on the step's row, under when: the header also sits
     // above the reminders.
@@ -161,7 +161,7 @@ void main() {
   testWidgets('a prospect done: how did it end, two ways on', (tester) async {
     final calls = await _pump(tester, Done(_samples));
 
-    expect(find.text('SAMPLES — DONE'), findsOneWidget);
+    expect(find.text('Samples — done'), findsOneWidget);
     expect(find.text('How did it end with Sarah?'), findsOneWidget);
     expect(
       find.text(
@@ -183,7 +183,7 @@ void main() {
       person: _sarah(stage: Stage.customer),
     );
 
-    expect(find.text('NEW CUSTOMER — DONE'), findsOneWidget);
+    expect(find.text('New customer — done'), findsOneWidget);
     expect(find.text('All 4 steps are done with Sarah.'), findsOneWidget);
     await tester.tap(find.text('Follow with…'));
 
@@ -223,7 +223,7 @@ void main() {
       expect(find.text('Due in 5 days'), findsOneWidget);
       expect(find.byIcon(Icons.schedule_rounded), findsNWidgets(2));
       expect(find.byType(DateChip), findsNothing);
-      expect(find.text('NEXT STEP'), findsOneWidget);
+      expect(find.text('Next step'), findsOneWidget);
       expect(find.text('Add a reminder'), findsOneWidget);
     });
 

@@ -514,8 +514,8 @@ void main() {
     double top(Finder finder) => tester.getTopLeft(finder).dy;
 
     await edit(member);
-    final aims = find.text('WHAT THEY ARE AIMING FOR');
-    final known = find.text('INFO');
+    final aims = find.text('What they are aiming for');
+    final known = find.text('Info');
     expect(top(field('Name')), lessThan(top(aims)));
     expect(top(aims), lessThan(top(field('Their why'))));
     await tester.ensureVisible(field('Concerns'));
@@ -525,13 +525,13 @@ void main() {
     await tester.pumpAndSettle();
 
     await edit(_marie);
-    expect(find.text('WHAT THEY ARE AIMING FOR'), findsNothing);
-    expect(find.text('INFO'), findsOneWidget);
+    expect(find.text('What they are aiming for'), findsNothing);
+    expect(find.text('Info'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
     await edit(member, EditPart.facts);
-    expect(find.text('INFO'), findsNothing);
+    expect(find.text('Info'), findsNothing);
   });
 
   testWidgets('a name is still required', (tester) async {

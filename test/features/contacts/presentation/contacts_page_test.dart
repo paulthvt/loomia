@@ -754,7 +754,7 @@ void main() {
   testWidgets('Add in HISTORY opens Log something', (tester) async {
     await openMarie(tester);
 
-    await reveal(tester, find.text('HISTORY'));
+    await reveal(tester, find.text('History'));
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
 
@@ -951,12 +951,12 @@ void main() {
       await openContacts(tester, size: _desktop);
       await tester.tap(find.text('Marie Dupont'));
       await tester.pumpAndSettle();
-      expect(find.text('INFO'), findsOneWidget);
+      expect(find.text('Info'), findsOneWidget);
 
       await tester.tap(find.text('Mentoring Marie'));
       await tester.pumpAndSettle();
       expect(find.byType(BottomSheet), findsNothing);
-      expect(find.text('INFO'), findsNothing);
+      expect(find.text('Info'), findsNothing);
       expect(find.text('Pick her kit'), findsOneWidget);
       // The history stays.
       expect(find.text('Second call'), findsOneWidget);
@@ -969,7 +969,7 @@ void main() {
       await tester.tap(find.byType(CloseButton));
       await tester.pumpAndSettle();
       expect(find.text('Her questions\nabout the kit'), findsNothing);
-      expect(find.text('INFO'), findsOneWidget);
+      expect(find.text('Info'), findsOneWidget);
 
       await tester.tap(find.text('Second call'));
       await tester.pumpAndSettle();

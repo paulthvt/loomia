@@ -512,7 +512,7 @@ void main() {
       activities: activities,
     );
     // Nothing else is due: the section is open.
-    expect(find.text('CATCH UP'), findsOneWidget);
+    expect(find.text('Catch up'), findsOneWidget);
 
     await tester.tap(find.text('Log something'));
     await tester.pumpAndSettle();
@@ -520,7 +520,7 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.text('CATCH UP'), findsNothing);
+    expect(find.text('Catch up'), findsNothing);
   });
 
   group('Not now on Catch up', () {
@@ -541,7 +541,7 @@ void main() {
       await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(people.calls, contains('dismissCatchUp(bea, ${today()})'));
-      expect(find.text('CATCH UP'), findsNothing);
+      expect(find.text('Catch up'), findsNothing);
       expect(
         find.text('Bea Martin is back in Catch up in a month'),
         findsOneWidget,
@@ -550,7 +550,7 @@ void main() {
       await tester.tap(find.text('Undo'));
       await tester.pumpAndSettle();
       expect(people.calls, contains('dismissCatchUp(bea, null)'));
-      expect(find.text('CATCH UP'), findsOneWidget);
+      expect(find.text('Catch up'), findsOneWidget);
     });
 
     testWidgets('the folded line puts off everyone in it', (tester) async {
@@ -565,7 +565,7 @@ void main() {
       await tester.tap(find.text('Not now'));
       await tester.pumpAndSettle();
       expect(people.calls, contains('dismissCatchUp(bea, cyr, ${today()})'));
-      expect(find.text('CATCH UP'), findsNothing);
+      expect(find.text('Catch up'), findsNothing);
       expect(
         find.text('2 people are back in Catch up in a month'),
         findsOneWidget,
@@ -586,7 +586,7 @@ void main() {
       people.failWith = null;
       await tester.drag(find.text('Bea Martin'), const Offset(-500, 0));
       await tester.pumpAndSettle();
-      expect(find.text('CATCH UP'), findsNothing);
+      expect(find.text('Catch up'), findsNothing);
     });
   });
 

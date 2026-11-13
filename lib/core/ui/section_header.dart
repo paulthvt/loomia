@@ -27,6 +27,7 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = LoomiaColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
     final label = actionLabel;
 
     return Padding(
@@ -40,8 +41,8 @@ class SectionHeader extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              title.toUpperCase(),
-              style: AppTypography.overline.copyWith(color: colors.textMuted),
+              title,
+              style: AppTypography.title.copyWith(color: scheme.onSurface),
             ),
           ),
           if (trailing case final trailing?)
@@ -64,7 +65,13 @@ class SectionHeader extends StatelessWidget {
                     horizontal: AppSpacing.sm,
                   ),
                 ),
-                child: Text(label, style: AppTypography.label),
+                child: Text(
+                  label,
+                  style: AppTypography.label.copyWith(
+                    color: colors.primaryText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
         ],
       ),

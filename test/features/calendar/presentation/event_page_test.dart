@@ -190,7 +190,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Sarah Lemaire'), 200);
     expect(find.text('Prospect · going'), findsOneWidget);
     expect(find.text('Customer · going'), findsOneWidget);
-    expect(find.text('PEOPLE'), findsOneWidget);
+    expect(find.text('People'), findsOneWidget);
     expect(find.text('Mark who was there'), findsNothing);
 
     await tester.tap(find.byTooltip('More for Claire Moreau'));
@@ -248,7 +248,7 @@ void main() {
     );
 
     await tester.scrollUntilVisible(find.text('Sarah Lemaire'), 200);
-    expect(find.text('PEOPLE · 3 · 1 GOING'), findsOneWidget);
+    expect(find.text('People · 3 · 1 going'), findsOneWidget);
     expect(find.text('Prospect · invited Oct 1'), findsOneWidget);
     expect(find.text('Customer · going'), findsOneWidget);
     expect(
@@ -675,7 +675,7 @@ void main() {
       onTick: (step, done) => ticks.add((step.id, done)),
     );
 
-    expect(find.text('CHECKLIST'), findsOneWidget);
+    expect(find.text('Checklist'), findsOneWidget);
     expect(find.text('1 day before · Wednesday, October 7'), findsOneWidget);
     expect(find.text('1 day after · Friday, October 9'), findsOneWidget);
 
@@ -931,9 +931,9 @@ void main() {
     ) async {
       final events = await open(tester, [call()]);
 
-      expect(find.text('PREP NOTES'), findsOneWidget);
+      expect(find.text('Prep notes'), findsOneWidget);
       expect(find.text('Ask about her kit'), findsOneWidget);
-      expect(find.text('REPORT'), findsOneWidget);
+      expect(find.text('Report'), findsOneWidget);
       for (final label in mentorat.reportFields) {
         expect(field(label), findsOneWidget);
       }
@@ -1215,8 +1215,8 @@ void main() {
           ),
         ],
       );
-      expect(find.text('REPORT'), findsNothing);
-      expect(find.text('PREP NOTES'), findsNothing);
+      expect(find.text('Report'), findsNothing);
+      expect(find.text('Prep notes'), findsNothing);
       expect(find.text('Ask about her kit'), findsOneWidget);
     });
 
@@ -1233,8 +1233,8 @@ void main() {
           ),
         ],
       );
-      expect(find.text('REPORT'), findsNothing);
-      expect(find.text('PREP NOTES'), findsNothing);
+      expect(find.text('Report'), findsNothing);
+      expect(find.text('Prep notes'), findsNothing);
     });
 
     testWidgets('delete warns when the report goes with it', (tester) async {
