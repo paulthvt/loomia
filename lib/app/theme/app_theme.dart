@@ -93,6 +93,58 @@ abstract final class AppTheme {
     );
   }
 
+  /// A search field on the hero gradient (Contacts): a translucent pill,
+  /// its hint and icon quieter than what is typed.
+  static InputDecoration heroSearch(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    final pill = BorderRadius.circular(AppRadii.pill);
+    return InputDecoration(
+      fillColor: colors.heroFillSubtle,
+      hintStyle: AppTypography.bodyLarge.copyWith(color: colors.onHeroQuiet),
+      prefixIconColor: colors.onHeroQuiet,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: pill,
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: pill,
+        borderSide: BorderSide(color: colors.onHero, width: 2),
+      ),
+    );
+  }
+
+  /// Filter chips on the hero gradient, as a theme for a `Theme` above
+  /// them: white when picked, with the hero fill's ink; translucent
+  /// otherwise.
+  static ThemeData heroChips(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = LoomiaColors.of(context);
+    final chips = theme.chipTheme;
+    return theme.copyWith(
+      // A chip paints its fill on a canvas Material: without this, the
+      // translucent fill sits on the canvas colour, not the gradient.
+      canvasColor: Colors.transparent,
+      chipTheme: chips.copyWith(
+        backgroundColor: colors.heroFill,
+        selectedColor: colors.onHero,
+        labelStyle: chips.labelStyle?.copyWith(
+          color: WidgetStateColor.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? colors.onHeroFill
+                : colors.onHero,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.ms,
+          vertical: AppSpacing.xs,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+        ),
+      ),
+    );
+  }
+
   /// The white + on the dark chrome (floating bar, sidebar, rail), for an
   /// `IconButton` or a `FilledButton.icon`. The caller sets its size.
   static ButtonStyle createButton(BuildContext context) {

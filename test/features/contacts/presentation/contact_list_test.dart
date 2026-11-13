@@ -4,6 +4,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/tag_chip.dart';
@@ -95,6 +96,28 @@ void main() {
     expect(find.text('Nurse'), findsOneWidget);
     // The filter chip "Team" and Hélène's stage chip.
     expect(find.text('Team'), findsNWidgets(2));
+  });
+
+  testWidgets('search and filters sit in the hero', (tester) async {
+    await _pump(tester, size: _phone);
+
+    for (final finder in [
+      find.byType(TextField),
+      find.widgetWithText(ChoiceChip, 'Everyone'),
+      find.text('3 people'),
+    ]) {
+      expect(
+        find.descendant(of: find.byType(HeroPanel), matching: finder),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.descendant(
+        of: find.byType(HeroPanel),
+        matching: find.byType(ContactRow),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('a stage chip filters the list', (tester) async {

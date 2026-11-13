@@ -20,6 +20,7 @@ class TagChip extends StatelessWidget {
     required this.color,
     this.onTap,
     this.selected,
+    this.onHero = false,
     super.key,
   });
 
@@ -28,16 +29,27 @@ class TagChip extends StatelessWidget {
   final VoidCallback? onTap;
   final bool? selected;
 
+  /// On the hero gradient (the Contacts filter): off is an outline in the
+  /// hero's white, and the chip is a pill like the stage chips.
+  final bool onHero;
+
+  /// The outline's opacity on the hero.
+  static const double _heroOutline = .25;
+
   @override
   Widget build(BuildContext context) {
     final tag = color.of(context);
+    final colors = LoomiaColors.of(context);
     final off = selected == false;
-    final (background, text) = off
-        ? (
-            LoomiaColors.of(context).surfaceSunken,
-            Theme.of(context).colorScheme.onSurfaceVariant,
-          )
-        : (tag.container, tag.ink);
+    final (background, text) = switch ((off, onHero)) {
+      (true, true) => (Colors.transparent, colors.onHero),
+      (true, false) => (
+        colors.surfaceSunken,
+        Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      _ => (tag.container, tag.ink),
+    };
+    final radius = BorderRadius.circular(onHero ? AppRadii.pill : AppRadii.sm);
     final chip = AnimatedContainer(
       duration: context.motion(AppMotion.quick),
       curve: AppMotion.standard,
@@ -47,7 +59,10 @@ class TagChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
+        borderRadius: radius,
+        border: off && onHero
+            ? Border.all(color: colors.onHero.withValues(alpha: _heroOutline))
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -74,7 +89,7 @@ class TagChip extends StatelessWidget {
       selected: selected,
       child: InkWell(
         onTap: tap,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
+        borderRadius: radius,
         // 32px like the LRP line under the stage chip: it keeps the tags
         // tight under it, and 32 still clears the 24px minimum target.
         child: ConstrainedBox(

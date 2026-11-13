@@ -54,22 +54,15 @@ Widget teamMemberMobileLight() =>
 @Preview(group: 'Contacts', name: 'Desktop — light', size: Size(1440, 900))
 Widget contactsDesktopLight() => _app(
   AppTheme.light,
-  Builder(
-    builder: (context) => Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          width: 440,
-          decoration: BoxDecoration(
-            border: Border(
-              right: BorderSide(color: LoomiaColors.of(context).borderSubtle),
-            ),
-          ),
-          child: _list(selectedId: _sample.first.id, showRefresh: true),
-        ),
-        Expanded(child: _details()),
-      ],
-    ),
+  Row(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SizedBox(
+        width: 440,
+        child: _list(selectedId: _sample.first.id, showRefresh: true),
+      ),
+      Expanded(child: _details()),
+    ],
   ),
 );
 

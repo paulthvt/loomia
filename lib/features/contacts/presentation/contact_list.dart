@@ -7,6 +7,7 @@ import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
@@ -236,110 +237,74 @@ class _ContactListState extends State<ContactList> {
     final picksOnPhone = !sideNavigation && actions != null;
     final bottomRoom = MediaQuery.paddingOf(context).bottom;
 
-    final list = RefreshIndicator(
-      onRefresh: widget.onRefresh,
-      child: ListView(
-        // Pull to refresh works on a short list too.
-        physics: const AlwaysScrollableScrollPhysics(),
-        // Under the last row: the bottom padding (the floating bar's room
-        // on a phone), unless the picked actions take the bar's place.
-        padding: EdgeInsets.all(desktop ? AppSpacing.lg : AppSpacing.md)
-            .add(EdgeInsets.only(bottom: picksOnPhone ? 0 : bottomRoom)),
-        children: [
-          if (picked != null) ...[
-            _PickingHeader(
-              count: picked.length,
-              onSelectAll: () => _setPicked({
-                ...?_picked,
-                for (final person in shown) person.id,
-              }),
-              onClose: () => _setPicked(null),
+    final colors = LoomiaColors.of(context);
+    // From the screen's top edge on a phone, under the status bar; a band
+    // heading the list pane on desktop.
+    final hero = HeroPanel(
+      shape: desktop ? HeroShape.band : HeroShape.screenTop,
+      gap: 0,
+      children: [
+        if (picked != null)
+          _PickingHeader(
+            count: picked.length,
+            onSelectAll: () => _setPicked({
+              ...?_picked,
+              for (final person in shown) person.id,
+            }),
+            onClose: () => _setPicked(null),
+          )
+        else
+          LoomiaTopBar(
+            eyebrow: people.isEmpty ? null : l10n.contactsCount(people.length),
+            title: l10n.contactsTitle,
+            onHero: true,
+            gap: 0,
+            action: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: AppSpacing.sm,
+              children: [
+                if (sideNavigation && people.isNotEmpty)
+                  // Icon only: a label leaves the title too little room
+                  // in the list pane once translated.
+                  HeroIconButton(
+                    onPressed: () => _setPicked({}),
+                    tooltip: l10n.contactsSelect,
+                    icon: Icons.checklist_rounded,
+                  ),
+                if (widget.onImport case final onImport?)
+                  HeroIconButton(
+                    onPressed: onImport,
+                    tooltip: l10n.contactsImport,
+                    icon: Icons.contacts_outlined,
+                  ),
+                if (widget.showRefresh)
+                  HeroIconButton(
+                    onPressed: widget.onRefresh,
+                    tooltip: l10n.contactsRefresh,
+                    icon: Icons.refresh_rounded,
+                  ),
+                // The floating bar's + or the sidebar's adds one.
+                ?account,
+              ],
             ),
-            // With a mouse the actions sit under the header; on a phone they
-            // take the bottom bar's place.
-            if (sideNavigation && actions != null) ...[
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  for (final action in actions)
-                    if (action.destructive)
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                        onPressed: action.onTap,
-                        icon: Icon(action.icon),
-                        label: Text(action.short),
-                      )
-                    else
-                      FilledButton.tonalIcon(
-                        style: AppTheme.tonal(context),
-                        onPressed: action.onTap,
-                        icon: Icon(action.icon),
-                        label: Text(action.short),
-                      ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-          ] else
-            LoomiaTopBar(
-              title: l10n.contactsTitle,
-              action: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (sideNavigation && people.isNotEmpty)
-                    // Icon only: a label leaves the title too little room
-                    // in the list pane once translated.
-                    IconButton(
-                      onPressed: () => _setPicked({}),
-                      tooltip: l10n.contactsSelect,
-                      icon: const Icon(Icons.checklist_rounded),
-                    ),
-                  if (widget.onImport case final onImport?)
-                    IconButton(
-                      onPressed: onImport,
-                      tooltip: l10n.contactsImport,
-                      icon: const Icon(Icons.contacts_outlined),
-                    ),
-                  if (widget.showRefresh)
-                    IconButton(
-                      onPressed: widget.onRefresh,
-                      tooltip: l10n.contactsRefresh,
-                      icon: const Icon(Icons.refresh_rounded),
-                    ),
-                  // The floating bar's + or the sidebar's adds one.
-                  ?account,
-                ],
-              ),
+          ),
+        if (people.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            onChanged: (value) => setState(() => _query = value),
+            textInputAction: TextInputAction.search,
+            style: Theme.of(context).textTheme.bodyLarge
+                ?.copyWith(color: colors.onHero),
+            cursorColor: colors.onHero,
+            decoration: AppTheme.heroSearch(context).copyWith(
+              hintText: l10n.contactsSearchHint,
+              prefixIcon: const Icon(Icons.search_rounded),
             ),
-          if (people.isEmpty) ...[
-            EmptyState(
-              icon: Icons.people_outline,
-              title: l10n.contactsEmptyTitle,
-              body: l10n.contactsEmptyBody,
-              actionLabel: l10n.contactsAdd,
-              onAction: widget.onAdd,
-            ),
-            if (widget.onImport case final onImport?)
-              Center(
-                child: TextButton(
-                  onPressed: onImport,
-                  child: Text(l10n.contactsImport),
-                ),
-              ),
-          ] else ...[
-            TextField(
-              onChanged: (value) => setState(() => _query = value),
-              textInputAction: TextInputAction.search,
-              decoration: AppTheme.search(context).copyWith(
-                hintText: l10n.contactsSearchHint,
-                prefixIcon: const Icon(Icons.search_rounded),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.ms),
-            StageFilter(
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Theme(
+            data: AppTheme.heroChips(context),
+            child: StageFilter(
               value: _stage,
               onChanged: (stage) => setState(() => _stage = stage),
               loyaltyLabel: anyLoyalty
@@ -348,78 +313,157 @@ class _ContactListState extends State<ContactList> {
               loyalty: _loyalty,
               onLoyaltyChanged: (on) => setState(() => _loyalty = on),
             ),
-            if (widget.tags.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              TagFilter(
-                tags: widget.tags,
-                selected: tagFilter,
-                onChanged: (tags) => setState(() => _tags = tags),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.ms),
-            // A filter chip: a new list, faded in. Typing: a new list, at once.
-            // Otherwise a person added or deleted grows in or folds out, once
-            // the sheet or dialog has closed.
-            FadeSwap(
-              duration: AppMotion.quick,
-              child: KeyedSubtree(
-                key: ValueKey((
-                  'filter',
-                  _stage,
-                  _loyalty,
-                  (tagFilter.toList()..sort()).join(','),
-                )),
-                child: shown.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.lg,
-                        ),
-                        child: Text(
-                          l10n.contactsNoMatch,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: LoomiaColors.of(context).textMuted,
-                              ),
-                        ),
-                      )
-                    : AnimatedRows(
-                        key: ValueKey(('rows', _query)),
-                        delay: context.motion(AppMotion.slow),
-                        children: [
-                          for (final person in shown)
-                            ContactRow(
-                              key: ValueKey(person.id),
-                              name: person.name,
-                              photoPath: person.photoPath,
-                              subtitle: contactSubtitle(l10n, person),
-                              titleTrailing: switch (tagsOf(
-                                person.tagIds,
-                                widget.tags,
-                              )) {
-                                [] => null,
-                                final tags => TagDots(
-                                  tags: [
-                                    for (final tag in tags)
-                                      (name: tag.name, color: tag.color),
-                                  ],
-                                ),
-                              },
-                              trailing: LoomiaChip(
-                                label: stageLabel(l10n, person.stage),
-                              ),
-                              selected: person.id == widget.selectedId,
-                              checked: pickedIds?.contains(person.id),
-                              onTap: pickedIds == null
-                                  ? () => widget.onOpen(person)
-                                  : () => _toggle(person.id),
-                              onLongPress: () => _toggle(person.id),
-                            ),
-                        ],
-                      ),
-              ),
+          ),
+          if (widget.tags.isNotEmpty)
+            TagFilter(
+              tags: widget.tags,
+              selected: tagFilter,
+              onChanged: (tags) => setState(() => _tags = tags),
             ),
+        ],
+      ],
+    );
+
+    final below = <Widget>[
+      // With a mouse the picked actions sit under the hero; on a phone they
+      // take the bottom bar's place.
+      if (sideNavigation && actions != null)
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            for (final action in actions)
+              if (action.destructive)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: action.onTap,
+                  icon: Icon(action.icon),
+                  label: Text(action.short),
+                )
+              else
+                FilledButton.tonalIcon(
+                  style: AppTheme.tonal(context),
+                  onPressed: action.onTap,
+                  icon: Icon(action.icon),
+                  label: Text(action.short),
+                ),
           ],
+        ),
+      if (people.isEmpty) ...[
+        EmptyState(
+          icon: Icons.people_outline,
+          title: l10n.contactsEmptyTitle,
+          body: l10n.contactsEmptyBody,
+          actionLabel: l10n.contactsAdd,
+          onAction: widget.onAdd,
+        ),
+        if (widget.onImport case final onImport?)
+          Center(
+            child: TextButton(
+              onPressed: onImport,
+              child: Text(l10n.contactsImport),
+            ),
+          ),
+      ] else
+        // A filter chip: a new list, faded in. Typing: a new list, at once.
+        // Otherwise a person added or deleted grows in or folds out, once
+        // the sheet or dialog has closed.
+        FadeSwap(
+          duration: AppMotion.quick,
+          child: KeyedSubtree(
+            key: ValueKey((
+              'filter',
+              _stage,
+              _loyalty,
+              (tagFilter.toList()..sort()).join(','),
+            )),
+            child: shown.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.lg,
+                    ),
+                    child: Text(
+                      l10n.contactsNoMatch,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: colors.textMuted),
+                    ),
+                  )
+                : _RowsCard(
+                    child: AnimatedRows(
+                      key: ValueKey(('rows', _query)),
+                      delay: context.motion(AppMotion.slow),
+                      children: [
+                        for (final (index, person) in shown.indexed)
+                          Column(
+                            key: ValueKey(person.id),
+                            children: [
+                              if (index > 0)
+                                const Divider(
+                                  indent: AppSpacing.md,
+                                  endIndent: AppSpacing.md,
+                                ),
+                              ContactRow(
+                                name: person.name,
+                                photoPath: person.photoPath,
+                                subtitle: contactSubtitle(l10n, person),
+                                titleTrailing: switch (tagsOf(
+                                  person.tagIds,
+                                  widget.tags,
+                                )) {
+                                  [] => null,
+                                  final tags => TagDots(
+                                    tags: [
+                                      for (final tag in tags)
+                                        (name: tag.name, color: tag.color),
+                                    ],
+                                  ),
+                                },
+                                trailing: LoomiaChip(
+                                  label: stageLabel(l10n, person.stage),
+                                ),
+                                selected: person.id == widget.selectedId,
+                                checked: pickedIds?.contains(person.id),
+                                onTap: pickedIds == null
+                                    ? () => widget.onOpen(person)
+                                    : () => _toggle(person.id),
+                                onLongPress: () => _toggle(person.id),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ),
+    ];
+
+    final list = RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      edgeOffset: desktop ? 0 : MediaQuery.paddingOf(context).top,
+      child: ListView(
+        // Pull to refresh works on a short list too.
+        physics: const AlwaysScrollableScrollPhysics(),
+        // Under the last row: the bottom padding (the floating bar's room
+        // on a phone), unless the picked actions take the bar's place.
+        padding:
+            (desktop
+                    ? const EdgeInsets.all(AppSpacing.lg)
+                    : const EdgeInsets.only(bottom: AppSpacing.md))
+                .add(EdgeInsets.only(bottom: picksOnPhone ? 0 : bottomRoom)),
+        children: [
+          hero,
+          for (final piece in below)
+            Padding(
+              padding: EdgeInsets.only(
+                top: AppSpacing.md,
+                left: desktop ? 0 : AppSpacing.md,
+                right: desktop ? 0 : AppSpacing.md,
+              ),
+              child: piece,
+            ),
         ],
       ),
     );
@@ -455,7 +499,7 @@ typedef _PickedAction = ({
   VoidCallback? onTap,
 });
 
-/// ✕ · "2 selected" · Select all, on one line.
+/// ✕ · "2 selected" · Select all, on one line, on the hero.
 class _PickingHeader extends StatelessWidget {
   const _PickingHeader({
     required this.count,
@@ -470,29 +514,55 @@ class _PickingHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Row(
-        spacing: AppSpacing.xs,
-        children: [
-          IconButton(
-            onPressed: onClose,
-            tooltip: l10n.contactsStopSelecting,
-            icon: const Icon(Icons.close_rounded),
+    return Row(
+      spacing: AppSpacing.sm,
+      children: [
+        HeroIconButton(
+          onPressed: onClose,
+          tooltip: l10n.contactsStopSelecting,
+          icon: Icons.close_rounded,
+        ),
+        Expanded(
+          child: Text(
+            l10n.contactsSelected(count),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(color: LoomiaColors.of(context).onHero),
           ),
-          Expanded(
-            child: Text(
-              l10n.contactsSelected(count),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+        ),
+        TextButton(
+          style: AppTheme.heroButton(context),
+          onPressed: onSelectAll,
+          child: Text(l10n.contactsSelectAll),
+        ),
+      ],
+    );
+  }
+}
+
+/// The rows on one white card. Its own Material: a row's selected fill and
+/// ink paint on the card, not under it.
+class _RowsCard extends StatelessWidget {
+  const _RowsCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: AppTheme.card(context),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTileTheme.merge(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.lg),
           ),
-          TextButton(
-            onPressed: onSelectAll,
-            child: Text(l10n.contactsSelectAll),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: child,
           ),
-        ],
+        ),
       ),
     );
   }

@@ -643,6 +643,15 @@
   "@contactsTitle": {
     "description": "Title of the list of people."
   },
+  "contactsCount": "{count, plural, =1{1 person} other{{count} people}}",
+  "@contactsCount": {
+    "description": "Above the Contacts title: how many people are in the book.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "contactsAdd": "Add someone",
   "@contactsAdd": {
     "description": "Button on the Contacts list, and on its empty state, that opens the form to add a person."

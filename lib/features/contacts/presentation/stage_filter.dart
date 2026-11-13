@@ -68,8 +68,8 @@ class StageFilter extends StatelessWidget {
 }
 
 /// The tag chips under the stage chips (#332), one per tag in [tags]' order,
-/// each on or off. Several on: people with all of them. A phone scrolls them
-/// sideways on one line; wider screens wrap them.
+/// each on or off, on the hero gradient. Several on: people with all of
+/// them. A phone scrolls them sideways on one line; wider screens wrap them.
 class TagFilter extends StatelessWidget {
   const TagFilter({
     required this.tags,
@@ -90,6 +90,7 @@ class TagFilter extends StatelessWidget {
           label: tag.name,
           color: tag.color,
           selected: selected.contains(tag.id),
+          onHero: true,
           onTap: () => onChanged(
             selected.contains(tag.id)
                 ? selected.difference({tag.id})
