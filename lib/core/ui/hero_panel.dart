@@ -57,17 +57,22 @@ class HeroPanel extends StatelessWidget {
         style: TextStyle(color: colors.onHero),
         child: IconTheme.merge(
           data: IconThemeData(color: colors.onHero),
-          child: Padding(
-            padding: effectivePadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  children[i],
-                  if (i < children.length - 1) SizedBox(height: gap),
+          // A Material for the children's ink: without it, an InkWell's
+          // splash paints on the Scaffold, under the gradient.
+          child: Material(
+            type: MaterialType.transparency,
+            child: Padding(
+              padding: effectivePadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < children.length; i++) ...[
+                    children[i],
+                    if (i < children.length - 1) SizedBox(height: gap),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -284,19 +289,22 @@ class HeroBadge extends StatelessWidget {
         ),
         child: IconTheme.merge(
           data: IconThemeData(color: colors.onHeroFill, size: 18),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: AppSpacing.xs,
-            children: [
-              icon,
-              if (text != null)
-                Text(
-                  text,
-                  style: AppTypography.labelLarge.copyWith(
-                    color: colors.onHeroFill,
+          // One node for a screen reader: the icon's label, then the text.
+          child: MergeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: AppSpacing.xs,
+              children: [
+                icon,
+                if (text != null)
+                  Text(
+                    text,
+                    style: AppTypography.labelLarge.copyWith(
+                      color: colors.onHeroFill,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

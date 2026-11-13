@@ -17,7 +17,7 @@ import '../../../app/app_harness.dart';
 import '../fake_task_repository.dart';
 
 /// The button once the task is done, which unticks it.
-const _markNotDone = 'Mark "Call the supplier" not done';
+const _markNotDone = 'Mark as not done';
 
 void main() {
   const phone = Size(390, 844);

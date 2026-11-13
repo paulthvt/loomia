@@ -258,9 +258,7 @@ class TaskView extends StatelessWidget {
                       Icons.notifications_rounded,
                       semanticLabel: l10n.taskAlertIsOn,
                     ),
-                    // ponytail: no "Bell on" label yet, the ARB is Tasks
-                    // 4 and 6's; the icon speaks the bell. Add the label
-                    // with its copy.
+                    label: l10n.taskBellOn,
                   )
                 : Icon(
                     Icons.notifications_off_outlined,
@@ -317,13 +315,13 @@ class TaskView extends StatelessWidget {
                   style: AppTheme.tonal(context),
                   onPressed: busy ? null : onTick,
                   icon: const Icon(Icons.undo_rounded),
-                  label: Text(l10n.eventStepUntick(task.title)),
+                  label: Text(l10n.taskMarkNotDone),
                 )
               else
                 FilledButton.icon(
                   onPressed: busy ? null : onTick,
                   icon: const Icon(Icons.check_rounded),
-                  label: Text(l10n.actionMarkAsDone),
+                  label: Text(l10n.taskMarkDone),
                 ),
             ],
           ),

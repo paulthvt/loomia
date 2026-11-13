@@ -26,6 +26,32 @@ void main() {
       expect(decoration.gradient, equals(LoomiaColors.light.heroGradient));
     });
 
+    testWidgets('a hero InkWell finds a Material inside the hero', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: HeroPanel(
+              children: [InkWell(onTap: () {}, child: const Text('Tap'))],
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.descendant(
+          of: find.byType(HeroPanel),
+          matching: find.ancestor(
+            of: find.byType(InkWell),
+            matching: find.byType(Material),
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('screen-top hero pads by the status bar', (tester) async {
       const statusBarHeight = 47.0;
 

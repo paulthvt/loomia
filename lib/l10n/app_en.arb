@@ -1408,6 +1408,18 @@
   "@taskAlertIsOff": {
     "description": "Screen reader label of the crossed-out bell after a task's time on its page (#390): no push at that time."
   },
+  "taskBellOn": "Bell on",
+  "@taskBellOn": {
+    "description": "Label of the white pill on a task's time row, on its page, when its bell is on: it notifies at that time."
+  },
+  "taskMarkDone": "Mark as done",
+  "@taskMarkDone": {
+    "description": "The task page's main button, below the task: ticks it done. No task name inside, the page title already says it."
+  },
+  "taskMarkNotDone": "Mark as not done",
+  "@taskMarkNotDone": {
+    "description": "The task page's main button once the task is done: unticks it. No task name inside, the page title already says it."
+  },
   "taskNotFound": "This task isn't in your list any more.",
   "@taskNotFound": {
     "description": "Title shown when a task's page points to one that no longer exists (deleted, maybe on another device). Followed by eventNotFoundBody."

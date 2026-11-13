@@ -119,11 +119,7 @@ void main() {
       push.tap({'type': 'task', 'task': 't1'});
       await tester.pumpAndSettle();
       expect(find.byType(TaskPage), findsOneWidget);
-      expect(
-        find.text('Mark "Call the supplier" not done'),
-        findsOneWidget,
-        reason: 'ticked',
-      );
+      expect(find.text('Mark as not done'), findsOneWidget, reason: 'ticked');
 
       push.tap({'type': 'task', 'task': 'gone'});
       await tester.pumpAndSettle();
