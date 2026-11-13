@@ -103,7 +103,7 @@ in the top bar, focusable with `/` and `Cmd/Ctrl+K`.
 
 ### 10. SectionHeader
 *Purpose:* the only structural divider in the product.
-*Anatomy:* Title case, 18 bold (`title-case`) in `text/primary` · optional trailing text action or
+*Anatomy:* Sentence case as written, 18 bold (`title`, AppTypography.title) in `text/primary` · optional trailing text action or
 count. Horizon restyle (2026-11-13) changed from `overline` to sentence-case bold for legibility.
 *Props:* `title`, `actionLabel`, `showAction`.
 *Rules:* no rules, no card headers, no chevrons. Space and this header do all the
