@@ -1,4 +1,4 @@
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/shell/floating_nav_bar.dart';
 import 'package:loomia/app/theme/app_theme.dart';
@@ -6,10 +6,13 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../load_fonts.dart';
+
 Future<void> _pump(
   WidgetTester tester,
   int selected, {
   bool reduceMotion = false,
+  bool withCreate = false,
 }) => tester.pumpWidget(
   MaterialApp(
     localizationsDelegates: localizationsDelegates,
@@ -23,8 +26,10 @@ Future<void> _pump(
       bottomNavigationBar: FloatingNavBar(
         selected: selected,
         onSelect: (_) {},
-        create: null,
-        onCreate: null,
+        create: withCreate
+            ? (label: 'New task', icon: Icons.add_rounded, run: (_, _) async {})
+            : null,
+        onCreate: withCreate ? () {} : null,
       ),
     ),
   ),
@@ -100,6 +105,71 @@ void main() {
         expect(tester.takeException(), isNull);
       }
     }
+  });
+
+  group('labels fit or hide', () {
+    // Ahem's square glyphs are far wider than the real font.
+    setUpAll(loadAppFonts);
+
+    Future<void> phone(WidgetTester tester, double scale) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    }
+
+    testWidgets('every label shows in full at 390px', (tester) async {
+      await phone(tester, 1);
+      for (final (index, label) in [
+        'Today',
+        'Calendar',
+        'Contacts',
+        'Goals',
+      ].indexed) {
+        await _pump(tester, index, withCreate: true);
+        await tester.pumpAndSettle();
+        final text = find.descendant(
+          of: find.byType(FloatingNavBar),
+          matching: find.text(label),
+        );
+        expect(text, findsOneWidget);
+        final paragraph = tester.renderObject<RenderParagraph>(text);
+        final measured = TextPainter(
+          text: paragraph.text,
+          textScaler: paragraph.textScaler,
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+        )..layout();
+        expect(paragraph.didExceedMaxLines, isFalse);
+        expect(paragraph.size.width, measured.width);
+      }
+    });
+
+    testWidgets('a label too wide for the pill is hidden, still announced', (
+      tester,
+    ) async {
+      await phone(tester, 2);
+      final handle = tester.ensureSemantics();
+      await _pump(tester, 1, withCreate: true);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        find.descendant(
+          of: find.byType(FloatingNavBar),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(FloatingNavBar),
+          matching: find.bySemanticsLabel('Calendar'),
+        ),
+        findsOneWidget,
+      );
+      handle.dispose();
+    });
   });
 
   testWidgets('a tab is a 52-high target TalkBack can activate', (
