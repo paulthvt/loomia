@@ -53,8 +53,10 @@ and that page, never compared or ranked against anyone.
 *Second exception, acknowledge, don't celebrate:* when a month closes,
 reaching your own target may be marked once — the ring draws closed and holds.
 The month review has the same screen, tone and layout for a miss; only the
-facts differ. No confetti, no sound, no loop, no shareable card. A celebration
-for a hit would make the quiet screen for a miss read as a verdict.
+facts differ. No sound, no loop, no shareable card. A celebration
+for a hit would make the quiet screen for a miss read as a verdict. On Today,
+the all-done hero shows a static confetti illustration (hidden from screen readers),
+a warm line, and a full bar — a moment of recognition, not a looping celebration.
 
 ## 6. Structure from space and type, not from chrome
 

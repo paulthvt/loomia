@@ -103,11 +103,11 @@ in the top bar, focusable with `/` and `Cmd/Ctrl+K`.
 
 ### 10. SectionHeader
 *Purpose:* the only structural divider in the product.
-*Anatomy:* `overline` title in `text/muted` · optional trailing text action or
-count.
+*Anatomy:* Title case, 18 bold (`title-case`) in `text/primary` · optional trailing text action or
+count. Horizon restyle (2026-11-13) changed from `overline` to sentence-case bold for legibility.
 *Props:* `title`, `actionLabel`, `showAction`.
 *Rules:* no rules, no card headers, no chevrons. Space and this header do all the
-grouping (principle #6).
+grouping (principle #6). The `overline` token (11px Bold, tracked uppercase) stays for stat tile labels and date eyebrows only.
 
 ---
 
@@ -115,18 +115,18 @@ grouping (principle #6).
 
 ### 11. TodayHero
 *Purpose:* answer "what should I do today?" from arm's length.
-*Anatomy:* radius-20 `primary/base` block · `TODAY` eyebrow · one **sentence**
-(not a number) in `title-lg` · white progress bar on a `primary/hover` track ·
+*Anatomy:* Horizon gradient panel (rosewood → apricot 135°, `HeroPanel.screenTop`) · date eyebrow · greeting · white hero card with radius 28 · `TODAY` eyebrow · one **sentence**
+(not a number) in `title-lg` · white progress bar on a darker track ·
 footer: today's count, left ("1 of 3 done").
 *Props:* `eyebrow`, `headline`, `progress` (`done`, `total`; none hides the bar
 and the footer).
-*Responsive:* mobile full width; desktop the width of the left column, headline
+*Responsive:* mobile full width; desktop band at top (radius 32), headline
 steps to `headline` (24px).
-*Rules:* the **only** filled colour block in the product (guardrail #1). The count
+*Rules:* the gradient hero is the identity element of Horizon (2026-11-13 restyle), one per screen. The count
 of people lives inside the sentence so it cannot read as a quota. The footer
 counts today's own list (done plus still waiting), never a target and never a
-percentage. Everything done keeps the hero: "That's everyone for today", full
-bar.
+percentage. Everything done keeps the hero: "You're all done for today", full
+bar, static confetti and gradient check badge.
 
 ### 12. ActionItem
 *Purpose:* the unit of Today — a suggestion, not a task.
@@ -209,34 +209,19 @@ destructive one is never the accidental tap. Escape / tapping the scrim cancels.
 
 ## Navigation
 
-### 20. NavItem
-Bottom-bar destination. Active = `primary/container` pill behind the glyph plus a
-Bold `caption` label. `label` prop. **No badge counts, ever** (principle #4).
-Labels always visible.
+Horizon restyle (2026-11-13) replaced the flat bottom bar and sidebar with **floating chrome**: a dark pill bar on mobile, a dark floating sidebar on desktop.
 
-### 21. BottomNav
-Four destinations (Today, Contacts, Team, Goals) on `surface/default` with a 1px
-top hairline and no shadow. Mobile only. Platform adds the safe-area inset below
-it.
+### 20. Chrome pill bar (mobile)
+*Anatomy:* Floating dark pill (`LoomiaColors.chrome`, `#2A181C`) on the four tabs only, 120px bottom room · sliding amber pill (420 ms emphasized, reduce motion respects `context.motion`) · white icon and label for active tab · white **+** button on the right for creating (task / event / person / own order, matching the tab).
+*Rules:* the four tabs only (Today, Calendar, Contacts, Goals). Detail screens (contact, event, task, notifications, plan) show a back button in the hero and no bar. Replaces the old BottomNav plus "Add a task", Calendar FAB, add-person button, "Log my own order".
+*Code:* `AppShell`, `lib/app/shell/`.
 
-### 22. SidebarItem
-Desktop destination. 44px tall (a pointer is precise), radius 12, active =
-`primary/container`. Hover = `primary/muted`; focus-visible = 2px `state/focus`.
+### 21. Sidebar (desktop/tablet)
+*Anatomy:* 248px floating dark rail (`LoomiaColors.chrome`) with a subtle hairline · wordmark · first item the labelled create button (New task / New event / New person / Log my own order, changes with the selected tab) · the four destinations · account block pinned to the bottom. Collapses to 72px icon rail (create becomes a **+** circle) below 1100px, replaced by the pill bar below 840px.
+*Rules:* active item has `LoomiaColors.onChrome` text; hover washes with white at 8%. The create button is always visible and always matches the selected tab.
 
-### 23. Sidebar
-248px fixed rail on `surface/sunken` with a right hairline: wordmark, the four
-destinations, account block pinned to the bottom. Collapses to 72px icon-only
-below 1100px, and is replaced by BottomNav below 840px.
-
-### 24. TopAppBar
-`surface/canvas`, no shadow and no border until content scrolls under it (then a
-hairline appears). `overline` eyebrow carries the date, `headline` title carries
-the place; the title collapses to `title-lg` on scroll. One trailing ghost action.
-
-### 25. FAB
-*Purpose:* primary action for the screen.
-*Anatomy:* 56px square, radius-16, `primary` fill, `on-primary` icon, no shadow.
-*Rules:* at most one per screen. Used by Calendar's New event.
+### 22. TopAppBar (detail screens)
+Detail screens (contact, event, task, notifications) use a `DetailHero`: gradient band with back button, title, and trailing actions. The old TopAppBar (canvas, eyebrow, collapsing title) is retired; tab screens use the gradient hero instead.
 
 ---
 

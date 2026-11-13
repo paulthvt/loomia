@@ -58,6 +58,29 @@ Widget goalsPlanLight() => _app(
   ),
 );
 
+@Preview(group: 'Goals', name: 'Plan — dark', size: Size(390, 844))
+Widget goalsPlanDark() => _app(
+  AppTheme.dark,
+  Scaffold(
+    body: SafeArea(
+      top: false,
+      child: PlanForm(
+        month: (
+          month: DateTime(2026, 10),
+          plan: null,
+          progress: _progress,
+          forecast: 3,
+          plans: _past,
+        ),
+        model: BusinessModel.doterra,
+        onSave: (_) async {},
+        onSaved: () {},
+        onClose: () {},
+      ),
+    ),
+  ),
+);
+
 @Preview(group: 'Goals', name: 'Plan — desktop', size: Size(1440, 900))
 Widget goalsPlanDesktopLight() => goalsPlanLight();
 

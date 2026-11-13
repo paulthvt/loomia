@@ -18,6 +18,13 @@ Widget notificationsMobileLight() => _app(
   allowed: true,
 );
 
+@Preview(group: 'Notifications', name: 'Mobile — dark', size: Size(390, 844))
+Widget notificationsMobileDark() => _app(
+  AppTheme.dark,
+  const NotificationSettings(enabled: true, timeZone: 'Europe/Paris'),
+  allowed: true,
+);
+
 @Preview(group: 'Notifications', name: 'Off — dark', size: Size(390, 844))
 Widget notificationsOffDark() => _app(
   AppTheme.dark,

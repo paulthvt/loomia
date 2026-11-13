@@ -37,6 +37,10 @@ void main() {
       const Size(390, 844),
       todayAllDoneMobileLight,
     ),
+    'today_all_done_mobile_dark': (
+      const Size(390, 844),
+      todayAllDoneMobileDark,
+    ),
     'today_events_mobile_light': (const Size(390, 844), todayEventsMobileLight),
     'today_nudge_mobile_light': (const Size(390, 844), todayNudgeMobileLight),
     'today_catch_up_mobile_light': (
@@ -46,6 +50,10 @@ void main() {
     'notifications_mobile_light': (
       const Size(390, 844),
       notificationsMobileLight,
+    ),
+    'notifications_mobile_dark': (
+      const Size(390, 844),
+      notificationsMobileDark,
     ),
     'notifications_off_dark': (const Size(390, 844), notificationsOffDark),
     'notifications_permission_off_light': (
@@ -70,6 +78,7 @@ void main() {
       calendarWeekDesktopLight,
     ),
     'event_mobile_light': (const Size(390, 844), eventMobileLight),
+    'event_mobile_dark': (const Size(390, 844), eventMobileDark),
     'event_done_mobile_light': (const Size(390, 844), eventDoneMobileLight),
     'event_report_mobile_light': (
       const Size(390, 1339),
@@ -77,11 +86,13 @@ void main() {
     ),
     'report_view_light': (const Size(390, 844), reportViewLight),
     'task_mobile_light': (const Size(390, 844), taskMobileLight),
+    'task_mobile_dark': (const Size(390, 844), taskMobileDark),
     'goals_mobile_light': (const Size(390, 844), goalsMobileLight),
     'goals_mobile_dark': (const Size(390, 844), goalsMobileDark),
     'goals_desktop_light': (const Size(1440, 900), goalsDesktopLight),
     'goals_empty_light': (const Size(390, 844), goalsEmptyLight),
     'goals_plan_light': (const Size(390, 844), goalsPlanLight),
+    'goals_plan_dark': (const Size(390, 844), goalsPlanDark),
     'goals_plan_desktop_light': (const Size(1440, 900), goalsPlanDesktopLight),
     'goals_close_light': (const Size(390, 844), goalsCloseLight),
     'goals_review_all_light': (const Size(390, 844), goalsReviewAllLight),

@@ -14,9 +14,9 @@ Branch on `context.screenSize`, never on raw pixel widths in a widget.
 
 | Class | Width | Navigation | Content |
 | --- | --- | --- | --- |
-| `mobile` | < 600 | BottomNav, 4 destinations | single column, 16px side padding |
-| `tablet` | 600–1199 | Sidebar collapsed to 72px icon rail (portrait: BottomNav) | single wide column capped at 640, or two columns above 840 |
-| `desktop` | ≥ 1200 | Sidebar 248px expanded | 2 columns (Today, Goals, Team) or list + detail (Contacts) |
+| `mobile` | < 600 | Floating dark pill bar, 4 tabs | single column, 16px side padding |
+| `tablet` | 600–1199 | Floating dark sidebar 72px icon rail (portrait: pill bar) | single wide column capped at 640, or two columns above 840 |
+| `desktop` | ≥ 1200 | Floating dark sidebar 248px expanded | 2 columns (Today, Goals, Team) or list + detail (Contacts) |
 
 `desktop` starts at 1200, not 1024 (#403): at 1024 the sidebar, a list and a
 440px side pane left the pane too narrow, as on a portrait iPad Pro 13" (1032).
@@ -24,7 +24,7 @@ Branch on `context.screenSize`, never on raw pixel widths in a widget.
 Two behaviours cross a boundary that is *not* a size class edge and are therefore
 named explicitly:
 
-- **840px** — below this the sidebar is replaced by BottomNav.
+- **840px** — below this the floating sidebar is replaced by the floating pill bar.
 - **1100px** — below this the expanded sidebar collapses to the 72px icon rail.
 
 ---
@@ -33,20 +33,19 @@ named explicitly:
 
 - One column, `space/md` (16) horizontal padding, `space/lg` (24) between groups.
 - 44px minimum touch target on every interactive element; 64px list rows.
-- TopAppBar carries the date as an eyebrow and collapses its title to `title-lg`
-  on scroll. One trailing action, never two.
-- BottomNav is always visible; it never carries badge counts.
+- Gradient hero holds the screen title or key info (date/greeting on Today, month grid on Calendar, search on Contacts, back and title on detail screens).
+- Floating dark pill bar on the four tabs; always visible, never carries badge counts. White **+** creates what the tab is about (task / event / person / own order).
 - Dialogs present as bottom sheets with the same internals.
 - Primary actions sit within thumb reach — on a contact, `Message` and `Call` are
   a full-width pair directly under the header, not in the app bar.
-- Content scrolls under a fixed bar; nothing is horizontally scrollable except the
+- Content scrolls under the hero; nothing is horizontally scrollable except the
   filter chip row on Contacts.
 
 ## Tablet
 
-- Portrait behaves like a wide mobile: BottomNav, single column capped at 640 and
+- Portrait behaves like a wide mobile: floating pill bar, single column capped at 640 and
   centred, which keeps line length readable instead of stretching body text.
-- Landscape gets the 72px icon sidebar and, above 840px, the desktop two-column
+- Landscape gets the 72px icon sidebar (floating dark) and, above 840px, the desktop two-column
   split with the right column narrowed to 320.
 - Touch targets stay at mobile size — a tablet is a touch device.
 
@@ -54,8 +53,9 @@ named explicitly:
 
 Desktop is designed, not enlarged:
 
-- **Sidebar** 248px on `surface/sunken`: wordmark, four destinations, account
+- **Floating dark sidebar** 248px (`LoomiaColors.chrome`): wordmark, labelled create button (New task / New event / New person / Log my own order, changes with the tab), four destinations, account
   pinned to the bottom.
+- **Gradient hero band** at the top (radius 32), one per screen.
 - **Two-column content** on Today, Goals and Team (#171), one shared layout,
   `ContentColumns`: a fixed 400px side column, 32px apart, and the main
   column taking all the rest, from the sidebar's edge: a wider window gives

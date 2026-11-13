@@ -63,6 +63,10 @@ Widget todayEmptyLight() => _app(AppTheme.light, const [], done: 0);
 Widget todayAllDoneMobileLight() =>
     _app(AppTheme.light, const [], goals: _goals, done: 3, checkIns: _catchUp);
 
+@Preview(group: 'Today', name: 'All done — dark', size: Size(390, 844))
+Widget todayAllDoneMobileDark() =>
+    _app(AppTheme.dark, const [], goals: _goals, done: 3, checkIns: _catchUp);
+
 @Preview(group: 'Today', name: 'Events — light', size: Size(390, 844))
 Widget todayEventsMobileLight() => _app(
   AppTheme.light,
