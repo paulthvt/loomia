@@ -75,6 +75,15 @@ abstract final class AppTheme {
     );
   }
 
+  /// A white pill button on the hero gradient (an event's Join).
+  static ButtonStyle heroPill(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return FilledButton.styleFrom(
+      backgroundColor: colors.onHero,
+      foregroundColor: colors.onHeroFill,
+    );
+  }
+
   /// A text button on the hero gradient (the desktop Calendar's Today).
   static ButtonStyle heroButton(BuildContext context) {
     final colors = LoomiaColors.of(context);

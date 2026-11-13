@@ -46,7 +46,6 @@ Widget calendarWeekDesktopLight() =>
 Widget eventMobileLight() => _app(
   AppTheme.light,
   Scaffold(
-    appBar: AppBar(leading: const BackButton()),
     body: EventView(
       event: _events[1],
       people: eventPeople(_events[1], _people),
@@ -71,7 +70,6 @@ Widget eventMobileLight() => _app(
 Widget eventDoneMobileLight() => _app(
   AppTheme.light,
   Scaffold(
-    appBar: AppBar(leading: const BackButton()),
     body: EventView(
       event: _done,
       people: eventPeople(_done, _people),
@@ -99,7 +97,6 @@ Widget eventReportMobileLight() => ProviderScope(
   child: _app(
     AppTheme.light,
     Scaffold(
-      appBar: AppBar(leading: const BackButton()),
       body: EventView(
         event: _call,
         people: eventPeople(_call, _people),
@@ -192,7 +189,6 @@ final _previousCall = CalendarEvent(
 Widget taskMobileLight() => _app(
   AppTheme.light,
   Scaffold(
-    appBar: AppBar(leading: const BackButton()),
     body: TaskView(
       task: Task(
         id: 't5',

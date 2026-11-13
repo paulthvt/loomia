@@ -1,6 +1,7 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Hero panel shape: screen-top paints under the status bar with bottom-only
@@ -117,20 +118,187 @@ class HeroIconButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback? onPressed;
 
+  /// Its look, for an icon button that is not this one (the back button).
+  static ButtonStyle styleOf(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return IconButton.styleFrom(
+      backgroundColor: colors.heroFill,
+      foregroundColor: colors.onHero,
+      fixedSize: const Size.square(44),
+      minimumSize: const Size.square(44),
+      shape: const CircleBorder(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = LoomiaColors.of(context);
-
     return IconButton(
       icon: Icon(icon),
       tooltip: tooltip,
       onPressed: onPressed,
-      style: IconButton.styleFrom(
-        backgroundColor: colors.heroFill,
-        foregroundColor: colors.onHero,
-        fixedSize: const Size.square(44),
-        minimumSize: const Size.square(44),
-        shape: const CircleBorder(),
+      style: styleOf(context),
+    );
+  }
+}
+
+/// The hero of a detail screen (an event, a task): back when [onBack] is
+/// set, then edit and delete, the title, and its [lines]. A band on
+/// desktop, where it heads a pane.
+class DetailHero extends StatelessWidget {
+  const DetailHero({
+    required this.title,
+    required this.editTooltip,
+    required this.onEdit,
+    required this.deleteTooltip,
+    required this.onDelete,
+    required this.lines,
+    this.onBack,
+    this.band = false,
+    super.key,
+  });
+
+  final String title;
+  final String editTooltip;
+  final VoidCallback onEdit;
+  final String deleteTooltip;
+  final VoidCallback onDelete;
+  final List<Widget> lines;
+  final VoidCallback? onBack;
+  final bool band;
+
+  @override
+  Widget build(BuildContext context) {
+    final back = onBack;
+    return HeroPanel(
+      shape: band ? HeroShape.band : HeroShape.screenTop,
+      gap: AppSpacing.md,
+      children: [
+        Row(
+          spacing: AppSpacing.sm,
+          children: [
+            if (back != null)
+              BackButton(
+                onPressed: back,
+                style: HeroIconButton.styleOf(context),
+              ),
+            const Spacer(),
+            HeroIconButton(
+              icon: Icons.edit_rounded,
+              tooltip: editTooltip,
+              onPressed: onEdit,
+            ),
+            HeroIconButton(
+              icon: Icons.delete_rounded,
+              tooltip: deleteTooltip,
+              onPressed: onDelete,
+            ),
+          ],
+        ),
+        Text(
+          title,
+          style: AppTypography.headline.copyWith(
+            color: LoomiaColors.of(context).onHero,
+          ),
+        ),
+        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: lines),
+      ],
+    );
+  }
+}
+
+/// An icon and a line on the hero. With [onTap], the line reads as a link,
+/// underlined.
+class HeroLine extends StatelessWidget {
+  const HeroLine({
+    required this.icon,
+    required this.text,
+    this.onTap,
+    this.trailing,
+    this.singleLine = false,
+    super.key,
+  });
+
+  final Widget icon;
+  final String text;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+  final bool singleLine;
+
+  @override
+  Widget build(BuildContext context) {
+    final onHero = LoomiaColors.of(context).onHero;
+    final tap = onTap;
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        spacing: AppSpacing.ms,
+        children: [
+          icon,
+          Expanded(
+            child: Text(
+              text,
+              maxLines: singleLine ? 1 : null,
+              overflow: singleLine ? TextOverflow.ellipsis : null,
+              style: AppTypography.bodyLarge.copyWith(
+                color: onHero,
+                decoration: tap == null ? null : TextDecoration.underline,
+                decorationColor: onHero,
+              ),
+            ),
+          ),
+          ?trailing,
+        ],
+      ),
+    );
+    return tap == null
+        ? row
+        : Semantics(
+            container: true,
+            link: true,
+            child: InkWell(onTap: tap, child: row),
+          );
+  }
+}
+
+/// A white pill on the hero that is not a button (the task's bell): [icon],
+/// then [label] when there is one.
+class HeroBadge extends StatelessWidget {
+  const HeroBadge({required this.icon, this.label, super.key});
+
+  final Widget icon;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    final text = label;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.onHero,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: IconTheme.merge(
+          data: IconThemeData(color: colors.onHeroFill, size: 18),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: AppSpacing.xs,
+            children: [
+              icon,
+              if (text != null)
+                Text(
+                  text,
+                  style: AppTypography.labelLarge.copyWith(
+                    color: colors.onHeroFill,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

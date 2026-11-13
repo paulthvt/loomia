@@ -5,6 +5,7 @@ import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/contact_row.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -131,6 +132,20 @@ void main() {
 
     expect(place, 'Studio Lumière, Lyon');
     expect(joined, Uri.parse('https://meet.google.com/abc'));
+  });
+
+  testWidgets('event actions sit in the hero', (tester) async {
+    await _pumpView(tester, _workshop);
+
+    for (final tooltip in ['Edit event', 'Delete event']) {
+      expect(
+        find.descendant(
+          of: find.byType(HeroPanel),
+          matching: find.byTooltip(tooltip),
+        ),
+        findsOneWidget,
+      );
+    }
   });
 
   testWidgets('no place, link or notes: only when', (tester) async {

@@ -5,16 +5,18 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/scope_dialog.dart';
-import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/event_row.dart'
@@ -37,10 +39,8 @@ class TaskPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The hero holds back and runs under the status bar.
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => backOr(context, Routes.calendar)),
-      ),
       body: SafeArea(top: false, child: TaskPane(id: id)),
     );
   }
@@ -193,9 +193,10 @@ class _TaskPaneState extends ConsumerState<TaskPane> {
   }
 }
 
-/// The task as a function of its inputs, for previews and tests: the title
-/// with Edit and Delete, postpone when its time is near or past, then the
-/// ring and the day, the time and its bell, the repeat and the note.
+/// The task as a function of its inputs, for previews and tests: a hero
+/// with Edit and Delete, the title, the day, the time and its bell, the
+/// repeat; below, postpone when its time is near or past, the note and Mark
+/// as done.
 class TaskView extends StatelessWidget {
   const TaskView({
     required this.task,
@@ -224,91 +225,109 @@ class TaskView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
     final failure = this.failure;
     final time = task.dueTime;
     final repeat = task.repeat;
     final note = task.note;
 
-    Widget line(Widget lead, String text, {Widget? trailing}) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Row(
-        spacing: AppSpacing.sm,
-        children: [
-          lead,
-          Expanded(
-            child: Text(
-              text,
-              style: theme.textTheme.bodyLarge?.copyWith(color: muted),
+    final colors = LoomiaColors.of(context);
+    final desktop = context.screenSize.isDesktop;
+    final hero = DetailHero(
+      band: desktop,
+      onBack: desktop ? null : () => backOr(context, Routes.calendar),
+      title: task.title,
+      editTooltip: l10n.taskEdit,
+      onEdit: onEdit,
+      deleteTooltip: l10n.taskDelete,
+      onDelete: onDelete,
+      lines: [
+        HeroLine(
+          icon: const Icon(Icons.calendar_today_rounded),
+          text: DateFormat.MMMMEEEEd(l10n.localeName).format(task.dueOn),
+        ),
+        if (time != null)
+          HeroLine(
+            icon: const Icon(Icons.schedule_rounded),
+            text: timeLabel(
+              context,
+              DateTime(2000, 1, 1, time.hour, time.minute),
             ),
+            trailing: task.alert
+                ? HeroBadge(
+                    icon: Icon(
+                      Icons.notifications_rounded,
+                      semanticLabel: l10n.taskAlertIsOn,
+                    ),
+                    // ponytail: no "Bell on" label yet, the ARB is Tasks
+                    // 4 and 6's; the icon speaks the bell. Add the label
+                    // with its copy.
+                  )
+                : Icon(
+                    Icons.notifications_off_outlined,
+                    color: colors.onHeroQuiet,
+                    semanticLabel: l10n.taskAlertIsOff,
+                  ),
           ),
-          ?trailing,
-        ],
-      ),
+        if (repeat != null && !task.done)
+          HeroLine(
+            icon: const Icon(Icons.repeat_rounded),
+            text: repeatRuleLine(l10n, repeat),
+          ),
+      ],
     );
 
     return ListView(
-      padding: EdgeInsets.all(
-        context.screenSize.isDesktop ? AppSpacing.lg : AppSpacing.md,
-      ),
+      padding: desktop
+          ? const EdgeInsets.all(AppSpacing.lg)
+          : const EdgeInsets.only(bottom: AppSpacing.lg),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(task.title, style: theme.textTheme.headlineSmall),
-            ),
-            IconButton(
-              onPressed: onEdit,
-              tooltip: l10n.taskEdit,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-            IconButton(
-              onPressed: onDelete,
-              tooltip: l10n.taskDelete,
-              icon: const Icon(Icons.delete_outline_rounded),
-            ),
-          ],
+        hero,
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            desktop ? 0 : AppSpacing.md,
+            AppSpacing.md,
+            desktop ? 0 : AppSpacing.md,
+            0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppSpacing.md,
+            children: [
+              if (failure != null) FormError(peopleFailureCopy(l10n, failure)),
+              if (time != null && !task.done && alertNear(task, now))
+                _Postpone(
+                  task: task,
+                  now: now,
+                  busy: busy,
+                  onPostpone: onPostpone,
+                ),
+              if (note != null)
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: AppTheme.card(context),
+                  child: Text(
+                    note,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              if (task.done)
+                FilledButton.tonalIcon(
+                  style: AppTheme.tonal(context),
+                  onPressed: busy ? null : onTick,
+                  icon: const Icon(Icons.undo_rounded),
+                  label: Text(l10n.eventStepUntick(task.title)),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: busy ? null : onTick,
+                  icon: const Icon(Icons.check_rounded),
+                  label: Text(l10n.actionMarkAsDone),
+                ),
+            ],
+          ),
         ),
-        if (failure != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          FormError(peopleFailureCopy(l10n, failure)),
-        ],
-        if (time != null && !task.done && alertNear(task, now)) ...[
-          const SizedBox(height: AppSpacing.ms),
-          _Postpone(task: task, now: now, busy: busy, onPostpone: onPostpone),
-        ],
-        const SizedBox(height: AppSpacing.ms),
-        line(
-          TickRing(
-            selected: task.done,
-            tooltip: task.done
-                ? l10n.eventStepUntick(task.title)
-                : l10n.nextStepMarkDone(task.title),
-            onPressed: busy ? null : onTick,
-          ),
-          DateFormat.MMMMEEEEd(l10n.localeName).format(task.dueOn),
-        ),
-        if (time != null)
-          line(
-            Icon(Icons.schedule_rounded, color: muted),
-            timeLabel(context, DateTime(2000, 1, 1, time.hour, time.minute)),
-            trailing: Icon(
-              task.alert
-                  ? Icons.notifications_active_rounded
-                  : Icons.notifications_off_outlined,
-              color: task.alert ? theme.colorScheme.primary : muted,
-              semanticLabel: task.alert
-                  ? l10n.taskAlertIsOn
-                  : l10n.taskAlertIsOff,
-            ),
-          ),
-        if (repeat != null && !task.done)
-          line(
-            Icon(Icons.repeat_rounded, color: muted),
-            repeatRuleLine(l10n, repeat),
-          ),
-        if (note != null) line(Icon(Icons.notes_rounded, color: muted), note),
       ],
     );
   }

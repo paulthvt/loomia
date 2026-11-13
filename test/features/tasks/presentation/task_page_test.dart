@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/pick_day.dart';
-import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -15,6 +15,9 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
 import '../fake_task_repository.dart';
+
+/// The button once the task is done, which unticks it.
+const _markNotDone = 'Mark "Call the supplier" not done';
 
 void main() {
   const phone = Size(390, 844);
@@ -184,6 +187,22 @@ void main() {
       expect(find.text('In 15 min'), findsNothing, reason: 'far from its time');
     });
 
+    testWidgets('task shows Mark as done below the hero', (tester) async {
+      final task = await add(at: DateTime(2026, 12, 3, 14));
+      await open(tester, task.id);
+
+      final done = find.widgetWithText(FilledButton, 'Mark as done');
+      expect(done, findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(HeroPanel), matching: done),
+        findsNothing,
+      );
+      expect(
+        tester.getTopLeft(done).dy,
+        greaterThan(tester.getBottomLeft(find.byType(HeroPanel)).dy),
+      );
+    });
+
     testWidgets('a bell turned off says so', (tester) async {
       final task = await add(at: DateTime(2026, 12, 3, 14), alert: false);
       await open(tester, task.id);
@@ -305,19 +324,19 @@ void main() {
     });
 
     for (final (name, size) in [('phone', phone), ('desktop', desktop)]) {
-      testWidgets('on $name, the ring ticks with Undo and the page stays', (
+      testWidgets('on $name, Mark as done ticks with Undo and the page stays', (
         tester,
       ) async {
         final task = await add(at: DateTime(2026, 12, 3, 14));
         await open(tester, task.id, size: size);
 
-        await tester.tap(find.byType(TickRing));
+        await tester.tap(find.text('Mark as done'));
         await tester.pumpAndSettle();
 
         expect(tasks.store[task.id]!.done, isTrue);
         expect(find.text('Undo'), findsOneWidget);
         expect(find.byType(TaskPane), findsOneWidget);
-        expect(tester.widget<TickRing>(find.byType(TickRing)).selected, isTrue);
+        expect(find.text(_markNotDone), findsOneWidget);
       });
     }
 
@@ -327,12 +346,12 @@ void main() {
       final task = await add(at: DateTime(2026, 12, 3, 14), weekly: true);
       await open(tester, task.id);
 
-      await tester.tap(find.byType(TickRing));
+      await tester.tap(find.text('Mark as done'));
       await tester.pumpAndSettle();
 
       expect(tasks.nextOf, contains(task.id), reason: 'the next one was made');
       expect(find.text('Thursday, December 3'), findsOneWidget);
-      expect(tester.widget<TickRing>(find.byType(TickRing)).selected, isTrue);
+      expect(find.text(_markNotDone), findsOneWidget);
     });
 
     testWidgets('an unknown task: not found', (tester) async {
