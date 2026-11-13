@@ -26,6 +26,31 @@ abstract final class AppTheme {
     brightness: scheme.brightness,
   );
 
+  /// Standard card decoration (surfaceContainerLowest, soft shadow in light,
+  /// no border).
+  static BoxDecoration card(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
+    return BoxDecoration(
+      color: scheme.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      boxShadow: colors.cardShadow,
+    );
+  }
+
+  /// Hero card decoration (surfaceContainerLowest, deeper shadow, subtle
+  /// border in dark).
+  static BoxDecoration heroCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
+    return BoxDecoration(
+      color: scheme.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(AppRadii.heroCard),
+      boxShadow: colors.heroCardShadow,
+      border: Border.all(color: colors.heroCardBorder, width: 1),
+    );
+  }
+
   /// The Tonal button (`docs/design/components.md` #2), for
   /// `FilledButton.tonal`. Material's tonal reads `secondaryContainer`; ours is
   /// `primary/container`, which a theme cannot tell apart from Primary.
@@ -120,8 +145,8 @@ abstract final class AppTheme {
         color: colors.surfaceDefault,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          side: BorderSide(color: colors.borderSubtle),
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          side: BorderSide.none,
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -182,7 +207,7 @@ abstract final class AppTheme {
 
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: colors.surfaceDefault,
+        fillColor: scheme.surfaceContainerLowest,
         hintStyle: AppTypography.bodyLarge.copyWith(color: colors.textMuted),
         // Drawn above the box by LabeledField; fields carry no labelText.
         labelStyle: AppTypography.label.copyWith(
@@ -193,11 +218,26 @@ abstract final class AppTheme {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.ms,
         ),
-        border: _inputBorder(colors.borderSubtle),
-        enabledBorder: _inputBorder(colors.borderSubtle),
-        focusedBorder: _inputBorder(colors.focus, width: 2),
-        errorBorder: _inputBorder(scheme.error),
-        focusedErrorBorder: _inputBorder(scheme.error, width: 2),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: colors.focus, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: scheme.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: scheme.error, width: 2),
+        ),
       ),
 
       // The Calendar's Month / Week switch (Figma "CalendarViewSwitch"):
@@ -365,13 +405,6 @@ abstract final class AppTheme {
         borderRadius: pill,
         borderSide: BorderSide(color: LoomiaColors.of(context).focus, width: 2),
       ),
-    );
-  }
-
-  static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      borderSide: BorderSide(color: color, width: width),
     );
   }
 }

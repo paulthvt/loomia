@@ -191,6 +191,16 @@ class _ColourSheet extends StatelessWidget {
           _Swatch('info/container', colors.infoContainer),
           _Swatch('state/focus', colors.focus),
         ]),
+        _Group('horizon — hero & chrome', [
+          _Swatch('chrome', colors.chrome, ink: colors.onChrome),
+          _Swatch('chrome/muted', colors.onChromeMuted),
+          _Swatch('hero/on', colors.onHero),
+          _Swatch('hero/quiet', colors.onHeroQuiet),
+          _Swatch('hero/fill', colors.heroFill),
+          _Swatch('hero/fill-subtle', colors.heroFillSubtle),
+          _Swatch('hero-card/border', colors.heroCardBorder),
+          _Swatch('chrome/border', colors.chromeBorder),
+        ]),
       ],
     );
   }

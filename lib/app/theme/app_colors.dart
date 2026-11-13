@@ -31,7 +31,7 @@ abstract final class AppColors {
     onError: Color(0xFFFFFFFF), // semantic/on-error
     errorContainer: Color(0xFFF0E0E2),
     onErrorContainer: Color(0xFF88202E),
-    surface: Color(0xFFFBFAF8), // surface/canvas
+    surface: Color(0xFFF6F2ED), // surface/canvas
     onSurface: Color(0xFF201B16), // text/primary
     onSurfaceVariant: Color(0xFF57524C), // text/secondary
     surfaceContainerLowest: Color(0xFFFFFFFF), // surface/default
@@ -112,6 +112,18 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     required this.info,
     required this.infoContainer,
     required this.focus,
+    required this.heroGradient,
+    required this.cardShadow,
+    required this.heroCardShadow,
+    required this.heroCardBorder,
+    required this.chrome,
+    required this.onChrome,
+    required this.onChromeMuted,
+    required this.chromeBorder,
+    required this.onHero,
+    required this.onHeroQuiet,
+    required this.heroFill,
+    required this.heroFillSubtle,
   });
 
   /// Logo, app icon, decorative marks. Never behind text — too light for
@@ -174,6 +186,42 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
   /// 2px focus-visible ring.
   final Color focus;
 
+  /// Hero panel gradient (rosewood to apricot).
+  final LinearGradient heroGradient;
+
+  /// Soft shadow for cards in light mode.
+  final List<BoxShadow> cardShadow;
+
+  /// Deeper shadow for hero cards.
+  final List<BoxShadow> heroCardShadow;
+
+  /// Border for hero cards (transparent in light, subtle in dark).
+  final Color heroCardBorder;
+
+  /// Chrome navigation background.
+  final Color chrome;
+
+  /// Text on chrome.
+  final Color onChrome;
+
+  /// Muted text on chrome.
+  final Color onChromeMuted;
+
+  /// Chrome border (transparent in light, subtle in dark).
+  final Color chromeBorder;
+
+  /// Text on hero gradient.
+  final Color onHero;
+
+  /// Quiet text on hero gradient.
+  final Color onHeroQuiet;
+
+  /// Translucent button fill on hero.
+  final Color heroFill;
+
+  /// Subtle translucent fill on hero (search, switch).
+  final Color heroFillSubtle;
+
   /// Same in both modes: the logo does not change with the theme.
   static const _brand = Color(0xFFE8964A);
 
@@ -202,6 +250,30 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     info: Color(0xFF2C6B7A),
     infoContainer: Color(0xFFDDEDF1),
     focus: Color(0xFF995413),
+    heroGradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF82424F), Color(0xFFE39A68)],
+    ),
+    cardShadow: [
+      BoxShadow(color: Color(0x12201B16), offset: Offset(0, 2), blurRadius: 8),
+    ],
+    heroCardShadow: [
+      BoxShadow(
+        color: Color(0x331E120A),
+        offset: Offset(0, 10),
+        blurRadius: 30,
+      ),
+    ],
+    heroCardBorder: Color(0x00000000),
+    chrome: Color(0xFF2A181C),
+    onChrome: Color(0xFFFFFFFF),
+    onChromeMuted: Color(0xA6FFFFFF),
+    chromeBorder: Color(0x00000000),
+    onHero: Color(0xFFFFFFFF),
+    onHeroQuiet: Color(0xD9FFFFFF),
+    heroFill: Color(0x2EFFFFFF),
+    heroFillSubtle: Color(0x1FFFFFFF),
   );
 
   static const dark = LoomiaColors(
@@ -229,6 +301,28 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     info: Color(0xFF74BDCB),
     infoContainer: Color(0xFF14282E),
     focus: Color(0xFFD38A45),
+    heroGradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF4F2530), Color(0xFFA8623F)],
+    ),
+    cardShadow: [],
+    heroCardShadow: [
+      BoxShadow(
+        color: Color(0x66000000),
+        offset: Offset(0, 10),
+        blurRadius: 30,
+      ),
+    ],
+    heroCardBorder: Color(0x14FFFFFF),
+    chrome: Color(0xFF2A181C),
+    onChrome: Color(0xFFFFFFFF),
+    onChromeMuted: Color(0xA6FFFFFF),
+    chromeBorder: Color(0x1AFFFFFF),
+    onHero: Color(0xFFFFFFFF),
+    onHeroQuiet: Color(0xD9FFFFFF),
+    heroFill: Color(0x2EFFFFFF),
+    heroFillSubtle: Color(0x1FFFFFFF),
   );
 
   /// Throws if the extension is missing, which only happens outside
@@ -270,6 +364,22 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
       info: c(info, other.info),
       infoContainer: c(infoContainer, other.infoContainer),
       focus: c(focus, other.focus),
+      heroGradient: LinearGradient.lerp(heroGradient, other.heroGradient, t)!,
+      cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, t)!,
+      heroCardShadow: BoxShadow.lerpList(
+        heroCardShadow,
+        other.heroCardShadow,
+        t,
+      )!,
+      heroCardBorder: c(heroCardBorder, other.heroCardBorder),
+      chrome: c(chrome, other.chrome),
+      onChrome: c(onChrome, other.onChrome),
+      onChromeMuted: c(onChromeMuted, other.onChromeMuted),
+      chromeBorder: c(chromeBorder, other.chromeBorder),
+      onHero: c(onHero, other.onHero),
+      onHeroQuiet: c(onHeroQuiet, other.onHeroQuiet),
+      heroFill: c(heroFill, other.heroFill),
+      heroFillSubtle: c(heroFillSubtle, other.heroFillSubtle),
     );
   }
 }

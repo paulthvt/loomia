@@ -45,4 +45,13 @@ abstract final class AppRadii {
   /// Buttons, icon buttons, progress tracks, nav pill, and avatars at every
   /// size — avatars are circular, always.
   static const double pill = 999;
+
+  /// Standard cards.
+  static const double card = 24;
+
+  /// Hero cards.
+  static const double heroCard = 28;
+
+  /// Hero panel.
+  static const double hero = 32;
 }

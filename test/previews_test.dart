@@ -142,7 +142,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      if (Platform.isLinux) {
+      // Local renders (RENDER_PREVIEWS=1) are for visual checking only, never
+      // commit them. Only CI-generated goldens (Linux) are committed.
+      if (Platform.isLinux || Platform.environment['RENDER_PREVIEWS'] == '1') {
         await expectLater(
           find.byType(MaterialApp),
           matchesGoldenFile('goldens/$name.png'),

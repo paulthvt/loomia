@@ -62,7 +62,7 @@ void main() {
           isA<RoundedRectangleBorder>().having(
             (s) => s.borderRadius,
             'radius',
-            BorderRadius.circular(AppRadii.lg),
+            BorderRadius.circular(AppRadii.card),
           ),
         );
       });
@@ -135,5 +135,57 @@ void main() {
       LoomiaColors.light.lerp(LoomiaColors.dark, 1).brand,
       LoomiaColors.dark.brand,
     );
+  });
+
+  test('hero gradient is rosewood to apricot, darker in dark mode', () {
+    expect(LoomiaColors.light.heroGradient.colors, [
+      const Color(0xFF82424F),
+      const Color(0xFFE39A68),
+    ]);
+    expect(LoomiaColors.dark.heroGradient.colors, [
+      const Color(0xFF4F2530),
+      const Color(0xFFA8623F),
+    ]);
+  });
+
+  test('white meets AA on both hero starts', () {
+    for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
+      expect(
+        contrast(const Color(0xFFFFFFFF), colors.heroGradient.colors.first),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
+
+  test('muted chrome ink meets AA on chrome', () {
+    for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
+      final composited = Color.alphaBlend(colors.onChromeMuted, colors.chrome);
+      expect(contrast(composited, colors.chrome), greaterThanOrEqualTo(4.5));
+    }
+  });
+
+  test('canvas is the warm Horizon canvas', () {
+    expect(AppColors.light.surface, const Color(0xFFF6F2ED));
+  });
+
+  testWidgets('cards have no border and one soft shadow in light', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final card = AppTheme.card(ctx);
+    expect(card.border, isNull);
+    expect(card.boxShadow, LoomiaColors.light.cardShadow);
   });
 }
