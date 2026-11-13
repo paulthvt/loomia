@@ -367,9 +367,9 @@ palette gets built as variables; the exploration pages stay as-is for reference.
 
 ## Horizon — 2026 restyle
 
-**Status:** shipped (2026-11-13, #499). Visual reference: `docs/design/horizon/`, spec: `docs/superpowers/specs/2026-11-13-horizon-theme.md`.
+Issue #499. Visual reference: `docs/design/horizon/`, spec: `docs/superpowers/specs/2026-11-13-horizon-theme.md`.
 
-Direction B's "one filled block" rule worked but felt rigid. Horizon refines it into a **gradient hero** that feels warmer, more grounded, and unmistakably Loomia. The system stays otherwise unchanged: same spacing, same radii, same components — this is a palette and chrome restyle, not a redesign.
+Direction B's "one filled block" rule worked but felt rigid. Horizon refines it into a **gradient hero** that feels warmer, more grounded, and unmistakably Loomia. Layout and features stay the same: a palette, shape and chrome restyle, not a redesign.
 
 ### What changed
 

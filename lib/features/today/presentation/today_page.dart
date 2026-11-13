@@ -996,8 +996,8 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
-  /// The Tasks header and today's open tasks under it; a failed load in their place. Nothing
-  /// while they load.
+  /// The Tasks header and today's open tasks under it; a failed load in
+  /// their place. Nothing while they load.
   List<Widget> _tasks(AppLocalizations l10n, List<Task> tasks, DateTime day) =>
       switch (widget.tasks) {
         AsyncData() => [
