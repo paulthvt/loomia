@@ -148,4 +148,12 @@ void main() {
     expect(find.text('People'), findsOneWidget);
     expect(find.text('PEOPLE'), findsNothing);
   });
+
+  testWidgets('section header title is bold', (tester) async {
+    await pump(tester, const SectionHeader(title: 'People'));
+
+    final style = tester.widget<Text>(find.text('People')).style!;
+    expect(style.fontWeight, FontWeight.w700);
+    expect(style.fontVariations, [const FontVariation('wght', 700)]);
+  });
 }
