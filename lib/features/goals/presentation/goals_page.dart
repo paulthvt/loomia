@@ -351,7 +351,9 @@ class GoalsView extends StatelessWidget {
                       ),
                       Text(
                         _pastLine(l10n, number, closed),
-                        style: theme.textTheme.bodyLarge,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),

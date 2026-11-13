@@ -56,7 +56,12 @@ class ReportView extends StatelessWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      Text(entry.text, style: theme.textTheme.bodyLarge),
+                      Text(
+                        entry.text,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
             ],

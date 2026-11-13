@@ -95,7 +95,10 @@ abstract final class AppTypography {
       headlineSmall: headline.copyWith(color: ink),
       titleLarge: titleLarge.copyWith(color: ink),
       titleMedium: title.copyWith(color: ink),
-      bodyLarge: bodyLarge.copyWith(color: inkVariant),
+      // Ink, not inkVariant: a text field paints its value in this slot's
+      // colour, and a value is text/primary. Body copy in this style sets
+      // onSurfaceVariant itself.
+      bodyLarge: bodyLarge.copyWith(color: ink),
       bodyMedium: body.copyWith(color: inkVariant),
       bodySmall: bodySmall.copyWith(color: inkVariant),
       labelLarge: labelLarge.copyWith(color: ink),

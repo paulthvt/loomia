@@ -287,7 +287,14 @@ class ResultRow extends StatelessWidget {
           builder: (context, constraints) => Row(
             spacing: AppSpacing.xs,
             children: [
-              Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
               // Its own width, up to half the row: a long value ("Executive,
               // aiming for Elite") wraps instead of overflowing.
               ConstrainedBox(

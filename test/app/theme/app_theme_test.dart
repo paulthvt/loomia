@@ -211,4 +211,37 @@ void main() {
     expect(card.boxShadow, LoomiaColors.dark.cardShadow);
     expect(AppTheme.heroCard(ctx).color, const Color(0xFF1E1A15));
   });
+
+  for (final (mode, theme) in [
+    ('light', AppTheme.light),
+    ('dark', AppTheme.dark),
+  ]) {
+    testWidgets('$mode: typed values read as text/primary, hints muted', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Column(
+              children: [
+                TextField(controller: TextEditingController(text: '2295')),
+                TextField(decoration: AppTheme.filledField()),
+                const TextField(decoration: InputDecoration(hintText: 'Hint')),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final ink = theme.colorScheme.onSurface;
+      for (final field in tester.widgetList<EditableText>(
+        find.byType(EditableText),
+      )) {
+        expect(field.style.color, ink);
+      }
+      final hint = tester.widget<Text>(find.text('Hint'));
+      expect(hint.style?.color, theme.extension<LoomiaColors>()!.textMuted);
+    });
+  }
 }

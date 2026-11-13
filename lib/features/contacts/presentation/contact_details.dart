@@ -713,7 +713,9 @@ class ContactDetails extends StatelessWidget {
                           children: [
                             Text(
                               l10n.contactInviteSent(formatCode(invite.code)),
-                              style: theme.textTheme.bodyLarge,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                             Text(
                               l10n.contactInviteUntil(
