@@ -124,6 +124,8 @@ void main() {
     'tokens_components_dark': (const Size(420, 760), componentsDark),
     'nav_bar_light': (const Size(390, 120), navBarLight),
     'nav_bar_dark': (const Size(390, 120), navBarDark),
+    'sidebar_desktop_light': (const Size(264, 900), sidebarDesktopLight),
+    'sidebar_rail_light': (const Size(104, 900), sidebarRailLight),
   };
 
   setUpAll(loadAppFonts);

@@ -236,7 +236,6 @@ Widget _goals(ThemeData theme, GoalsMonth month) => ProviderScope(
       onPlan: () {},
       onRetry: () {},
       onRefresh: () async {},
-      onLogOrder: () {},
       onOrders: () {},
       onRitual: () {},
     ),

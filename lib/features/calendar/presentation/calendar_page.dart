@@ -460,24 +460,6 @@ class CalendarView extends StatelessWidget {
     return _Latest(
       view: this,
       builder: (context, latest) => Scaffold(
-        // Phones add from the floating bar's +. ponytail: the tablet keeps
-        // this button until the sidebar has its own +.
-        floatingActionButton: !context.screenSize.usesSideNavigation
-            ? null
-            : Builder(
-                builder: (button) => FloatingActionButton(
-                  onPressed: () => unawaited(
-                    chooseAdd(
-                      button,
-                      day: selection.day,
-                      onEvent: onAdd,
-                      onTask: onAddTask,
-                    ),
-                  ),
-                  tooltip: l10n.calendarAdd,
-                  child: const Icon(Icons.add_rounded),
-                ),
-              ),
         // The lists run under the floating bar, padded by its room.
         body: SafeArea(
           bottom: false,
@@ -701,12 +683,9 @@ class CalendarView extends StatelessWidget {
   }
 
   /// Under the last row of a list or of the grid's hours: the bottom
-  /// padding (the floating bar's room on a phone), and on a tablet clear of
-  /// the add button.
+  /// padding (the floating bar's room on a phone).
   static double _bottomRoom(BuildContext context) =>
-      MediaQuery.paddingOf(context).bottom +
-      (context.screenSize.usesSideNavigation ? _fabClearance : 0);
-  static const double _fabClearance = AppSpacing.xxxl + AppSpacing.lg;
+      MediaQuery.paddingOf(context).bottom;
 
   /// The phone grid's hour labels ("8 AM") and its least hour height.
   static const double _phoneGutter = 32;

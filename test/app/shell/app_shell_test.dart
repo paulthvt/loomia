@@ -5,6 +5,7 @@ import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/shell/floating_nav_bar.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/presentation/calendar_controller.dart';
 import 'package:loomia/features/calendar/presentation/calendar_page.dart';
@@ -92,6 +93,45 @@ void main() {
 
     expect(find.byType(SettingsPage), findsOneWidget);
     expect(find.byType(BackButton), findsNothing);
+  });
+
+  testWidgets("desktop: the sidebar's first button creates for the section", (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(1440, 900));
+    container.read(routerProvider).go(Routes.contacts);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AppSidebar),
+        matching: find.text('New person'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoomiaDialog), findsOneWidget);
+  });
+
+  testWidgets("tablet: the rail's + is labelled for screen readers", (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await pumpLoomia(tester, size: const Size(800, 1000));
+
+    final create = find.descendant(
+      of: find.byType(AppSidebar),
+      matching: find.byTooltip('New task'),
+    );
+    expect(
+      tester.getSemantics(create),
+      isSemantics(tooltip: 'New task', isButton: true),
+    );
+    await tester.tap(create);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ReminderDayField), findsOneWidget);
+    semantics.dispose();
   });
 
   testWidgets('mobile: a floating bar with Today and Contacts', (tester) async {

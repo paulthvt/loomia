@@ -93,7 +93,6 @@ void main() {
           onTickTask: (_) {},
           onOpen: (_) {},
           onOpenTask: (_) {},
-          onAddTask: () {},
           onRetry: () {},
           onRefresh: () async {},
         ),
@@ -129,7 +128,7 @@ void main() {
       expect(find.text('Add a task'), findsNothing);
     });
 
-    testWidgets('with a sidebar, the Tasks header keeps Add a task', (
+    testWidgets("with a sidebar, no Add a task either: the sidebar's + adds", (
       tester,
     ) async {
       await pumpView(
@@ -140,7 +139,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Add a task'), findsOneWidget);
+      expect(find.text('Tasks'), findsOneWidget);
+      expect(find.text('Add a task'), findsNothing);
     });
 
     testWidgets('late task shows its dueLabel chip', (tester) async {

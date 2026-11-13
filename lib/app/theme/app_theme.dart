@@ -62,6 +62,16 @@ abstract final class AppTheme {
     );
   }
 
+  /// The white + on the dark chrome (floating bar, sidebar, rail), for an
+  /// `IconButton` or a `FilledButton.icon`. The caller sets its size.
+  static ButtonStyle createButton(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return FilledButton.styleFrom(
+      backgroundColor: colors.onChrome,
+      foregroundColor: colors.chrome,
+    );
+  }
+
   /// The Sign in with Apple button, on top of the outlined theme (same height,
   /// pill and label as Google's). Apple's HIG allows only black, white or
   /// white-with-outline, so these are Apple's colours, not ours: white with a

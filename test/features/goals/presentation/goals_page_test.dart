@@ -33,7 +33,6 @@ var plans = 0;
 var retries = 0;
 var orders = 0;
 var rituals = 0;
-var logs = 0;
 
 /// [GoalsView] alone, on a fixed day, counting Plan and Try again taps.
 Future<void> pumpGoals(
@@ -46,7 +45,6 @@ Future<void> pumpGoals(
   retries = 0;
   orders = 0;
   rituals = 0;
-  logs = 0;
   return tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
@@ -58,7 +56,6 @@ Future<void> pumpGoals(
         model: model,
         onPlan: () => plans++,
         onRetry: () => retries++,
-        onLogOrder: () => logs++,
         onOrders: () => orders++,
         onRitual: () => rituals++,
         onRefresh: () async {},
@@ -235,14 +232,14 @@ void main() {
     expect(find.text('2,180 PV · Executive'), findsOneWidget);
   });
 
-  testWidgets('the card opens the orders; the button logs one', (tester) async {
+  testWidgets('the card opens the orders; the + logs one, not the page', (
+    tester,
+  ) async {
     await pumpGoals(tester, AsyncData(month(plan: full, progress: progress)));
 
     await tester.tap(find.text('Own volume'));
     expect(orders, 1);
-    await tester.scrollUntilVisible(find.text('Log my own order'), 200);
-    await tester.tap(find.text('Log my own order'));
-    expect(logs, 1);
+    expect(find.text('Log my own order'), findsNothing);
   });
 
   testWidgets('the last days: a card to plan next month', (tester) async {

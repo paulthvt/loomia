@@ -309,19 +309,7 @@ class _ContactListState extends State<ContactList> {
                       tooltip: l10n.contactsRefresh,
                       icon: const Icon(Icons.refresh_rounded),
                     ),
-                  if (desktop)
-                    FilledButton.icon(
-                      onPressed: widget.onAdd,
-                      icon: const Icon(Icons.person_add_alt_1_outlined),
-                      label: Text(l10n.contactsAddShort),
-                    )
-                  // A phone adds from the floating bar's +.
-                  else if (sideNavigation)
-                    IconButton.filledTonal(
-                      onPressed: widget.onAdd,
-                      tooltip: l10n.contactsAdd,
-                      icon: const Icon(Icons.person_add_alt_1_outlined),
-                    ),
+                  // The floating bar's + or the sidebar's adds one.
                   ?account,
                 ],
               ),

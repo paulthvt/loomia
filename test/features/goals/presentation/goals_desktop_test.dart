@@ -77,7 +77,6 @@ void main() {
             onPlan: () {},
             onRetry: () {},
             onRefresh: () async {},
-            onLogOrder: () {},
             onOrders: () => fail('no sheet on desktop'),
             onRitual: () {},
           ),

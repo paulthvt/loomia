@@ -7,7 +7,6 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
-import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
@@ -20,7 +19,6 @@ import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/stat_tile.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
-import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
@@ -46,12 +44,6 @@ class GoalsPage extends ConsumerWidget {
       onPlan: () => context.push(Routes.goalsPlan),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => ref.refresh(provider.future),
-      onLogOrder: () {
-        final container = ProviderScope.containerOf(context, listen: false);
-        unawaited(
-          showLogOwnOrder(context, onSaved: () => refreshOrders(container)),
-        );
-      },
       onRitual: () => context.push(Routes.goalsClose),
       onOrders: () =>
           unawaited(showOrders(context, DateTime(today().year, today().month))),
@@ -73,7 +65,6 @@ class GoalsView extends StatelessWidget {
     required this.onPlan,
     required this.onRetry,
     required this.onRefresh,
-    required this.onLogOrder,
     required this.onOrders,
     required this.onRitual,
     this.accountAction,
@@ -88,9 +79,6 @@ class GoalsView extends StatelessWidget {
   final VoidCallback onPlan;
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
-
-  /// Opens Your own order.
-  final VoidCallback onLogOrder;
 
   /// Opens the month's orders: the volume card's tap.
   final VoidCallback onOrders;
@@ -309,17 +297,6 @@ class GoalsView extends StatelessWidget {
             number.format(pacing.projected.round()),
           ),
           l10n.goalPaceNote,
-        ),
-      ],
-      // A phone logs one from the floating bar's +. ponytail: with a
-      // sidebar until it has its own +.
-      if (context.screenSize.usesSideNavigation) ...[
-        const SizedBox(height: AppSpacing.md),
-        FilledButton.tonalIcon(
-          onPressed: onLogOrder,
-          style: AppTheme.tonal(context),
-          icon: const Icon(Icons.add_rounded),
-          label: Text(l10n.goalLogOwnOrder),
         ),
       ],
       const SizedBox(height: AppSpacing.sm),

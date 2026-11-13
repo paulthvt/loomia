@@ -450,7 +450,6 @@ Widget _app(
       onNext: (_) {},
       onOpen: (_) {},
       onOpenTask: (_) {},
-      onAddTask: () {},
       onRetry: () {},
       onRefresh: () async {},
       goals: goals,

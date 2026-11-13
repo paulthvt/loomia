@@ -1,6 +1,7 @@
 import 'package:loomia/app/shell/create_action.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -56,6 +57,7 @@ class FloatingNavBar extends StatelessWidget {
           decoration: ShapeDecoration(
             color: colors.chrome.withValues(alpha: 0.95),
             shape: StadiumBorder(side: BorderSide(color: colors.chromeBorder)),
+            shadows: AppElevation.overlay,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,10 +95,10 @@ class FloatingNavBar extends StatelessWidget {
                       null => null,
                     },
                     tooltip: create.label,
-                    style: IconButton.styleFrom(
-                      fixedSize: const Size.square(_createSize),
-                      backgroundColor: colors.onChrome,
-                      foregroundColor: colors.chrome,
+                    style: AppTheme.createButton(context).copyWith(
+                      fixedSize: const WidgetStatePropertyAll(
+                        Size.square(_createSize),
+                      ),
                     ),
                     icon: Icon(create.icon),
                   ),

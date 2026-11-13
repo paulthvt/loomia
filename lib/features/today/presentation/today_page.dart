@@ -49,7 +49,6 @@ import 'package:loomia/features/notifications/presentation/notifications_control
 import 'package:loomia/features/notifications/presentation/nudge_card.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_row.dart';
-import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/features/tasks/presentation/toggle_task.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
@@ -441,7 +440,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       onOpen: (person) => openContact(context, person.id),
       onTickTask: (task) => unawaited(_tickTask(task)),
       onOpenTask: (task) => openTask(context, task.id),
-      onAddTask: () => unawaited(showTask(context, day: today())),
       onRetry: () {
         if (people.hasError) ref.invalidate(book);
         if (workflows.hasError) ref.invalidate(lists);
@@ -572,7 +570,6 @@ class TodayView extends StatefulWidget {
     this.onNext,
     this.onTickTask,
     this.onOpenTask,
-    this.onAddTask,
     this.accountAction,
     this.goals,
     this.model = BusinessModel.other,
@@ -624,7 +621,6 @@ class TodayView extends StatefulWidget {
   /// Task callbacks.
   final void Function(Task task)? onTickTask;
   final void Function(Task task)? onOpenTask;
-  final VoidCallback? onAddTask;
 
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
@@ -941,20 +937,12 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
-  /// The Tasks header, with Add a task where there is no floating bar's +,
-  /// and today's open tasks under it; a failed load in their place. Nothing
+  /// The Tasks header and today's open tasks under it; a failed load in their place. Nothing
   /// while they load.
   List<Widget> _tasks(AppLocalizations l10n, List<Task> tasks, DateTime day) =>
       switch (widget.tasks) {
         AsyncData() => [
-          SectionHeader(
-            title: l10n.todaySectionTasks,
-            // ponytail: with a sidebar until it has its own +.
-            actionLabel: context.screenSize.usesSideNavigation
-                ? l10n.todayAddTask
-                : null,
-            onAction: widget.onAddTask,
-          ),
+          SectionHeader(title: l10n.todaySectionTasks),
           // Slots that outlive their task, so a ticked one waits for its
           // check and slides out instead of vanishing.
           AnimatedRows(
