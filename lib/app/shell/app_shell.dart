@@ -92,7 +92,7 @@ class AppShell extends ConsumerWidget {
                 create: create,
                 onCreate: create == null
                     ? null
-                    : (button) => unawaited(create.run(button, ref)),
+                    : () => unawaited(create.run(context, ref)),
               )
             : null,
       );

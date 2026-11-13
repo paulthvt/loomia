@@ -28,8 +28,7 @@ class FloatingNavBar extends StatelessWidget {
   /// No + without one.
   final CreateAction? create;
 
-  /// Gets the + button's context, so a menu opens over it.
-  final ValueChanged<BuildContext>? onCreate;
+  final VoidCallback? onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -70,20 +69,15 @@ class FloatingNavBar extends StatelessWidget {
                 ),
               ),
               if (create != null)
-                Builder(
-                  builder: (button) => IconButton(
-                    onPressed: switch (onCreate) {
-                      final run? => () => run(button),
-                      null => null,
-                    },
-                    tooltip: create.label,
-                    style: AppTheme.createButton(context).copyWith(
-                      fixedSize: const WidgetStatePropertyAll(
-                        Size.square(_createSize),
-                      ),
+                IconButton(
+                  onPressed: onCreate,
+                  tooltip: create.label,
+                  style: AppTheme.createButton(context).copyWith(
+                    fixedSize: const WidgetStatePropertyAll(
+                      Size.square(_createSize),
                     ),
-                    icon: Icon(create.icon),
                   ),
+                  icon: Icon(create.icon),
                 ),
             ],
           ),

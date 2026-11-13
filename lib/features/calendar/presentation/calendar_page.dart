@@ -14,6 +14,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
+import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -65,7 +66,7 @@ void openTask(BuildContext context, String id) {
 }
 
 /// The Calendar's + (the floating bar, the sidebar): asks Event or Task in a
-/// menu over [context]'s widget, then adds it on [day].
+/// sheet, then adds it on [day].
 Future<void> addOnCalendar(BuildContext context, WidgetRef ref, DateTime day) =>
     chooseAdd(
       context,
@@ -1377,22 +1378,20 @@ class _DaySectionState extends State<DaySection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Builder(
-          builder: (header) => SectionHeader(
-            title: l10n.calendarDayTitle(widget.day),
-            actionLabel: l10n.calendarAdd,
-            onAction: switch (widget.onAddTask) {
-              final onTask? => () => unawaited(
-                chooseAdd(
-                  header,
-                  day: widget.day,
-                  onEvent: widget.onAdd,
-                  onTask: onTask,
-                ),
+        SectionHeader(
+          title: l10n.calendarDayTitle(widget.day),
+          actionLabel: l10n.calendarAdd,
+          onAction: switch (widget.onAddTask) {
+            final onTask? => () => unawaited(
+              chooseAdd(
+                context,
+                day: widget.day,
+                onEvent: widget.onAdd,
+                onTask: onTask,
               ),
-              null => () => widget.onAdd(widget.day),
-            },
-          ),
+            ),
+            null => () => widget.onAdd(widget.day),
+          },
         ),
         const SizedBox(height: AppSpacing.ms),
         ...body,
@@ -1556,40 +1555,55 @@ class _NowRow extends StatelessWidget {
   }
 }
 
-/// The Calendar's add (the button, a day's Add): a menu at [anchor]'s end
-/// that asks Event or Task, then runs [onEvent] or [onTask] for [day].
+/// The Calendar's add (the button, a day's Add): a sheet that asks Event or
+/// Task, then runs [onEvent] or [onTask] for [day].
 Future<void> chooseAdd(
-  BuildContext anchor, {
+  BuildContext context, {
   required DateTime day,
   required ValueChanged<DateTime> onEvent,
   required ValueChanged<DateTime> onTask,
 }) async {
-  final l10n = AppLocalizations.of(anchor);
-  final box = anchor.findRenderObject()! as RenderBox;
-  // The root's, as the menu: over the floating bar the + sits in.
-  final overlay =
-      Overlay.of(anchor, rootOverlay: true).context.findRenderObject()!
-          as RenderBox;
-  final rect = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
-  // From the end of the anchor, so the menu sits over its button and the
-  // screen's edge pushes it back in. ponytail: LTR only, both locales are.
-  final at = Rect.fromLTWH(rect.right, rect.top, 0, rect.height);
-  Widget item(IconData icon, String label) =>
-      Row(spacing: AppSpacing.ms, children: [Icon(icon), Text(label)]);
-  final choice = await showMenu<ValueChanged<DateTime>>(
-    context: anchor,
-    useRootNavigator: true,
-    position: RelativeRect.fromRect(at, Offset.zero & overlay.size),
-    items: [
-      PopupMenuItem(
-        value: onEvent,
-        child: item(Icons.event_outlined, l10n.calendarAddEvent),
+  final choice = await LoomiaDialog.show<ValueChanged<DateTime>>(context, (
+    context,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    Widget row(
+      IconData icon,
+      String title,
+      String hint,
+      ValueChanged<DateTime> run,
+    ) => ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(hint),
+      onTap: () => Navigator.pop(context, run),
+    );
+    return LoomiaDialog(
+      title: l10n.calendarDayTitle(day),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+      ],
+      child: Column(
+        children: [
+          row(
+            Icons.event_outlined,
+            l10n.calendarAddEvent,
+            l10n.calendarAddEventHint,
+            onEvent,
+          ),
+          row(
+            Icons.assignment_outlined,
+            l10n.calendarAddTask,
+            l10n.calendarAddTaskHint,
+            onTask,
+          ),
+        ],
       ),
-      PopupMenuItem(
-        value: onTask,
-        child: item(Icons.assignment_outlined, l10n.calendarAddTask),
-      ),
-    ],
-  );
+    );
+  });
   choice?.call(day);
 }

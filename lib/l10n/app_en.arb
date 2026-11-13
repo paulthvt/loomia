@@ -2921,14 +2921,14 @@
   },
   "calendarDayTitle": "{day}",
   "@calendarDayTitle": {
-    "description": "Heading above the selected day's events on the Calendar screen, shown uppercased, e.g. 'Thursday, October 8'. The format follows the locale.",
+    "description": "Heading above the selected day's events on the Calendar screen, shown uppercased, e.g. 'Thursday, October 8'; also the title of the sheet that asks Event or Task for that day. The format follows the locale.",
     "placeholders": {
       "day": { "type": "DateTime", "format": "MMMMEEEEd" }
     }
   },
   "calendarAdd": "Add",
   "@calendarAdd": {
-    "description": "Action beside the selected day's heading on the Calendar screen, and tooltip of the Calendar's add button: opens a menu to add an event or a task on that day."
+    "description": "Action beside the selected day's heading on the Calendar screen, and tooltip of the Calendar's add button: opens a sheet to add an event or a task on that day."
   },
   "calendarMoreEvents": "+{count} more",
   "@calendarMoreEvents": {
@@ -3077,11 +3077,19 @@
   },
   "calendarAddEvent": "Event",
   "@calendarAddEvent": {
-    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
+    "description": "Row of the sheet that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
+  },
+  "calendarAddEventHint": "Something with a time and people",
+  "@calendarAddEventHint": {
+    "description": "One-line hint under 'Event' in the sheet that the Calendar's add button opens: what an event is (a workshop, a training, a call at a set time)."
   },
   "calendarAddTask": "Task",
   "@calendarAddTask": {
-    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds a task (something to do, with a due day) on the selected day."
+    "description": "Row of the sheet that the Calendar's add button and a day's Add open: adds a task (something to do, with a due day) on the selected day."
+  },
+  "calendarAddTaskHint": "Something to do on that day",
+  "@calendarAddTaskHint": {
+    "description": "One-line hint under 'Task' in the sheet that the Calendar's add button opens: what a task is (something to do, due that day, no set time)."
   },
   "calendarLoadFailed": "Couldn't load your calendar.",
   "@calendarLoadFailed": {

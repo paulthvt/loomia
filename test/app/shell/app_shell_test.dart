@@ -228,14 +228,45 @@ void main() {
 
     await tester.tap(find.byTooltip('New event'));
     await tester.pumpAndSettle();
-    expect(find.text('Event'), findsOneWidget);
-    await tester.tap(find.text('Task'));
+    // A sheet, not a menu over the bar.
+    final sheet = find.byType(BottomSheet);
+    expect(find.byType(PopupMenuItem<Object?>), findsNothing);
+    expect(
+      find.descendant(of: sheet, matching: find.text('Event')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: sheet,
+        matching: find.text('Something with a time and people'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.descendant(of: sheet, matching: find.text('Task')));
     await tester.pumpAndSettle();
 
     final field = tester.widget<ReminderDayField>(
       find.byType(ReminderDayField),
     );
     expect(field.value, day);
+  });
+
+  testWidgets('plus on calendar opens the event form from the sheet', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(390, 844));
+    container.read(routerProvider).go(Routes.calendar);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('New event'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.text('Event'));
+    await tester.pumpAndSettle();
+    // The chooser closed, the event form opened in its place.
+    expect(find.text('Something with a time and people'), findsNothing);
+    expect(find.text('New event'), findsWidgets);
+    expect(find.byType(LoomiaDialog), findsOneWidget);
   });
 
   testWidgets('last row scrolls above the floating bar', (tester) async {

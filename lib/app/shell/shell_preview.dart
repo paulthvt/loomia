@@ -32,7 +32,7 @@ Widget _bar(ThemeData theme) => MaterialApp(
         selected: 0,
         onSelect: (_) {},
         create: createActionFor(Routes.today, AppLocalizations.of(context)),
-        onCreate: (_) {},
+        onCreate: () {},
       ),
     ),
   ),

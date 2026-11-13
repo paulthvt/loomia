@@ -11,7 +11,7 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// What the + creates on a tab: its label (tooltip, sidebar text), icon,
-/// and what it runs. The context is the button's, so a menu opens over it.
+/// and what it runs.
 typedef CreateAction = ({
   String label,
   IconData icon,
