@@ -73,7 +73,7 @@ void main() {
     await open(tester, DateTime(2026, 10, 1));
 
     expect(find.text('How did September go?'), findsOneWidget);
-    expect(find.text('STEP 1 OF 3'), findsOneWidget);
+    expect(find.text('Step 1 of 3'), findsOneWidget);
     await tester.enterText(field('OV'), '5000');
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
@@ -82,12 +82,12 @@ void main() {
     expect(closed.closed, isTrue);
     expect(closed.teamVolumeActual, 5000);
     // The look back, before planning.
-    expect(find.text('STEP 2 OF 3'), findsOneWidget);
+    expect(find.text('Step 2 of 3'), findsOneWidget);
     expect(find.text('September is behind you'), findsOneWidget);
     await tester.tap(find.text('Plan October'));
     await tester.pumpAndSettle();
 
-    expect(find.text('STEP 3 OF 3'), findsOneWidget);
+    expect(find.text('Step 3 of 3'), findsOneWidget);
     expect(find.text('What are you aiming for in October?'), findsOneWidget);
     expect(find.textContaining('Started from your draft'), findsNothing);
     // Starts from the month just closed.
@@ -121,7 +121,7 @@ void main() {
     await tester.tap(find.text('Plan October'));
     await tester.pumpAndSettle();
 
-    expect(find.text('STEP 3 OF 3'), findsOneWidget);
+    expect(find.text('Step 3 of 3'), findsOneWidget);
     expect(
       find.text('Started from your draft. Change anything, then save.'),
       findsOneWidget,
@@ -136,11 +136,11 @@ void main() {
     goals = FakeGoalsRepository(plans: [MonthPlan(month: september)]);
     await open(tester, DateTime(2026, 10, 1));
 
-    expect(find.text('STEP 1 OF 2'), findsOneWidget);
+    expect(find.text('Step 1 of 2'), findsOneWidget);
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
-    expect(find.text('STEP 2 OF 2'), findsOneWidget);
+    expect(find.text('Step 2 of 2'), findsOneWidget);
     expect(find.text('What are you aiming for in October?'), findsOneWidget);
   });
 
@@ -151,7 +151,7 @@ void main() {
     await open(tester, DateTime(2026, 9, 30));
 
     expect(find.text('What are you aiming for in October?'), findsOneWidget);
-    expect(find.textContaining('STEP'), findsNothing);
+    expect(find.textContaining(RegExp(r'Step \d')), findsNothing);
     expect(goals.calls, isNot(contains('progress(2026-09)')));
   });
 
@@ -167,7 +167,7 @@ void main() {
     await open(tester, DateTime(2026, 9, 30));
 
     expect(find.text('What are you aiming for in October?'), findsOneWidget);
-    expect(find.textContaining('STEP'), findsNothing);
+    expect(find.textContaining(RegExp(r'Step \d')), findsNothing);
     expect(
       tester.widget<TextFormField>(field('Own volume (PV)')).controller!.text,
       '3000',

@@ -40,6 +40,7 @@ Widget goalsPlanLight() => _app(
   AppTheme.light,
   Scaffold(
     body: SafeArea(
+      top: false,
       child: PlanForm(
         month: (
           month: DateTime(2026, 10),
@@ -51,6 +52,7 @@ Widget goalsPlanLight() => _app(
         model: BusinessModel.doterra,
         onSave: (_) async {},
         onSaved: () {},
+        onClose: () {},
       ),
     ),
   ),
@@ -85,6 +87,7 @@ Widget goalsCloseLight() => _app(
         ),
         model: BusinessModel.doterra,
         steps: 3,
+        onLeave: () {},
         onClose: ({teamVolume, level}) async {},
       ),
     ),
@@ -148,6 +151,7 @@ Widget _review(MonthPlan closed) => _app(
         next: DateTime(2026, 10),
         model: BusinessModel.doterra,
         onNext: () {},
+        onClose: () {},
       ),
     ),
   ),

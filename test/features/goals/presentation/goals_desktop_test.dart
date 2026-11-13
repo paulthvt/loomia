@@ -91,7 +91,7 @@ void main() {
       greaterThan(tiles + 600),
     );
     expect(find.text('Order · 100 PV'), findsOneWidget);
-    await tester.tap(find.text('Own volume'));
+    await tester.tap(find.text('OWN VOLUME'));
     await tester.pumpAndSettle();
   });
 }

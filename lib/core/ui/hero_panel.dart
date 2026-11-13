@@ -311,3 +311,49 @@ class HeroBadge extends StatelessWidget {
     );
   }
 }
+
+/// "• TODAY" on the amber tint: the label of a white card on the hero.
+class HeroEyebrow extends StatelessWidget {
+  const HeroEyebrow(this.label, {super.key});
+
+  final String label;
+
+  /// The dot before the label.
+  static const double _dot = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.ms,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.primary,
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox.square(dimension: _dot),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              label.toUpperCase(),
+              style: AppTypography.overline.copyWith(
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

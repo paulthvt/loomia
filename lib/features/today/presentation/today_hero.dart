@@ -1,6 +1,7 @@
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_typography.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -38,7 +39,7 @@ class TodayHero extends StatelessWidget {
       children: [
         Row(
           children: [
-            _Eyebrow(eyebrow),
+            HeroEyebrow(eyebrow),
             const Spacer(),
             if (progress case (:final done, :final total))
               // Heard on its own, after the sentence's eyebrow.
@@ -69,52 +70,6 @@ class TodayHero extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// "• TODAY" on the amber tint.
-class _Eyebrow extends StatelessWidget {
-  const _Eyebrow(this.label);
-
-  final String label;
-
-  /// The dot before the label.
-  static const double _dot = 6;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(AppRadii.pill),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.ms,
-          vertical: AppSpacing.xs,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: const SizedBox.square(dimension: _dot),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              label.toUpperCase(),
-              style: AppTypography.overline.copyWith(
-                color: scheme.onPrimaryContainer,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

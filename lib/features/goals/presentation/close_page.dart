@@ -67,83 +67,91 @@ class _ClosePageState extends ConsumerState<ClosePage> {
               goalsOf(open, model).isNotEmpty;
     final steps = reviews ? 3 : 2;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => backOr(context, Routes.goals)),
+    void leave() => backOr(context, Routes.goals);
+    final body = switch (closing) {
+      AsyncValue(value: null, hasValue: true) => EmptyState(
+        icon: Icons.flag_outlined,
+        title: l10n.closeNothing,
+        body: l10n.closeNothingBody,
+        actionLabel: l10n.closeBackToGoals,
+        onAction: _done,
       ),
+      AsyncValue(value: final value?)
+          when value.ritual.closes && _closed == null =>
+        CloseForm(
+          closing: value,
+          model: model,
+          steps: steps,
+          onLeave: leave,
+          onClose: ({teamVolume, level}) async {
+            final closed = await container
+                .read(goalsRepositoryProvider)
+                .close(
+                  value.ritual.close,
+                  teamVolume: teamVolume,
+                  level: level,
+                );
+            container.invalidate(goalsProvider);
+            if (mounted) setState(() => _closed = closed);
+          },
+        ),
+      AsyncValue(value: final value?)
+          when reviews && closed != null && !_reviewed =>
+        MonthReview(
+          closed: closed,
+          next: value.ritual.plan,
+          model: model,
+          onClose: leave,
+          onNext: () => setState(() => _reviewed = true),
+        ),
+      AsyncValue(value: final value?) => PlanForm(
+        step: value.ritual.closes ? steps : null,
+        steps: steps,
+        month: (
+          month: value.ritual.plan,
+          plan: value.plans
+              .where((plan) => plan.month == value.ritual.plan)
+              .firstOrNull,
+          // Planning reads no progress.
+          progress: const Progress(
+            ownVolume: 0,
+            prospects: 0,
+            customers: 0,
+            teamMembers: 0,
+            loyalty: 0,
+          ),
+          forecast: value.forecast,
+          // The month just closed counts toward the suggestions.
+          plans: [
+            for (final plan in value.plans)
+              if (plan.month != _closed?.month) plan,
+            ?_closed,
+          ],
+        ),
+        model: model,
+        // savePlan reloads Goals. This page's own load dies with it:
+        // reloading it now would show "Nothing to close" on the way out.
+        onSave: (plan) => savePlan(container, plan),
+        onSaved: _done,
+        onClose: leave,
+        reminder: true,
+      ),
+      AsyncError(:final error) => LoadFailed(
+        offline: error == PeopleFailure.network,
+        title: l10n.goalsLoadFailed,
+        onRetry: () => ref.invalidate(provider),
+      ),
+      _ => const Center(child: CircularProgressIndicator()),
+    };
+    return Scaffold(
+      // The steps' hero holds close; the other states keep a bar.
+      appBar: body is CloseForm || body is MonthReview || body is PlanForm
+          ? null
+          : AppBar(leading: BackButton(onPressed: leave)),
       body: SafeArea(
-        child: switch (closing) {
-          AsyncValue(value: null, hasValue: true) => EmptyState(
-            icon: Icons.flag_outlined,
-            title: l10n.closeNothing,
-            body: l10n.closeNothingBody,
-            actionLabel: l10n.closeBackToGoals,
-            onAction: _done,
-          ),
-          AsyncValue(value: final value?)
-              when value.ritual.closes && _closed == null =>
-            CloseForm(
-              closing: value,
-              model: model,
-              steps: steps,
-              onClose: ({teamVolume, level}) async {
-                final closed = await container
-                    .read(goalsRepositoryProvider)
-                    .close(
-                      value.ritual.close,
-                      teamVolume: teamVolume,
-                      level: level,
-                    );
-                container.invalidate(goalsProvider);
-                if (mounted) setState(() => _closed = closed);
-              },
-            ),
-          AsyncValue(value: final value?)
-              when reviews && closed != null && !_reviewed =>
-            MonthReview(
-              closed: closed,
-              next: value.ritual.plan,
-              model: model,
-              onNext: () => setState(() => _reviewed = true),
-            ),
-          AsyncValue(value: final value?) => PlanForm(
-            step: value.ritual.closes ? steps : null,
-            steps: steps,
-            month: (
-              month: value.ritual.plan,
-              plan: value.plans
-                  .where((plan) => plan.month == value.ritual.plan)
-                  .firstOrNull,
-              // Planning reads no progress.
-              progress: const Progress(
-                ownVolume: 0,
-                prospects: 0,
-                customers: 0,
-                teamMembers: 0,
-                loyalty: 0,
-              ),
-              forecast: value.forecast,
-              // The month just closed counts toward the suggestions.
-              plans: [
-                for (final plan in value.plans)
-                  if (plan.month != _closed?.month) plan,
-                ?_closed,
-              ],
-            ),
-            model: model,
-            // savePlan reloads Goals. This page's own load dies with it:
-            // reloading it now would show "Nothing to close" on the way out.
-            onSave: (plan) => savePlan(container, plan),
-            onSaved: _done,
-            reminder: true,
-          ),
-          AsyncError(:final error) => LoadFailed(
-            offline: error == PeopleFailure.network,
-            title: l10n.goalsLoadFailed,
-            onRetry: () => ref.invalidate(provider),
-          ),
-          _ => const Center(child: CircularProgressIndicator()),
-        },
+        // The hero paints under the status bar and pads itself.
+        top: false,
+        child: body,
       ),
     );
   }

@@ -54,7 +54,7 @@ void main() {
       ),
     );
 
-    expect(find.text('STEP 2 OF 3'), findsOneWidget);
+    expect(find.text('Step 2 of 3'), findsOneWidget);
     expect(find.text('Bravo, you reached your goals!'), findsOneWidget);
     expect(find.textContaining('You can be proud of yourself'), findsOneWidget);
     expect(find.byType(ReachedRing), findsOneWidget);
