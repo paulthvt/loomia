@@ -86,21 +86,19 @@ class OwnVolumeHero extends StatelessWidget {
     final volume = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            HeroEyebrow(l10n.goalOwnVolume),
-            const Spacer(),
-            if (pacing != null)
-              Text(
-                pacing.onPace ? l10n.goalOnPace : l10n.goalBehindPace,
-                // As GoalCard: behind takes the warm secondary ink.
-                style: AppTypography.caption.copyWith(
-                  color: pacing.onPace
-                      ? colors.textMuted
-                      : colors.secondaryText,
+        HeroCardHead(
+          eyebrow: l10n.goalOwnVolume,
+          status: pacing == null
+              ? null
+              : Text(
+                  pacing.onPace ? l10n.goalOnPace : l10n.goalBehindPace,
+                  // As GoalCard: behind takes the warm secondary ink.
+                  style: AppTypography.caption.copyWith(
+                    color: pacing.onPace
+                        ? colors.textMuted
+                        : colors.secondaryText,
+                  ),
                 ),
-              ),
-          ],
         ),
         const SizedBox(height: AppSpacing.md),
         // Same style on both: wraps as words when the number is long.

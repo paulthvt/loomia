@@ -347,10 +347,13 @@ class HeroEyebrow extends StatelessWidget {
               child: const SizedBox.square(dimension: _dot),
             ),
             const SizedBox(width: AppSpacing.sm),
-            Text(
-              label.toUpperCase(),
-              style: AppTypography.overline.copyWith(
-                color: scheme.onPrimaryContainer,
+            // Flexible: a label wider than the card wraps, never overflows.
+            Flexible(
+              child: Text(
+                label.toUpperCase(),
+                style: AppTypography.overline.copyWith(
+                  color: scheme.onPrimaryContainer,
+                ),
               ),
             ),
           ],
@@ -445,4 +448,28 @@ class HeroFormList extends StatelessWidget {
       ],
     );
   }
+}
+
+/// A hero card's first line: its [HeroEyebrow] and, at the line's end, a
+/// short [status] ("2 of 15 done", "On pace"). When both do not fit (a long
+/// French label, a large text size), the status drops under the eyebrow,
+/// whole: it carries meaning, so it is never cut.
+class HeroCardHead extends StatelessWidget {
+  const HeroCardHead({required this.eyebrow, this.status, super.key});
+
+  final String eyebrow;
+  final Widget? status;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    // Full width, so spaceBetween puts the status at the line's end.
+    width: double.infinity,
+    child: Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      children: [HeroEyebrow(eyebrow), ?status],
+    ),
+  );
 }

@@ -37,22 +37,19 @@ class TodayHero extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            HeroEyebrow(eyebrow),
-            const Spacer(),
-            if (progress case (:final done, :final total))
-              // Heard on its own, after the sentence's eyebrow.
-              Semantics(
-                container: true,
-                child: Text(
-                  AppLocalizations.of(context).todayDone(done, total),
-                  style: AppTypography.caption.copyWith(
-                    color: colors.textMuted,
-                  ),
-                ),
+        HeroCardHead(
+          eyebrow: eyebrow,
+          status: switch (progress) {
+            // Heard on its own, after the sentence's eyebrow.
+            (:final done, :final total) => Semantics(
+              container: true,
+              child: Text(
+                AppLocalizations.of(context).todayDone(done, total),
+                style: AppTypography.caption.copyWith(color: colors.textMuted),
               ),
-          ],
+            ),
+            null => null,
+          },
         ),
         const SizedBox(height: AppSpacing.md),
         Text(
