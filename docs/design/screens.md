@@ -30,8 +30,8 @@ screens read as one product and not as seven mockups.
 
 ## 1. Today — the home
 
-**Every size** — one column, 624px at most. Desktop keeps the sidebar and
-uses the large top bar; mobile keeps the account button and the bottom nav.
+**Every size** — one column, 624px at most. Desktop has the floating sidebar and
+gradient hero band; mobile has the gradient hero panel and the floating pill bar.
 
 Top bar (`TUESDAY, SEPTEMBER 29` / "Good morning, Pauline") → TodayHero →
 `PRIORITY` + the people whose workflow step is due today or late.
@@ -70,7 +70,7 @@ data.
 
 App bar → SearchField → filter chips (`Everyone` active, `Customers`,
 `To follow up`, `Team`) → `NEEDS A NUDGE` (3, with the count as the header action)
-→ `EVERYONE ELSE` → BottomNav.
+→ `EVERYONE ELSE` → pill bar.
 
 The list is grouped by *whether the person needs something*, not alphabetically —
 a 420-person alphabetical list is a database, and this product is not a database
@@ -89,9 +89,9 @@ selection while a thumb cannot.
 
 ## 3. Contact detail (mobile)
 
-"Back to contacts" bar → Avatar 56 + name (`headline`) + "Customer since March ·
+Gradient hero with back button → Avatar 56 + name (`headline`) + "Customer since March ·
 Lyon" + two chips → `Message` / `Call` / overflow → `NEXT STEP` (one ActionItem) →
-`HISTORY` (3 ActivityItems, "All 24") → BottomNav.
+`HISTORY` (3 ActivityItems, "All 24"). No pill bar on detail screens.
 
 The screen answers one question: *what do I say to this person?* The next step is
 above the history because the history is memory, not homework. The app bar title
@@ -134,11 +134,11 @@ first step's day.
 Retired with #151: the list is the Contacts Team filter, the check-ins are on
 Today; returns with the team plan.
 
-App bar → a summary card ("6 people on your team" + AvatarGroup + "Two of them
+Gradient hero → a summary card ("6 people on your team" + AvatarGroup + "Two of them
 could use a message this week. **Nobody is being measured here** — this is just who
 might need you.") → `WORTH A CHECK-IN` (2 ActionItems about people, with the
 reason: "Joined 3 weeks ago and has not added a contact yet") → `EVERYONE` (roster
-of ContactRows) → BottomNav.
+of ContactRows) → pill bar.
 
 This is the screen most at risk of becoming an MLM tool, so it is the most
 constrained: no volumes, no ranks, no comparison, no "downline". A team member is

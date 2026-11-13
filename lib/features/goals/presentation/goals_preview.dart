@@ -40,6 +40,7 @@ Widget goalsPlanLight() => _app(
   AppTheme.light,
   Scaffold(
     body: SafeArea(
+      top: false,
       child: PlanForm(
         month: (
           month: DateTime(2026, 10),
@@ -51,6 +52,30 @@ Widget goalsPlanLight() => _app(
         model: BusinessModel.doterra,
         onSave: (_) async {},
         onSaved: () {},
+        onClose: () {},
+      ),
+    ),
+  ),
+);
+
+@Preview(group: 'Goals', name: 'Plan — dark', size: Size(390, 844))
+Widget goalsPlanDark() => _app(
+  AppTheme.dark,
+  Scaffold(
+    body: SafeArea(
+      top: false,
+      child: PlanForm(
+        month: (
+          month: DateTime(2026, 10),
+          plan: null,
+          progress: _progress,
+          forecast: 3,
+          plans: _past,
+        ),
+        model: BusinessModel.doterra,
+        onSave: (_) async {},
+        onSaved: () {},
+        onClose: () {},
       ),
     ),
   ),
@@ -85,6 +110,7 @@ Widget goalsCloseLight() => _app(
         ),
         model: BusinessModel.doterra,
         steps: 3,
+        onLeave: () {},
         onClose: ({teamVolume, level}) async {},
       ),
     ),
@@ -148,6 +174,7 @@ Widget _review(MonthPlan closed) => _app(
         next: DateTime(2026, 10),
         model: BusinessModel.doterra,
         onNext: () {},
+        onClose: () {},
       ),
     ),
   ),
@@ -236,7 +263,6 @@ Widget _goals(ThemeData theme, GoalsMonth month) => ProviderScope(
       onPlan: () {},
       onRetry: () {},
       onRefresh: () async {},
-      onLogOrder: () {},
       onOrders: () {},
       onRitual: () {},
     ),

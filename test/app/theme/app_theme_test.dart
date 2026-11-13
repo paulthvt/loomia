@@ -62,7 +62,7 @@ void main() {
           isA<RoundedRectangleBorder>().having(
             (s) => s.borderRadius,
             'radius',
-            BorderRadius.circular(AppRadii.lg),
+            BorderRadius.circular(AppRadii.card),
           ),
         );
       });
@@ -111,13 +111,13 @@ void main() {
     }
   });
 
-  test('quiet hero ink meets AA on primary', () {
-    final primary = AppColors.light.primary;
-    final quiet = Color.alphaBlend(
-      AppColors.light.onPrimary.withValues(alpha: AppColors.quietOnPrimary),
-      primary,
-    );
-    expect(contrast(quiet, primary), greaterThanOrEqualTo(4.5));
+  test('quiet hero ink meets AA where hero text sits', () {
+    // Text sits in the gradient's dark top-left (spec, Hero gradient).
+    for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
+      final under = colors.heroGradient.colors.first;
+      final quiet = Color.alphaBlend(colors.onHeroQuiet, under);
+      expect(contrast(quiet, under), greaterThanOrEqualTo(4.5));
+    }
   });
 
   test('primary ink meets AA on its surface', () {
@@ -136,4 +136,112 @@ void main() {
       LoomiaColors.dark.brand,
     );
   });
+
+  test('hero gradient is rosewood to apricot, darker in dark mode', () {
+    expect(LoomiaColors.light.heroGradient.colors, [
+      const Color(0xFF82424F),
+      const Color(0xFFE39A68),
+    ]);
+    expect(LoomiaColors.dark.heroGradient.colors, [
+      const Color(0xFF4F2530),
+      const Color(0xFFA8623F),
+    ]);
+  });
+
+  test('white meets AA on both hero starts', () {
+    for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
+      expect(
+        contrast(const Color(0xFFFFFFFF), colors.heroGradient.colors.first),
+        greaterThanOrEqualTo(4.5),
+      );
+    }
+  });
+
+  test('muted chrome ink meets AA on chrome', () {
+    for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
+      final composited = Color.alphaBlend(colors.onChromeMuted, colors.chrome);
+      expect(contrast(composited, colors.chrome), greaterThanOrEqualTo(4.5));
+    }
+  });
+
+  test('canvas is the warm Horizon canvas', () {
+    expect(AppColors.light.surface, const Color(0xFFF6F2ED));
+  });
+
+  testWidgets('cards have no border and one soft shadow in light', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final card = AppTheme.card(ctx);
+    expect(card.border, isNull);
+    expect(card.boxShadow, LoomiaColors.light.cardShadow);
+  });
+
+  testWidgets('cards in dark are surfaceDefault, not the sunken colour', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final card = AppTheme.card(ctx);
+    expect(card.color, const Color(0xFF1E1A15));
+    expect(card.border, isNull);
+    expect(card.boxShadow, LoomiaColors.dark.cardShadow);
+    expect(AppTheme.heroCard(ctx).color, const Color(0xFF1E1A15));
+  });
+
+  for (final (mode, theme) in [
+    ('light', AppTheme.light),
+    ('dark', AppTheme.dark),
+  ]) {
+    testWidgets('$mode: typed values read as text/primary, hints muted', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Column(
+              children: [
+                TextField(controller: TextEditingController(text: '2295')),
+                TextField(decoration: AppTheme.filledField()),
+                const TextField(decoration: InputDecoration(hintText: 'Hint')),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final ink = theme.colorScheme.onSurface;
+      for (final field in tester.widgetList<EditableText>(
+        find.byType(EditableText),
+      )) {
+        expect(field.style.color, ink);
+      }
+      final hint = tester.widget<Text>(find.text('Hint'));
+      expect(hint.style?.color, theme.extension<LoomiaColors>()!.textMuted);
+    });
+  }
 }

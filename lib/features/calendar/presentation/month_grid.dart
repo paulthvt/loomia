@@ -19,6 +19,7 @@ class MonthGrid extends StatelessWidget {
     required this.onSelect,
     this.taskCounts = const {},
     this.people = const PeopleAhead.none(),
+    this.onHero = false,
     super.key,
   });
 
@@ -37,6 +38,10 @@ class MonthGrid extends StatelessWidget {
   final PeopleAhead people;
   final ValueChanged<DateTime> onSelect;
 
+  /// On the hero gradient: white numbers and marks, today ringed and the
+  /// selected day filled in white.
+  final bool onHero;
+
   @override
   Widget build(BuildContext context) => _DayRows(
     days: monthDays(
@@ -50,6 +55,7 @@ class MonthGrid extends StatelessWidget {
     taskCounts: taskCounts,
     people: people,
     onSelect: onSelect,
+    onHero: onHero,
   );
 }
 
@@ -64,6 +70,7 @@ class _DayRows extends StatelessWidget {
     required this.taskCounts,
     required this.people,
     required this.onSelect,
+    required this.onHero,
   });
 
   final List<DateTime> days;
@@ -74,12 +81,14 @@ class _DayRows extends StatelessWidget {
   final Map<DateTime, int> taskCounts;
   final PeopleAhead people;
   final ValueChanged<DateTime> onSelect;
+  final bool onHero;
 
   @override
   Widget build(BuildContext context) {
+    final colors = LoomiaColors.of(context);
     final weekday = DateFormat.E(Localizations.localeOf(context).toString());
     final style = Theme.of(context).textTheme.labelSmall
-        ?.copyWith(color: LoomiaColors.of(context).textMuted);
+        ?.copyWith(color: onHero ? colors.onHeroQuiet : colors.textMuted);
     const week = DateTime.daysPerWeek;
 
     return Column(
@@ -116,6 +125,7 @@ class _DayRows extends StatelessWidget {
                     taskCount: taskCounts[day] ?? 0,
                     people: people.count(day),
                     onTap: () => onSelect(day),
+                    onHero: onHero,
                   ),
                 ),
             ],
@@ -139,6 +149,7 @@ class DayCell extends StatelessWidget {
     required this.onTap,
     this.taskCount = 0,
     this.people = 0,
+    this.onHero = false,
     super.key,
   });
 
@@ -165,19 +176,36 @@ class DayCell extends StatelessWidget {
   final int people;
   final VoidCallback onTap;
 
+  /// On the hero gradient, as [MonthGrid.onHero].
+  final bool onHero;
+
+  /// Neighbouring months' numbers on the hero.
+  static const double _outsideOnHero = 0.35;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final colors = LoomiaColors.of(context);
-    final ink = selected
+    final ink = onHero
+        ? selected
+              ? colors.onHeroFill
+              : inMonth
+              ? colors.onHero
+              : colors.onHero.withValues(alpha: _outsideOnHero)
+        : selected
         ? scheme.onPrimary
         : today
         ? colors.primaryText
         : inMonth
         ? scheme.onSurface
         : colors.textDisabled;
-    final dot = past ? colors.textMuted : scheme.primary;
+    final fill = onHero ? colors.onHero : scheme.primary;
+    final dot = onHero
+        ? colors.onHero
+        : past
+        ? colors.textMuted
+        : scheme.primary;
     final events = count.clamp(0, _maxDots);
     final tasks = taskCount.clamp(0, _maxDots - events);
     final l10n = AppLocalizations.of(context);
@@ -186,6 +214,8 @@ class DayCell extends StatelessWidget {
         : theme.textTheme.bodyLarge;
 
     return Semantics(
+      // Its own node, not merged with the hero around it.
+      container: true,
       button: true,
       selected: selected,
       label: daySemantics(l10n, day, count, taskCount, people),
@@ -207,9 +237,9 @@ class DayCell extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: selected ? scheme.primary : null,
+                    color: selected ? fill : null,
                     border: today && !selected
-                        ? Border.all(color: scheme.primary, width: _ring)
+                        ? Border.all(color: fill, width: _ring)
                         : null,
                   ),
                   child: Text(
@@ -262,7 +292,7 @@ class DayCell extends StatelessWidget {
                       height: _markerThickness,
                       // Round ends: Figma's 1 px radius on a 2 px line.
                       decoration: BoxDecoration(
-                        color: colors.textMuted,
+                        color: onHero ? colors.onHero : colors.textMuted,
                         borderRadius: BorderRadius.circular(AppRadii.pill),
                       ),
                     ),

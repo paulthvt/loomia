@@ -26,6 +26,29 @@ abstract final class AppTheme {
     brightness: scheme.brightness,
   );
 
+  /// Standard card decoration (surfaceDefault, soft shadow in light, no
+  /// border). Widgets use `LoomiaCard`.
+  static BoxDecoration card(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return BoxDecoration(
+      color: colors.surfaceDefault,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      boxShadow: colors.cardShadow,
+    );
+  }
+
+  /// Hero card decoration (surfaceDefault, deeper shadow, subtle border in
+  /// dark).
+  static BoxDecoration heroCard(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return BoxDecoration(
+      color: colors.surfaceDefault,
+      borderRadius: BorderRadius.circular(AppRadii.heroCard),
+      boxShadow: colors.heroCardShadow,
+      border: Border.all(color: colors.heroCardBorder, width: 1),
+    );
+  }
+
   /// The Tonal button (`docs/design/components.md` #2), for
   /// `FilledButton.tonal`. Material's tonal reads `secondaryContainer`; ours is
   /// `primary/container`, which a theme cannot tell apart from Primary.
@@ -34,6 +57,239 @@ abstract final class AppTheme {
     return FilledButton.styleFrom(
       backgroundColor: scheme.primaryContainer,
       foregroundColor: scheme.onPrimaryContainer,
+    );
+  }
+
+  /// The Calendar's view switch on the hero gradient: a translucent track,
+  /// the selected segment white with the primary tint's ink.
+  static ButtonStyle heroSegmented(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return SegmentedButton.styleFrom(
+      backgroundColor: colors.heroFillSubtle,
+      foregroundColor: colors.onHero,
+      selectedBackgroundColor: colors.onHero,
+      selectedForegroundColor: colors.onHeroFill,
+      side: BorderSide.none,
+    );
+  }
+
+  /// A white pill button on the hero gradient (an event's Join).
+  static ButtonStyle heroPill(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return FilledButton.styleFrom(
+      backgroundColor: colors.onHero,
+      foregroundColor: colors.onHeroFill,
+    );
+  }
+
+  /// A translucent pill button on the hero gradient, beside a [heroPill]
+  /// (a contact's Call).
+  static ButtonStyle heroFillPill(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return FilledButton.styleFrom(
+      backgroundColor: colors.heroFill,
+      foregroundColor: colors.onHero,
+    );
+  }
+
+  /// Choice chips on the page (a prospect's Where it stands), as a theme for
+  /// a `Theme` above them: outlined pills, the picked one in the primary
+  /// tint with a check.
+  static ThemeData choiceChips(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final colors = LoomiaColors.of(context);
+    final chips = theme.chipTheme;
+    return theme.copyWith(
+      chipTheme: chips.copyWith(
+        backgroundColor: scheme.surfaceContainerLowest,
+        selectedColor: scheme.primaryContainer,
+        showCheckmark: true,
+        checkmarkColor: scheme.onPrimaryContainer,
+        side: WidgetStateBorderSide.resolveWith(
+          (states) => BorderSide(
+            color: states.contains(WidgetState.selected)
+                ? colors.primaryText.withValues(alpha: .4)
+                : colors.borderSubtle,
+          ),
+        ),
+        labelStyle: chips.labelStyle?.copyWith(
+          color: WidgetStateColor.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? scheme.onPrimaryContainer
+                : scheme.onSurface,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.ms,
+          vertical: AppSpacing.xs,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+        ),
+      ),
+    );
+  }
+
+  /// The notification days, as a theme for a `Theme` above them: circles,
+  /// the picked ones in primary, in the primary tint while disabled. The
+  /// caller sizes the label.
+  static ThemeData dayChips(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final chips = theme.chipTheme;
+    bool picked(Set<WidgetState> states) =>
+        states.contains(WidgetState.selected);
+    bool off(Set<WidgetState> states) => states.contains(WidgetState.disabled);
+    return theme.copyWith(
+      // Seven 48px targets don't fit a phone's card; 40px circles do (Figma).
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      chipTheme: chips.copyWith(
+        // surfaceContainer is the card's own colour in dark mode.
+        color: WidgetStateProperty.resolveWith(
+          (states) => switch ((picked(states), off(states))) {
+            (true, false) => scheme.primary,
+            (true, true) => scheme.primaryContainer,
+            _ => scheme.surfaceContainerHigh,
+          },
+        ),
+        showCheckmark: false,
+        labelStyle: AppTypography.label.copyWith(
+          color: WidgetStateColor.resolveWith(
+            (states) => switch ((picked(states), off(states))) {
+              (true, false) => scheme.onPrimary,
+              (true, true) => scheme.onPrimaryContainer,
+              (false, true) => theme.disabledColor,
+              (false, false) => scheme.onSurfaceVariant,
+            },
+          ),
+        ),
+        padding: EdgeInsets.zero,
+        labelPadding: EdgeInsets.zero,
+        shape: const CircleBorder(),
+      ),
+    );
+  }
+
+  /// A Settings group's rows (`SettingsRow` in Figma), as the theme for its
+  /// `ListTileTheme`: square highlights so they meet the card's edges.
+  /// [bold] titles where a row carries a subtitle of its own (Notifications).
+  static ListTileThemeData settingsRows(
+    BuildContext context, {
+    bool bold = false,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final colors = LoomiaColors.of(context);
+    return ListTileTheme.of(context).copyWith(
+      shape: const RoundedRectangleBorder(),
+      titleTextStyle: bold
+          ? AppTypography.labelLarge.copyWith(color: scheme.onSurface)
+          : theme.textTheme.bodyLarge?.copyWith(color: scheme.onSurface),
+      leadingAndTrailingTextStyle: theme.textTheme.bodyMedium?.copyWith(
+        color: colors.textMuted,
+      ),
+      subtitleTextStyle: bold
+          ? AppTypography.bodySmall.copyWith(color: scheme.onSurfaceVariant)
+          : theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+      selectedTileColor: colors.primaryMuted,
+      selectedColor: scheme.onSurface,
+    );
+  }
+
+  /// A text button on the hero gradient (the desktop Calendar's Today).
+  static ButtonStyle heroButton(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return TextButton.styleFrom(
+      backgroundColor: colors.heroFill,
+      foregroundColor: colors.onHero,
+    );
+  }
+
+  /// A search field on the hero gradient (Contacts): a translucent pill,
+  /// its hint and icon quieter than what is typed.
+  static InputDecoration heroSearch(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    final pill = BorderRadius.circular(AppRadii.pill);
+    return InputDecoration(
+      fillColor: colors.heroFillSubtle,
+      hintStyle: AppTypography.bodyLarge.copyWith(color: colors.onHeroQuiet),
+      prefixIconColor: colors.onHeroQuiet,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: pill,
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: pill,
+        borderSide: BorderSide(color: colors.onHero, width: 2),
+      ),
+    );
+  }
+
+  /// A field on the plan and month-end steps (`goals_plan_*`): filled, no
+  /// outline at rest, white on the canvas. Everywhere else fields keep the
+  /// theme's hairline.
+  static InputDecoration filledField({String? helperText}) {
+    final none = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadii.lg),
+      borderSide: BorderSide.none,
+    );
+    return InputDecoration(
+      helperText: helperText,
+      border: none,
+      enabledBorder: none,
+    );
+  }
+
+  /// Filter chips on the hero gradient, as a theme for a `Theme` above
+  /// them: white when picked, with the hero fill's ink; translucent
+  /// otherwise.
+  static ThemeData heroChips(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = LoomiaColors.of(context);
+    final chips = theme.chipTheme;
+    return theme.copyWith(
+      // A chip paints its fill on a canvas Material: without this, the
+      // translucent fill sits on the canvas colour, not the gradient.
+      canvasColor: Colors.transparent,
+      chipTheme: chips.copyWith(
+        backgroundColor: colors.heroFill,
+        selectedColor: colors.onHero,
+        labelStyle: chips.labelStyle?.copyWith(
+          color: WidgetStateColor.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? colors.onHeroFill
+                : colors.onHero,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.ms,
+          vertical: AppSpacing.xs,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+        ),
+      ),
+    );
+  }
+
+  /// Between wrapped rows of Material chips, and under them: a padded tap
+  /// target (touch platforms) already leaves [AppSpacing.sm] clear around
+  /// each chip; a shrunk one (desktop, the web on a computer) leaves none.
+  static double chipRunSpacing(BuildContext context) =>
+      Theme.of(context).materialTapTargetSize == MaterialTapTargetSize.padded
+      ? 0
+      : AppSpacing.sm;
+
+  /// The white + on the dark chrome (floating bar, sidebar, rail), for an
+  /// `IconButton` or a `FilledButton.icon`. The caller sets its size.
+  static ButtonStyle createButton(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return FilledButton.styleFrom(
+      backgroundColor: colors.onChrome,
+      foregroundColor: colors.chrome,
     );
   }
 
@@ -120,8 +376,8 @@ abstract final class AppTheme {
         color: colors.surfaceDefault,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
-          side: BorderSide(color: colors.borderSubtle),
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          side: BorderSide.none,
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -182,7 +438,7 @@ abstract final class AppTheme {
 
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: colors.surfaceDefault,
+        fillColor: scheme.surfaceContainerLowest,
         hintStyle: AppTypography.bodyLarge.copyWith(color: colors.textMuted),
         // Drawn above the box by LabeledField; fields carry no labelText.
         labelStyle: AppTypography.label.copyWith(
@@ -193,15 +449,33 @@ abstract final class AppTheme {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.ms,
         ),
-        border: _inputBorder(colors.borderSubtle),
-        enabledBorder: _inputBorder(colors.borderSubtle),
-        focusedBorder: _inputBorder(colors.focus, width: 2),
-        errorBorder: _inputBorder(scheme.error),
-        focusedErrorBorder: _inputBorder(scheme.error, width: 2),
+        // A hairline at rest: sheets and dialogs are as white as the field.
+        // The plan and month-end steps drop it (filledField).
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: colors.borderSubtle),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: colors.borderSubtle),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: colors.focus, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: scheme.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          borderSide: BorderSide(color: scheme.error, width: 2),
+        ),
       ),
 
-      // The Calendar's Month / Week switch (Figma "CalendarViewSwitch"):
-      // the selected side in the primary tint, as an active filter chip.
+      // Segmented buttons off the hero: the selected side in the primary
+      // tint, as an active filter chip. The Calendar's switch sits on the
+      // hero and uses heroSegmented instead.
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           selectedBackgroundColor: scheme.primaryContainer,
@@ -367,13 +641,6 @@ abstract final class AppTheme {
       ),
     );
   }
-
-  static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadii.md),
-      borderSide: BorderSide(color: color, width: width),
-    );
-  }
 }
 
 /// Elevation (§5). Three levels, two of which cast a shadow — content surfaces
@@ -409,6 +676,9 @@ abstract final class AppMotion {
   /// Sheet and dialog present/dismiss, page transition, a completed card
   /// sliding out (and its next one in).
   static const slow = Duration(milliseconds: 320);
+
+  /// The floating bar's pill travelling between tabs, on an emphasized curve.
+  static const emphasized = Duration(milliseconds: 420);
 
   static const standard = Cubic(0.2, 0, 0, 1);
   static const decelerate = Cubic(0, 0, 0, 1);

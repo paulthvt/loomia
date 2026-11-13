@@ -4,6 +4,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/today/domain/due.dart';
+import 'package:loomia/features/today/presentation/all_done_card.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
@@ -41,8 +42,8 @@ Due _due(String name) => DueStep(
 );
 
 const _body =
-    'Nothing is waiting on you today. When someone is worth a message, they '
-    'will show up here.';
+    "Congrats, Pauline — that's everyone and every task. When someone is "
+    "worth a message, they'll show up here.";
 
 void main() {
   Future<void> pump(
@@ -97,7 +98,7 @@ void main() {
   testWidgets('everything done: the hero stays, full', (tester) async {
     await pump(tester, due: const [], done: 3);
 
-    expect(find.text("That's everyone for today"), findsOneWidget);
+    expect(find.text("You're all done for today"), findsOneWidget);
     expect(find.text('3 of 3 done'), findsOneWidget);
     expect(find.text(_body), findsOneWidget);
     expect(find.text('You are up to date'), findsNothing);
@@ -115,14 +116,17 @@ void main() {
     });
   }
 
-  testWidgets('everything done on desktop: the line under the hero', (
-    tester,
-  ) async {
+  testWidgets('everything done on desktop: the line on the hero card, '
+      'beside the greeting', (tester) async {
     await pump(tester, due: const [], done: 2, size: const Size(1440, 900));
 
     expect(
-      tester.getTopLeft(find.text(_body)).dy,
-      greaterThan(tester.getBottomLeft(find.byType(TodayHero)).dy),
+      find.ancestor(of: find.text(_body), matching: find.byType(AllDoneCard)),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.text(_body)).dx,
+      greaterThan(tester.getTopRight(find.text('Good morning, Pauline')).dx),
     );
   });
 }

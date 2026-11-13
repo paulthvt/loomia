@@ -3,6 +3,7 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -19,6 +20,7 @@ import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 Person _person({
+  String name = 'Marie Dupont',
   Stage stage = Stage.prospect,
   ProspectStatus? status,
   String? phone,
@@ -35,7 +37,7 @@ Person _person({
 }) => Person(
   loyaltyDay: loyaltyDay,
   id: 'p1',
-  name: 'Marie Dupont',
+  name: name,
   stage: stage,
   stageSince: DateTime.utc(2026, 3, 4),
   prospectStatus: status,
@@ -250,7 +252,7 @@ void main() {
     await _pump(tester, _person(stage: Stage.customer));
 
     expect(find.byType(ChoiceChip), findsNothing);
-    expect(find.text('WHERE IT STANDS'), findsNothing);
+    expect(find.text('Where it stands'), findsNothing);
   });
 
   testWidgets('no channel, no Message or Call', (tester) async {
@@ -258,6 +260,33 @@ void main() {
 
     expect(find.text('Message'), findsNothing);
     expect(find.text('Call'), findsNothing);
+  });
+
+  testWidgets('Message and Call sit in the identity hero', (tester) async {
+    await _pump(tester, _person(phone: '06 12 34 56 78'));
+
+    for (final label in ['Message', 'Call']) {
+      expect(
+        find.descendant(of: find.byType(HeroPanel), matching: find.text(label)),
+        findsOneWidget,
+      );
+    }
+  });
+
+  testWidgets('long contact name wraps in the identity hero', (tester) async {
+    const name = 'Marie-Antoinette Dupont de la Villeneuve';
+    expect(name.length, 40);
+    await _pump(
+      tester,
+      _person(name: name, phone: '06 12 34 56 78'),
+      size: const Size(390, 844),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.descendant(of: find.byType(HeroPanel), matching: find.text(name)),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a phone gives Call and Message by text', (tester) async {
@@ -333,15 +362,15 @@ void main() {
       ),
     );
 
-    expect(find.text('WHAT THEY ARE AIMING FOR'), findsOneWidget);
+    expect(find.text('What they are aiming for'), findsOneWidget);
     expect(find.text('Their own goal'), findsOneWidget);
     expect(find.text('Pay for the holidays'), findsOneWidget);
     expect(find.text('Where they are stuck'), findsOneWidget);
     expect(find.text('Their why'), findsNothing);
     // Above what you know.
     expect(
-      tester.getTopLeft(find.text('WHAT THEY ARE AIMING FOR')).dy,
-      lessThan(tester.getTopLeft(find.text('INFO')).dy),
+      tester.getTopLeft(find.text('What they are aiming for')).dy,
+      lessThan(tester.getTopLeft(find.text('Info')).dy),
     );
   });
 
@@ -350,7 +379,7 @@ void main() {
   ) async {
     final calls = await _pump(tester, _person(stage: Stage.team));
 
-    expect(find.text('WHAT THEY ARE AIMING FOR'), findsOneWidget);
+    expect(find.text('What they are aiming for'), findsOneWidget);
     expect(find.text('Nothing yet.'), findsNWidgets(2));
     await tester.tap(find.text('Edit').first);
     await tester.tap(find.text('Edit').last);
@@ -450,7 +479,7 @@ void main() {
       _person(stage: Stage.customer, ownGoal: 'Pay for the holidays'),
     );
 
-    expect(find.text('WHAT THEY ARE AIMING FOR'), findsNothing);
+    expect(find.text('What they are aiming for'), findsNothing);
     expect(find.text('Pay for the holidays'), findsNothing);
   });
 
@@ -638,18 +667,18 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('desktop: the facts column is 340 wide, beside the next step', (
+  testWidgets('desktop: the facts column is 320 wide, beside the next step', (
     tester,
   ) async {
     await _pump(tester, _person(), size: const Size(1440, 900));
 
     final facts = find.ancestor(
-      of: find.text('INFO'),
+      of: find.text('Info'),
       matching: find.byType(SectionHeader),
     );
-    expect(tester.getSize(facts).width, 340);
+    expect(tester.getSize(facts).width, 320);
     expect(
-      tester.getTopLeft(find.text('WHERE IT STANDS')).dx,
+      tester.getTopLeft(find.text('Where it stands')).dx,
       lessThan(tester.getTopLeft(facts).dx),
     );
   });
@@ -736,7 +765,7 @@ void main() {
         sharing: shared(plan: plan),
       );
 
-      expect(find.text('SHARED BY MARIE'), findsOneWidget);
+      expect(find.text('Shared by Marie'), findsOneWidget);
       expect(find.text('Aims for 100 PV'), findsNothing);
       expect(find.text('Each month'), findsNothing);
       expect(find.text('Aims for 200 PV'), findsOneWidget);
@@ -745,11 +774,11 @@ void main() {
       expect(find.text('Executive'), findsOneWidget);
       expect(find.text('Manager'), findsNothing);
       // What sharing does not replace stays, under its own header.
-      expect(find.text('WHAT THEY ARE AIMING FOR'), findsOneWidget);
+      expect(find.text('What they are aiming for'), findsOneWidget);
       expect(find.text('10 hours a week'), findsOneWidget);
       expect(
-        tester.getTopLeft(find.text('SHARED BY MARIE')).dy,
-        lessThan(tester.getTopLeft(find.text('WHAT THEY ARE AIMING FOR')).dy),
+        tester.getTopLeft(find.text('Shared by Marie')).dy,
+        lessThan(tester.getTopLeft(find.text('What they are aiming for')).dy),
       );
     });
 
@@ -856,7 +885,7 @@ void main() {
         sharing: shared(memberFirstName: '', noPlan: true),
       );
 
-      expect(find.text('SHARED BY MARIE MARTIN'), findsOneWidget);
+      expect(find.text('Shared by Marie Martin'), findsOneWidget);
       expect(
         find.text("Marie Martin hasn't set this month yet"),
         findsOneWidget,
@@ -880,7 +909,7 @@ void main() {
         sharing: shared(plan: plan),
       );
 
-      expect(find.text('SHARED BY MARIE'), findsNothing);
+      expect(find.text('Shared by Marie'), findsNothing);
       expect(find.text('Invite to share goals'), findsNothing);
     });
 

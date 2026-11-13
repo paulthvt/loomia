@@ -1,4 +1,5 @@
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/tag_chip.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -44,6 +45,7 @@ class StageFilter extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: AppSpacing.sm,
+      runSpacing: AppTheme.chipRunSpacing(context),
       children: [
         for (final (stage, label) in [
           (null, l10n.contactsFilterEveryone),
@@ -68,8 +70,8 @@ class StageFilter extends StatelessWidget {
 }
 
 /// The tag chips under the stage chips (#332), one per tag in [tags]' order,
-/// each on or off. Several on: people with all of them. A phone scrolls them
-/// sideways on one line; wider screens wrap them.
+/// each on or off, on the hero gradient. Several on: people with all of
+/// them. A phone scrolls them sideways on one line; wider screens wrap them.
 class TagFilter extends StatelessWidget {
   const TagFilter({
     required this.tags,
@@ -90,6 +92,7 @@ class TagFilter extends StatelessWidget {
           label: tag.name,
           color: tag.color,
           selected: selected.contains(tag.id),
+          onHero: true,
           onTap: () => onChanged(
             selected.contains(tag.id)
                 ? selected.difference({tag.id})
@@ -98,7 +101,12 @@ class TagFilter extends StatelessWidget {
         ),
     ];
     if (!context.screenSize.isMobile) {
-      return Wrap(spacing: AppSpacing.sm, children: chips);
+      // Tag chips have no padded target: the space is always theirs.
+      return Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: chips,
+      );
     }
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,

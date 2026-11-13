@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -86,78 +87,68 @@ class EventRow extends StatelessWidget {
     final line = where != null && count != null
         ? l10n.eventRowLine(where, count)
         : where ?? count;
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      side: BorderSide(color: colors.borderSubtle),
-    );
-
     // Over: the ink one step down, so the times and title stay readable.
     final ink = over ? scheme.onSurfaceVariant : scheme.onSurface;
     final quiet = over ? colors.textMuted : scheme.onSurfaceVariant;
 
-    return Material(
-      color: over ? Colors.transparent : colors.surfaceDefault,
-      shape: shape,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: shape,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: AppSpacing.ms,
-              children: [
-                SizedBox(
-                  width: timeWidth,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+    // A card; over, an outline with no fill or shadow.
+    return LoomiaCard(
+      outlined: over,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppSpacing.ms,
+            children: [
+              SizedBox(
+                width: timeWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      timeLabel(context, event.startsAt),
+                      style: theme.textTheme.labelLarge?.copyWith(color: ink),
+                    ),
+                    if (ends != null)
                       Text(
-                        timeLabel(context, event.startsAt),
-                        style: theme.textTheme.labelLarge?.copyWith(color: ink),
-                      ),
-                      if (ends != null)
-                        Text(
-                          timeLabel(context, ends),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.textMuted,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: over ? colors.borderStrong : scheme.primary,
-                    borderRadius: BorderRadius.circular(AppRadii.pill),
-                  ),
-                  child: const SizedBox(width: _bar),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: AppSpacing.xs,
-                    children: [
-                      Text(
-                        event.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: ink,
+                        timeLabel(context, ends),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.textMuted,
                         ),
                       ),
-                      if (line != null)
-                        Text(
-                          line,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: quiet,
-                          ),
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
-                if (trailing case final t?) Center(child: t),
-              ],
-            ),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: over ? colors.borderStrong : scheme.primary,
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
+                ),
+                child: const SizedBox(width: _bar),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: AppSpacing.xs,
+                  children: [
+                    Text(
+                      event.title,
+                      style: theme.textTheme.titleMedium?.copyWith(color: ink),
+                    ),
+                    if (line != null)
+                      Text(
+                        line,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: quiet,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (trailing case final t?) Center(child: t),
+            ],
           ),
         ),
       ),

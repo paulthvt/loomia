@@ -6,7 +6,8 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
-import 'package:loomia/core/ui/loomia_top_bar.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
@@ -25,8 +26,12 @@ class MonthReview extends StatelessWidget {
     required this.next,
     required this.model,
     required this.onNext,
+    this.onClose,
     super.key,
   });
+
+  /// The hero's close button; none without.
+  final VoidCallback? onClose;
 
   /// With at least one target (`goalsOf` not empty).
   final MonthPlan closed;
@@ -95,8 +100,8 @@ class MonthReview extends StatelessWidget {
 
     List<Widget> group(String title, List<GoalResult> goals) => [
       SectionHeader(title: title),
-      Card(
-        // Each objective reads on its own, its "Reached" with it.
+      // Each objective reads on its own, its "Reached" with it.
+      LoomiaCard(
         semanticContainer: false,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -122,14 +127,11 @@ class MonthReview extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: ContentColumns.mainMax),
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
+        child: HeroFormList(
+          onClose: onClose,
+          eyebrow: l10n.closeStep(2, 3),
+          title: title,
           children: [
-            LoomiaTopBar(
-              eyebrow: l10n.closeStep(2, 3),
-              title: title,
-              gap: AppSpacing.sm,
-            ),
             const StepBar(step: 2, total: 3),
             const SizedBox(height: AppSpacing.lg),
             if (open.isEmpty) ...[

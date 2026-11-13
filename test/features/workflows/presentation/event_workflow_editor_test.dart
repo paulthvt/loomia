@@ -44,7 +44,7 @@ void main() {
     container.read(routerProvider).go(Routes.settingsWorkflows);
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('EVENTS'), 200);
+    await tester.scrollUntilVisible(find.text('Events'), 200);
     expect(find.text('Workshop'), findsOneWidget);
 
     await tester.tap(find.text('Workshop'));
@@ -216,7 +216,7 @@ void main() {
       eventWorkflows.calls.where((call) => call.startsWith('delete(')),
       hasLength(1),
     );
-    expect(find.text('EVENTS'), findsOneWidget);
+    expect(find.text('Events'), findsOneWidget);
   });
 
   testWidgets('a new event workflow with events on Today; delete goes back', (
@@ -269,7 +269,7 @@ void main() {
       eventWorkflows.calls.where((call) => call.startsWith('delete(')),
       hasLength(1),
     );
-    expect(find.text('EVENTS'), findsOneWidget);
+    expect(find.text('Events'), findsOneWidget);
   });
 
   testWidgets('Report section: hidden for group, shown for one-person', (

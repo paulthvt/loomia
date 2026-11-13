@@ -11,6 +11,7 @@ class SectionHeader extends StatelessWidget {
     required this.title,
     this.actionLabel,
     this.onAction,
+    this.actionIcon,
     this.trailing,
     super.key,
   });
@@ -21,12 +22,16 @@ class SectionHeader extends StatelessWidget {
   /// Null with an [actionLabel] set renders the label as a plain count.
   final VoidCallback? onAction;
 
+  /// Before the action's label ("+ Add a reminder").
+  final IconData? actionIcon;
+
   /// In place of the action: a menu, sized as the action is.
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final colors = LoomiaColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
     final label = actionLabel;
 
     return Padding(
@@ -40,8 +45,8 @@ class SectionHeader extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              title.toUpperCase(),
-              style: AppTypography.overline.copyWith(color: colors.textMuted),
+              title,
+              style: AppTypography.title.copyWith(color: scheme.onSurface),
             ),
           ),
           if (trailing case final trailing?)
@@ -55,16 +60,27 @@ class SectionHeader extends StatelessWidget {
             else
               // 32px, not the theme's 44: the header sits 16px tall in Figma,
               // and 32 still clears the 24px minimum target.
-              TextButton(
+              TextButton.icon(
                 onPressed: onAction,
+                icon: switch (actionIcon) {
+                  final icon? => Icon(icon, size: 16),
+                  null => null,
+                },
                 style: TextButton.styleFrom(
                   minimumSize: const Size(0, 32),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  foregroundColor: colors.primaryText,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.sm,
                   ),
                 ),
-                child: Text(label, style: AppTypography.label),
+                label: Text(
+                  label,
+                  style: AppTypography.label.copyWith(
+                    color: colors.primaryText,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
         ],
       ),

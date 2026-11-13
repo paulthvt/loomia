@@ -54,9 +54,9 @@ void main() {
   ) async {
     await openWorkflows(tester, Routes.settingsWorkflows);
 
-    expect(find.text('PROSPECTS'), findsOneWidget);
-    expect(find.text('CUSTOMERS'), findsOneWidget);
-    expect(find.text('TEAM'), findsOneWidget);
+    expect(find.text('Prospects'), findsOneWidget);
+    expect(find.text('Customers'), findsOneWidget);
+    expect(find.text('Team'), findsOneWidget);
     // Samples and Getting started have 5 steps; New customer 4.
     expect(find.text('Default · 5 steps'), findsNWidgets(2));
     expect(find.text('Default · 4 steps'), findsOneWidget);
@@ -69,7 +69,7 @@ void main() {
     );
 
     // Event workflows section appears
-    await tester.scrollUntilVisible(find.text('EVENTS'), 200);
+    await tester.scrollUntilVisible(find.text('Events'), 200);
     expect(find.text('Workshop'), findsOneWidget);
   });
 
@@ -84,8 +84,8 @@ void main() {
       ),
     );
 
-    expect(find.text('PROSPECTS'), findsOneWidget);
-    expect(find.text('TEAM'), findsNothing);
+    expect(find.text('Prospects'), findsOneWidget);
+    expect(find.text('Team'), findsNothing);
   });
 
   testWidgets('a spinner while loading', (tester) async {
@@ -210,12 +210,12 @@ void main() {
     await tester.tap(find.text('Workflows'));
     await tester.pumpAndSettle();
     expect(find.text('Health professionals'), findsOneWidget);
-    expect(find.text('PREFERENCES'), findsOneWidget);
+    expect(find.text('Preferences'), findsOneWidget);
 
     await tester.tap(find.text('Health professionals'));
     await tester.pumpAndSettle();
     expect(find.byType(WorkflowEditor), findsOneWidget);
-    expect(find.text('PREFERENCES'), findsOneWidget);
+    expect(find.text('Preferences'), findsOneWidget);
 
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();

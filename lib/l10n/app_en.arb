@@ -307,10 +307,6 @@
   "@todaySectionTasks": {
     "description": "Section heading above the tasks due today."
   },
-  "todayAddTask": "Add a task",
-  "@todayAddTask": {
-    "description": "Action label in the Tasks section header to create a new task."
-  },
   "todaySectionThisMonth": "This month",
   "@todaySectionThisMonth": {
     "description": "Section heading above the monthly goal card on the Today screen."
@@ -379,9 +375,20 @@
       "total": { "type": "int" }
     }
   },
-  "todayAllDone": "That's everyone for today",
+  "todayAllDone": "You're all done for today",
   "@todayAllDone": {
-    "description": "The Today hero's sentence once everything on today's list was ticked. Calm and plain, not a celebration."
+    "description": "Title of the Today hero card once everything on today's list was ticked, under a check badge. Warm and plain."
+  },
+  "todayAllDoneBody": "Congrats, {firstName} — that's everyone and every task. When someone is worth a message, they'll show up here.",
+  "@todayAllDoneBody": {
+    "description": "Shows under the all-done title on the Today hero card once everything on today's list was ticked. Warm, never counts or compares: no streak, score or rank.",
+    "placeholders": {
+      "firstName": { "type": "String" }
+    }
+  },
+  "todayAllDoneBodyUnnamed": "Congrats — that's everyone and every task. When someone is worth a message, they'll show up here.",
+  "@todayAllDoneBodyUnnamed": {
+    "description": "todayAllDoneBody for an account without a first name: shows under the all-done title on the Today hero card. Warm, never counts or compares: no streak, score or rank."
   },
   "todayReminderDetail": "Reminder",
   "@todayReminderDetail": {
@@ -423,6 +430,26 @@
   "navToday": "Today",
   "@navToday": {
     "description": "Navigation destination leading to the Today screen, in the sidebar."
+  },
+  "createTask": "New task",
+  "@createTask": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Today tab: adds a task for today."
+  },
+  "createEvent": "New event",
+  "@createEvent": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Calendar tab: asks event or task, then adds it on the selected day."
+  },
+  "createPerson": "New person",
+  "@createPerson": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Contacts tab: adds a person to the address book."
+  },
+  "createOrder": "Log my own order",
+  "@createOrder": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Goals tab: logs an order of the user's own, with no person."
+  },
+  "notificationsSubtitle": "When Loomia gives you a nudge, and when it stays quiet.",
+  "@notificationsSubtitle": {
+    "description": "Subtitle under the title in the gradient header of the Notifications screen."
   },
   "settingsTitle": "Settings",
   "@settingsTitle": {
@@ -616,13 +643,18 @@
   "@contactsTitle": {
     "description": "Title of the list of people."
   },
+  "contactsCount": "{count, plural, =1{1 person} other{{count} people}}",
+  "@contactsCount": {
+    "description": "Above the Contacts title: how many people are in the book.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "contactsAdd": "Add someone",
   "@contactsAdd": {
     "description": "Button on the Contacts list, and on its empty state, that opens the form to add a person."
-  },
-  "contactsAddShort": "Add",
-  "@contactsAddShort": {
-    "description": "Short label of the button at the top of the Contacts list on desktop, which opens the form to add a person."
   },
   "contactsRefresh": "Refresh",
   "@contactsRefresh": {
@@ -1150,8 +1182,6 @@
   "@logOwnOrderTitle": { "description": "Title of the sheet that logs an order of the user's own, from Goals: no person." },
   "logOwnOrderAmountRequired": "Enter the amount.",
   "@logOwnOrderAmountRequired": { "description": "Error under the amount of an own order, which can't be saved without one." },
-  "goalLogOwnOrder": "Log my own order",
-  "@goalLogOwnOrder": { "description": "Goals button: opens Your own order." },
   "ordersTitle": "Orders in {month}",
   "@ordersTitle": {
     "description": "Title of the sheet listing this month's orders, opened from the own-volume card.",
@@ -1386,6 +1416,18 @@
   "taskAlertIsOff": "Doesn't notify",
   "@taskAlertIsOff": {
     "description": "Screen reader label of the crossed-out bell after a task's time on its page (#390): no push at that time."
+  },
+  "taskBellOn": "Bell on",
+  "@taskBellOn": {
+    "description": "Label of the white pill on a task's time row, on its page, when its bell is on: it notifies at that time."
+  },
+  "taskMarkDone": "Mark as done",
+  "@taskMarkDone": {
+    "description": "The task page's main button, below the task: ticks it done. No task name inside, the page title already says it."
+  },
+  "taskMarkNotDone": "Mark as not done",
+  "@taskMarkNotDone": {
+    "description": "The task page's main button once the task is done: unticks it. No task name inside, the page title already says it."
   },
   "taskNotFound": "This task isn't in your list any more.",
   "@taskNotFound": {
@@ -2879,14 +2921,14 @@
   },
   "calendarDayTitle": "{day}",
   "@calendarDayTitle": {
-    "description": "Heading above the selected day's events on the Calendar screen, shown uppercased, e.g. 'Thursday, October 8'. The format follows the locale.",
+    "description": "Heading above the selected day's events on the Calendar screen, shown uppercased, e.g. 'Thursday, October 8'; also the title of the sheet that asks Event or Task for that day. The format follows the locale.",
     "placeholders": {
       "day": { "type": "DateTime", "format": "MMMMEEEEd" }
     }
   },
   "calendarAdd": "Add",
   "@calendarAdd": {
-    "description": "Action beside the selected day's heading on the Calendar screen, and tooltip of the Calendar's add button: opens a menu to add an event or a task on that day."
+    "description": "Action beside the selected day's heading on the Calendar screen, and tooltip of the Calendar's add button: opens a sheet to add an event or a task on that day."
   },
   "calendarMoreEvents": "+{count} more",
   "@calendarMoreEvents": {
@@ -3035,11 +3077,19 @@
   },
   "calendarAddEvent": "Event",
   "@calendarAddEvent": {
-    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
+    "description": "Row of the sheet that the Calendar's add button and a day's Add open: adds an event (a workshop, a training) on the selected day."
+  },
+  "calendarAddEventHint": "Something with a time and people",
+  "@calendarAddEventHint": {
+    "description": "One-line hint under 'Event' in the sheet that the Calendar's add button opens: what an event is (a workshop, a training, a call at a set time)."
   },
   "calendarAddTask": "Task",
   "@calendarAddTask": {
-    "description": "Item of the menu that the Calendar's add button and a day's Add open: adds a task (something to do, with a due day) on the selected day."
+    "description": "Row of the sheet that the Calendar's add button and a day's Add open: adds a task (something to do, with a due day) on the selected day."
+  },
+  "calendarAddTaskHint": "Something to do on that day",
+  "@calendarAddTaskHint": {
+    "description": "One-line hint under 'Task' in the sheet that the Calendar's add button opens: what a task is (something to do, due that day, no set time)."
   },
   "calendarLoadFailed": "Couldn't load your calendar.",
   "@calendarLoadFailed": {

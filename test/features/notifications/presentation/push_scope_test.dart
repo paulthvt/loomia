@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/pick_day.dart';
-import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:loomia/features/notifications/domain/notification_settings.dart';
@@ -120,7 +119,7 @@ void main() {
       push.tap({'type': 'task', 'task': 't1'});
       await tester.pumpAndSettle();
       expect(find.byType(TaskPage), findsOneWidget);
-      expect(tester.widget<TickRing>(find.byType(TickRing)).selected, isTrue);
+      expect(find.text('Mark as not done'), findsOneWidget, reason: 'ticked');
 
       push.tap({'type': 'task', 'task': 'gone'});
       await tester.pumpAndSettle();

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/shell/shell_preview.dart';
 import 'package:loomia/app/theme/theme_preview.dart';
 import 'package:loomia/core/ui/tag_preview.dart';
 import 'package:loomia/core/ui/ui_preview.dart';
@@ -36,6 +37,10 @@ void main() {
       const Size(390, 844),
       todayAllDoneMobileLight,
     ),
+    'today_all_done_mobile_dark': (
+      const Size(390, 844),
+      todayAllDoneMobileDark,
+    ),
     'today_events_mobile_light': (const Size(390, 844), todayEventsMobileLight),
     'today_nudge_mobile_light': (const Size(390, 844), todayNudgeMobileLight),
     'today_catch_up_mobile_light': (
@@ -45,6 +50,10 @@ void main() {
     'notifications_mobile_light': (
       const Size(390, 844),
       notificationsMobileLight,
+    ),
+    'notifications_mobile_dark': (
+      const Size(390, 844),
+      notificationsMobileDark,
     ),
     'notifications_off_dark': (const Size(390, 844), notificationsOffDark),
     'notifications_permission_off_light': (
@@ -69,6 +78,7 @@ void main() {
       calendarWeekDesktopLight,
     ),
     'event_mobile_light': (const Size(390, 844), eventMobileLight),
+    'event_mobile_dark': (const Size(390, 844), eventMobileDark),
     'event_done_mobile_light': (const Size(390, 844), eventDoneMobileLight),
     'event_report_mobile_light': (
       const Size(390, 1339),
@@ -76,11 +86,13 @@ void main() {
     ),
     'report_view_light': (const Size(390, 844), reportViewLight),
     'task_mobile_light': (const Size(390, 844), taskMobileLight),
+    'task_mobile_dark': (const Size(390, 844), taskMobileDark),
     'goals_mobile_light': (const Size(390, 844), goalsMobileLight),
     'goals_mobile_dark': (const Size(390, 844), goalsMobileDark),
     'goals_desktop_light': (const Size(1440, 900), goalsDesktopLight),
     'goals_empty_light': (const Size(390, 844), goalsEmptyLight),
     'goals_plan_light': (const Size(390, 844), goalsPlanLight),
+    'goals_plan_dark': (const Size(390, 844), goalsPlanDark),
     'goals_plan_desktop_light': (const Size(1440, 900), goalsPlanDesktopLight),
     'goals_close_light': (const Size(390, 844), goalsCloseLight),
     'goals_review_all_light': (const Size(390, 844), goalsReviewAllLight),
@@ -121,6 +133,10 @@ void main() {
     'tokens_spacing': (const Size(420, 700), spacingTokens),
     'tokens_components_light': (const Size(420, 760), componentsLight),
     'tokens_components_dark': (const Size(420, 760), componentsDark),
+    'nav_bar_light': (const Size(390, 120), navBarLight),
+    'nav_bar_dark': (const Size(390, 120), navBarDark),
+    'sidebar_desktop_light': (const Size(264, 900), sidebarDesktopLight),
+    'sidebar_rail_light': (const Size(104, 900), sidebarRailLight),
   };
 
   setUpAll(loadAppFonts);
@@ -142,7 +158,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      if (Platform.isLinux) {
+      // Local renders (RENDER_PREVIEWS=1) are for visual checking only, never
+      // commit them. Only CI-generated goldens (Linux) are committed.
+      if (Platform.isLinux || Platform.environment['RENDER_PREVIEWS'] == '1') {
         await expectLater(
           find.byType(MaterialApp),
           matchesGoldenFile('goldens/$name.png'),

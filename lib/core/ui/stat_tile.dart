@@ -28,21 +28,12 @@ class StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final colors = LoomiaColors.of(context);
-    final (background, ink, border) = switch (tone) {
-      StatTone.plain => (
-        colors.surfaceDefault,
-        scheme.onSurface,
-        colors.borderSubtle,
-      ),
-      StatTone.primary => (
-        scheme.primaryContainer,
-        scheme.onPrimaryContainer,
-        Colors.transparent,
-      ),
+    final (background, ink) = switch (tone) {
+      StatTone.plain => (scheme.surfaceContainerLowest, scheme.onSurface),
+      StatTone.primary => (scheme.primaryContainer, scheme.onPrimaryContainer),
       StatTone.secondary => (
         scheme.secondaryContainer,
         scheme.onSecondaryContainer,
-        Colors.transparent,
       ),
     };
     final subdued = tone == StatTone.plain ? colors.textMuted : ink;
@@ -52,11 +43,12 @@ class StatTile extends StatelessWidget {
       duration: context.motion(AppMotion.fast),
       curve: AppMotion.standard,
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        border: Border.all(color: border),
-      ),
+      decoration: tone == StatTone.plain
+          ? AppTheme.card(context)
+          : BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -182,7 +182,7 @@ void main() {
     testWidgets('folded: the header, Show and how many', (tester) async {
       await _pump(tester, people: _people);
 
-      expect(find.text('PEOPLE'), findsOneWidget);
+      expect(find.text('People'), findsOneWidget);
       expect(find.text('Show'), findsOneWidget);
       expect(find.text('5 people to follow up'), findsOneWidget);
       expect(find.byType(ActionItem), findsNothing);
@@ -292,7 +292,7 @@ void main() {
       );
 
       final task = tester.getTopLeft(find.text('Task t1')).dy;
-      final people = tester.getTopLeft(find.text('PEOPLE')).dy;
+      final people = tester.getTopLeft(find.text('People')).dy;
       final event = tester.getTopLeft(find.byType(EventRow)).dy;
       expect(task, lessThan(people));
       expect(people, lessThan(event));
@@ -358,7 +358,7 @@ void main() {
         ),
       );
 
-      expect(find.text('PEOPLE'), findsNothing);
+      expect(find.text('People'), findsNothing);
       expect(find.text('Nothing planned'), findsOneWidget);
     });
   });
@@ -399,7 +399,7 @@ void main() {
       await tester.tap(find.text('5 people'));
       await tester.pumpAndSettle();
 
-      expect(find.text('PEOPLE'), findsOneWidget);
+      expect(find.text('People'), findsOneWidget);
       expect(find.text('Show'), findsNothing);
       expect(find.text('Hugo Martin'), findsOneWidget);
     });

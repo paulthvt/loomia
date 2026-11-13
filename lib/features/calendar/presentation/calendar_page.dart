@@ -13,6 +13,8 @@ import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
+import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -60,6 +62,37 @@ void openTask(BuildContext context, String id) {
     context.go(location);
   } else {
     unawaited(context.push(location));
+  }
+}
+
+/// The Calendar's + (the floating bar, the sidebar): asks Event or Task in a
+/// sheet, then adds it on [day].
+Future<void> addOnCalendar(BuildContext context, WidgetRef ref, DateTime day) =>
+    chooseAdd(
+      context,
+      day: day,
+      onEvent: (day) => unawaited(_addEvent(context, ref, day)),
+      onTask: (day) => unawaited(_addTask(context, ref, day)),
+    );
+
+/// Adds an event; the calendar then shows its day.
+Future<void> _addEvent(
+  BuildContext context,
+  WidgetRef ref,
+  DateTime day,
+) async {
+  final saved = await showEventForm(context, day: day);
+  if (saved != null && context.mounted) {
+    ref.read(calendarSelectionProvider.notifier).select(saved.day);
+  }
+}
+
+/// Adds a task; the calendar then shows the day it is due. A task is
+/// edited from its page (#390).
+Future<void> _addTask(BuildContext context, WidgetRef ref, DateTime day) async {
+  final saved = await showTask(context, day: day);
+  if (saved != null && context.mounted) {
+    ref.read(calendarSelectionProvider.notifier).select(saved.dueOn);
   }
 }
 
@@ -124,22 +157,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           last: last,
         );
         if (day != null) selector.select(day);
-    }
-  }
-
-  Future<void> _add(BuildContext context, WidgetRef ref, DateTime day) async {
-    final saved = await showEventForm(context, day: day);
-    if (saved != null && context.mounted) {
-      ref.read(calendarSelectionProvider.notifier).select(saved.day);
-    }
-  }
-
-  /// Adds a task; the calendar then shows the day it is due. A task is
-  /// edited from its page (#390).
-  Future<void> _task(DateTime day) async {
-    final saved = await showTask(context, day: day);
-    if (saved != null && mounted) {
-      ref.read(calendarSelectionProvider.notifier).select(saved.dueOn);
     }
   }
 
@@ -210,11 +227,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       onMode: selector.setMode,
       onPickTitle: () => unawaited(_pickTitle(context, ref)),
       onOpen: (event) => openEvent(context, event.id),
-      onAdd: (day) => unawaited(_add(context, ref, day)),
+      onAdd: (day) => unawaited(_addEvent(context, ref, day)),
       onToggleTask: (task) => unawaited(_toggleTask(task, withUndo: !desktop)),
       onToggleTaskQuiet: (task) =>
           unawaited(_toggleTask(task, withUndo: false)),
-      onAddTask: (day) => unawaited(_task(day)),
+      onAddTask: (day) => unawaited(_addTask(context, ref, day)),
       onOpenTask: (task) => openTask(context, task.id),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => _refresh(context, ref),
@@ -223,10 +240,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       // With a sidebar, Settings is its account block instead, and there
       // is no pull to refresh on a mouse: a button, as on Today.
       accountAction: context.screenSize.usesSideNavigation
-          ? IconButton(
+          ? HeroIconButton(
               onPressed: () => unawaited(_refresh(context, ref)),
               tooltip: AppLocalizations.of(context).contactsRefresh,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: Icons.refresh_rounded,
             )
           : const AccountButton(),
     );
@@ -361,12 +378,13 @@ class CalendarView extends StatelessWidget {
           ),
       ],
       selected: {mode},
-      // Three segments on a phone: the tint says which, the tick would
+      // The white segment says which; on a phone the tick would also
       // squeeze the labels out ("Semaine" in French).
-      showSelectedIcon: desktop,
+      showSelectedIcon: false,
       // A phone's switch row is the switch alone.
       expandedInsets: desktop ? null : EdgeInsets.zero,
       onSelectionChanged: (modes) => onMode?.call(modes.single),
+      style: AppTheme.heroSegmented(context),
     );
     // Desktop in 3 days shows a week: its arrows turn weeks.
     void turn(int delta) {
@@ -376,25 +394,26 @@ class CalendarView extends StatelessWidget {
 
     final todayButton = TextButton(
       onPressed: onToday,
+      style: AppTheme.heroButton(context),
       child: Text(l10n.calendarToday),
     );
-    final previous = IconButton(
+    final previous = HeroIconButton(
       onPressed: () => turn(-1),
       tooltip: switch (mode) {
         CalendarMode.month => l10n.calendarPreviousMonth,
         CalendarMode.threeDays => l10n.calendarPreviousDays,
         CalendarMode.week => l10n.calendarPreviousWeek,
       },
-      icon: const Icon(Icons.chevron_left_rounded),
+      icon: Icons.chevron_left_rounded,
     );
-    final next = IconButton(
+    final next = HeroIconButton(
       onPressed: () => turn(1),
       tooltip: switch (mode) {
         CalendarMode.month => l10n.calendarNextMonth,
         CalendarMode.threeDays => l10n.calendarNextDays,
         CalendarMode.week => l10n.calendarNextWeek,
       },
-      icon: const Icon(Icons.chevron_right_rounded),
+      icon: Icons.chevron_right_rounded,
     );
     Widget titleButton(TextStyle? style) => Expanded(
       child: Align(
@@ -406,7 +425,7 @@ class CalendarView extends StatelessWidget {
             CalendarMode.threeDays => l10n.calendarChooseDay(title),
             CalendarMode.week => l10n.calendarChooseWeek(title),
           },
-          style: style,
+          style: style?.copyWith(color: LoomiaColors.of(context).onHero),
           onTap: onPickTitle,
         ),
       ),
@@ -417,11 +436,13 @@ class CalendarView extends StatelessWidget {
         view: this,
         builder: (context, latest) =>
             _desktop(context, latest, mode, days, firstDay, [
-              titleButton(theme.textTheme.headlineSmall),
+              titleButton(theme.textTheme.displaySmall),
               modeSwitch,
               const SizedBox(width: AppSpacing.sm),
               todayButton,
+              const SizedBox(width: AppSpacing.sm),
               previous,
+              const SizedBox(width: AppSpacing.sm),
               next,
               ?accountAction,
             ]),
@@ -432,10 +453,10 @@ class CalendarView extends StatelessWidget {
       children: [
         titleButton(theme.textTheme.headlineSmall),
         // The switch row's room goes to the switch: Today is an icon.
-        IconButton(
+        HeroIconButton(
           onPressed: onToday,
           tooltip: l10n.calendarToday,
-          icon: const Icon(Icons.today_rounded),
+          icon: Icons.today_rounded,
         ),
         previous,
         next,
@@ -445,28 +466,20 @@ class CalendarView extends StatelessWidget {
     return _Latest(
       view: this,
       builder: (context, latest) => Scaffold(
-        floatingActionButton: Builder(
-          builder: (button) => FloatingActionButton(
-            onPressed: () => unawaited(
-              chooseAdd(
-                button,
-                day: selection.day,
-                onEvent: onAdd,
-                onTask: onAddTask,
-              ),
-            ),
-            tooltip: l10n.calendarAdd,
-            child: const Icon(Icons.add_rounded),
-          ),
-        ),
+        // The lists run under the floating bar, padded by its room; the
+        // hero runs under the status bar.
         body: SafeArea(
+          top: false,
+          bottom: false,
           child: LayoutBuilder(
             builder: (context, box) {
               // On its side the phone has no room to hold the calendar
               // still: everything scrolls, and a curved swipe can still miss.
-              final pinned = box.maxHeight >= _pinnedMinHeight;
+              final pinned =
+                  box.maxHeight - MediaQuery.paddingOf(context).top >=
+                  _pinnedMinHeight;
               const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
-              const bottom = _fabClearance;
+              final bottom = _bottomRoom(context);
               Widget scrolling(EdgeInsets padding, List<Widget> children) =>
                   _refreshable(
                     ListView(
@@ -476,12 +489,25 @@ class CalendarView extends StatelessWidget {
                       children: children,
                     ),
                   );
-              final top = [
-                header,
-                const SizedBox(height: AppSpacing.sm),
-                modeSwitch,
-                const SizedBox(height: AppSpacing.md),
-              ];
+              // From the screen's top edge, under the status bar.
+              Widget hero(Widget? grid) => HeroPanel(
+                gap: 0,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                ),
+                children: [
+                  header,
+                  const SizedBox(height: AppSpacing.sm),
+                  modeSwitch,
+                  if (grid != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    grid,
+                  ],
+                ],
+              );
               if (mode != CalendarMode.month) {
                 final grids = _SwipePager(
                   key: ValueKey(mode),
@@ -498,35 +524,50 @@ class CalendarView extends StatelessWidget {
                 );
                 final waiting = eventsNotLoaded(context, events, onRetry);
                 if (!pinned) {
-                  return scrolling(
-                    sides.copyWith(top: AppSpacing.sm, bottom: bottom),
-                    [...top, ?waiting, grids],
-                  );
+                  return scrolling(EdgeInsets.only(bottom: bottom), [
+                    hero(null),
+                    Padding(
+                      padding: sides.copyWith(top: AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [?waiting, grids],
+                      ),
+                    ),
+                  ]);
                 }
                 // The hours scroll inside the grid, and pull to refresh at
                 // its top; a sideways drag is the pager's (#357).
-                return Padding(
-                  padding: sides.copyWith(top: AppSpacing.sm),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ...top,
-                      ?waiting,
-                      Expanded(
-                        child: _refreshable(
-                          ScrollConfiguration(
-                            behavior: ScrollConfiguration.of(context).copyWith(
-                              physics: AlwaysScrollableScrollPhysics(
-                                parent: ScrollConfiguration.of(context)
-                                    .getScrollPhysics(context),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    hero(null),
+                    Expanded(
+                      child: Padding(
+                        padding: sides.copyWith(top: AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ?waiting,
+                            Expanded(
+                              child: _refreshable(
+                                ScrollConfiguration(
+                                  behavior: ScrollConfiguration.of(context)
+                                      .copyWith(
+                                        physics: AlwaysScrollableScrollPhysics(
+                                          parent: ScrollConfiguration.of(
+                                            context,
+                                          ).getScrollPhysics(context),
+                                        ),
+                                      ),
+                                  child: grids,
+                                ),
                               ),
                             ),
-                            child: grids,
-                          ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               }
               final counts = eventsPerDay(events.value ?? const []);
@@ -545,6 +586,7 @@ class CalendarView extends StatelessWidget {
                   taskCounts: taskCounts,
                   people: people,
                   onSelect: onSelect,
+                  onHero: true,
                 ),
               );
               final below = FadeSwap(
@@ -572,29 +614,25 @@ class CalendarView extends StatelessWidget {
                 ),
               );
               if (!pinned) {
-                return scrolling(
-                  sides.copyWith(top: AppSpacing.sm, bottom: bottom),
-                  [...top, pager, const Divider(height: AppSpacing.xl), below],
-                );
+                return scrolling(EdgeInsets.only(bottom: bottom), [
+                  hero(pager),
+                  Padding(
+                    padding: sides.copyWith(top: AppSpacing.lg),
+                    child: below,
+                  ),
+                ]);
               }
               // Held still, the month has no vertical drag to lose a swipe
               // to (#369); only the list below scrolls and pulls.
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: sides.copyWith(top: AppSpacing.sm),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [...top, pager],
-                    ),
-                  ),
-                  const Padding(
-                    padding: sides,
-                    child: Divider(height: AppSpacing.xl),
-                  ),
+                  hero(pager),
                   Expanded(
-                    child: scrolling(sides.copyWith(bottom: bottom), [below]),
+                    child: scrolling(
+                      sides.copyWith(top: AppSpacing.lg, bottom: bottom),
+                      [below],
+                    ),
                   ),
                 ],
               );
@@ -662,7 +700,7 @@ class CalendarView extends StatelessWidget {
       scrolls: scrolls,
       scrollToMinute: scrolls ? _opensAt(days, list) : null,
       // Week ends its hours above the button; the 3 days' scroll past it.
-      bottomInset: scrolls ? _fabClearance : 0,
+      bottomInset: scrolls ? _bottomRoom(context) : 0,
     );
   }
 
@@ -679,9 +717,10 @@ class CalendarView extends StatelessWidget {
     return starts.isEmpty ? null : starts.reduce(math.min);
   }
 
-  /// Under the last row of a list or of the grid's hours: clear of the
-  /// add button.
-  static const double _fabClearance = AppSpacing.xxxl + AppSpacing.lg;
+  /// Under the last row of a list or of the grid's hours: the bottom
+  /// padding (the floating bar's room on a phone).
+  static double _bottomRoom(BuildContext context) =>
+      MediaQuery.paddingOf(context).bottom;
 
   /// The phone grid's hour labels ("8 AM") and its least hour height.
   static const double _phoneGutter = 32;
@@ -738,7 +777,14 @@ class CalendarView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: AppSpacing.md,
                   children: [
-                    Row(children: header),
+                    HeroPanel(
+                      shape: HeroShape.band,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xl,
+                        vertical: AppSpacing.md,
+                      ),
+                      children: [Row(children: header)],
+                    ),
                     ?eventsNotLoaded(context, events, onRetry),
                     Expanded(
                       child: mode == CalendarMode.week
@@ -806,6 +852,8 @@ Future<void> showDaySheet(
   required DateTime day,
 }) => showModalBottomSheet<void>(
   context: context,
+  // Over the floating bar, which the tab's own navigator lies under.
+  useRootNavigator: true,
   isScrollControlled: true,
   showDragHandle: true,
   useSafeArea: true,
@@ -924,6 +972,8 @@ class _TitleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
+    // Its own node, not merged with the hero around it.
+    container: true,
     button: true,
     label: semantics,
     excludeSemantics: true,
@@ -944,10 +994,8 @@ class _TitleButton extends StatelessWidget {
                 style: style,
               ),
             ),
-            Icon(
-              Icons.expand_more_rounded,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            // The hero's icon colour.
+            const Icon(Icons.expand_more_rounded),
           ],
         ),
       ),
@@ -1330,22 +1378,20 @@ class _DaySectionState extends State<DaySection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Builder(
-          builder: (header) => SectionHeader(
-            title: l10n.calendarDayTitle(widget.day),
-            actionLabel: l10n.calendarAdd,
-            onAction: switch (widget.onAddTask) {
-              final onTask? => () => unawaited(
-                chooseAdd(
-                  header,
-                  day: widget.day,
-                  onEvent: widget.onAdd,
-                  onTask: onTask,
-                ),
+        SectionHeader(
+          title: l10n.calendarDayTitle(widget.day),
+          actionLabel: l10n.calendarAdd,
+          onAction: switch (widget.onAddTask) {
+            final onTask? => () => unawaited(
+              chooseAdd(
+                context,
+                day: widget.day,
+                onEvent: widget.onAdd,
+                onTask: onTask,
               ),
-              null => () => widget.onAdd(widget.day),
-            },
-          ),
+            ),
+            null => () => widget.onAdd(widget.day),
+          },
         ),
         const SizedBox(height: AppSpacing.ms),
         ...body,
@@ -1509,36 +1555,55 @@ class _NowRow extends StatelessWidget {
   }
 }
 
-/// The Calendar's add (the button, a day's Add): a menu at [anchor]'s end
-/// that asks Event or Task, then runs [onEvent] or [onTask] for [day].
+/// The Calendar's add (the button, a day's Add): a sheet that asks Event or
+/// Task, then runs [onEvent] or [onTask] for [day].
 Future<void> chooseAdd(
-  BuildContext anchor, {
+  BuildContext context, {
   required DateTime day,
   required ValueChanged<DateTime> onEvent,
   required ValueChanged<DateTime> onTask,
 }) async {
-  final l10n = AppLocalizations.of(anchor);
-  final box = anchor.findRenderObject()! as RenderBox;
-  final overlay = Overlay.of(anchor).context.findRenderObject()! as RenderBox;
-  final rect = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
-  // From the end of the anchor, so the menu sits over its button and the
-  // screen's edge pushes it back in. ponytail: LTR only, both locales are.
-  final at = Rect.fromLTWH(rect.right, rect.top, 0, rect.height);
-  Widget item(IconData icon, String label) =>
-      Row(spacing: AppSpacing.ms, children: [Icon(icon), Text(label)]);
-  final choice = await showMenu<ValueChanged<DateTime>>(
-    context: anchor,
-    position: RelativeRect.fromRect(at, Offset.zero & overlay.size),
-    items: [
-      PopupMenuItem(
-        value: onEvent,
-        child: item(Icons.event_outlined, l10n.calendarAddEvent),
+  final choice = await LoomiaDialog.show<ValueChanged<DateTime>>(context, (
+    context,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    Widget row(
+      IconData icon,
+      String title,
+      String hint,
+      ValueChanged<DateTime> run,
+    ) => ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(hint),
+      onTap: () => Navigator.pop(context, run),
+    );
+    return LoomiaDialog(
+      title: l10n.calendarDayTitle(day),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+      ],
+      child: Column(
+        children: [
+          row(
+            Icons.event_outlined,
+            l10n.calendarAddEvent,
+            l10n.calendarAddEventHint,
+            onEvent,
+          ),
+          row(
+            Icons.assignment_outlined,
+            l10n.calendarAddTask,
+            l10n.calendarAddTaskHint,
+            onTask,
+          ),
+        ],
       ),
-      PopupMenuItem(
-        value: onTask,
-        child: item(Icons.assignment_outlined, l10n.calendarAddTask),
-      ),
-    ],
-  );
+    );
+  });
   choice?.call(day);
 }

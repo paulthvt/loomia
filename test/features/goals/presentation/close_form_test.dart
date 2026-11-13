@@ -89,7 +89,7 @@ void main() {
     // "Reached" is a semantics label.
     final semantics = tester.ensureSemantics();
 
-    expect(find.text('STEP 1 OF 2'), findsOneWidget);
+    expect(find.text('Step 1 of 2'), findsOneWidget);
     expect(find.text('How did September go?'), findsOneWidget);
     expect(find.text('2,650 of 2,800 PV'), findsOneWidget);
     expect(find.text('9 of 8'), findsOneWidget);
@@ -110,7 +110,7 @@ void main() {
   testWidgets('the typed figures say what they are and where they come from '
       '(#428)', (tester) async {
     await pump(tester);
-    expect(find.text('YOUR FINAL NUMBERS FOR SEPTEMBER'), findsOneWidget);
+    expect(find.text('Your final numbers for September'), findsOneWidget);
     expect(
       find.text(
         "Loomia can't see these two. Copy them from your dōTERRA account.",

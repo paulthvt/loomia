@@ -5,12 +5,13 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/load_failed.dart';
-import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
@@ -37,11 +38,15 @@ class PlanPage extends ConsumerWidget {
     final account = ref.watch(accountProvider);
     final provider = goalsProvider(account?.email);
     final month = ref.watch(provider);
+    void close() => backOr(context, Routes.goals);
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => backOr(context, Routes.goals)),
-      ),
+      // The form's hero holds close; the other states keep a bar.
+      appBar: month.hasValue
+          ? null
+          : AppBar(leading: BackButton(onPressed: close)),
       body: SafeArea(
+        // The hero paints under the status bar and pads itself.
+        top: false,
         child: switch (month) {
           // `.value` survives the reload a save triggers.
           AsyncValue(value: final value?) => PlanForm(
@@ -51,7 +56,8 @@ class PlanPage extends ConsumerWidget {
               ProviderScope.containerOf(context, listen: false),
               plan,
             ),
-            onSaved: onSaved ?? () => backOr(context, Routes.goals),
+            onSaved: onSaved ?? close,
+            onClose: close,
             reminder: true,
           ),
           AsyncError(:final error) => LoadFailed(
@@ -77,10 +83,14 @@ class PlanForm extends StatefulWidget {
     this.step,
     this.steps = 2,
     this.reminder = false,
+    this.onClose,
     super.key,
   });
 
   final GoalsMonth month;
+
+  /// The hero's close button; none without.
+  final VoidCallback? onClose;
 
   /// In the close-and-plan flow: which step this is, of [steps].
   final int? step;
@@ -226,7 +236,7 @@ class _PlanFormState extends State<PlanForm> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final material = MaterialLocalizations.of(context);
-    final colors = LoomiaColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
     final number = NumberFormat.decimalPattern(l10n.localeName);
     final model = widget.model;
     final failure = _failure;
@@ -242,7 +252,7 @@ class _PlanFormState extends State<PlanForm> {
       child: TextFormField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(
+        decoration: AppTheme.filledField(
           helperText:
               helper ??
               (hint == null ? null : l10n.planSuggestion(number.format(hint))),
@@ -262,7 +272,7 @@ class _PlanFormState extends State<PlanForm> {
             controller: controller,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
+            decoration: AppTheme.filledField(
               helperText: hint == null
                   ? null
                   : l10n.planSuggestion(number.format(hint)),
@@ -276,31 +286,23 @@ class _PlanFormState extends State<PlanForm> {
         constraints: const BoxConstraints(maxWidth: ContentColumns.mainMax),
         child: Form(
           key: _form,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+          child: HeroFormList(
+            onClose: widget.onClose,
+            eyebrow: switch (widget.step) {
+              final step? => l10n.closeStep(step, widget.steps),
+              null => null,
+            },
+            title: l10n.planTitle(widget.month.month),
+            subtitle: widget.step != null && widget.month.plan != null
+                ? l10n.planFromDraft
+                : firstTime
+                ? l10n.planIntroFirst
+                : l10n.planIntro,
             children: [
-              LoomiaTopBar(
-                eyebrow: switch (widget.step) {
-                  final step? => l10n.closeStep(step, widget.steps),
-                  null => null,
-                },
-                title: l10n.planTitle(widget.month.month),
-                gap: AppSpacing.sm,
-              ),
               if (widget.step case final step?) ...[
                 StepBar(step: step, total: widget.steps),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.lg),
               ],
-              Text(
-                widget.step != null && widget.month.plan != null
-                    ? l10n.planFromDraft
-                    : firstTime
-                    ? l10n.planIntroFirst
-                    : l10n.planIntro,
-                style: Theme.of(context).textTheme.bodyLarge
-                    ?.copyWith(color: colors.textMuted),
-              ),
-              const SizedBox(height: AppSpacing.lg),
               if (failure != null) ...[
                 FormError(peopleFailureCopy(l10n, failure)),
                 const SizedBox(height: AppSpacing.ms),
@@ -330,13 +332,23 @@ class _PlanFormState extends State<PlanForm> {
                     _teamMembers,
                     _suggested.teamMembers,
                   ),
-                  Text(
-                    l10n.planLoyaltyForecast(
-                      model.name,
-                      widget.month.forecast,
-                      widget.month.month,
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppRadii.lg),
                     ),
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Text(
+                        l10n.planLoyaltyForecast(
+                          model.name,
+                          widget.month.forecast,
+                          widget.month.month,
+                        ),
+                        style: Theme.of(context).textTheme.bodyLarge
+                            ?.copyWith(color: scheme.onPrimaryContainer),
+                      ),
+                    ),
                   ),
                   count(l10n.goalLoyalty(model.name), _loyalty, null),
                 ],
@@ -374,14 +386,15 @@ class _PlanFormState extends State<PlanForm> {
                 RitualReminder(key: _reminder, month: widget.month.month),
                 const SizedBox(height: AppSpacing.lg),
               ],
-              FilledButton(
+              FilledButton.icon(
                 onPressed: _saving ? null : _save,
-                child: _saving
+                icon: _saving
                     ? const SizedBox.square(
                         dimension: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(material.saveButtonLabel),
+                    : const Icon(Icons.check_rounded),
+                label: Text(material.saveButtonLabel),
               ),
             ],
           ),
@@ -412,7 +425,7 @@ class LevelField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final decoration = InputDecoration(helperText: helper);
+    final decoration = AppTheme.filledField(helperText: helper);
     return LabeledField(
       label: label,
       child: model.levels.isEmpty

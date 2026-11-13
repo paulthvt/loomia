@@ -22,7 +22,7 @@ class RitualCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
+        color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(AppRadii.lg),
       ),
       child: Column(
@@ -34,7 +34,7 @@ class RitualCard extends StatelessWidget {
                 ? l10n.pushRitualTitle(ritual.close, ritual.plan)
                 : l10n.pushRitualPlanTitle(ritual.plan),
             style: theme.textTheme.titleMedium?.copyWith(
-              color: scheme.onSecondaryContainer,
+              color: scheme.onPrimaryContainer,
             ),
           ),
           Text(
@@ -42,7 +42,7 @@ class RitualCard extends StatelessWidget {
                 ? l10n.pushRitualBody(ritual.plan)
                 : l10n.pushRitualPlanBody,
             style: AppTypography.caption.copyWith(
-              color: scheme.onSecondaryContainer,
+              color: scheme.onPrimaryContainer,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),

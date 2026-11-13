@@ -46,7 +46,30 @@ Widget calendarWeekDesktopLight() =>
 Widget eventMobileLight() => _app(
   AppTheme.light,
   Scaffold(
-    appBar: AppBar(leading: const BackButton()),
+    body: EventView(
+      event: _events[1],
+      people: eventPeople(_events[1], _people),
+      now: DateTime(2026, 10, 7, 9),
+      onAddPeople: () {},
+      onRemove: (_) {},
+      onGoing: (_) {},
+      onFollowedUp: (_) {},
+      onOpenPerson: (_) {},
+      onMarkDone: () {},
+      onEdit: () {},
+      onDelete: () {},
+      onOpenPlace: (_) {},
+      onJoin: (_) {},
+      steps: _workshopSteps,
+      onTick: (_, _) {},
+    ),
+  ),
+);
+
+@Preview(group: 'Calendar', name: 'Event — dark', size: Size(390, 844))
+Widget eventMobileDark() => _app(
+  AppTheme.dark,
+  Scaffold(
     body: EventView(
       event: _events[1],
       people: eventPeople(_events[1], _people),
@@ -71,7 +94,6 @@ Widget eventMobileLight() => _app(
 Widget eventDoneMobileLight() => _app(
   AppTheme.light,
   Scaffold(
-    appBar: AppBar(leading: const BackButton()),
     body: EventView(
       event: _done,
       people: eventPeople(_done, _people),
@@ -99,7 +121,6 @@ Widget eventReportMobileLight() => ProviderScope(
   child: _app(
     AppTheme.light,
     Scaffold(
-      appBar: AppBar(leading: const BackButton()),
       body: EventView(
         event: _call,
         people: eventPeople(_call, _people),
@@ -192,7 +213,37 @@ final _previousCall = CalendarEvent(
 Widget taskMobileLight() => _app(
   AppTheme.light,
   Scaffold(
-    appBar: AppBar(leading: const BackButton()),
+    body: TaskView(
+      task: Task(
+        id: 't5',
+        title: 'Call the supplier',
+        note: 'Ask about the 10 ml bottles',
+        dueOn: DateTime(2026, 10, 22),
+        doneOn: null,
+        createdAt: DateTime(2026, 10, 5),
+        dueTime: (hour: 14, minute: 0),
+        repeat: (
+          every: 1,
+          unit: RepeatUnit.week,
+          from: DateTime(2026, 10, 22),
+          until: null,
+          scheduledOn: DateTime(2026, 10, 22),
+        ),
+      ),
+      now: DateTime(2026, 10, 20, 9),
+      busy: false,
+      onTick: () {},
+      onEdit: () {},
+      onDelete: () {},
+      onPostpone: (_) {},
+    ),
+  ),
+);
+
+@Preview(group: 'Calendar', name: 'Task — dark', size: Size(390, 844))
+Widget taskMobileDark() => _app(
+  AppTheme.dark,
+  Scaffold(
     body: TaskView(
       task: Task(
         id: 't5',

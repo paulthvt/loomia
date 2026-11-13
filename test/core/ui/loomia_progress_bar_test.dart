@@ -15,7 +15,7 @@ void main() {
     ('light', AppTheme.light),
     ('dark', AppTheme.dark),
   ]) {
-    testWidgets('$name: the hero bar stands out from the primary fill', (
+    testWidgets('$name: the hero bar stands out from the hero card', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -33,7 +33,7 @@ void main() {
       );
       // Non-text UI needs 3:1 against what it sits on (WCAG 1.4.11).
       expect(
-        _contrast(bar.color!, theme.colorScheme.primary),
+        _contrast(bar.color!, theme.colorScheme.surfaceContainerLowest),
         greaterThanOrEqualTo(3),
       );
     });

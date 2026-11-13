@@ -7,20 +7,20 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
-import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/load_failed.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/stat_tile.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
-import 'package:loomia/features/contacts/presentation/log_activity_sheet.dart';
 import 'package:loomia/features/goals/domain/goal_rules.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
@@ -46,12 +46,6 @@ class GoalsPage extends ConsumerWidget {
       onPlan: () => context.push(Routes.goalsPlan),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => ref.refresh(provider.future),
-      onLogOrder: () {
-        final container = ProviderScope.containerOf(context, listen: false);
-        unawaited(
-          showLogOwnOrder(context, onSaved: () => refreshOrders(container)),
-        );
-      },
       onRitual: () => context.push(Routes.goalsClose),
       onOrders: () =>
           unawaited(showOrders(context, DateTime(today().year, today().month))),
@@ -73,7 +67,6 @@ class GoalsView extends StatelessWidget {
     required this.onPlan,
     required this.onRetry,
     required this.onRefresh,
-    required this.onLogOrder,
     required this.onOrders,
     required this.onRitual,
     this.accountAction,
@@ -89,9 +82,6 @@ class GoalsView extends StatelessWidget {
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
 
-  /// Opens Your own order.
-  final VoidCallback onLogOrder;
-
   /// Opens the month's orders: the volume card's tap.
   final VoidCallback onOrders;
 
@@ -101,6 +91,9 @@ class GoalsView extends StatelessWidget {
 
   /// Per `docs/design/responsive-design.md`, as on Today.
   static const double _column = 624;
+
+  /// The hero card beside the title on desktop, as on Today.
+  static const double _heroCardWidth = 440;
 
   @override
   Widget build(BuildContext context) {
@@ -115,8 +108,126 @@ class GoalsView extends StatelessWidget {
     final showRitual =
         ritual != null && (ritual.closes || month.value?.month != ritual.plan);
 
+    final plan = month.value?.plan;
+    final heroCard = switch (month) {
+      AsyncData(:final value) when plan != null => HeroCard(
+        child: OwnVolumeHero(
+          month: value,
+          today: today,
+          model: model,
+          // Desktop lists the orders beside the card already.
+          onTap: desktop ? null : onOrders,
+          onPlan: plan.closed ? null : onPlan,
+        ),
+      ),
+      _ => null,
+    };
+    final topBar = Semantics(
+      container: true,
+      child: LoomiaTopBar(
+        eyebrow: l10n.goalsDaysLeft(daysLeft, today),
+        title: l10n.goalsTitle,
+        large: desktop,
+        action: accountAction,
+        gap: 0,
+        onHero: true,
+      ),
+    );
+    final content = <Widget>[
+      // Desktop's dashboard has it in the side column.
+      if (showRitual && !(desktop && plan != null)) ...[
+        ritualInvitation(ritual, onRitual),
+        const SizedBox(height: AppSpacing.md),
+      ],
+      ...switch (month) {
+        AsyncData(:final value) when value.plan == null => [
+          EmptyState(
+            icon: Icons.flag_outlined,
+            title: l10n.goalsEmptyTitle,
+            body: l10n.goalsEmptyBody(value.month),
+            actionLabel: l10n.goalsPlanMonth(value.month),
+            onAction: onPlan,
+          ),
+        ],
+        AsyncData(:final value) => switch (_dashboard(context, value)) {
+          (:final main, :final past) when desktop => [
+            ContentColumns(
+              main: main,
+              side: [
+                if (showRitual) ...[
+                  ritualInvitation(ritual, onRitual),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                SectionHeader(title: l10n.ordersTitle(value.month)),
+                OrdersList(month: value.month),
+                ...past,
+              ],
+            ),
+          ],
+          (:final main, :final past) => [...main, ...past],
+        },
+        AsyncError(:final error) => [
+          LoadFailed(
+            offline: error == PeopleFailure.network,
+            title: l10n.goalsLoadFailed,
+            onRetry: onRetry,
+          ),
+        ],
+        _ => const [Center(child: CircularProgressIndicator())],
+      },
+    ];
+    final bottom = MediaQuery.paddingOf(context).bottom;
+
+    final list = desktop
+        ? ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xxl,
+              vertical: AppSpacing.xl,
+            ).add(EdgeInsets.only(bottom: bottom)),
+            children: [
+              HeroPanel(
+                shape: HeroShape.band,
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: topBar),
+                      if (heroCard != null) ...[
+                        const SizedBox(width: AppSpacing.lg),
+                        SizedBox(width: _heroCardWidth, child: heroCard),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              ...content,
+            ],
+          )
+        : ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            // The list runs under the floating bar, padded by its room.
+            padding: EdgeInsets.only(bottom: AppSpacing.md + bottom),
+            children: [
+              // From the screen's top edge, under the status bar.
+              HeroPanel(gap: AppSpacing.md, children: [topBar, ?heroCard]),
+              const SizedBox(height: AppSpacing.lg),
+              for (final piece in content)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: piece,
+                ),
+            ],
+          );
+
     return Scaffold(
       body: SafeArea(
+        // A phone's hero paints under the status bar and pads itself.
+        top: desktop,
+        bottom: false,
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: ConstrainedBox(
@@ -126,72 +237,8 @@ class GoalsView extends StatelessWidget {
             ),
             child: RefreshIndicator(
               onRefresh: onRefresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: desktop
-                    ? const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xxl,
-                        vertical: AppSpacing.xl,
-                      )
-                    : const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  ContentColumns.aligned(
-                    LoomiaTopBar(
-                      eyebrow: l10n.goalsDaysLeft(daysLeft, today),
-                      title: l10n.goalsTitle,
-                      large: desktop,
-                      action: accountAction,
-                      gap: AppSpacing.sm,
-                    ),
-                  ),
-                  // Desktop's dashboard has it in the side column.
-                  if (showRitual &&
-                      !(desktop && month.value?.plan != null)) ...[
-                    ritualInvitation(ritual, onRitual),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                  ...switch (month) {
-                    AsyncData(:final value) when value.plan == null => [
-                      EmptyState(
-                        icon: Icons.flag_outlined,
-                        title: l10n.goalsEmptyTitle,
-                        body: l10n.goalsEmptyBody(value.month),
-                        actionLabel: l10n.goalsPlanMonth(value.month),
-                        onAction: onPlan,
-                      ),
-                    ],
-                    AsyncData(:final value) => switch (_dashboard(
-                      context,
-                      value,
-                      desktop,
-                    )) {
-                      (:final main, :final past) when desktop => [
-                        ContentColumns(
-                          main: main,
-                          side: [
-                            if (showRitual) ...[
-                              ritualInvitation(ritual, onRitual),
-                              const SizedBox(height: AppSpacing.lg),
-                            ],
-                            SectionHeader(title: l10n.ordersTitle(value.month)),
-                            OrdersList(month: value.month),
-                            ...past,
-                          ],
-                        ),
-                      ],
-                      (:final main, :final past) => [...main, ...past],
-                    },
-                    AsyncError(:final error) => [
-                      LoadFailed(
-                        offline: error == PeopleFailure.network,
-                        title: l10n.goalsLoadFailed,
-                        onRetry: onRetry,
-                      ),
-                    ],
-                    _ => const [Center(child: CircularProgressIndicator())],
-                  },
-                ],
-              ),
+              edgeOffset: desktop ? 0 : MediaQuery.paddingOf(context).top,
+              child: list,
             ),
           ),
         ),
@@ -204,7 +251,6 @@ class GoalsView extends StatelessWidget {
   ({List<Widget> main, List<Widget> past}) _dashboard(
     BuildContext context,
     GoalsMonth month,
-    bool desktop,
   ) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
@@ -212,9 +258,6 @@ class GoalsView extends StatelessWidget {
     final number = NumberFormat.decimalPattern(l10n.localeName);
     final plan = month.plan!;
     final done = month.progress;
-    final target = plan.ownVolumeTarget;
-    final hasTarget = target != null && target > 0;
-    final pacing = pace(hasTarget ? target : null, done.ownVolume, today);
 
     Widget count(String label, int value, int? aimed) => StatTile(
       label: label,
@@ -231,13 +274,13 @@ class GoalsView extends StatelessWidget {
         ],
       ),
     );
-    Widget note(String line, String below) => Card(
+    Widget note(String line, String below) => LoomiaCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(line, style: theme.textTheme.bodyLarge),
+            Text(line, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
             Text(
               below,
@@ -263,15 +306,6 @@ class GoalsView extends StatelessWidget {
     ];
 
     final main = <Widget>[
-      volumeCard(
-        context,
-        month: month,
-        today: today,
-        model: model,
-        // Desktop lists the orders beside the card already.
-        onTap: desktop ? null : onOrders,
-      ),
-      const SizedBox(height: AppSpacing.md),
       pair(
         count(l10n.goalNewProspects, done.prospects, plan.prospectsTarget),
         count(l10n.goalNewCustomers, done.customers, plan.customersTarget),
@@ -293,38 +327,12 @@ class GoalsView extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         note(declared, l10n.goalDeclaredNote),
       ],
-      if (pacing != null) ...[
-        const SizedBox(height: AppSpacing.md),
-        note(
-          l10n.goalPaceProjection(
-            model.name,
-            number.format(pacing.projected.round()),
-          ),
-          l10n.goalPaceNote,
-        ),
-      ],
-      const SizedBox(height: AppSpacing.md),
-      FilledButton.tonalIcon(
-        onPressed: onLogOrder,
-        style: AppTheme.tonal(context),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(l10n.goalLogOwnOrder),
-      ),
-      const SizedBox(height: AppSpacing.sm),
-      if (!plan.closed)
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton(
-            onPressed: onPlan,
-            child: Text(l10n.goalChangePlan),
-          ),
-        ),
     ];
     final pastWidgets = <Widget>[
       if (past.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.md),
         SectionHeader(title: l10n.goalPastMonths),
-        Card(
+        LoomiaCard(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
@@ -343,7 +351,9 @@ class GoalsView extends StatelessWidget {
                       ),
                       Text(
                         _pastLine(l10n, number, closed),
-                        style: theme.textTheme.bodyLarge,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),

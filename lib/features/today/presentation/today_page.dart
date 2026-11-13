@@ -14,6 +14,7 @@ import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
@@ -49,13 +50,13 @@ import 'package:loomia/features/notifications/presentation/notifications_control
 import 'package:loomia/features/notifications/presentation/nudge_card.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/tasks/presentation/task_row.dart';
-import 'package:loomia/features/tasks/presentation/task_sheet.dart';
 import 'package:loomia/features/tasks/presentation/tasks_controller.dart';
 import 'package:loomia/features/tasks/presentation/toggle_task.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/team/presentation/check_in_items.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/domain/today_events.dart';
+import 'package:loomia/features/today/presentation/all_done_card.dart';
 import 'package:loomia/features/today/presentation/done_today.dart';
 import 'package:loomia/features/today/presentation/today_event_items.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
@@ -399,10 +400,10 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       firstName: account?.firstName ?? '',
       // With a sidebar, Settings is its account block instead.
       accountAction: context.screenSize.usesSideNavigation
-          ? IconButton(
+          ? HeroIconButton(
               onPressed: _refresh,
               tooltip: AppLocalizations.of(context).contactsRefresh,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: Icons.refresh_rounded,
             )
           : const AccountButton(),
       busy: _busy,
@@ -441,7 +442,6 @@ class _TodayPageState extends ConsumerState<TodayPage> {
       onOpen: (person) => openContact(context, person.id),
       onTickTask: (task) => unawaited(_tickTask(task)),
       onOpenTask: (task) => openTask(context, task.id),
-      onAddTask: () => unawaited(showTask(context, day: today())),
       onRetry: () {
         if (people.hasError) ref.invalidate(book);
         if (workflows.hasError) ref.invalidate(lists);
@@ -572,7 +572,6 @@ class TodayView extends StatefulWidget {
     this.onNext,
     this.onTickTask,
     this.onOpenTask,
-    this.onAddTask,
     this.accountAction,
     this.goals,
     this.model = BusinessModel.other,
@@ -624,7 +623,6 @@ class TodayView extends StatefulWidget {
   /// Task callbacks.
   final void Function(Task task)? onTickTask;
   final void Function(Task task)? onOpenTask;
-  final VoidCallback? onAddTask;
 
   final VoidCallback onRetry;
   final Future<void> Function() onRefresh;
@@ -682,6 +680,9 @@ class _TodayViewState extends State<TodayView> {
   /// Per `docs/design/responsive-design.md`: the priority column's width.
   static const double _column = 624;
 
+  /// Desktop: the hero card beside the greeting.
+  static const double _heroCardWidth = 440;
+
   /// "And N more waiting" was tapped. Resets on leaving Today.
   bool _expanded = false;
 
@@ -717,13 +718,13 @@ class _TodayViewState extends State<TodayView> {
             model: widget.model,
             onTap: widget.onGoals ?? () {},
           );
+    // Phone: first under the hero. Desktop: in the side column.
     final ritualCard = [
       if (!desktop && ritual != null) ...[
-        SizedBox(height: ritual.drafted ? AppSpacing.sm : AppSpacing.md),
         ritualInvitation(ritual, widget.onRitual ?? () {}),
+        const SizedBox(height: AppSpacing.lg),
       ],
     ];
-    final goalWidgets = [?goalLine, ...ritualCard];
     // Desktop: the month and the team beside the priority list.
     final side = [
       if (goals != null && hasGoalLine(goals))
@@ -784,7 +785,7 @@ class _TodayViewState extends State<TodayView> {
     };
     final tasksBlock = _tasks(l10n, tasks, day);
     final loading = [
-      ...goalWidgets,
+      ...ritualCard,
       ...eventsBlock,
       const Center(child: CircularProgressIndicator()),
     ];
@@ -797,24 +798,11 @@ class _TodayViewState extends State<TodayView> {
       ),
       AsyncData(:final value)
           when value.isEmpty && tasks.isEmpty && (widget.done ?? 0) > 0 =>
-        (
-          'done',
-          [
-            ..._allDone(
-              l10n,
-              widget.done!,
-              desktop,
-              goalLine,
-              ritualCard,
-              eventsBlock,
-            ),
-            ...tasksBlock,
-          ],
-        ),
+        ('done', [...ritualCard, ...eventsBlock, ...tasksBlock]),
       AsyncData(:final value) when value.isEmpty && tasks.isEmpty => (
         'up-to-date',
         [
-          ...goalWidgets,
+          ...ritualCard,
           ...eventsBlock,
           const _UpToDate(),
           SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
@@ -823,12 +811,12 @@ class _TodayViewState extends State<TodayView> {
       ),
       AsyncData(:final value) => (
         'due',
-        _due(l10n, value, tasks, desktop, goalWidgets, eventsBlock, tasksBlock),
+        _due(l10n, value, desktop, ritualCard, eventsBlock, tasksBlock),
       ),
       AsyncError(:final error) => (
         'error',
         [
-          ...goalWidgets,
+          ...ritualCard,
           ...eventsBlock,
           LoadFailed(
             offline: error == PeopleFailure.network,
@@ -867,8 +855,129 @@ class _TodayViewState extends State<TodayView> {
       ),
     ];
 
+    // The white card on the gradient: what is left, or the all-done moment.
+    final Widget? card = switch ((branch, widget.due)) {
+      ('done', _) => AllDoneCard(
+        done: widget.done!,
+        firstName: widget.firstName,
+      ),
+      ('due', AsyncData(:final value)) => _hero(l10n, value, tasks),
+      _ => null,
+    };
+    final heroCard = card == null
+        ? null
+        : FadeSwap(
+            key: const ValueKey('hero-card'),
+            duration: AppMotion.slow,
+            // Heard apart from the greeting.
+            child: Semantics(
+              key: ValueKey(branch),
+              container: true,
+              child: HeroCard(child: card),
+            ),
+          );
+    final topBar = Semantics(
+      container: true,
+      child: LoomiaTopBar(
+        eyebrow: l10n.todayDate(widget.now),
+        title: greeting(l10n, widget.now, widget.firstName),
+        large: desktop,
+        action: widget.accountAction,
+        gap: 0,
+        onHero: true,
+      ),
+    );
+    final bottom = MediaQuery.paddingOf(context).bottom;
+
+    final Widget list;
+    if (desktop) {
+      list = ListView(
+        // Pull to refresh works on a short list too.
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxl,
+          vertical: AppSpacing.xl,
+        ).add(EdgeInsets.only(bottom: bottom)),
+        children: [
+          HeroPanel(
+            shape: HeroShape.band,
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            children: [
+              Row(
+                children: [
+                  Expanded(child: topBar),
+                  if (heroCard != null) ...[
+                    const SizedBox(width: AppSpacing.lg),
+                    SizedBox(width: _heroCardWidth, child: heroCard),
+                  ],
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          ContentColumns(
+            main: content,
+            side: [
+              for (final (index, piece) in side.indexed) ...[
+                if (index > 0) const SizedBox(height: AppSpacing.md),
+                piece,
+              ],
+            ],
+          ),
+        ],
+      );
+    } else {
+      list = ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        // The list runs under the floating bar, padded by its room.
+        padding: EdgeInsets.only(bottom: AppSpacing.md + bottom),
+        children: [
+          // From the screen's top edge, under the status bar.
+          HeroPanel(
+            gap: 0,
+            children: [
+              topBar,
+              if (goalLine != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                goalLine,
+              ],
+              if (heroCard != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                heroCard,
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // One list child each, so each is heard on its own.
+          for (final piece in [
+            ...content,
+            // Desktop has them in the side column.
+            if (widget.checkIns.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.lg),
+              ...checkInItems(
+                l10n,
+                widget.checkIns,
+                onOpen: widget.onOpen,
+                onCheckIn: widget.onCheckIn ?? (_) {},
+                onNotNow: widget.onNotNow ?? (_) async => false,
+                collapsed: !_catchUpShown,
+                onToggle: () => setState(() => _catchUpOpen = !_catchUpShown),
+              ),
+            ],
+          ])
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: piece,
+            ),
+        ],
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
+        // A phone's hero paints under the status bar and pads itself.
+        top: desktop,
+        bottom: false,
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: ConstrainedBox(
@@ -878,54 +987,8 @@ class _TodayViewState extends State<TodayView> {
             ),
             child: RefreshIndicator(
               onRefresh: widget.onRefresh,
-              child: ListView(
-                // Pull to refresh works on a short list too.
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: desktop
-                    ? const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xxl,
-                        vertical: AppSpacing.xl,
-                      )
-                    : const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  ContentColumns.aligned(
-                    LoomiaTopBar(
-                      eyebrow: l10n.todayDate(widget.now),
-                      title: greeting(l10n, widget.now, widget.firstName),
-                      large: desktop,
-                      action: widget.accountAction,
-                      gap: AppSpacing.sm,
-                    ),
-                  ),
-                  if (desktop)
-                    ContentColumns(
-                      main: content,
-                      side: [
-                        for (final (index, piece) in side.indexed) ...[
-                          if (index > 0) const SizedBox(height: AppSpacing.md),
-                          piece,
-                        ],
-                      ],
-                    )
-                  else ...[
-                    ...content,
-                    // Desktop has them in the side column.
-                    if (widget.checkIns.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.lg),
-                      ...checkInItems(
-                        l10n,
-                        widget.checkIns,
-                        onOpen: widget.onOpen,
-                        onCheckIn: widget.onCheckIn ?? (_) {},
-                        onNotNow: widget.onNotNow ?? (_) async => false,
-                        collapsed: !_catchUpShown,
-                        onToggle: () =>
-                            setState(() => _catchUpOpen = !_catchUpShown),
-                      ),
-                    ],
-                  ],
-                ],
-              ),
+              edgeOffset: desktop ? 0 : MediaQuery.paddingOf(context).top,
+              child: list,
             ),
           ),
         ),
@@ -933,16 +996,12 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
-  /// The Tasks header, with Add a task, and today's open tasks under it; a
-  /// failed load in their place. Nothing while they load.
+  /// The Tasks header and today's open tasks under it; a failed load in
+  /// their place. Nothing while they load.
   List<Widget> _tasks(AppLocalizations l10n, List<Task> tasks, DateTime day) =>
       switch (widget.tasks) {
         AsyncData() => [
-          SectionHeader(
-            title: l10n.todaySectionTasks,
-            actionLabel: l10n.todayAddTask,
-            onAction: widget.onAddTask,
-          ),
+          SectionHeader(title: l10n.todaySectionTasks),
           // Slots that outlive their task, so a ticked one waits for its
           // check and slides out instead of vanishing.
           AnimatedRows(
@@ -985,72 +1044,38 @@ class _TodayViewState extends State<TodayView> {
         _ => const [],
       };
 
-  /// Everything on today's list was ticked: the hero stays, full, and the
-  /// up-to-date line sits under it (under the goal line on a phone, above the
-  /// close-the-month card).
-  List<Widget> _allDone(
-    AppLocalizations l10n,
-    int done,
-    bool desktop,
-    Widget? goalLine,
-    List<Widget> ritualCard,
-    List<Widget> eventsBlock,
-  ) => [
-    TodayHero(
+  /// What is left today, on the hero card.
+  Widget _hero(AppLocalizations l10n, List<Due> due, List<Task> tasks) {
+    final done = widget.done;
+    // People, not rows: a step and a reminder are one person to message.
+    final people = {for (final row in due) row.person.id}.length;
+    return TodayHero(
       eyebrow: l10n.todayTitle,
-      headline: l10n.todayAllDone,
-      progress: (done: done, total: done),
-    ),
-    ?goalLine,
-    Padding(
-      padding: desktop
-          ? const EdgeInsets.only(top: AppSpacing.sm)
-          : const EdgeInsetsDirectional.fromSTEB(
-              AppSpacing.xs,
-              AppSpacing.xs,
-              AppSpacing.xs,
-              0,
-            ),
-      child: Text(
-        l10n.todayEmptyBody,
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-    ),
-    ...ritualCard,
-    SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
-    ...eventsBlock,
-  ];
+      headline: switch ((people, tasks.length)) {
+        (_, 0) => l10n.todayHeadline(people),
+        (0, final count) => l10n.todayHeadlineTasks(count),
+        (_, final count) => l10n.todayHeadlineBoth(people, count),
+      },
+      // Rows, not people: each tick moves the bar.
+      progress: done == null
+          ? null
+          : (done: done, total: done + due.length + tasks.length),
+    );
+  }
 
   List<Widget> _due(
     AppLocalizations l10n,
     List<Due> due,
-    List<Task> tasks,
     bool desktop,
-    List<Widget> goalWidgets,
+    List<Widget> ritualCard,
     List<Widget> eventsBlock,
     List<Widget> tasksBlock,
   ) {
     final shown = _expanded ? due : due.take(desktop ? 6 : 5).toList();
     final now = widget.now;
     final day = DateTime(now.year, now.month, now.day);
-    final done = widget.done;
-    // People, not rows: a step and a reminder are one person to message.
-    final people = {for (final row in due) row.person.id}.length;
     return [
-      TodayHero(
-        eyebrow: l10n.todayTitle,
-        headline: switch ((people, tasks.length)) {
-          (_, 0) => l10n.todayHeadline(people),
-          (0, final count) => l10n.todayHeadlineTasks(count),
-          (_, final count) => l10n.todayHeadlineBoth(people, count),
-        },
-        // Rows, not people: each tick moves the bar.
-        progress: done == null
-            ? null
-            : (done: done, total: done + due.length + tasks.length),
-      ),
-      ...goalWidgets,
-      SizedBox(height: desktop ? AppSpacing.xl : AppSpacing.lg),
+      ...ritualCard,
       ...eventsBlock,
       if (due.isNotEmpty) ...[
         SectionHeader(title: l10n.todaySectionPeople),

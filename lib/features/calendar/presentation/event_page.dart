@@ -11,7 +11,9 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/load_failed.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -83,10 +85,8 @@ class EventPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The hero holds back and runs under the status bar.
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => backOr(context, Routes.calendar)),
-      ),
       body: SafeArea(top: false, child: EventPane(id: id)),
     );
   }
@@ -426,34 +426,24 @@ class EventView extends StatelessWidget {
     final link = event.link;
     final notes = event.notes;
 
-    return ListView(
-      padding: EdgeInsets.all(
-        context.screenSize.isDesktop ? AppSpacing.lg : AppSpacing.md,
-      ),
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(event.title, style: theme.textTheme.headlineSmall),
-            ),
-            IconButton(
-              onPressed: onEdit,
-              tooltip: l10n.eventEdit,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-            IconButton(
-              onPressed: onDelete,
-              tooltip: l10n.eventDelete,
-              icon: const Icon(Icons.delete_outline_rounded),
-            ),
-          ],
+    final colors = LoomiaColors.of(context);
+    final desktop = context.screenSize.isDesktop;
+    final hero = DetailHero(
+      band: desktop,
+      onBack: desktop ? null : () => backOr(context, Routes.calendar),
+      title: event.title,
+      editTooltip: l10n.eventEdit,
+      onEdit: onEdit,
+      deleteTooltip: l10n.eventDelete,
+      onDelete: onDelete,
+      lines: [
+        HeroLine(
+          icon: const Icon(Icons.schedule_rounded),
+          text: whenLabel(context, event),
         ),
-        const SizedBox(height: AppSpacing.ms),
-        _Line(icon: Icons.schedule_rounded, text: whenLabel(context, event)),
         if (event.series case final series?)
-          _Line(
-            icon: Icons.repeat_rounded,
+          HeroLine(
+            icon: const Icon(Icons.repeat_rounded),
             text: repeatLine(
               l10n,
               everyWeeks: series.everyWeeks,
@@ -462,142 +452,195 @@ class EventView extends StatelessWidget {
             ),
           ),
         if (place != null)
-          _Line(
-            icon: Icons.place_outlined,
+          HeroLine(
+            icon: const Icon(Icons.place_rounded),
             text: place,
             onTap: () => onOpenPlace(place),
           ),
         if (link != null)
-          _Line(
-            icon: Icons.videocam_outlined,
+          HeroLine(
+            icon: const Icon(Icons.videocam_rounded),
             text: shownLink(link),
             singleLine: true,
-            trailing: FilledButton.tonal(
-              style: AppTheme.tonal(context),
+            trailing: FilledButton(
+              style: AppTheme.heroPill(context),
               onPressed: () => onJoin(Uri.parse(link)),
               child: Text(l10n.eventJoin),
             ),
           ),
-        if (notes != null && report.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.lg),
-          SectionHeader(title: l10n.eventPrepNotes),
-        ],
-        if (notes != null)
-          Padding(
-            padding: EdgeInsets.only(top: report.isEmpty ? AppSpacing.md : 0),
-            child: Text(
-              notes,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        if (previousReport case final previous?) ...[
-          const SizedBox(height: AppSpacing.md),
-          _PreviousReportRow(
-            day: previous.day,
-            onTap: () => unawaited(
-              showReportSheet(
-                context,
-                title: l10n.eventPreviousReport,
-                report: previous.report ?? const [],
-                day: previous.day,
-                onOpenEvent: () => openEvent(context, previous.id),
-              ),
-            ),
-          ),
-        ],
-        if (report.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.lg),
-          ReportEditor(
-            key: reportEditorKey(event, report),
-            event: event,
-            entries: report,
-          ),
-        ],
-        if (steps.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.lg),
-          SectionHeader(title: l10n.eventChecklist),
-          for (final step in steps)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(step.label),
-              subtitle: Text(
-                l10n.eventStepDue(
-                  stepTiming(l10n, step.days),
-                  stepDue(event, step),
+      ],
+    );
+
+    return ListView(
+      padding: desktop
+          ? const EdgeInsets.all(AppSpacing.lg)
+          : const EdgeInsets.only(bottom: AppSpacing.lg),
+      children: [
+        hero,
+        const SizedBox(height: AppSpacing.md),
+        // Each its own child of the list, which stays lazy: a report
+        // scrolled away is let go (its editor keeps what was typed).
+        for (final child in <Widget>[
+          if (notes != null && report.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            SectionHeader(title: l10n.eventPrepNotes),
+          ],
+          if (notes != null)
+            LoomiaCard(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  notes,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
-              trailing: TickRing(
-                onPressed: () =>
-                    onTick(step, !event.stepsDone.containsKey(step.id)),
-                selected: event.stepsDone.containsKey(step.id),
-                tooltip: event.stepsDone.containsKey(step.id)
-                    ? l10n.eventStepUntick(step.label)
-                    : l10n.eventStepTick(step.label),
+            ),
+          if (previousReport case final previous?) ...[
+            const SizedBox(height: AppSpacing.md),
+            _PreviousReportRow(
+              day: previous.day,
+              onTap: () => unawaited(
+                showReportSheet(
+                  context,
+                  title: l10n.eventPreviousReport,
+                  report: previous.report ?? const [],
+                  day: previous.day,
+                  onOpenEvent: () => openEvent(context, previous.id),
+                ),
               ),
             ),
-        ],
-        if (event.done) ...[
-          const SizedBox(height: AppSpacing.lg),
-          _DoneBanner(
-            text: l10n.eventDoneBanner(event.cameCount, event.attendees.length),
-          ),
-        ] else if (event.canMarkDone(now)) ...[
-          const SizedBox(height: AppSpacing.lg),
-          FilledButton(
-            onPressed: onMarkDone,
-            child: Text(l10n.eventMarkWhoWasThere),
-          ),
-        ],
-        const SizedBox(height: AppSpacing.lg),
-        SectionHeader(
-          title: !event.done && event.goingCount < event.attendees.length
-              ? l10n.eventPeopleGoing(event.attendees.length, event.goingCount)
-              : l10n.eventPeople,
-          actionLabel: event.done ? null : l10n.peoplePickerTitle,
-          onAction: event.done ? null : onAddPeople,
-        ),
-        if (people.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: Text(
-              l10n.eventNoPeople,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: LoomiaColors.of(context).textMuted,
-              ),
+          ],
+          if (report.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            ReportEditor(
+              key: reportEditorKey(event, report),
+              event: event,
+              entries: report,
             ),
-          )
-        else
-          for (final (:person, :attendee) in people)
-            ContactRow(
-              name: person.name,
-              photoPath: person.photoPath,
-              subtitle: _status(l10n, person, attendee),
-              onTap: () => onOpenPerson(person),
-              trailing: event.done
-                  ? null
-                  : PopupMenuButton<VoidCallback>(
-                      tooltip: l10n.eventPersonMore(person.name),
-                      onSelected: (action) => action(),
-                      itemBuilder: (context) => [
-                        if (!attendee.going) ...[
-                          PopupMenuItem(
-                            value: () => onGoing(person),
-                            child: Text(l10n.eventGoing),
-                          ),
-                          PopupMenuItem(
-                            value: () => onFollowedUp(person),
-                            child: Text(l10n.eventFollowedUp),
-                          ),
-                        ],
-                        PopupMenuItem(
-                          value: () => onRemove(person),
-                          child: Text(l10n.eventRemoveFromEvent),
+          ],
+          if (steps.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            SectionHeader(title: l10n.eventChecklist),
+            LoomiaCard(
+              child: Column(
+                children: [
+                  for (final (i, step) in steps.indexed) ...[
+                    if (i > 0)
+                      const Divider(
+                        height: 1,
+                        indent: AppSpacing.md,
+                        endIndent: AppSpacing.md,
+                      ),
+                    ListTile(
+                      title: Text(step.label),
+                      subtitle: Text(
+                        l10n.eventStepDue(
+                          stepTiming(l10n, step.days),
+                          stepDue(event, step),
                         ),
-                      ],
+                      ),
+                      trailing: TickRing(
+                        onPressed: () =>
+                            onTick(step, !event.stepsDone.containsKey(step.id)),
+                        selected: event.stepsDone.containsKey(step.id),
+                        tooltip: event.stepsDone.containsKey(step.id)
+                            ? l10n.eventStepUntick(step.label)
+                            : l10n.eventStepTick(step.label),
+                      ),
                     ),
+                  ],
+                ],
+              ),
             ),
+          ],
+          if (event.done) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _DoneBanner(
+              text: l10n.eventDoneBanner(
+                event.cameCount,
+                event.attendees.length,
+              ),
+            ),
+          ] else if (event.canMarkDone(now)) ...[
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton(
+              onPressed: onMarkDone,
+              child: Text(l10n.eventMarkWhoWasThere),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.lg),
+          SectionHeader(
+            title: !event.done && event.goingCount < event.attendees.length
+                ? l10n.eventPeopleGoing(
+                    event.attendees.length,
+                    event.goingCount,
+                  )
+                : l10n.eventPeople,
+            actionLabel: event.done ? null : l10n.peoplePickerTitle,
+            onAction: event.done ? null : onAddPeople,
+          ),
+          if (people.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Text(
+                l10n.eventNoPeople,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colors.textMuted,
+                ),
+              ),
+            )
+          else
+            LoomiaCard(
+              child: Column(
+                children: [
+                  for (final (i, (:person, :attendee)) in people.indexed) ...[
+                    if (i > 0)
+                      const Divider(
+                        height: 1,
+                        indent: AppSpacing.md,
+                        endIndent: AppSpacing.md,
+                      ),
+                    ContactRow(
+                      name: person.name,
+                      photoPath: person.photoPath,
+                      subtitle: _status(l10n, person, attendee),
+                      onTap: () => onOpenPerson(person),
+                      trailing: event.done
+                          ? null
+                          : PopupMenuButton<VoidCallback>(
+                              tooltip: l10n.eventPersonMore(person.name),
+                              onSelected: (action) => action(),
+                              itemBuilder: (context) => [
+                                if (!attendee.going) ...[
+                                  PopupMenuItem(
+                                    value: () => onGoing(person),
+                                    child: Text(l10n.eventGoing),
+                                  ),
+                                  PopupMenuItem(
+                                    value: () => onFollowedUp(person),
+                                    child: Text(l10n.eventFollowedUp),
+                                  ),
+                                ],
+                                PopupMenuItem(
+                                  value: () => onRemove(person),
+                                  child: Text(l10n.eventRemoveFromEvent),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ])
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: desktop ? 0 : AppSpacing.md,
+            ),
+            child: child,
+          ),
       ],
     );
   }
@@ -633,69 +676,15 @@ class _PreviousReportRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = LoomiaColors.of(context);
-    return ListTile(
-      onTap: onTap,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: colors.borderSubtle),
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-      ),
-      leading: Icon(Icons.history_rounded, color: colors.primaryText),
-      title: Text(l10n.eventPreviousReport),
-      subtitle: Text(l10n.reportDay(day)),
-      trailing: const Icon(Icons.chevron_right_rounded),
-    );
-  }
-}
-
-/// An icon and a line. With [onTap], the line reads as a link.
-class _Line extends StatelessWidget {
-  const _Line({
-    required this.icon,
-    required this.text,
-    this.onTap,
-    this.trailing,
-    this.singleLine = false,
-  });
-
-  final IconData icon;
-  final String text;
-  final VoidCallback? onTap;
-  final Widget? trailing;
-  final bool singleLine;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
-    final tap = onTap;
-    final row = Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Row(
-        spacing: AppSpacing.sm,
-        children: [
-          Icon(icon, color: muted),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: singleLine ? 1 : null,
-              overflow: singleLine ? TextOverflow.ellipsis : null,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: tap == null
-                    ? muted
-                    : LoomiaColors.of(context).primaryText,
-              ),
-            ),
-          ),
-          ?trailing,
-        ],
+    return LoomiaCard(
+      child: ListTile(
+        onTap: onTap,
+        leading: Icon(Icons.history_rounded, color: colors.primaryText),
+        title: Text(l10n.eventPreviousReport),
+        subtitle: Text(l10n.reportDay(day)),
+        trailing: const Icon(Icons.chevron_right_rounded),
       ),
     );
-    return tap == null
-        ? row
-        : Semantics(
-            link: true,
-            child: InkWell(onTap: tap, child: row),
-          );
   }
 }
 

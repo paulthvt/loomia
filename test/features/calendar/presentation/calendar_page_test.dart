@@ -120,6 +120,9 @@ class _Starting extends CalendarSelector {
   CalendarSelection build() => start;
 }
 
+/// The bottom padding the shell gives a tab on a phone, for its floating bar.
+const double _barRoom = AppSpacing.xxl * 2.5;
+
 /// The view wired to the real selection, from [start].
 Future<ProviderContainer> _pumpLive(
   WidgetTester tester,
@@ -414,9 +417,11 @@ void main() {
     expect(container.read(calendarSelectionProvider).mode, CalendarMode.week);
   });
 
-  testWidgets('3 days: the last hour scrolls clear of the add button', (
+  testWidgets('3 days: the last hour scrolls clear of the floating bar', (
     tester,
   ) async {
+    // The room the shell leaves under a tab for its floating bar.
+    tester.view.padding = const FakeViewPadding(bottom: _barRoom);
     await _pumpLive(tester, threeDays);
     final hours = tester
         .state<ScrollableState>(
@@ -429,18 +434,17 @@ void main() {
         )
         .position;
 
-    // 8:00 to 22:00 at 52 an hour, and the add button's clearance.
+    // 8:00 to 22:00 at 52 an hour, and the bar's room.
     expect(
       hours.maxScrollExtent,
-      moreOrLessEquals(
-        14 * 52 + AppSpacing.xxxl + AppSpacing.lg - hours.viewportDimension,
-      ),
+      moreOrLessEquals(14 * 52 + _barRoom - hours.viewportDimension),
     );
   });
 
-  testWidgets('week on a phone: the hours fit and end above the add button', (
+  testWidgets('week on a phone: the hours fit and end above the bar', (
     tester,
   ) async {
+    tester.view.padding = const FakeViewPadding(bottom: _barRoom);
     await _pumpLive(tester, week);
     final scrollable = find
         .descendant(
@@ -457,9 +461,7 @@ void main() {
     );
     expect(
       tester.getBottomLeft(column.last).dy,
-      moreOrLessEquals(
-        tester.getBottomLeft(scrollable).dy - AppSpacing.xxxl - AppSpacing.lg,
-      ),
+      moreOrLessEquals(tester.getBottomLeft(scrollable).dy - _barRoom),
     );
   });
 
@@ -622,7 +624,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel(RegExp('^Saturday, October 10')));
     await tester.pumpAndSettle();
     expect(selected, DateTime(2026, 10, 10));
-    expect(find.text('SATURDAY, OCTOBER 10'), findsOneWidget);
+    expect(find.text('Saturday, October 10'), findsOneWidget);
     expect(find.text('Nothing planned'), findsOneWidget);
   });
 
@@ -636,7 +638,7 @@ void main() {
       onOpen: (event) => opened = event,
     );
 
-    expect(find.text('THURSDAY, OCTOBER 8'), findsOneWidget);
+    expect(find.text('Thursday, October 8'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('New member training')).dy,
       lessThan(tester.getTopLeft(find.text('Essential oils for sleep')).dy),
@@ -651,9 +653,7 @@ void main() {
     expect(opened, _workshop);
   });
 
-  testWidgets('an empty day says so; Add and the button add on it', (
-    tester,
-  ) async {
+  testWidgets('an empty day says so; Add adds on it', (tester) async {
     final added = <DateTime>[];
     await _pump(
       tester,
@@ -672,12 +672,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Event'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Event'));
-    await tester.pumpAndSettle();
 
-    expect(added, [DateTime(2026, 10, 9), DateTime(2026, 10, 9)]);
+    expect(added, [DateTime(2026, 10, 9)]);
   });
 
   testWidgets('a failed load says so', (tester) async {
@@ -706,7 +702,9 @@ void main() {
     CalendarEvent? opened;
     await _pump(
       tester,
-      size: const Size(1440, 900),
+      // The test font's wide glyphs wrap both titles: a day under the hero
+      // band needs a little more than 900 to hold the two.
+      size: const Size(1440, 960),
       desktop: true,
       events: [_workshop, _training],
       onOpen: (event) => opened = event,
@@ -717,7 +715,7 @@ void main() {
     expect(tester.getSize(find.byType(DesktopMonth)).width, greaterThan(1300));
     expect(
       tester.getBottomLeft(find.byType(DesktopMonth)).dy,
-      greaterThan(850),
+      greaterThan(960 - 50),
     );
     // One header row: the switch beside the title.
     expect(
@@ -777,7 +775,7 @@ void main() {
     expect(selected, DateTime(2026, 10, 8));
     // Under the day: its heading, its events as rows.
     expect(
-      tester.getTopLeft(find.text('THURSDAY, OCTOBER 8')).dy,
+      tester.getTopLeft(find.text('Thursday, October 8')).dy,
       greaterThan(tester.getBottomLeft(find.text('8')).dy),
     );
     expect(find.byType(EventRow), findsNWidgets(2));
@@ -1290,7 +1288,7 @@ void main() {
     container.read(routerProvider).go(Routes.calendar);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Add'));
+    await tester.tap(find.byTooltip('New event'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Event'));
     await tester.pumpAndSettle();
@@ -1360,10 +1358,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The selected day should now be the 20th, with the event listed.
-    expect(
-      find.text(DateFormat('EEEE, MMMM d').format(day20).toUpperCase()),
-      findsOneWidget,
-    );
+    expect(find.text(DateFormat('EEEE, MMMM d').format(day20)), findsOneWidget);
     expect(find.text('Workshop'), findsOneWidget);
   });
 

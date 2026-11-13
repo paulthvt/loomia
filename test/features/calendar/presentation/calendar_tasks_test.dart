@@ -268,10 +268,8 @@ void main() {
     expect(toggled, ['open', 'done']);
   });
 
-  for (final (name, entry) in [
-    ('the add button', find.byTooltip('Add')),
-    ("the day's Add", find.text('Add')),
-  ]) {
+  // The floating bar's + asks the same: test/app/shell/app_shell_test.dart.
+  for (final (name, entry) in [("the day's Add", find.text('Add'))]) {
     testWidgets('$name asks Event or Task', (tester) async {
       final added = <DateTime>[];
       final addedTasks = <DateTime>[];
@@ -632,7 +630,7 @@ void main() {
     testWidgets('a task saved on another day selects that day', (tester) async {
       await pumpCalendar(tester);
 
-      await tester.tap(find.byTooltip('Add'));
+      await tester.tap(find.byTooltip('New event'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Task'));
       await tester.pumpAndSettle();

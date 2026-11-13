@@ -34,6 +34,8 @@ class LoomiaDialog extends StatelessWidget {
       context.screenSize.isMobile
       ? showModalBottomSheet<T>(
           context: context,
+          // Over the floating bar, which a tab's own navigator lies under.
+          useRootNavigator: true,
           isScrollControlled: true,
           useSafeArea: true,
           showDragHandle: true,

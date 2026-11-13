@@ -9,6 +9,7 @@ import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/business_model/business_model_copy.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/auth_failure.dart';
 import 'package:loomia/features/auth/presentation/auth_failure_copy.dart';
@@ -250,9 +251,8 @@ class _FirstRunCompanyStepState extends ConsumerState<FirstRunCompanyStep> {
               BusinessModel.doterra,
               BusinessModel.other,
             ])
-              Card(
+              LoomiaCard(
                 key: ValueKey('business-model-${model.name}'),
-                clipBehavior: Clip.antiAlias,
                 child: ListTile(
                   title: Text(businessModelLabel(l10n, model)),
                   subtitle: Text(switch (model) {

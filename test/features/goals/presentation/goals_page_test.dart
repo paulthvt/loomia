@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
@@ -33,7 +34,6 @@ var plans = 0;
 var retries = 0;
 var orders = 0;
 var rituals = 0;
-var logs = 0;
 
 /// [GoalsView] alone, on a fixed day, counting Plan and Try again taps.
 Future<void> pumpGoals(
@@ -46,7 +46,6 @@ Future<void> pumpGoals(
   retries = 0;
   orders = 0;
   rituals = 0;
-  logs = 0;
   return tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
@@ -58,7 +57,6 @@ Future<void> pumpGoals(
         model: model,
         onPlan: () => plans++,
         onRetry: () => retries++,
-        onLogOrder: () => logs++,
         onOrders: () => orders++,
         onRitual: () => rituals++,
         onRefresh: () async {},
@@ -67,11 +65,19 @@ Future<void> pumpGoals(
   );
 }
 
+/// Room for the hero and every card under it, without scrolling.
+void tall(WidgetTester tester) {
+  tester.view
+    ..physicalSize = const Size(800, 1600)
+    ..devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
+
 void main() {
   testWidgets('no plan: the question and Plan September', (tester) async {
     await pumpGoals(tester, AsyncData(month()));
 
-    expect(find.text('11 DAYS LEFT IN SEPTEMBER'), findsOneWidget);
+    expect(find.text('11 days left in September'), findsOneWidget);
     expect(find.text('Goals'), findsOneWidget);
     expect(find.text('What are you aiming for this month?'), findsOneWidget);
     await tester.tap(find.text('Plan September'));
@@ -114,6 +120,7 @@ void main() {
   );
 
   testWidgets('the month against the plan, in dōTERRA words', (tester) async {
+    tall(tester);
     await pumpGoals(
       tester,
       AsyncData(month(plan: full, progress: progress, forecast: 1)),
@@ -138,6 +145,53 @@ void main() {
     await tester.scrollUntilVisible(find.text('Change the plan'), 200);
     await tester.tap(find.text('Change the plan'));
     expect(plans, 1);
+  });
+
+  testWidgets('own volume sits in the hero card', (tester) async {
+    await pumpGoals(
+      tester,
+      AsyncData(month(plan: full, progress: progress, forecast: 1)),
+    );
+
+    Finder inCard(String text) =>
+        find.descendant(of: find.byType(HeroCard), matching: find.text(text));
+    expect(
+      find.descendant(of: find.byType(HeroPanel), matching: find.text('Goals')),
+      findsOneWidget,
+    );
+    expect(inCard('OWN VOLUME'), findsOneWidget);
+    expect(inCard('1,840'), findsOneWidget);
+    expect(inCard('On pace'), findsOneWidget);
+    expect(
+      inCard('At this pace you finish the month at about 2,905 PV.'),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(HeroCard),
+        matching: find.byType(LoomiaProgressBar),
+      ),
+      findsOneWidget,
+    );
+    final bar = tester.widget<LoomiaProgressBar>(
+      find.byType(LoomiaProgressBar),
+    );
+    expect(bar.tone, ProgressTone.secondary);
+    expect(
+      find.descendant(
+        of: find.byType(HeroCard),
+        matching: find.widgetWithText(FilledButton, 'Change the plan'),
+      ),
+      findsOneWidget,
+    );
+    // The tiles stay on the canvas.
+    expect(
+      find.descendant(
+        of: find.byType(HeroPanel),
+        matching: find.text('NEW PROSPECTS'),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('the first 3 days: the numbers, no pace', (tester) async {
@@ -174,6 +228,7 @@ void main() {
   });
 
   testWidgets('Other: neutral words', (tester) async {
+    tall(tester);
     await pumpGoals(
       tester,
       AsyncData(month(plan: full, progress: progress)),
@@ -229,20 +284,20 @@ void main() {
     );
 
     await tester.scrollUntilVisible(find.text('2,180 PV · Executive'), 200);
-    expect(find.text('PAST MONTHS'), findsOneWidget);
+    expect(find.text('Past months'), findsOneWidget);
     expect(find.text('August 2026'), findsOneWidget);
     expect(find.text('2,410 of 2,500 PV · Elite reached'), findsOneWidget);
     expect(find.text('2,180 PV · Executive'), findsOneWidget);
   });
 
-  testWidgets('the card opens the orders; the button logs one', (tester) async {
+  testWidgets('the card opens the orders; the + logs one, not the page', (
+    tester,
+  ) async {
     await pumpGoals(tester, AsyncData(month(plan: full, progress: progress)));
 
-    await tester.tap(find.text('Own volume'));
+    await tester.tap(find.text('OWN VOLUME'));
     expect(orders, 1);
-    await tester.scrollUntilVisible(find.text('Log my own order'), 200);
-    await tester.tap(find.text('Log my own order'));
-    expect(logs, 1);
+    expect(find.text('Log my own order'), findsNothing);
   });
 
   testWidgets('the last days: a card to plan next month', (tester) async {

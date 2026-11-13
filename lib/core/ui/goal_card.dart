@@ -54,66 +54,71 @@ class GoalCard extends StatelessWidget {
     final suffixText = suffix;
     final fill = progress;
 
-    return Card(
+    return Container(
+      decoration: AppTheme.card(context),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(title, style: theme.textTheme.titleMedium),
-                  ),
-                  if (paceText != null)
-                    // Pace ink changes as the number moves, so it fades
-                    // rather than flicks between warm and muted (§7, 180ms).
-                    AnimatedDefaultTextStyle(
-                      duration: context.motion(AppMotion.quick),
-                      curve: AppMotion.standard,
-                      style: AppTypography.caption.copyWith(
-                        color: behindPace
-                            ? colors.secondaryText
-                            : colors.textMuted,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(title, style: theme.textTheme.titleMedium),
+                    ),
+                    if (paceText != null)
+                      // Pace ink changes as the number moves, so it fades
+                      // rather than flicks between warm and muted (§7, 180ms).
+                      AnimatedDefaultTextStyle(
+                        duration: context.motion(AppMotion.quick),
+                        curve: AppMotion.standard,
+                        style: AppTypography.caption.copyWith(
+                          color: behindPace
+                              ? colors.secondaryText
+                              : colors.textMuted,
+                        ),
+                        child: Text(paceText),
                       ),
-                      child: Text(paceText),
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    value,
-                    style: AppTypography.numeric.copyWith(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  if (suffixText != null) ...[
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      suffixText,
-                      style: AppTypography.body.copyWith(
-                        color: colors.textMuted,
-                      ),
-                    ),
                   ],
-                ],
-              ),
-              if (fill != null) ...[
-                const SizedBox(height: AppSpacing.ms),
-                LoomiaProgressBar(
-                  value: fill.clamp(0, 1),
-                  leadingLabel: leading,
-                  trailingLabel: timeLeft,
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      value,
+                      style: AppTypography.numeric.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    if (suffixText != null) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        suffixText,
+                        style: AppTypography.body.copyWith(
+                          color: colors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (fill != null) ...[
+                  const SizedBox(height: AppSpacing.ms),
+                  LoomiaProgressBar(
+                    value: fill.clamp(0, 1),
+                    leadingLabel: leading,
+                    trailingLabel: timeLeft,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

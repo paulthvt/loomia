@@ -363,4 +363,36 @@ a value.
 The mocks on pages `01`–`03` are exploration and use literal hex. Only the chosen
 palette gets built as variables; the exploration pages stay as-is for reference.
 
+---
+
+## Horizon — 2026 restyle
+
+Issue #499. Visual reference: `docs/design/horizon/`, spec: `docs/superpowers/specs/2026-11-13-horizon-theme.md`.
+
+Direction B's "one filled block" rule worked but felt rigid. Horizon refines it into a **gradient hero** that feels warmer, more grounded, and unmistakably Loomia. Layout and features stay the same: a palette, shape and chrome restyle, not a redesign.
+
+### What changed
+
+- **Hero gradient:** rosewood `#82424F` → apricot `#E39A68` at 135° (dark: `#4F2530` → `#A8623F`). One gradient hero per screen, replacing the old primary-filled TodayHero. The hero holds what matters now: date and greeting on Today, month grid on Calendar, search and filters on Contacts, your own volume on Goals, back and title on detail screens.
+- **Hero components:** `HeroPanel` (band/screenTop), `HeroCard`, `HeroIconButton`, `HeroFormList`, `DetailHero`, `HeroLine`, `HeroBadge`, `HeroEyebrow`. Text is white with a quiet variant at 85%; translucent fills at 18% (buttons), 12% (inputs, switches).
+- **Cards:** white with one soft shadow (`0 2 8 @7%`), no border. Radius 24 standard, 28 hero card, 32 hero bottom corners. `SettingsGroup` became a card.
+- **Section headers:** sentence case as written, 18 bold ("Catch up", "Where it stands"), no overline. The overline token stays for stat tiles and date eyebrows only.
+- **Phone navigation:** floating dark pill bar (`#2A181C`) on the four tabs, sliding amber pill (420 ms emphasized), white **+** for creating (task / event / person / own order per tab). Detail screens: back in the hero, no bar. Replaces "Add a task", Calendar FAB, add-person button, "Log my own order".
+- **Desktop/tablet:** floating dark sidebar, first item the labelled create button (New task / New event / New person / Log my own order); rail shows a **+** circle.
+- **Today all-done:** gradient check badge, static confetti (hidden from screen readers), "You're all done for today", warm line. No streaks, no scores.
+- **Canvas:** `#F6F2ED` light, `#120F0C` dark (unchanged).
+
+### New tokens (LoomiaColors)
+
+`heroGradient`, `onHero`, `onHeroQuiet`, `heroFill`, `heroFillSubtle`, `onHeroFill`, `heroCardShadow`, `heroCardBorder`, `chrome`, `onChrome`, `onChromeMuted`, `chromeBorder`; `AppRadii.card` (24), `heroCard` (28), `hero` (32).
+
+### Why it works
+
+1. The gradient is a **structural element**, not decoration. It frames what you're here to do, and everything else sits on quiet white — the calm/momentum balance Direction B aimed for, now without the salesy risk of a solid fill.
+2. One hero per screen keeps it a signal, never wallpaper.
+3. The warm rosewood → apricot arc reads grounded and human — no teal, no startup blue-green.
+4. The floating chrome (bar, sidebar) is dark in both modes, so switching themes feels like adjusting brightness, not swapping identities.
+
+This is the final restyle before shipping. Future palette changes stay cheap (one Figma variables panel, one Dart file), but the gradient structure is now load-bearing.
+
 

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/shell/floating_nav_bar.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
@@ -239,10 +240,10 @@ void main() {
     expect(find.text("You're offline"), findsNothing);
   });
 
-  testWidgets('Add someone opens the new person', (tester) async {
+  testWidgets('the + opens the new person', (tester) async {
     await openContacts(tester);
 
-    await tester.tap(find.byTooltip('Add someone'));
+    await tester.tap(find.byTooltip('New person'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.descendant(
@@ -256,6 +257,52 @@ void main() {
 
     expect(find.byType(ContactPage), findsOneWidget);
     expect(find.text('Chloé'), findsOneWidget);
+  });
+
+  testWidgets('search with the keyboard open keeps the hero clear of the '
+      'status bar and the rows in view', (tester) async {
+    const statusBar = 24.0;
+    // The user's phone's keyboard; at 300 the field still fit the doubly
+    // shrunk list without scrolling the hero up.
+    const keyboard = 360.0;
+    await openContacts(tester);
+    final ratio = tester.view.devicePixelRatio;
+    tester.view.padding = FakeViewPadding(top: statusBar * ratio);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    tester.view.viewInsets = FakeViewPadding(bottom: keyboard * ratio);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getTopLeft(find.text('Contacts').first).dy,
+      greaterThanOrEqualTo(statusBar),
+    );
+    final row = tester.getRect(find.text('Marie Dupont'));
+    expect(row.bottom, lessThanOrEqualTo(_phone.height - keyboard));
+    expect(tester.getBottomLeft(find.byType(TextField)).dy, lessThan(row.top));
+  });
+
+  testWidgets('a SnackBar with the keyboard open sits above it', (
+    tester,
+  ) async {
+    const keyboard = 360.0;
+    await openContacts(tester);
+    await tester.tap(find.byType(TextField));
+    tester.view.viewInsets = FakeViewPadding(
+      bottom: keyboard * tester.view.devicePixelRatio,
+    );
+    await tester.pumpAndSettle();
+
+    ScaffoldMessenger.of(tester.element(find.byType(ContactList)))
+        .showSnackBar(const SnackBar(content: Text('Not saved')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.byType(SnackBar)).bottom,
+      lessThanOrEqualTo(_phone.height - keyboard),
+    );
   });
 
   testWidgets('missing person', (tester) async {
@@ -497,10 +544,9 @@ void main() {
         .sizeFactor
         .value;
 
+    // The header's ⋯ scrolls away above History: log from its Add.
     await reveal(tester, find.text('Ordered the cream'));
-    await tester.tap(find.byTooltip('More'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Log something'));
+    await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.descendant(
@@ -754,7 +800,7 @@ void main() {
   testWidgets('Add in HISTORY opens Log something', (tester) async {
     await openMarie(tester);
 
-    await reveal(tester, find.text('HISTORY'));
+    await reveal(tester, find.text('History'));
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
 
@@ -790,7 +836,7 @@ void main() {
     await tester.tap(find.text('Lucas Martin'));
     await tester.pumpAndSettle();
     // The picking's actions take the bottom navigation's place.
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(FloatingNavBar), findsNothing);
     await tester.tap(find.text('Move to…'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Team').last);
@@ -802,7 +848,7 @@ void main() {
     expect(people.store['p1']!.stage, Stage.team);
     expect(people.store['p2']!.stage, Stage.team);
     expect(find.text('2 selected'), findsNothing);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(FloatingNavBar), findsOneWidget);
   });
 
   testWidgets('back ends the picking and brings the navigation back', (
@@ -812,12 +858,12 @@ void main() {
 
     await tester.longPress(find.text('Marie Dupont'));
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(FloatingNavBar), findsNothing);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(find.text('1 selected'), findsNothing);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(FloatingNavBar), findsOneWidget);
   });
 
   testWidgets('desktop: deleting the open person empties the pane', (
@@ -951,12 +997,12 @@ void main() {
       await openContacts(tester, size: _desktop);
       await tester.tap(find.text('Marie Dupont'));
       await tester.pumpAndSettle();
-      expect(find.text('INFO'), findsOneWidget);
+      expect(find.text('Info'), findsOneWidget);
 
       await tester.tap(find.text('Mentoring Marie'));
       await tester.pumpAndSettle();
       expect(find.byType(BottomSheet), findsNothing);
-      expect(find.text('INFO'), findsNothing);
+      expect(find.text('Info'), findsNothing);
       expect(find.text('Pick her kit'), findsOneWidget);
       // The history stays.
       expect(find.text('Second call'), findsOneWidget);
@@ -969,7 +1015,7 @@ void main() {
       await tester.tap(find.byType(CloseButton));
       await tester.pumpAndSettle();
       expect(find.text('Her questions\nabout the kit'), findsNothing);
-      expect(find.text('INFO'), findsOneWidget);
+      expect(find.text('Info'), findsOneWidget);
 
       await tester.tap(find.text('Second call'));
       await tester.pumpAndSettle();
@@ -1071,6 +1117,9 @@ void main() {
     await tester.ensureVisible(tick);
     await tester.pumpAndSettle();
     await tester.tap(tick);
+    await tester.pumpAndSettle();
+    // Back sits in the hero, scrolled away with it.
+    await tester.ensureVisible(find.byType(BackButton));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
@@ -1179,6 +1228,10 @@ void main() {
     people.store['p1'] = _marieOn(6);
     await openMarie(tester);
 
+    await reveal(
+      tester,
+      find.widgetWithText(FilledButton, 'Became a customer'),
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Became a customer'));
     await tester.pumpAndSettle();
 

@@ -4,6 +4,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
+import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
@@ -139,5 +140,20 @@ void main() {
       isSemantics(label: 'Name', isTextField: true),
     );
     semantics.dispose();
+  });
+
+  testWidgets('section header shows the title as written', (tester) async {
+    await pump(tester, const SectionHeader(title: 'People'));
+
+    expect(find.text('People'), findsOneWidget);
+    expect(find.text('PEOPLE'), findsNothing);
+  });
+
+  testWidgets('section header title is bold', (tester) async {
+    await pump(tester, const SectionHeader(title: 'People'));
+
+    final style = tester.widget<Text>(find.text('People')).style!;
+    expect(style.fontWeight, FontWeight.w700);
+    expect(style.fontVariations, [const FontVariation('wght', 700)]);
   });
 }

@@ -1,12 +1,14 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/form_error.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
-import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -24,8 +26,12 @@ class CloseForm extends StatefulWidget {
     required this.model,
     required this.onClose,
     this.steps = 2,
+    this.onLeave,
     super.key,
   });
+
+  /// The hero's close button; none without.
+  final VoidCallback? onLeave;
 
   /// 3 when the month review follows (the month had targets).
   final int steps;
@@ -120,14 +126,11 @@ class _CloseFormState extends State<CloseForm> {
         constraints: const BoxConstraints(maxWidth: ContentColumns.mainMax),
         child: Form(
           key: _form,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+          child: HeroFormList(
+            onClose: widget.onLeave,
+            eyebrow: l10n.closeStep(1, widget.steps),
+            title: l10n.closeTitle(widget.closing.ritual.close),
             children: [
-              LoomiaTopBar(
-                eyebrow: l10n.closeStep(1, widget.steps),
-                title: l10n.closeTitle(widget.closing.ritual.close),
-                gap: AppSpacing.sm,
-              ),
               StepBar(step: 1, total: widget.steps),
               const SizedBox(height: AppSpacing.md),
               Text(
@@ -142,8 +145,8 @@ class _CloseFormState extends State<CloseForm> {
                 const SizedBox(height: AppSpacing.ms),
               ],
               SectionHeader(title: l10n.planFromBook),
-              Card(
-                // Each objective reads on its own, its "Reached" with it.
+              // Each objective reads on its own, its "Reached" with it.
+              LoomiaCard(
                 semanticContainer: false,
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -211,7 +214,7 @@ class _CloseFormState extends State<CloseForm> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: InputDecoration(
+                      decoration: AppTheme.filledField(
                         helperText: teamTarget == null
                             ? null
                             : l10n.closePlanned(number.format(teamTarget)),
@@ -284,7 +287,14 @@ class ResultRow extends StatelessWidget {
           builder: (context, constraints) => Row(
             spacing: AppSpacing.xs,
             children: [
-              Expanded(child: Text(label, style: theme.textTheme.bodyLarge)),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
               // Its own width, up to half the row: a long value ("Executive,
               // aiming for Elite") wraps instead of overflowing.
               ConstrainedBox(

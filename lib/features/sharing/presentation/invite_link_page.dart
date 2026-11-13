@@ -45,7 +45,9 @@ class InviteLinkPage extends ConsumerWidget {
               if (normalised == null)
                 Text(
                   l10n.inviteErrorInvalid,
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 )
               else ...[
@@ -57,7 +59,9 @@ class InviteLinkPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   l10n.inviteLinkSignedOutBody,
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],

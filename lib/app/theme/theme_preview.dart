@@ -3,6 +3,7 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Token sheets for `flutter widget-preview start`. This is the visual check on
@@ -191,6 +192,16 @@ class _ColourSheet extends StatelessWidget {
           _Swatch('info/container', colors.infoContainer),
           _Swatch('state/focus', colors.focus),
         ]),
+        _Group('horizon — hero & chrome', [
+          _Swatch('chrome', colors.chrome, ink: colors.onChrome),
+          _Swatch('chrome/muted', colors.onChromeMuted),
+          _Swatch('hero/on', colors.onHero),
+          _Swatch('hero/quiet', colors.onHeroQuiet),
+          _Swatch('hero/fill', colors.heroFill),
+          _Swatch('hero/fill-subtle', colors.heroFillSubtle),
+          _Swatch('hero-card/border', colors.heroCardBorder),
+          _Swatch('chrome/border', colors.chromeBorder),
+        ]),
       ],
     );
   }
@@ -373,7 +384,7 @@ class _ComponentSheet extends StatelessWidget {
           TextField(decoration: InputDecoration(hintText: 'Search people')),
         ]),
         _Group('card + chips', [
-          Card(
+          LoomiaCard(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(

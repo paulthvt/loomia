@@ -5,13 +5,15 @@ import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The four sizes the product uses (`docs/design/components.md` #4): inline in a
-/// sentence, dense list or stack, list row, contact header.
+/// The sizes the product uses (`docs/design/components.md` #4): inline in a
+/// sentence, dense list or stack, list row, contact header, the contact's
+/// identity hero.
 enum AvatarSize {
   inline(24),
   dense(32),
   row(40),
-  header(56);
+  header(56),
+  hero(76);
 
   const AvatarSize(this.diameter);
 
@@ -22,6 +24,7 @@ enum AvatarSize {
     AvatarSize.dense => AppTypography.caption,
     AvatarSize.row => AppTypography.label,
     AvatarSize.header => AppTypography.title,
+    AvatarSize.hero => AppTypography.headline,
   };
 }
 
@@ -53,15 +56,13 @@ class LoomiaAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
     final diameter = size.diameter;
     final initials = Container(
       width: diameter,
       height: diameter,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: colors.avatar, shape: BoxShape.circle),
       child: Text(
         initialsOf(name),
         style: size._style.copyWith(

@@ -26,18 +26,20 @@ Widget contactsMobileLight() => _app(AppTheme.light, _list());
 Widget contactsMobileDark() => _app(AppTheme.dark, _list());
 
 @Preview(group: 'Contacts', name: 'Person — light', size: Size(390, 844))
-Widget contactMobileLight() => _app(AppTheme.light, _details());
+Widget contactMobileLight() => _app(AppTheme.light, _details(onBack: () {}));
 
 @Preview(group: 'Contacts', name: 'Person — dark', size: Size(390, 844))
-Widget contactMobileDark() => _app(AppTheme.dark, _details());
+Widget contactMobileDark() => _app(AppTheme.dark, _details(onBack: () {}));
 
 @Preview(
   group: 'Contacts',
   name: 'Person — photo — light',
   size: Size(390, 844),
 )
-Widget contactPhotoMobileLight() =>
-    _app(AppTheme.light, _details(photo: MemoryImage(previewPhoto)));
+Widget contactPhotoMobileLight() => _app(
+  AppTheme.light,
+  _details(photo: MemoryImage(previewPhoto), onBack: () {}),
+);
 
 @Preview(
   group: 'Contacts',
@@ -45,31 +47,24 @@ Widget contactPhotoMobileLight() =>
   size: Size(390, 844),
 )
 Widget customerMobileLight() =>
-    _app(AppTheme.light, _details(person: _sample[1]));
+    _app(AppTheme.light, _details(person: _sample[1], onBack: () {}));
 
 @Preview(group: 'Contacts', name: 'Team member — light', size: Size(390, 844))
 Widget teamMemberMobileLight() =>
-    _app(AppTheme.light, _details(person: _sample[2]));
+    _app(AppTheme.light, _details(person: _sample[2], onBack: () {}));
 
 @Preview(group: 'Contacts', name: 'Desktop — light', size: Size(1440, 900))
 Widget contactsDesktopLight() => _app(
   AppTheme.light,
-  Builder(
-    builder: (context) => Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          width: 440,
-          decoration: BoxDecoration(
-            border: Border(
-              right: BorderSide(color: LoomiaColors.of(context).borderSubtle),
-            ),
-          ),
-          child: _list(selectedId: _sample.first.id, showRefresh: true),
-        ),
-        Expanded(child: _details()),
-      ],
-    ),
+  Row(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SizedBox(
+        width: 440,
+        child: _list(selectedId: _sample.first.id, showRefresh: true),
+      ),
+      Expanded(child: _details()),
+    ],
   ),
 );
 
@@ -166,9 +161,15 @@ Widget _list({String? selectedId, bool showRefresh = false}) => ContactList(
   showRefresh: showRefresh,
 );
 
-/// The person, with no next step unless it is Marie's.
-Widget _details({Person? person, ImageProvider? photo}) => ContactDetails(
+/// The person, with no next step unless it is Marie's. [onBack] on a phone,
+/// none in the desktop pane.
+Widget _details({
+  Person? person,
+  ImageProvider? photo,
+  VoidCallback? onBack,
+}) => ContactDetails(
   person: person ?? _sample.first,
+  onBack: onBack,
   photo: photo,
   onChoosePhoto: () async {},
   onRemovePhoto: () async {},

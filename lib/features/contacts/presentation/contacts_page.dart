@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/shell/app_shell.dart';
-import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
@@ -35,6 +34,12 @@ void openContact(BuildContext context, String id) {
   } else {
     unawaited(context.push(location));
   }
+}
+
+/// Adds a person (the +, the empty state), then opens them.
+Future<void> addPerson(BuildContext context) async {
+  final person = await showAddPerson(context);
+  if (person != null && context.mounted) openContact(context, person.id);
 }
 
 /// Reloads the book while the old list stays on screen. A failure says so in a
@@ -146,11 +151,6 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
     );
   }
 
-  Future<void> _add() async {
-    final person = await showAddPerson(context);
-    if (person != null && mounted) openContact(context, person.id);
-  }
-
   @override
   Widget build(BuildContext context) {
     final book = peopleProvider(ref.watch(accountProvider)?.email);
@@ -167,7 +167,7 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
       body = ContactList(
         people: list,
         onOpen: (person) => openContact(context, person.id),
-        onAdd: _add,
+        onAdd: () => unawaited(addPerson(context)),
         onImport: kIsWeb
             ? null
             : () => unawaited(context.push(Routes.importContacts)),
@@ -208,23 +208,17 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
     );
 
     return Scaffold(
+      // The list runs under the floating bar, padded by its room; on a
+      // phone its hero runs under the status bar.
       body: SafeArea(
+        top: context.screenSize.isDesktop || list == null,
+        bottom: false,
         child: pane == null
             ? body
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: _listWidth,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: LoomiaColors.of(context).borderSubtle,
-                        ),
-                      ),
-                    ),
-                    child: body,
-                  ),
+                  SizedBox(width: _listWidth, child: body),
                   Expanded(child: pane),
                 ],
               ),

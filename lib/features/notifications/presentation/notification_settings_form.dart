@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -53,6 +54,9 @@ class NotificationSettingsForm extends StatelessWidget {
 
   final PeopleFailure? failure;
 
+  /// A day's circle.
+  static const double _day = 40;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -69,6 +73,9 @@ class NotificationSettingsForm extends StatelessWidget {
     final days = weekdayOrder(
       MaterialLocalizations.of(context).firstDayOfWeekIndex,
     );
+    final action = on
+        ? LoomiaColors.of(context).primaryText
+        : theme.disabledColor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -78,11 +85,12 @@ class NotificationSettingsForm extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
         ],
         SettingsGroup(
+          bold: true,
           children: [
             SwitchListTile(
               title: Text(l10n.notificationsSummary),
               subtitle: Text(l10n.notificationsSummaryBody),
-              secondary: pushBell(on: settings.enabled),
+              secondary: _Bell(on: settings.enabled),
               value: settings.enabled,
               onChanged: (value) =>
                   turn(settings.copyWith(enabled: value), value: value),
@@ -90,7 +98,7 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsRitual),
               subtitle: Text(l10n.notificationsRitualBody),
-              secondary: pushBell(on: settings.ritual),
+              secondary: _Bell(on: settings.ritual),
               value: settings.ritual,
               onChanged: (value) => turn(
                 settings.copyWith(ritual: value, ritualChosen: true),
@@ -100,7 +108,7 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsTasks),
               subtitle: Text(l10n.notificationsTasksBody),
-              secondary: pushBell(on: settings.tasks),
+              secondary: _Bell(on: settings.tasks),
               value: settings.tasks,
               onChanged: (value) =>
                   turn(settings.copyWith(tasks: value), value: value),
@@ -108,7 +116,7 @@ class NotificationSettingsForm extends StatelessWidget {
             SwitchListTile(
               title: Text(l10n.notificationsSharing),
               subtitle: Text(l10n.notificationsSharingBody),
-              secondary: pushBell(on: settings.sharing),
+              secondary: _Bell(on: settings.sharing),
               value: settings.sharing,
               onChanged: (value) =>
                   turn(settings.copyWith(sharing: value), value: value),
@@ -142,8 +150,9 @@ class NotificationSettingsForm extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.md),
         SettingsGroup(
+          bold: true,
           children: [
             ListTile(
               enabled: on,
@@ -152,8 +161,11 @@ class NotificationSettingsForm extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 spacing: AppSpacing.xs,
                 children: [
-                  Text(formatSummaryTime(context, settings)),
-                  const Icon(Icons.chevron_right_rounded),
+                  Text(
+                    formatSummaryTime(context, settings),
+                    style: AppTypography.labelLarge.copyWith(color: action),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: action),
                 ],
               ),
               onTap: () async {
@@ -180,39 +192,50 @@ class NotificationSettingsForm extends StatelessWidget {
                 AppSpacing.md,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: AppSpacing.sm,
                 children: [
                   Text(
                     l10n.notificationsDays,
-                    style: theme.textTheme.bodyLarge?.copyWith(
+                    style: AppTypography.labelLarge.copyWith(
                       color: on ? scheme.onSurface : theme.disabledColor,
                     ),
                   ),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: [
-                      for (final day in days)
-                        FilterChip(
-                          key: ValueKey('day-$day'),
-                          // The theme hides it for filters elsewhere; here it
-                          // is what tells a chosen day apart (Figma).
-                          showCheckmark: true,
-                          // 2024-01-01 is a Monday: day d is the d-th.
-                          label: Text(
-                            DateFormat.E(locale).format(DateTime(2024, 1, day)),
+                  Theme(
+                    data: AppTheme.dayChips(context),
+                    // Full width, so spaceBetween spreads the days.
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        for (final day in days)
+                          FilterChip(
+                            key: ValueKey('day-$day'),
+                            // 2024-01-01 is a Monday: day d is the d-th.
+                            label: SizedBox.square(
+                              dimension: _day,
+                              child: Center(
+                                child: Text(
+                                  DateFormat.EEEEE(locale)
+                                      .format(DateTime(2024, 1, day)),
+                                  // "T" twice, "S" twice: say the day.
+                                  semanticsLabel: DateFormat.EEEE(locale)
+                                      .format(DateTime(2024, 1, day)),
+                                ),
+                              ),
+                            ),
+                            selected: settings.days.contains(day),
+                            onSelected: on
+                                ? (_) => onChanged(
+                                    settings.copyWith(
+                                      days: toggleDay(settings.days, day),
+                                    ),
+                                  )
+                                : null,
                           ),
-                          selected: settings.days.contains(day),
-                          onSelected: on
-                              ? (_) => onChanged(
-                                  settings.copyWith(
-                                    days: toggleDay(settings.days, day),
-                                  ),
-                                )
-                              : null,
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -238,6 +261,39 @@ class NotificationSettingsForm extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The push's bell in a circle: tinted when on, quiet when off.
+class _Bell extends StatelessWidget {
+  const _Bell({required this.on});
+
+  final bool on;
+
+  static const double _size = 40;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        // surfaceContainer is the card's own colour in dark mode.
+        color: on ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+        shape: BoxShape.circle,
+      ),
+      child: SizedBox.square(
+        dimension: _size,
+        child: IconTheme.merge(
+          data: IconThemeData(
+            color: on
+                ? LoomiaColors.of(context).primaryText
+                : scheme.onSurfaceVariant,
+            size: 20,
+          ),
+          child: pushBell(on: on),
+        ),
+      ),
     );
   }
 }

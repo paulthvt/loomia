@@ -54,7 +54,7 @@ call-back — never for judgement (guardrail #2).
 | `primary/base` | `#A75C15` | `#A75C15` | The filled hero, primary buttons. **Identical in both modes.** |
 | `primary/hover` | `#8C4C12` | `#B06017` | Pointer hover; also the hero's own progress track. |
 | `primary/text` | `#995413` | `#D38A45` | Primary used as *ink* — this is the token that must flip, since the base fails contrast on dark surfaces. |
-| `primary/container` | `#F2E8DE` | `#271E16` | Tinted blocks, active nav pill, avatar background. |
+| `primary/container` | `#F2E8DE` | `#271E16` | Tinted blocks, active nav pill, avatar background (light; dark avatars take `#33251B`, `LoomiaColors.avatar`). |
 | `primary/on-container` | `#713E0E` | `#E0AB7B` | Ink on `primary/container`. |
 | `primary/muted` | `#F9F5F1` | `#1A140F` | Hover wash, selected row. |
 | `secondary/base` | `#697DAB` | `#909FC1` | Progress bars. The pace colour. |
@@ -82,14 +82,13 @@ offers tokens that make sense in the slot being edited.
 
 ### Rules that come out of the palette
 
-1. **One filled colour block per screen** — the Today hero. Everything else is
-   surface plus hairline (guardrail #1).
+1. **One gradient hero per screen** — the Horizon gradient (rosewood → apricot at 135°, `LoomiaColors.heroGradient`). Detail screens, modals and settings use it as a band or card; tab screens as a larger panel. Everything else is white cards on the warm canvas (guardrail #1, revised 2026-11-13).
 2. **Tinted pairs, not tinted everything** — at most one `primary/container` /
    `secondary/container` pair per screen (the stat tiles).
 3. **Accent means "a date made this urgent"**, never "you are behind".
 4. **Red only destroys.** The one exception is a field-level validation error.
 5. **Dark is not an inversion.** Canvas is hue-tinted near-black, surfaces step
-   up, the hero keeps its light-mode colour, and every *ink* use of primary /
+   up, the hero gradient stays identical in both modes, and every *ink* use of primary /
    secondary / accent switches to the lighter tint.
 
 ### Contrast
@@ -98,8 +97,8 @@ All body and label pairs clear WCAG AA (4.5:1); `text/muted` on `surface/canvas`
 is 5.1:1 light and 7.2:1 dark. `text/on-primary` on `primary/base` is 5.0:1 in
 both modes, and 4.6:1 on dark `primary/hover`; `primary/text` is 5.8:1 on white
 and 6.2:1 on dark `surface/default`. The hero's secondary labels are white at
-94% opacity (`AppColors.quietOnPrimary`, 4.6:1): ochre leaves less headroom than
-the old forest did, so hierarchy there comes from size and weight, not fading.
+85% (`LoomiaColors.onHeroQuiet`), 5.9:1 light and 9.7:1 dark on the gradient's
+top-left stop, where hero text sits.
 `test/app/theme/app_theme_test.dart` pins all of these.
 
 ---
@@ -163,9 +162,11 @@ This replaces the placeholder `AppSpacing` (which lacks 12, 16-as-`lg`, 20 and
 | --- | --- | --- |
 | `radius/sm` | 8 | Chips. |
 | `radius/md` | 12 | Inputs, list rows with a hover/selected wash. |
-| `radius/lg` | 16 | Cards, tiles, action items. |
-| `radius/xl` | 20 | The Today hero, dialogs, bottom sheets. |
-| `radius/pill` | 999 | Buttons, icon buttons, progress tracks, nav pill, **avatars at every size**. |
+| `radius/lg` | 16 | Tiles, action items. |
+| `radius/card` | 24 | Cards. |
+| `radius/hero-card` | 28 | Hero cards (Today, Goals). |
+| `radius/hero` | 32 | Hero bottom corners (phone), full hero band (desktop). |
+| `radius/pill` | 999 | Buttons, icon buttons, progress tracks, nav pill, chrome pill bar, **avatars at every size**. |
 
 **Avatars are circular, always, everywhere** — 24 (inline), 32 (dense list /
 stacks), 40 (list row), 56 (detail header). Decided 2026-09-22; squircle was the
@@ -178,19 +179,20 @@ chips.
 
 ## 5. Elevation
 
-Three levels. Only two of them cast a shadow.
+Three levels for content, plus the hero shadows.
 
 | Level | Spec | Where |
 | --- | --- | --- |
-| flat | no shadow, `surface/default`, 1px `border/subtle` | All content: cards, rows, tiles, bars. |
+| flat | one soft shadow `0 2 8 @7%`, no border | Cards: white on canvas, radius 24–28. Horizon restyle (2026-11-13) removed borders. |
 | `elevation/raised` | `0 1 2 @6%` + `0 2 8 @5%` | Menus, dropdowns, snackbars. **Never on a content card.** |
 | `elevation/overlay` | `0 8 28 @12%` | Dialogs and bottom sheets only. Scrim: `text/primary` at 40%. |
+| hero card | `LoomiaColors.heroCardShadow` | Hero cards (Today, Goals): deeper shadow than standard cards. |
 
 In dark mode, raised and overlay surfaces step up a surface token
 (`surface/default` → `surface/raised`) rather than deepening the shadow —
-shadows are close to invisible on a near-black canvas.
+shadows are close to invisible on a near-black canvas. Hero cards gain a subtle hairline (`LoomiaColors.heroCardBorder`) in dark mode.
 
-A UI of floating cards is the thing this system is built to avoid (principle #6).
+A UI of floating cards is the thing this system is built to avoid (principle #6). The Horizon hero is the exception: it floats to signal primacy, and its radius (32 bottom corners) distinguishes it from content cards (24).
 
 ---
 

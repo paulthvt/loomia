@@ -65,7 +65,13 @@ class LoomiaChip extends StatelessWidget {
             Icon(icon, size: 14, color: ink),
             const SizedBox(width: AppSpacing.xs),
           ],
-          Text(label, style: AppTypography.caption.copyWith(color: ink)),
+          // Flexible: at a large text size the label wraps in its chip.
+          Flexible(
+            child: Text(
+              label,
+              style: AppTypography.caption.copyWith(color: ink),
+            ),
+          ),
         ],
       ),
     );

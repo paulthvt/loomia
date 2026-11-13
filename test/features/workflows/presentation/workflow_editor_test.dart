@@ -107,7 +107,7 @@ void main() {
       workflows: workflows,
     );
 
-    expect(find.text("WHAT'S NEXT"), findsOneWidget);
+    expect(find.text("What's next"), findsOneWidget);
     final health = find.widgetWithText(
       CheckboxListTile,
       'Health professionals',

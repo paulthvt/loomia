@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -122,6 +123,35 @@ void main() {
     expect(plan.loyaltyForecast, 3);
     expect(plan.levelTarget, 'Elite');
     expect(saved, 1);
+  });
+
+  testWidgets('plan fields have no outline at rest', (tester) async {
+    goals = FakeGoalsRepository();
+    await open(tester);
+
+    final decorator = tester.widget<InputDecorator>(
+      find.descendant(
+        of: field('Own volume (PV)'),
+        matching: find.byType(InputDecorator),
+      ),
+    );
+    final border = decorator.decoration.border;
+    expect(
+      border == InputBorder.none ||
+          (border is OutlineInputBorder &&
+              border.borderSide == BorderSide.none),
+      isTrue,
+    );
+    expect(decorator.decoration.filled, isTrue);
+    // The question sits on the hero, with a close button.
+    expect(
+      find.descendant(
+        of: find.byType(HeroPanel),
+        matching: find.textContaining('What are you aiming for in'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Close'), findsOneWidget);
   });
 
   testWidgets('each number starts from the last 3 closed months', (

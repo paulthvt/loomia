@@ -102,6 +102,24 @@ void main() {
 
   setUp(() => tasks = FakeTaskRepository());
 
+  testWidgets('a field in the sheet has a visible box at rest', (tester) async {
+    await _pumpHarness(
+      tester,
+      tasks: tasks,
+      open: (context) => showTask(context, day: DateTime(2026, 10, 30)),
+    );
+
+    // The sheet is white like the field, so only the hairline shows it.
+    final decorator = tester.widget<InputDecorator>(
+      find.descendant(of: whatField, matching: find.byType(InputDecorator)),
+    );
+    final border = decorator.decoration.enabledBorder;
+    expect(border, isA<OutlineInputBorder>());
+    expect(border!.borderSide.style, BorderStyle.solid);
+    expect(border.borderSide.width, greaterThan(0));
+    expect(border.borderSide.color.a, greaterThan(0));
+  });
+
   testWidgets('new task: "  " shows taskTitleRequired and saves nothing', (
     tester,
   ) async {

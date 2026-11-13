@@ -124,8 +124,8 @@ void main() {
       ]),
     );
 
-    final eventsHeader = find.text('EVENTS');
-    final priorityHeader = find.text('PEOPLE');
+    final eventsHeader = find.text('Events');
+    final priorityHeader = find.text('People');
     expect(eventsHeader, findsOneWidget);
     expect(priorityHeader, findsOneWidget);
     expect(
@@ -180,7 +180,7 @@ void main() {
       events: noTodayEvents,
     );
 
-    expect(find.text('EVENTS'), findsNothing);
+    expect(find.text('Events'), findsNothing);
   });
 
   testWidgets('up to date on people, the events still show', (tester) async {
@@ -191,7 +191,7 @@ void main() {
       due: const AsyncData([]),
     );
 
-    expect(find.text('EVENTS'), findsOneWidget);
+    expect(find.text('Events'), findsOneWidget);
     expect(find.text('You are up to date'), findsOneWidget);
   });
 
@@ -229,7 +229,7 @@ void main() {
     );
 
     expect(find.text('One person is worth a message today'), findsOneWidget);
-    expect(find.text('EVENTS'), findsOneWidget);
+    expect(find.text('Events'), findsOneWidget);
   });
 
   testWidgets('in the app: tick a step and the network error', (tester) async {

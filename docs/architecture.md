@@ -71,10 +71,10 @@ separate authenticated from unauthenticated areas. `app_router.dart` documents
 those extension points inline.
 
 Signed-in screens sit in a `ShellRoute` whose `AppShell` (`lib/app/shell/`)
-picks its chrome from `context.screenSize`: a sidebar on desktop, the same
-sidebar as an icon rail on tablet, a bottom bar on mobile (hidden on
-Settings). Settings is not a destination — it opens from the account block at
-the bottom of the sidebar, or from the avatar in the top bar on mobile. Its sections (`/settings/account`,
+picks its chrome from `context.screenSize`: a floating dark sidebar on desktop, the same
+sidebar collapsed to an icon rail on tablet, a floating dark pill bar on mobile (hidden on
+Settings and detail screens). Settings is not a destination — it opens from the account block at
+the bottom of the sidebar, or from the avatar in the gradient hero on mobile. Its sections (`/settings/account`,
 `/settings/language`, `/settings/appearance`) are nested routes: on desktop they fill a pane beside the
 Settings list without a transition; on mobile and tablet each is its own pushed
 screen.

@@ -20,6 +20,7 @@ class TagChip extends StatelessWidget {
     required this.color,
     this.onTap,
     this.selected,
+    this.onHero = false,
     super.key,
   });
 
@@ -28,16 +29,28 @@ class TagChip extends StatelessWidget {
   final VoidCallback? onTap;
   final bool? selected;
 
+  /// On the hero gradient (the Contacts filter, the contact's hero): off and
+  /// plain are an outline in the hero's white, and the chip is a pill like
+  /// the stage chips.
+  final bool onHero;
+
+  /// The outline's opacity on the hero.
+  static const double _heroOutline = .25;
+
   @override
   Widget build(BuildContext context) {
     final tag = color.of(context);
-    final off = selected == false;
-    final (background, text) = off
-        ? (
-            LoomiaColors.of(context).surfaceSunken,
-            Theme.of(context).colorScheme.onSurfaceVariant,
-          )
-        : (tag.container, tag.ink);
+    final colors = LoomiaColors.of(context);
+    final off = selected == false || (onHero && selected == null);
+    final (background, text) = switch ((off, onHero)) {
+      (true, true) => (Colors.transparent, colors.onHero),
+      (true, false) => (
+        colors.surfaceSunken,
+        Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      _ => (tag.container, tag.ink),
+    };
+    final radius = BorderRadius.circular(onHero ? AppRadii.pill : AppRadii.sm);
     final chip = AnimatedContainer(
       duration: context.motion(AppMotion.quick),
       curve: AppMotion.standard,
@@ -47,7 +60,10 @@ class TagChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
+        borderRadius: radius,
+        border: off && onHero
+            ? Border.all(color: colors.onHero.withValues(alpha: _heroOutline))
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -69,12 +85,14 @@ class TagChip extends StatelessWidget {
     );
     final tap = onTap;
     if (tap == null) return chip;
+    // Its own node: on the hero it shares a Material with other content.
     return Semantics(
+      container: true,
       button: true,
       selected: selected,
       child: InkWell(
         onTap: tap,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
+        borderRadius: radius,
         // 32px like the LRP line under the stage chip: it keeps the tags
         // tight under it, and 32 still clears the 24px minimum target.
         child: ConstrainedBox(
@@ -141,24 +159,40 @@ class TagDots extends StatelessWidget {
 /// After a person's tags: "+ Add tag" when they have none, an edit chip when
 /// they have some. Both open the tag sheet.
 class TagAction extends StatelessWidget {
-  const TagAction({required this.empty, required this.onTap, super.key});
+  const TagAction({
+    required this.empty,
+    required this.onTap,
+    this.onHero = false,
+    super.key,
+  });
 
   final bool empty;
   final VoidCallback onTap;
+
+  /// On the hero gradient: outlined in the hero's white, a pill as the
+  /// tags beside it.
+  final bool onHero;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = LoomiaColors.of(context);
-    final ink = Theme.of(context).colorScheme.onSurfaceVariant;
+    final ink = onHero
+        ? colors.onHero
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final radius = BorderRadius.circular(onHero ? AppRadii.pill : AppRadii.sm);
     final chip = Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: colors.borderStrong),
-        borderRadius: BorderRadius.circular(AppRadii.sm),
+        border: Border.all(
+          color: onHero
+              ? colors.onHero.withValues(alpha: TagChip._heroOutline)
+              : colors.borderStrong,
+        ),
+        borderRadius: radius,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -184,11 +218,12 @@ class TagAction extends StatelessWidget {
       ),
     );
     final button = Semantics(
+      container: true,
       button: true,
       label: empty ? null : l10n.tagsEdit,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadii.sm),
+        borderRadius: radius,
         child: ConstrainedBox(
           constraints: const BoxConstraints(
             minHeight: tagTapTarget,
