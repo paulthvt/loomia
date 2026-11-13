@@ -16,6 +16,7 @@ class LoomiaTopBar extends StatelessWidget {
     this.large = false,
     this.action,
     this.gap = AppSpacing.lg,
+    this.onHero = false,
     super.key,
   });
 
@@ -32,6 +33,10 @@ class LoomiaTopBar extends StatelessWidget {
 
   /// Space below: less on Today, where the hero continues the greeting.
   final double gap;
+
+  /// On hero gradient: eyebrow in onHeroQuiet (sentence case, medium),
+  /// title in onHero.
+  final bool onHero;
 
   @override
   Widget build(BuildContext context) {
@@ -51,18 +56,25 @@ class LoomiaTopBar extends StatelessWidget {
               children: [
                 if (eyebrowText != null) ...[
                   Text(
-                    eyebrowText.toUpperCase(),
-                    style: AppTypography.overline.copyWith(
-                      color: colors.textMuted,
-                    ),
+                    onHero ? eyebrowText : eyebrowText.toUpperCase(),
+                    style: onHero
+                        ? AppTypography.body.copyWith(
+                            color: colors.onHeroQuiet,
+                            fontWeight: FontWeight.w500,
+                          )
+                        : AppTypography.overline.copyWith(
+                            color: colors.textMuted,
+                          ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                 ],
                 Text(
                   title,
-                  style: large
-                      ? theme.textTheme.displaySmall
-                      : theme.textTheme.headlineSmall,
+                  style:
+                      (large
+                              ? theme.textTheme.displaySmall
+                              : theme.textTheme.headlineSmall)
+                          ?.copyWith(color: onHero ? colors.onHero : null),
                 ),
               ],
             ),

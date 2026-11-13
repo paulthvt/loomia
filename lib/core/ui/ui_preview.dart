@@ -8,6 +8,7 @@ import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/fact_row.dart';
 import 'package:loomia/core/ui/goal_card.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
@@ -49,6 +50,51 @@ class _Gallery extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
         const LoomiaTopBar(eyebrow: 'Monday 22 September', title: 'Components'),
+        const SectionHeader(title: 'Hero panel'),
+        HeroPanel(
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: LoomiaTopBar(
+                    onHero: true,
+                    eyebrow: 'Monday 22 September',
+                    title: 'Good afternoon, Marie',
+                    gap: 0,
+                  ),
+                ),
+                HeroIconButton(
+                  icon: Icons.settings_outlined,
+                  tooltip: 'Settings',
+                  onPressed: () {},
+                ),
+              ],
+            ),
+            HeroCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Stat tile inside hero card',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          '18',
+                          style: Theme.of(context).textTheme.displaySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
         const SectionHeader(title: 'Wordmark'),
         Wrap(
           spacing: AppSpacing.lg,
