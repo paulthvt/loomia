@@ -106,8 +106,10 @@ class _Gallery extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         const SectionHeader(title: 'Avatar'),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        // A Wrap: the hero size pushes the group past the sheet's width.
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.end,
+          runSpacing: AppSpacing.sm,
           children: [
             for (final size in AvatarSize.values) ...[
               LoomiaAvatar(name: 'Marie Dupont', size: size),

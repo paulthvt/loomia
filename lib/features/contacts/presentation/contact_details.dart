@@ -8,7 +8,8 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/fact_row.dart';
-import 'package:loomia/core/ui/loomia_chip.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
+import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
@@ -56,7 +57,7 @@ typedef _Action = ({
 /// what you know. A pure view; the page owns saving and navigation.
 class ContactDetails extends StatelessWidget {
   /// INFO's column on desktop, beside the rest.
-  static const double _factsWidth = 340;
+  static const double _factsWidth = 320;
 
   const ContactDetails({
     required this.person,
@@ -84,10 +85,14 @@ class ContactDetails extends StatelessWidget {
     this.nextStep,
     this.history,
     this.report,
+    this.onBack,
     super.key,
   });
 
   final Person person;
+
+  /// Back, in the hero; null in the desktop pane.
+  final VoidCallback? onBack;
 
   /// Which words a team member's rank and volume use.
   final BusinessModel model;
@@ -206,10 +211,12 @@ class ContactDetails extends StatelessWidget {
     );
     const icon = Icon(Icons.more_horiz_rounded);
 
+    final style = HeroIconButton.styleOf(context);
     if (context.screenSize.isMobile) {
       return IconButton(
         tooltip: l10n.contactMore,
         icon: icon,
+        style: style,
         onPressed: () async {
           final chosen = await showModalBottomSheet<VoidCallback>(
             context: context,
@@ -233,6 +240,7 @@ class ContactDetails extends StatelessWidget {
     return PopupMenuButton<VoidCallback>(
       tooltip: l10n.contactMore,
       icon: icon,
+      style: style,
       onSelected: (action) => action(),
       itemBuilder: (context) => [
         for (final action in actions)
@@ -309,18 +317,26 @@ class ContactDetails extends StatelessWidget {
     final desktop = context.screenSize.isDesktop;
     final more = _more(context, l10n);
 
-    final buttons = [
+    // Message white with the primary icon, Call translucent beside it.
+    // [width]: each one's least, so two share the row in halves.
+    List<Widget> buttons(double width) => [
       if (message != null)
         FilledButton.icon(
           onPressed: () => onLaunch(message),
-          icon: const Icon(Icons.chat_bubble_outline_rounded),
+          style: AppTheme.heroPill(context)
+              .copyWith(minimumSize: WidgetStatePropertyAll(Size(width, 48))),
+          icon: Icon(
+            Icons.chat_bubble_rounded,
+            color: theme.colorScheme.primary,
+          ),
           label: Text(l10n.contactMessage),
         ),
       if (call != null)
-        FilledButton.tonalIcon(
+        FilledButton.icon(
           onPressed: () => onLaunch(call),
-          style: AppTheme.tonal(context),
-          icon: const Icon(Icons.call_outlined),
+          style: AppTheme.heroFillPill(context)
+              .copyWith(minimumSize: WidgetStatePropertyAll(Size(width, 48))),
+          icon: const Icon(Icons.call_rounded),
           label: Text(l10n.contactCall),
         ),
     ];
@@ -338,6 +354,7 @@ class ContactDetails extends StatelessWidget {
           // 32px, as the SectionHeader action: it sits tight under the
           // chip in Figma, and 32 still clears the 24px minimum target.
           style: TextButton.styleFrom(
+            foregroundColor: colors.onHero,
             padding: EdgeInsets.zero,
             minimumSize: const Size(0, 32),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -360,61 +377,91 @@ class ContactDetails extends StatelessWidget {
       );
     }
 
-    final header = Row(
-      crossAxisAlignment: desktop
-          ? CrossAxisAlignment.center
-          : CrossAxisAlignment.start,
-      children: [
-        AvatarControl(
-          name: person.name,
-          photo: photo,
-          onChoose: onChoosePhoto,
-          onRemove: person.photoPath == null ? null : onRemovePhoto,
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AppSpacing.xs,
-            children: [
-              Text(
-                person.name,
-                style: desktop
-                    ? theme.textTheme.displaySmall
-                    : theme.textTheme.headlineSmall,
-              ),
-              Text(
-                l10n.contactSince(
-                  stageLabel(l10n, person.stage),
-                  person.stageSince.toLocal(),
-                ),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colors.textMuted,
-                ),
-              ),
-              LoomiaChip(label: stageLabel(l10n, person.stage)),
-              if (person.stage != Stage.prospect) loyalty(),
-              Wrap(
-                spacing: AppSpacing.xs,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  for (final tag in tags)
-                    TagChip(label: tag.name, color: tag.color, onTap: onTags),
-                  TagAction(empty: tags.isEmpty, onTap: onTags),
-                ],
-              ),
-            ],
+    final back = onBack;
+    final avatar = AvatarControl(
+      name: person.name,
+      photo: photo,
+      size: AvatarSize.hero,
+      ring: colors.onHero,
+      onChoose: onChoosePhoto,
+      onRemove: person.photoPath == null ? null : onRemovePhoto,
+    );
+    final identity = Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: AppSpacing.xs,
+        children: [
+          Text(
+            person.name,
+            style: AppTypography.headline.copyWith(color: colors.onHero),
           ),
-        ),
-        // Desktop: the buttons sit in the header, sized to their labels.
-        if (desktop) ...[
-          for (final button in buttons) ...[
-            const SizedBox(width: AppSpacing.sm),
-            button,
-          ],
-          const SizedBox(width: AppSpacing.sm),
-          more,
+          Text(
+            l10n.contactSince(
+              stageLabel(l10n, person.stage),
+              person.stageSince.toLocal(),
+            ),
+            style: AppTypography.body.copyWith(color: colors.onHeroQuiet),
+          ),
         ],
+      ),
+    );
+    final backButton = back == null
+        ? null
+        : BackButton(onPressed: back, style: HeroIconButton.styleOf(context));
+    final hero = HeroPanel(
+      shape: desktop ? HeroShape.band : HeroShape.screenTop,
+      gap: AppSpacing.md,
+      children: [
+        // Phones and tablets: back and ⋯ on a row of their own; the desktop
+        // pane puts ⋯ beside the name.
+        if (!desktop) Row(children: [?backButton, const Spacer(), more]),
+        Row(
+          spacing: AppSpacing.md,
+          children: [
+            if (desktop) ?backButton,
+            avatar,
+            identity,
+            if (desktop) more,
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _StageChip(label: stageLabel(l10n, person.stage)),
+                for (final tag in tags)
+                  TagChip(
+                    label: tag.name,
+                    color: tag.color,
+                    onTap: onTags,
+                    onHero: true,
+                  ),
+                TagAction(empty: tags.isEmpty, onTap: onTags, onHero: true),
+              ],
+            ),
+            if (person.stage != Stage.prospect) loyalty(),
+          ],
+        ),
+        if (message != null || call != null)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Halves on a phone, at their own width in the desktop pane;
+              // stacked when a large text size or a longer translation would
+              // not fit, so a label never breaks mid-word.
+              final half = desktop
+                  ? 0.0
+                  : (constraints.maxWidth - AppSpacing.sm) / 2;
+              return OverflowBar(
+                spacing: AppSpacing.sm,
+                overflowSpacing: AppSpacing.sm,
+                children: buttons(half),
+              );
+            },
+          ),
       ],
     );
 
@@ -422,16 +469,19 @@ class ContactDetails extends StatelessWidget {
       if (person.stage == Stage.prospect) ...[
         SectionHeader(title: l10n.contactSectionWhereItStands),
         // Each chip already pads itself to the 48px tap target.
-        Wrap(
-          spacing: AppSpacing.sm,
-          children: [
-            for (final option in ProspectStatus.values)
-              ChoiceChip(
-                label: Text(statusLabel(l10n, option)),
-                selected: option == status,
-                onSelected: (_) => onStatus(option == status ? null : option),
-              ),
-          ],
+        Theme(
+          data: AppTheme.choiceChips(context),
+          child: Wrap(
+            spacing: AppSpacing.sm,
+            children: [
+              for (final option in ProspectStatus.values)
+                ChoiceChip(
+                  label: Text(statusLabel(l10n, option)),
+                  selected: option == status,
+                  onSelected: (_) => onStatus(option == status ? null : option),
+                ),
+            ],
+          ),
         ),
       ],
     ];
@@ -473,12 +523,14 @@ class ContactDetails extends StatelessWidget {
           if (facts.isEmpty)
             muted(l10n.contactNothingYet)
           else
-            for (final (label, value, link) in facts)
+            for (final (index, (label, value, link)) in facts.indexed) ...[
+              if (index > 0) const Divider(height: 1),
               FactRow(
                 label: label,
                 value: value!,
                 onTap: link == null ? null : () => onLaunch(link),
               ),
+            ],
         ]),
       ];
     }
@@ -704,10 +756,12 @@ class ContactDetails extends StatelessWidget {
       onRefresh: onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(desktop ? AppSpacing.xl : AppSpacing.md),
+        padding: desktop
+            ? const EdgeInsets.all(AppSpacing.lg)
+            : const EdgeInsets.only(bottom: AppSpacing.lg),
         children: desktop
             ? [
-                header,
+                hero,
                 const SizedBox(height: AppSpacing.lg),
                 ContentColumns(
                   sideWidth: _factsWidth,
@@ -723,34 +777,52 @@ class ContactDetails extends StatelessWidget {
                   ],
                 ),
               ]
-            : spaced([
-                [
-                  header,
-                  const SizedBox(height: AppSpacing.lg),
-                  Row(
-                    spacing: AppSpacing.sm,
-                    children: [
-                      // Side by side at their own width; stacked when a large
-                      // text size or a longer translation would not fit, so
-                      // a label never breaks mid-word.
-                      Expanded(
-                        child: OverflowBar(
-                          spacing: AppSpacing.sm,
-                          overflowSpacing: AppSpacing.sm,
-                          children: buttons,
-                        ),
-                      ),
-                      more,
-                    ],
+            : [
+                hero,
+                const SizedBox(height: AppSpacing.lg),
+                for (final child in spaced([
+                  whereItStands,
+                  [?nextStep],
+                  sharedGoals,
+                  aimingFor,
+                  whatYouKnow,
+                  [?history],
+                ]))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: child,
                   ),
-                ],
-                whereItStands,
-                [?nextStep],
-                sharedGoals,
-                aimingFor,
-                whatYouKnow,
-                [?history],
-              ]),
+              ],
+      ),
+    );
+  }
+}
+
+/// The stage on the hero: a translucent pill.
+class _StageChip extends StatelessWidget {
+  const _StageChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.heroFill,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.ms,
+          vertical: AppSpacing.xs,
+        ),
+        child: Text(
+          label,
+          style: AppTypography.label.copyWith(color: colors.onHero),
+        ),
       ),
     );
   }

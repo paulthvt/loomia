@@ -48,11 +48,15 @@ class ContactPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The hero holds back and runs under the status bar.
     return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => backOr(context, Routes.contacts)),
+      body: SafeArea(
+        top: false,
+        child: ContactPane(
+          id: id,
+          onBack: () => backOr(context, Routes.contacts),
+        ),
       ),
-      body: SafeArea(top: false, child: ContactPane(id: id)),
     );
   }
 }
@@ -78,9 +82,12 @@ class ContactsNoSelection extends StatelessWidget {
 /// saving, navigation and the other apps. Shared by [ContactPage] and the
 /// desktop pane.
 class ContactPane extends ConsumerStatefulWidget {
-  const ContactPane({required this.id, super.key});
+  const ContactPane({required this.id, this.onBack, super.key});
 
   final String id;
+
+  /// Back in the hero: null in the desktop pane beside the list.
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<ContactPane> createState() => _ContactPaneState();
@@ -151,6 +158,7 @@ class _ContactPaneState extends ConsumerState<ContactPane> {
 
     return ContactDetails(
       person: person,
+      onBack: widget.onBack,
       sharing: sharing,
       onInvite: () => unawaited(
         showInviteSheet(context, personId: person.id, name: firstName(person)),

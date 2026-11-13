@@ -268,7 +268,12 @@ class NextStepCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(title: header),
+        SectionHeader(
+          title: header,
+          actionLabel: onAddReminder == null ? null : l10n.reminderAdd,
+          actionIcon: Icons.add_rounded,
+          onAction: onAddReminder,
+        ),
         AnimatedRows(
           spacing: AppSpacing.ms,
           gap: RowGap.below,
@@ -376,18 +381,6 @@ class NextStepCard extends StatelessWidget {
               _reminder(context, l10n, reminder),
           ],
         ),
-        if (onAddReminder case final add?)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.sm),
-              child: TextButton.icon(
-                onPressed: add,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(l10n.reminderAdd),
-              ),
-            ),
-          ),
       ],
     );
   }

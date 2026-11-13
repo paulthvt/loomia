@@ -84,6 +84,55 @@ abstract final class AppTheme {
     );
   }
 
+  /// A translucent pill button on the hero gradient, beside a [heroPill]
+  /// (a contact's Call).
+  static ButtonStyle heroFillPill(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return FilledButton.styleFrom(
+      backgroundColor: colors.heroFill,
+      foregroundColor: colors.onHero,
+    );
+  }
+
+  /// Choice chips on the page (a prospect's Where it stands), as a theme for
+  /// a `Theme` above them: outlined pills, the picked one in the primary
+  /// tint with a check.
+  static ThemeData choiceChips(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final colors = LoomiaColors.of(context);
+    final chips = theme.chipTheme;
+    return theme.copyWith(
+      chipTheme: chips.copyWith(
+        backgroundColor: scheme.surfaceContainerLowest,
+        selectedColor: scheme.primaryContainer,
+        showCheckmark: true,
+        checkmarkColor: scheme.onPrimaryContainer,
+        side: WidgetStateBorderSide.resolveWith(
+          (states) => BorderSide(
+            color: states.contains(WidgetState.selected)
+                ? colors.primaryText.withValues(alpha: .4)
+                : colors.borderSubtle,
+          ),
+        ),
+        labelStyle: chips.labelStyle?.copyWith(
+          color: WidgetStateColor.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? scheme.onPrimaryContainer
+                : scheme.onSurface,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.ms,
+          vertical: AppSpacing.xs,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.pill),
+        ),
+      ),
+    );
+  }
+
   /// A text button on the hero gradient (the desktop Calendar's Today).
   static ButtonStyle heroButton(BuildContext context) {
     final colors = LoomiaColors.of(context);

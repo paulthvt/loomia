@@ -1072,6 +1072,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(tick);
     await tester.pumpAndSettle();
+    // Back sits in the hero, scrolled away with it.
+    await tester.ensureVisible(find.byType(BackButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.byType(ContactPage), findsNothing);

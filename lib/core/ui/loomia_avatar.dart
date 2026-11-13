@@ -5,13 +5,15 @@ import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The four sizes the product uses (`docs/design/components.md` #4): inline in a
-/// sentence, dense list or stack, list row, contact header.
+/// The sizes the product uses (`docs/design/components.md` #4): inline in a
+/// sentence, dense list or stack, list row, contact header, the contact's
+/// identity hero.
 enum AvatarSize {
   inline(24),
   dense(32),
   row(40),
-  header(56);
+  header(56),
+  hero(76);
 
   const AvatarSize(this.diameter);
 
@@ -22,6 +24,7 @@ enum AvatarSize {
     AvatarSize.dense => AppTypography.caption,
     AvatarSize.row => AppTypography.label,
     AvatarSize.header => AppTypography.title,
+    AvatarSize.hero => AppTypography.headline,
   };
 }
 

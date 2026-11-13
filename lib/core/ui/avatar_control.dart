@@ -14,6 +14,8 @@ class AvatarControl extends StatefulWidget {
     this.photo,
     this.onRemove,
     this.initiallyBusy = false,
+    this.size = AvatarSize.header,
+    this.ring,
     super.key,
   });
 
@@ -27,6 +29,11 @@ class AvatarControl extends StatefulWidget {
   /// Previews only: the uploading state without a pending future, its ring
   /// still (at 60%, as in the Figma board) so a golden can settle.
   final bool initiallyBusy;
+
+  final AvatarSize size;
+
+  /// A 3px ring around the avatar, under the badge (the identity hero).
+  final Color? ring;
 
   @override
   State<AvatarControl> createState() => _AvatarControlState();
@@ -48,7 +55,8 @@ class _AvatarControlState extends State<AvatarControl> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    const size = AvatarSize.header;
+    final size = widget.size;
+    final ring = widget.ring;
     final remove = widget.onRemove;
     final badge = AvatarSize.inline.diameter;
 
@@ -87,6 +95,15 @@ class _AvatarControlState extends State<AvatarControl> {
             clipBehavior: Clip.none,
             children: [
               LoomiaAvatar(name: widget.name, size: size, photo: widget.photo),
+              if (ring != null)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: ring, width: 3),
+                    ),
+                  ),
+                ),
               if (_busy)
                 Positioned.fill(
                   child: CircularProgressIndicator(
