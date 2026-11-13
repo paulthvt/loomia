@@ -77,6 +77,10 @@ class AppShell extends ConsumerWidget {
         // padding. Always this MediaQuery, only its data changes: the
         // Contacts list keeps its state.
         extendBody: true,
+        // Each page's own Scaffold makes room for the keyboard. This one
+        // must not too: its body's MediaQuery below is the one from above
+        // it, keyboard inset included, so the page would shrink twice.
+        resizeToAvoidBottomInset: false,
         body: MediaQuery(
           data: media.copyWith(
             padding: media.padding.copyWith(

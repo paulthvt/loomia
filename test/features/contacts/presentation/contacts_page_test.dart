@@ -259,6 +259,30 @@ void main() {
     expect(find.text('Chloé'), findsOneWidget);
   });
 
+  testWidgets('search with the keyboard open keeps the hero clear of the '
+      'status bar and the rows in view', (tester) async {
+    const statusBar = 24.0;
+    // The keyboard of the user's phone: the field had to scroll up.
+    const keyboard = 360.0;
+    await openContacts(tester);
+    final ratio = tester.view.devicePixelRatio;
+    tester.view.padding = FakeViewPadding(top: statusBar * ratio);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    tester.view.viewInsets = FakeViewPadding(bottom: keyboard * ratio);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getTopLeft(find.text('Contacts').first).dy,
+      greaterThanOrEqualTo(statusBar),
+    );
+    final row = tester.getRect(find.text('Marie Dupont'));
+    expect(row.bottom, lessThanOrEqualTo(_phone.height - keyboard));
+    expect(tester.getBottomLeft(find.byType(TextField)).dy, lessThan(row.top));
+  });
+
   testWidgets('missing person', (tester) async {
     final container = await pumpLoomia(tester, size: _phone, people: people);
     container.read(routerProvider).go(Routes.contactLocation('gone'));
