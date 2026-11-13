@@ -210,12 +210,12 @@ void main() {
     await tester.tap(find.text('Workflows'));
     await tester.pumpAndSettle();
     expect(find.text('Health professionals'), findsOneWidget);
-    expect(find.text('PREFERENCES'), findsOneWidget);
+    expect(find.text('Preferences'), findsOneWidget);
 
     await tester.tap(find.text('Health professionals'));
     await tester.pumpAndSettle();
     expect(find.byType(WorkflowEditor), findsOneWidget);
-    expect(find.text('PREFERENCES'), findsOneWidget);
+    expect(find.text('Preferences'), findsOneWidget);
 
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();

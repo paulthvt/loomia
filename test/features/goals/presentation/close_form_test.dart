@@ -89,7 +89,7 @@ void main() {
     // "Reached" is a semantics label.
     final semantics = tester.ensureSemantics();
 
-    expect(find.text('Step 1 of 2'), findsOneWidget);
+    expect(find.text('STEP 1 OF 2'), findsOneWidget);
     expect(find.text('How did September go?'), findsOneWidget);
     expect(find.text('2,650 of 2,800 PV'), findsOneWidget);
     expect(find.text('9 of 8'), findsOneWidget);

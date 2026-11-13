@@ -54,12 +54,12 @@ void main() {
       ),
     );
 
-    expect(find.text('Step 2 of 3'), findsOneWidget);
+    expect(find.text('STEP 2 OF 3'), findsOneWidget);
     expect(find.text('Bravo, you reached your goals!'), findsOneWidget);
     expect(find.textContaining('You can be proud of yourself'), findsOneWidget);
     expect(find.byType(ReachedRing), findsOneWidget);
-    expect(find.text('YOU REACHED'), findsOneWidget);
-    expect(find.text('ON ITS WAY'), findsNothing);
+    expect(find.text('You reached'), findsOneWidget);
+    expect(find.text('On its way'), findsNothing);
     expect(find.text('2,850 of 2,800 PV'), findsOneWidget);
     expect(find.text('Premier'), findsOneWidget);
     expect(find.bySemanticsLabel('Reached'), findsNWidgets(3));
@@ -90,8 +90,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(ReachedRing), findsNothing);
-    expect(find.text('YOU REACHED'), findsOneWidget);
-    expect(find.text('ON ITS WAY'), findsOneWidget);
+    expect(find.text('You reached'), findsOneWidget);
+    expect(find.text('On its way'), findsOneWidget);
     expect(find.text('Executive, aiming for Elite'), findsOneWidget);
   });
 
@@ -112,7 +112,7 @@ void main() {
     expect(find.textContaining('it carries into October'), findsOneWidget);
     expect(find.byType(ReachedRing), findsNothing);
     expect(find.text('What you built'), findsOneWidget);
-    expect(find.text('YOU REACHED'), findsNothing);
+    expect(find.text('You reached'), findsNothing);
     expect(find.text('7 of 8'), findsOneWidget);
     expect(find.text('Not filled in'), findsOneWidget);
     expect(find.bySemanticsLabel('Reached'), findsNothing);

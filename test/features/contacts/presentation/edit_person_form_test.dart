@@ -531,7 +531,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await edit(member, EditPart.facts);
-    expect(find.text('Info'), findsNothing);
+    expect(find.text('Info'), findsOneWidget); // Dialog title
   });
 
   testWidgets('a name is still required', (tester) async {

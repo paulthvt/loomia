@@ -181,7 +181,7 @@ void main() {
     );
 
     expect(find.text('of 2,800'), findsOneWidget);
-    expect(find.text('Loyalty orders'), findsOneWidget);
+    expect(find.text('LOYALTY ORDERS'), findsOneWidget);
     expect(find.text('Aiming for Elite · Team volume 6,000'), findsOneWidget);
     expect(find.textContaining('PV'), findsNothing);
     expect(find.textContaining('OV'), findsNothing);
