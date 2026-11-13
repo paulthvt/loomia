@@ -62,6 +62,33 @@ abstract final class AppTheme {
     );
   }
 
+  /// Ink on a white fill on the hero (the switch's selected segment, the
+  /// month's selected day). The hero and the white are the same in both
+  /// modes, so is this: the light tint's ink, never the dark one's.
+  static final Color onHeroFill = AppColors.light.onPrimaryContainer;
+
+  /// The Calendar's view switch on the hero gradient: a translucent track,
+  /// the selected segment white with the primary tint's ink.
+  static ButtonStyle heroSegmented(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return SegmentedButton.styleFrom(
+      backgroundColor: colors.heroFillSubtle,
+      foregroundColor: colors.onHero,
+      selectedBackgroundColor: colors.onHero,
+      selectedForegroundColor: onHeroFill,
+      side: BorderSide.none,
+    );
+  }
+
+  /// A text button on the hero gradient (the desktop Calendar's Today).
+  static ButtonStyle heroButton(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return TextButton.styleFrom(
+      backgroundColor: colors.heroFill,
+      foregroundColor: colors.onHero,
+    );
+  }
+
   /// The white + on the dark chrome (floating bar, sidebar, rail), for an
   /// `IconButton` or a `FilledButton.icon`. The caller sets its size.
   static ButtonStyle createButton(BuildContext context) {

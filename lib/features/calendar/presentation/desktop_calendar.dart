@@ -51,7 +51,7 @@ double _lineHeight(BuildContext context, TextStyle style) =>
     MediaQuery.textScalerOf(context).scale(style.fontSize ?? 14) *
     (style.height ?? 1);
 
-/// The desktop month and week's frame: one bordered card.
+/// The desktop month and week's frame: one card.
 class _Board extends StatelessWidget {
   const _Board({required this.child});
 
@@ -59,15 +59,15 @@ class _Board extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = LoomiaColors.of(context);
-    return Material(
-      color: colors.surfaceDefault,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        side: BorderSide(color: colors.borderSubtle),
+    final card = AppTheme.card(context);
+    return DecoratedBox(
+      decoration: card,
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: card.borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: child,
       ),
-      clipBehavior: Clip.antiAlias,
-      child: child,
     );
   }
 }

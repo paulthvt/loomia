@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
@@ -86,17 +87,19 @@ class EventRow extends StatelessWidget {
     final line = where != null && count != null
         ? l10n.eventRowLine(where, count)
         : where ?? count;
+    // A card; over, an outline with no fill or shadow.
+    final card = AppTheme.card(context);
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      side: BorderSide(color: colors.borderSubtle),
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      side: over ? BorderSide(color: colors.borderSubtle) : BorderSide.none,
     );
 
     // Over: the ink one step down, so the times and title stay readable.
     final ink = over ? scheme.onSurfaceVariant : scheme.onSurface;
     final quiet = over ? colors.textMuted : scheme.onSurfaceVariant;
 
-    return Material(
-      color: over ? Colors.transparent : colors.surfaceDefault,
+    final row = Material(
+      color: over ? Colors.transparent : card.color,
       shape: shape,
       child: InkWell(
         onTap: onTap,
@@ -162,5 +165,15 @@ class EventRow extends StatelessWidget {
         ),
       ),
     );
+    // The card's shadow behind the Material, which paints its fill.
+    return over
+        ? row
+        : DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: card.borderRadius,
+              boxShadow: card.boxShadow,
+            ),
+            child: row,
+          );
   }
 }

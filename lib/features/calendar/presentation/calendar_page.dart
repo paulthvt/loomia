@@ -13,6 +13,7 @@ import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -238,10 +239,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       // With a sidebar, Settings is its account block instead, and there
       // is no pull to refresh on a mouse: a button, as on Today.
       accountAction: context.screenSize.usesSideNavigation
-          ? IconButton(
+          ? HeroIconButton(
               onPressed: () => unawaited(_refresh(context, ref)),
               tooltip: AppLocalizations.of(context).contactsRefresh,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: Icons.refresh_rounded,
             )
           : const AccountButton(),
     );
@@ -376,12 +377,13 @@ class CalendarView extends StatelessWidget {
           ),
       ],
       selected: {mode},
-      // Three segments on a phone: the tint says which, the tick would
+      // The white segment says which; on a phone the tick would also
       // squeeze the labels out ("Semaine" in French).
-      showSelectedIcon: desktop,
+      showSelectedIcon: false,
       // A phone's switch row is the switch alone.
       expandedInsets: desktop ? null : EdgeInsets.zero,
       onSelectionChanged: (modes) => onMode?.call(modes.single),
+      style: AppTheme.heroSegmented(context),
     );
     // Desktop in 3 days shows a week: its arrows turn weeks.
     void turn(int delta) {
@@ -391,25 +393,26 @@ class CalendarView extends StatelessWidget {
 
     final todayButton = TextButton(
       onPressed: onToday,
+      style: AppTheme.heroButton(context),
       child: Text(l10n.calendarToday),
     );
-    final previous = IconButton(
+    final previous = HeroIconButton(
       onPressed: () => turn(-1),
       tooltip: switch (mode) {
         CalendarMode.month => l10n.calendarPreviousMonth,
         CalendarMode.threeDays => l10n.calendarPreviousDays,
         CalendarMode.week => l10n.calendarPreviousWeek,
       },
-      icon: const Icon(Icons.chevron_left_rounded),
+      icon: Icons.chevron_left_rounded,
     );
-    final next = IconButton(
+    final next = HeroIconButton(
       onPressed: () => turn(1),
       tooltip: switch (mode) {
         CalendarMode.month => l10n.calendarNextMonth,
         CalendarMode.threeDays => l10n.calendarNextDays,
         CalendarMode.week => l10n.calendarNextWeek,
       },
-      icon: const Icon(Icons.chevron_right_rounded),
+      icon: Icons.chevron_right_rounded,
     );
     Widget titleButton(TextStyle? style) => Expanded(
       child: Align(
@@ -421,7 +424,7 @@ class CalendarView extends StatelessWidget {
             CalendarMode.threeDays => l10n.calendarChooseDay(title),
             CalendarMode.week => l10n.calendarChooseWeek(title),
           },
-          style: style,
+          style: style?.copyWith(color: LoomiaColors.of(context).onHero),
           onTap: onPickTitle,
         ),
       ),
@@ -432,11 +435,13 @@ class CalendarView extends StatelessWidget {
         view: this,
         builder: (context, latest) =>
             _desktop(context, latest, mode, days, firstDay, [
-              titleButton(theme.textTheme.headlineSmall),
+              titleButton(theme.textTheme.displaySmall),
               modeSwitch,
               const SizedBox(width: AppSpacing.sm),
               todayButton,
+              const SizedBox(width: AppSpacing.sm),
               previous,
+              const SizedBox(width: AppSpacing.sm),
               next,
               ?accountAction,
             ]),
@@ -447,10 +452,10 @@ class CalendarView extends StatelessWidget {
       children: [
         titleButton(theme.textTheme.headlineSmall),
         // The switch row's room goes to the switch: Today is an icon.
-        IconButton(
+        HeroIconButton(
           onPressed: onToday,
           tooltip: l10n.calendarToday,
-          icon: const Icon(Icons.today_rounded),
+          icon: Icons.today_rounded,
         ),
         previous,
         next,
@@ -460,14 +465,18 @@ class CalendarView extends StatelessWidget {
     return _Latest(
       view: this,
       builder: (context, latest) => Scaffold(
-        // The lists run under the floating bar, padded by its room.
+        // The lists run under the floating bar, padded by its room; the
+        // hero runs under the status bar.
         body: SafeArea(
+          top: false,
           bottom: false,
           child: LayoutBuilder(
             builder: (context, box) {
               // On its side the phone has no room to hold the calendar
               // still: everything scrolls, and a curved swipe can still miss.
-              final pinned = box.maxHeight >= _pinnedMinHeight;
+              final pinned =
+                  box.maxHeight - MediaQuery.paddingOf(context).top >=
+                  _pinnedMinHeight;
               const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
               final bottom = _bottomRoom(context);
               Widget scrolling(EdgeInsets padding, List<Widget> children) =>
@@ -479,12 +488,25 @@ class CalendarView extends StatelessWidget {
                       children: children,
                     ),
                   );
-              final top = [
-                header,
-                const SizedBox(height: AppSpacing.sm),
-                modeSwitch,
-                const SizedBox(height: AppSpacing.md),
-              ];
+              // From the screen's top edge, under the status bar.
+              Widget hero(Widget? grid) => HeroPanel(
+                gap: 0,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                ),
+                children: [
+                  header,
+                  const SizedBox(height: AppSpacing.sm),
+                  modeSwitch,
+                  if (grid != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    grid,
+                  ],
+                ],
+              );
               if (mode != CalendarMode.month) {
                 final grids = _SwipePager(
                   key: ValueKey(mode),
@@ -501,35 +523,50 @@ class CalendarView extends StatelessWidget {
                 );
                 final waiting = eventsNotLoaded(context, events, onRetry);
                 if (!pinned) {
-                  return scrolling(
-                    sides.copyWith(top: AppSpacing.sm, bottom: bottom),
-                    [...top, ?waiting, grids],
-                  );
+                  return scrolling(EdgeInsets.only(bottom: bottom), [
+                    hero(null),
+                    Padding(
+                      padding: sides.copyWith(top: AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [?waiting, grids],
+                      ),
+                    ),
+                  ]);
                 }
                 // The hours scroll inside the grid, and pull to refresh at
                 // its top; a sideways drag is the pager's (#357).
-                return Padding(
-                  padding: sides.copyWith(top: AppSpacing.sm),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ...top,
-                      ?waiting,
-                      Expanded(
-                        child: _refreshable(
-                          ScrollConfiguration(
-                            behavior: ScrollConfiguration.of(context).copyWith(
-                              physics: AlwaysScrollableScrollPhysics(
-                                parent: ScrollConfiguration.of(context)
-                                    .getScrollPhysics(context),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    hero(null),
+                    Expanded(
+                      child: Padding(
+                        padding: sides.copyWith(top: AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ?waiting,
+                            Expanded(
+                              child: _refreshable(
+                                ScrollConfiguration(
+                                  behavior: ScrollConfiguration.of(context)
+                                      .copyWith(
+                                        physics: AlwaysScrollableScrollPhysics(
+                                          parent: ScrollConfiguration.of(
+                                            context,
+                                          ).getScrollPhysics(context),
+                                        ),
+                                      ),
+                                  child: grids,
+                                ),
                               ),
                             ),
-                            child: grids,
-                          ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               }
               final counts = eventsPerDay(events.value ?? const []);
@@ -548,6 +585,7 @@ class CalendarView extends StatelessWidget {
                   taskCounts: taskCounts,
                   people: people,
                   onSelect: onSelect,
+                  onHero: true,
                 ),
               );
               final below = FadeSwap(
@@ -575,29 +613,25 @@ class CalendarView extends StatelessWidget {
                 ),
               );
               if (!pinned) {
-                return scrolling(
-                  sides.copyWith(top: AppSpacing.sm, bottom: bottom),
-                  [...top, pager, const Divider(height: AppSpacing.xl), below],
-                );
+                return scrolling(EdgeInsets.only(bottom: bottom), [
+                  hero(pager),
+                  Padding(
+                    padding: sides.copyWith(top: AppSpacing.lg),
+                    child: below,
+                  ),
+                ]);
               }
               // Held still, the month has no vertical drag to lose a swipe
               // to (#369); only the list below scrolls and pulls.
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: sides.copyWith(top: AppSpacing.sm),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [...top, pager],
-                    ),
-                  ),
-                  const Padding(
-                    padding: sides,
-                    child: Divider(height: AppSpacing.xl),
-                  ),
+                  hero(pager),
                   Expanded(
-                    child: scrolling(sides.copyWith(bottom: bottom), [below]),
+                    child: scrolling(
+                      sides.copyWith(top: AppSpacing.lg, bottom: bottom),
+                      [below],
+                    ),
                   ),
                 ],
               );
@@ -742,7 +776,14 @@ class CalendarView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: AppSpacing.md,
                   children: [
-                    Row(children: header),
+                    HeroPanel(
+                      shape: HeroShape.band,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xl,
+                        vertical: AppSpacing.md,
+                      ),
+                      children: [Row(children: header)],
+                    ),
                     ?eventsNotLoaded(context, events, onRetry),
                     Expanded(
                       child: mode == CalendarMode.week
@@ -930,6 +971,8 @@ class _TitleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
+    // Its own node, not merged with the hero around it.
+    container: true,
     button: true,
     label: semantics,
     excludeSemantics: true,
@@ -950,10 +993,8 @@ class _TitleButton extends StatelessWidget {
                 style: style,
               ),
             ),
-            Icon(
-              Icons.expand_more_rounded,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            // The hero's icon colour.
+            const Icon(Icons.expand_more_rounded),
           ],
         ),
       ),

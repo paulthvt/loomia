@@ -702,7 +702,9 @@ void main() {
     CalendarEvent? opened;
     await _pump(
       tester,
-      size: const Size(1440, 900),
+      // The test font's wide glyphs wrap both titles: a day under the hero
+      // band needs a little more than 900 to hold the two.
+      size: const Size(1440, 960),
       desktop: true,
       events: [_workshop, _training],
       onOpen: (event) => opened = event,
