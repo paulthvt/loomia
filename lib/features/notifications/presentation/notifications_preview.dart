@@ -87,9 +87,11 @@ Widget _app(
   theme: theme,
   home: Builder(
     builder: (context) => Scaffold(
-      appBar: AppBar(),
       body: SettingsScroll(
+        hero: true,
         title: AppLocalizations.of(context).settingsSectionNotifications,
+        subtitle: AppLocalizations.of(context).notificationsSubtitle,
+        onBack: () {},
         child: NotificationSettingsForm(
           settings: settings,
           allowed: allowed,

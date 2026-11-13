@@ -6,6 +6,7 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';

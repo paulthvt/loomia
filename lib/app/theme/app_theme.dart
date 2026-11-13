@@ -133,6 +133,38 @@ abstract final class AppTheme {
     );
   }
 
+  /// The notification days, as a theme for a `Theme` above them: circles,
+  /// the picked ones in primary. The caller sizes the label.
+  static ThemeData dayChips(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final chips = theme.chipTheme;
+    return theme.copyWith(
+      // Seven 48px targets don't fit a phone's card; 40px circles do (Figma).
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      chipTheme: chips.copyWith(
+        // surfaceContainer is the card's own colour in dark mode.
+        backgroundColor: scheme.surfaceContainerHigh,
+        disabledColor: scheme.surfaceContainerHigh,
+        selectedColor: scheme.primary,
+        showCheckmark: false,
+        labelStyle: AppTypography.label.copyWith(
+          color: WidgetStateColor.resolveWith(
+            // White on primary even while disabled: grey on amber is unreadable.
+            (states) => states.contains(WidgetState.selected)
+                ? scheme.onPrimary
+                : states.contains(WidgetState.disabled)
+                ? theme.disabledColor
+                : scheme.onSurfaceVariant,
+          ),
+        ),
+        padding: EdgeInsets.zero,
+        labelPadding: EdgeInsets.zero,
+        shape: const CircleBorder(),
+      ),
+    );
+  }
+
   /// A text button on the hero gradient (the desktop Calendar's Today).
   static ButtonStyle heroButton(BuildContext context) {
     final colors = LoomiaColors.of(context);

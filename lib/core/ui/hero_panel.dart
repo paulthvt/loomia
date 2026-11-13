@@ -2,6 +2,8 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
+import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Hero panel shape: screen-top paints under the status bar with bottom-only
@@ -354,6 +356,93 @@ class HeroEyebrow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A form or a list under a hero (the plan and month-end steps, Settings):
+/// back or close, the step, the title and [subtitle] on the hero, from the
+/// screen's top edge on a phone and as a band on desktop; [children] under it.
+class HeroFormList extends StatelessWidget {
+  const HeroFormList({
+    required this.title,
+    required this.children,
+    this.eyebrow,
+    this.subtitle,
+    this.onClose,
+    this.onBack,
+    super.key,
+  });
+
+  final String title;
+  final String? eyebrow;
+  final String? subtitle;
+  final VoidCallback? onClose;
+
+  /// Back instead of close, for a screen pushed over another.
+  final VoidCallback? onBack;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final desktop = context.screenSize.isDesktop;
+    final colors = LoomiaColors.of(context);
+    final close = onClose;
+    final back = onBack;
+    final below = subtitle;
+    return ListView(
+      padding: desktop
+          ? const EdgeInsets.all(AppSpacing.md)
+          : const EdgeInsets.only(bottom: AppSpacing.md),
+      children: [
+        HeroPanel(
+          shape: desktop ? HeroShape.band : HeroShape.screenTop,
+          gap: AppSpacing.md,
+          children: [
+            if (close != null)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: HeroIconButton(
+                  icon: Icons.close_rounded,
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  onPressed: close,
+                ),
+              ),
+            if (back != null)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: BackButton(
+                  onPressed: back,
+                  style: HeroIconButton.styleOf(context),
+                ),
+              ),
+            Semantics(
+              container: true,
+              child: LoomiaTopBar(
+                eyebrow: eyebrow,
+                title: title,
+                gap: 0,
+                onHero: true,
+              ),
+            ),
+            if (below != null)
+              Text(
+                below,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: colors.onHeroQuiet,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        for (final child in children)
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: desktop ? 0 : AppSpacing.md,
+            ),
+            child: child,
+          ),
+      ],
     );
   }
 }

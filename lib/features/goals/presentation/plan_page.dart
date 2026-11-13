@@ -5,15 +5,12 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
-import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
-import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/load_failed.dart';
-import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
@@ -482,80 +479,6 @@ class StepBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadii.sm),
               ),
             ),
-          ),
-      ],
-    );
-  }
-}
-
-/// The plan and the month-end steps: close, the step, the title and
-/// [subtitle] on the hero, from the screen's top edge on a phone and as a
-/// band on desktop; [children] under it.
-class HeroFormList extends StatelessWidget {
-  const HeroFormList({
-    required this.title,
-    required this.children,
-    this.eyebrow,
-    this.subtitle,
-    this.onClose,
-    super.key,
-  });
-
-  final String title;
-  final String? eyebrow;
-  final String? subtitle;
-  final VoidCallback? onClose;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final desktop = context.screenSize.isDesktop;
-    final colors = LoomiaColors.of(context);
-    final close = onClose;
-    final below = subtitle;
-    return ListView(
-      padding: desktop
-          ? const EdgeInsets.all(AppSpacing.md)
-          : const EdgeInsets.only(bottom: AppSpacing.md),
-      children: [
-        HeroPanel(
-          shape: desktop ? HeroShape.band : HeroShape.screenTop,
-          gap: AppSpacing.md,
-          children: [
-            if (close != null)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: HeroIconButton(
-                  icon: Icons.close_rounded,
-                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                  onPressed: close,
-                ),
-              ),
-            Semantics(
-              container: true,
-              child: LoomiaTopBar(
-                eyebrow: eyebrow,
-                title: title,
-                gap: 0,
-                onHero: true,
-              ),
-            ),
-            if (below != null)
-              Text(
-                below,
-                style: AppTypography.bodyLarge.copyWith(
-                  color: colors.onHeroQuiet,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        for (final child in children)
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: desktop ? 0 : AppSpacing.md,
-            ),
-            child: child,
           ),
       ],
     );

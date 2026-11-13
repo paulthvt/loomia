@@ -117,6 +117,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 child: SettingsScroll(
+                  hero: true,
                   title: l10n.settingsTitle,
                   child: _SettingsList(selected: shown),
                 ),
@@ -137,31 +138,35 @@ class SettingsPage extends StatelessWidget {
     // Mobile reaches the list by push from a top bar; on a tablet it is a rail
     // destination with nothing to go back to. A section always goes back.
     final canGoBack = size.isMobile || current != null;
+    void back() => backOr(
+      context,
+      current == null
+          ? Routes.today
+          : workflowId == null && eventWorkflowId == null
+          ? Routes.settings
+          : Routes.settingsWorkflows,
+    );
+    // The list and Notifications hold back on their hero, which runs under
+    // the status bar.
+    final hero = current == null || current == SettingsSection.notifications;
     return Scaffold(
-      appBar: canGoBack
-          ? AppBar(
-              leading: BackButton(
-                onPressed: () => backOr(
-                  context,
-                  current == null
-                      ? Routes.today
-                      : workflowId == null && eventWorkflowId == null
-                      ? Routes.settings
-                      : Routes.settingsWorkflows,
-                ),
-              ),
-            )
+      appBar: canGoBack && !hero
+          ? AppBar(leading: BackButton(onPressed: back))
           : null,
       body: SafeArea(
+        top: !hero,
         child: current == null
             ? SettingsScroll(
+                hero: true,
                 title: l10n.settingsTitle,
+                onBack: canGoBack ? back : null,
                 child: const _SettingsList(),
               )
             : _Section(
                 section: current,
                 workflowId: workflowId,
                 eventWorkflowId: eventWorkflowId,
+                onBack: back,
               ),
       ),
     );
@@ -173,11 +178,15 @@ class _Section extends StatelessWidget {
     required this.section,
     this.workflowId,
     this.eventWorkflowId,
+    this.onBack,
   });
 
   final SettingsSection section;
   final String? workflowId;
   final String? eventWorkflowId;
+
+  /// Back on a section's hero; none on desktop, where the list stays beside.
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +205,10 @@ class _Section extends StatelessWidget {
         child: const AppearanceSettings(),
       ),
       SettingsSection.notifications => SettingsScroll(
+        hero: true,
         title: l10n.settingsSectionNotifications,
+        subtitle: l10n.notificationsSubtitle,
+        onBack: onBack,
         child: const NotificationSettingsSection(),
       ),
       SettingsSection.workflows => switch ((workflowId, eventWorkflowId)) {
