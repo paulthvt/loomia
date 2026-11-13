@@ -221,28 +221,44 @@ class AppSidebar extends ConsumerWidget {
                     createButton,
                     const SizedBox(height: AppSpacing.md),
                     _SidebarItem(
-                      icon: const Icon(Icons.wb_sunny_outlined),
+                      icon: Icon(
+                        location == Routes.today
+                            ? navIcons[0].$2
+                            : navIcons[0].$1,
+                      ),
                       label: l10n.navToday,
                       selected: location == Routes.today,
                       expanded: expanded,
                       onTap: () => context.go(Routes.today),
                     ),
                     _SidebarItem(
-                      icon: const Icon(Icons.calendar_month_outlined),
+                      icon: Icon(
+                        location.startsWith(Routes.calendar)
+                            ? navIcons[1].$2
+                            : navIcons[1].$1,
+                      ),
                       label: l10n.navCalendar,
                       selected: location.startsWith(Routes.calendar),
                       expanded: expanded,
                       onTap: () => context.go(Routes.calendar),
                     ),
                     _SidebarItem(
-                      icon: const Icon(Icons.people_outline),
+                      icon: Icon(
+                        location.startsWith(Routes.contacts)
+                            ? navIcons[2].$2
+                            : navIcons[2].$1,
+                      ),
                       label: l10n.navContacts,
                       selected: location.startsWith(Routes.contacts),
                       expanded: expanded,
                       onTap: () => context.go(Routes.contacts),
                     ),
                     _SidebarItem(
-                      icon: const Icon(Icons.flag_outlined),
+                      icon: Icon(
+                        location.startsWith(Routes.goals)
+                            ? navIcons[3].$2
+                            : navIcons[3].$1,
+                      ),
                       label: l10n.navGoals,
                       selected: location.startsWith(Routes.goals),
                       expanded: expanded,

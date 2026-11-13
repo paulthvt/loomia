@@ -1,9 +1,20 @@
+import 'dart:math' as math;
+
 import 'package:loomia/app/shell/create_action.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
+
+/// The four destinations' icons, outlined and filled: the bar, the rail and
+/// the sidebar fill the active one.
+const navIcons = [
+  (Icons.wb_sunny_outlined, Icons.wb_sunny),
+  (Icons.calendar_month_outlined, Icons.calendar_month),
+  (Icons.people_outline, Icons.people),
+  (Icons.flag_outlined, Icons.flag),
+];
 
 /// The phone's navigation: a dark pill floating 16px above the safe area,
 /// the four tabs and, on the right, the white + of [create]. The active tab
@@ -36,10 +47,10 @@ class FloatingNavBar extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final create = this.create;
     final tabs = [
-      (Icons.wb_sunny_outlined, l10n.navToday),
-      (Icons.calendar_month_outlined, l10n.navCalendar),
-      (Icons.people_outline, l10n.navContacts),
-      (Icons.flag_outlined, l10n.navGoals),
+      l10n.navToday,
+      l10n.navCalendar,
+      l10n.navContacts,
+      l10n.navGoals,
     ];
     return SafeArea(
       top: false,
@@ -98,7 +109,8 @@ class _Tabs extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<(IconData, String)> tabs;
+  /// The labels, in [navIcons]' order.
+  final List<String> tabs;
   final int selected;
   final ValueChanged<int> onSelect;
 
@@ -114,15 +126,18 @@ class _Tabs extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final others = tabs.length - 1;
-        // Icon-only, a tab is its 48px target.
-        final bare = 2 * _Tab.padding + iconSize;
+        // Icon-only, a tab is its 48px target, at least.
+        final bare = math.max(
+          kMinInteractiveDimension,
+          2 * _Tab.padding + iconSize,
+        );
         // A label shows only if all of it fits with the other tabs at their
         // 48px minimum: never "Cale…".
         final room =
             width - kMinInteractiveDimension * others - bare - _Tab.gap;
         // What the pill hugs on each tab: its icon, and its label if it fits.
         final hugs = [
-          for (final (_, label) in tabs)
+          for (final label in tabs)
             switch (_measure(label, style, scaler, direction)) {
               final text when text <= room => bare + _Tab.gap + text,
               _ => bare,
@@ -153,6 +168,9 @@ class _Tabs extends StatelessWidget {
             );
             return Stack(
               children: [
+                // ponytail: LTR only, the pill is placed from the left while
+                // the Row lays tabs out right-to-left in RTL. Mirror `left`
+                // (width - right) when an RTL locale ships.
                 Positioned.fromRect(
                   rect: pill,
                   child: Padding(
@@ -168,12 +186,15 @@ class _Tabs extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final (index, (icon, label)) in tabs.indexed)
+                    for (final (index, label) in tabs.indexed)
                       SizedBox(
                         width: lerp(settled(from, index), settled(to, index)),
                         child: _Tab(
-                          icon: icon,
+                          icon: index == selected
+                              ? navIcons[index].$2
+                              : navIcons[index].$1,
                           label: label,
+                          style: style,
                           showLabel: hugs[index] > bare,
                           selected: index == selected,
                           presence: presence(index),
@@ -215,6 +236,7 @@ class _Tab extends StatelessWidget {
   const _Tab({
     required this.icon,
     required this.label,
+    required this.style,
     required this.showLabel,
     required this.selected,
     required this.presence,
@@ -233,6 +255,10 @@ class _Tab extends StatelessWidget {
 
   final IconData icon;
   final String label;
+
+  /// What [label] was measured with: painted with it too, so the two
+  /// cannot drift apart.
+  final TextStyle style;
 
   /// Whether [label] fits the settled pill; if not, the pill is its icon.
   final bool showLabel;
@@ -274,8 +300,7 @@ class _Tab extends StatelessWidget {
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(color: color),
+                          style: style.copyWith(color: color),
                         ),
                       ),
                     ),

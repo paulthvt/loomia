@@ -77,7 +77,7 @@ void main() {
     final tile = find.byType(ListTile).first;
     expect(tester.getTopLeft(tile).dx, greaterThanOrEqualTo(28));
     expect(tester.getSize(tile).width, greaterThanOrEqualTo(44));
-    final icon = find.byIcon(Icons.wb_sunny_outlined);
+    final icon = find.byIcon(Icons.wb_sunny);
     expect(tester.getCenter(icon).dx, tester.getCenter(tile).dx);
   });
 
@@ -230,7 +230,10 @@ void main() {
     await tester.pumpAndSettle();
     // A sheet, not a menu over the bar.
     final sheet = find.byType(BottomSheet);
-    expect(find.byType(PopupMenuItem<Object?>), findsNothing);
+    expect(
+      find.byWidgetPredicate((widget) => widget is PopupMenuEntry),
+      findsNothing,
+    );
     expect(
       find.descendant(of: sheet, matching: find.text('Event')),
       findsOneWidget,
@@ -344,6 +347,22 @@ void main() {
     // On Today, back is left to the system: the app closes.
     expect(await tester.binding.handlePopRoute(), isFalse);
   });
+
+  for (final (screen, size) in [
+    ('tablet rail', const Size(800, 1000)),
+    ('desktop sidebar', const Size(1440, 900)),
+  ]) {
+    testWidgets('$screen: the active item shows its filled icon', (
+      tester,
+    ) async {
+      await pumpLoomia(tester, size: size);
+
+      expect(find.byIcon(Icons.wb_sunny), findsOneWidget);
+      expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
+      expect(find.byIcon(Icons.people_outline), findsOneWidget);
+      expect(find.byIcon(Icons.people), findsNothing);
+    });
+  }
 
   testWidgets('desktop: the sidebar has Contacts', (tester) async {
     await pumpLoomia(tester, size: const Size(1440, 900));

@@ -239,4 +239,16 @@ void main() {
     expect(inkWell.height, greaterThanOrEqualTo(48));
     handle.dispose();
   });
+
+  testWidgets('the active tab shows its filled icon, the others outlined', (
+    tester,
+  ) async {
+    await _pump(tester, 2);
+
+    expect(find.byIcon(Icons.people), findsOneWidget);
+    expect(find.byIcon(Icons.people_outline), findsNothing);
+    expect(find.byIcon(Icons.wb_sunny_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
+  });
 }
