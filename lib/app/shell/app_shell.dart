@@ -183,7 +183,7 @@ class AppSidebar extends ConsumerWidget {
               color: colors.chrome,
               borderRadius: BorderRadius.circular(AppRadii.heroCard),
               border: Border.all(color: colors.chromeBorder),
-              boxShadow: colors.heroCardShadow,
+              boxShadow: colors.cardShadow,
             ),
             child: Material(
               type: MaterialType.transparency,
