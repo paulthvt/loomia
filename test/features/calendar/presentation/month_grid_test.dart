@@ -21,44 +21,56 @@ void main() {
               .decoration!
           as BoxDecoration;
 
-  testWidgets('month grid on the hero marks today with a ring and the '
-      'selected day filled', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: AppTheme.light,
-        home: Scaffold(
-          body: MonthGrid(
-            month: DateTime(2026, 10),
-            selected: DateTime(2026, 10, 8),
-            today: DateTime(2026, 10, 7),
-            counts: const {},
-            onSelect: (_) {},
-            onHero: true,
+  for (final (mode, theme) in [
+    ('light', AppTheme.light),
+    ('dark', AppTheme.dark),
+  ]) {
+    testWidgets('month grid on the hero marks today with a ring and the '
+        'selected day filled ($mode)', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: theme,
+          home: Scaffold(
+            body: MonthGrid(
+              month: DateTime(2026, 10),
+              selected: DateTime(2026, 10, 8),
+              today: DateTime(2026, 10, 7),
+              counts: const {},
+              onSelect: (_) {},
+              onHero: true,
+            ),
           ),
         ),
-      ),
-    );
-    final onHero = AppTheme.light.extension<LoomiaColors>()!.onHero;
-    final scheme = AppTheme.light.colorScheme;
+      );
+      final colors = theme.extension<LoomiaColors>()!;
+      final onHero = colors.onHero;
 
-    final today = circle(tester, '7');
-    expect(today.color, isNull);
-    expect(today.border, Border.all(color: onHero, width: 1.5));
+      final today = circle(tester, '7');
+      expect(today.color, isNull);
+      expect(today.border, Border.all(color: onHero, width: 1.5));
 
-    final selected = circle(tester, '8');
-    expect(selected.color, onHero);
-    expect(selected.border, isNull);
+      final selected = circle(tester, '8');
+      expect(selected.color, onHero);
+      expect(selected.border, isNull);
+      expect(
+        tester.widget<Text>(find.text('8')).style?.color,
+        colors.onHeroFill,
+      );
+      expect(tester.widget<Text>(find.text('9')).style?.color, onHero);
+      // September 30, before the month.
+      expect(
+        tester.widget<Text>(find.text('30').first).style?.color,
+        onHero.withValues(alpha: 0.35),
+      );
+    });
+  }
+
+  test('the ink on the hero\'s white is the same in both modes', () {
     expect(
-      tester.widget<Text>(find.text('8')).style?.color,
-      scheme.onPrimaryContainer,
-    );
-    expect(tester.widget<Text>(find.text('9')).style?.color, onHero);
-    // September 30, before the month.
-    expect(
-      tester.widget<Text>(find.text('30').first).style?.color,
-      onHero.withValues(alpha: 0.35),
+      AppTheme.dark.extension<LoomiaColors>()!.onHeroFill,
+      AppTheme.light.extension<LoomiaColors>()!.onHeroFill,
     );
   });
 }

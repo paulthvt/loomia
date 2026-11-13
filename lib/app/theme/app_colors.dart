@@ -124,6 +124,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     required this.onHeroQuiet,
     required this.heroFill,
     required this.heroFillSubtle,
+    required this.onHeroFill,
   });
 
   /// Logo, app icon, decorative marks. Never behind text — too light for
@@ -222,6 +223,11 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
   /// Subtle translucent fill on hero (search, switch).
   final Color heroFillSubtle;
 
+  /// Ink on a white fill on the hero (the Calendar switch's selected
+  /// segment, the month's selected day). The hero and the white are the
+  /// same in both modes, so is this: the light primary tint's ink.
+  final Color onHeroFill;
+
   /// Same in both modes: the logo does not change with the theme.
   static const _brand = Color(0xFFE8964A);
 
@@ -274,6 +280,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     onHeroQuiet: Color(0xD9FFFFFF),
     heroFill: Color(0x2EFFFFFF),
     heroFillSubtle: Color(0x1FFFFFFF),
+    onHeroFill: Color(0xFF713E0E),
   );
 
   static const dark = LoomiaColors(
@@ -323,6 +330,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     onHeroQuiet: Color(0xD9FFFFFF),
     heroFill: Color(0x2EFFFFFF),
     heroFillSubtle: Color(0x1FFFFFFF),
+    onHeroFill: Color(0xFF713E0E),
   );
 
   /// Throws if the extension is missing, which only happens outside
@@ -380,6 +388,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
       onHeroQuiet: c(onHeroQuiet, other.onHeroQuiet),
       heroFill: c(heroFill, other.heroFill),
       heroFillSubtle: c(heroFillSubtle, other.heroFillSubtle),
+      onHeroFill: c(onHeroFill, other.onHeroFill),
     );
   }
 }

@@ -715,7 +715,7 @@ void main() {
     expect(tester.getSize(find.byType(DesktopMonth)).width, greaterThan(1300));
     expect(
       tester.getBottomLeft(find.byType(DesktopMonth)).dy,
-      greaterThan(850),
+      greaterThan(960 - 50),
     );
     // One header row: the switch beside the title.
     expect(

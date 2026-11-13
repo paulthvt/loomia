@@ -62,11 +62,6 @@ abstract final class AppTheme {
     );
   }
 
-  /// Ink on a white fill on the hero (the switch's selected segment, the
-  /// month's selected day). The hero and the white are the same in both
-  /// modes, so is this: the light tint's ink, never the dark one's.
-  static final Color onHeroFill = AppColors.light.onPrimaryContainer;
-
   /// The Calendar's view switch on the hero gradient: a translucent track,
   /// the selected segment white with the primary tint's ink.
   static ButtonStyle heroSegmented(BuildContext context) {
@@ -75,7 +70,7 @@ abstract final class AppTheme {
       backgroundColor: colors.heroFillSubtle,
       foregroundColor: colors.onHero,
       selectedBackgroundColor: colors.onHero,
-      selectedForegroundColor: onHeroFill,
+      selectedForegroundColor: colors.onHeroFill,
       side: BorderSide.none,
     );
   }
@@ -277,8 +272,9 @@ abstract final class AppTheme {
         ),
       ),
 
-      // The Calendar's Month / Week switch (Figma "CalendarViewSwitch"):
-      // the selected side in the primary tint, as an active filter chip.
+      // Segmented buttons off the hero: the selected side in the primary
+      // tint, as an active filter chip. The Calendar's switch sits on the
+      // hero and uses heroSegmented instead.
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
           selectedBackgroundColor: scheme.primaryContainer,

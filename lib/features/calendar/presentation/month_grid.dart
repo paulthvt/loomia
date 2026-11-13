@@ -1,7 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
-import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -190,7 +189,7 @@ class DayCell extends StatelessWidget {
     final colors = LoomiaColors.of(context);
     final ink = onHero
         ? selected
-              ? AppTheme.onHeroFill
+              ? colors.onHeroFill
               : inMonth
               ? colors.onHero
               : colors.onHero.withValues(alpha: _outsideOnHero)

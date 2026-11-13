@@ -1,4 +1,3 @@
-import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
@@ -99,46 +98,51 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = LoomiaColors.of(context);
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      side: BorderSide(color: colors.borderSubtle),
-    );
-    return Material(
-      color: colors.surfaceDefault,
-      shape: shape,
-      child: InkWell(
-        onTap: onTap,
-        customBorder: shape,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: AppSpacing.ms,
-            children: [
-              Row(
-                spacing: AppSpacing.ms,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: AppSpacing.xs,
-                      children: [
-                        Text(title, style: theme.textTheme.titleMedium),
-                        Text(
-                          subtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+    final card = AppTheme.card(context);
+    final shape = RoundedRectangleBorder(borderRadius: card.borderRadius!);
+    // As EventRow: the card's shadow behind the Material, which paints its
+    // fill.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: card.borderRadius,
+        boxShadow: card.boxShadow,
+      ),
+      child: Material(
+        color: card.color,
+        shape: shape,
+        child: InkWell(
+          onTap: onTap,
+          customBorder: shape,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppSpacing.ms,
+              children: [
+                Row(
+                  spacing: AppSpacing.ms,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: AppSpacing.xs,
+                        children: [
+                          Text(title, style: theme.textTheme.titleMedium),
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  ?trailing,
-                ],
-              ),
-              ?below,
-            ],
+                    ?trailing,
+                  ],
+                ),
+                ?below,
+              ],
+            ),
           ),
         ),
       ),
