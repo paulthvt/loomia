@@ -111,7 +111,7 @@ class ActionItem extends StatelessWidget {
                         width: AvatarSize.row.diameter,
                         height: AvatarSize.row.diameter,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
+                          color: colors.avatar,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

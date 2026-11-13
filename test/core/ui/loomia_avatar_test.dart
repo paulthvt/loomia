@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/core/ui/preview_photo.dart';
@@ -71,5 +72,41 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('MD'), findsOneWidget);
+  });
+
+  testWidgets('dark: the initials disc stands out from the card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: const Scaffold(body: LoomiaAvatar(name: 'Marie Dupont')),
+      ),
+    );
+
+    final disc = tester.widget<Container>(
+      find.ancestor(of: find.text('MD'), matching: find.byType(Container)),
+    );
+    final fill = (disc.decoration! as BoxDecoration).color!;
+    final card = LoomiaColors.dark.surfaceDefault;
+    // primaryContainer (#271E16) is 1.06:1 on the card; the mockup's 1.17.
+    expect(
+      (fill.computeLuminance() + 0.05) / (card.computeLuminance() + 0.05),
+      greaterThan(1.15),
+    );
+  });
+
+  testWidgets('light: the initials disc keeps primaryContainer', (
+    tester,
+  ) async {
+    await _pump(tester, const LoomiaAvatar(name: 'Marie Dupont'));
+
+    final disc = tester.widget<Container>(
+      find.ancestor(of: find.text('MD'), matching: find.byType(Container)),
+    );
+    expect(
+      (disc.decoration! as BoxDecoration).color,
+      AppTheme.light.colorScheme.primaryContainer,
+    );
   });
 }

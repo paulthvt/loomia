@@ -120,6 +120,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     required this.heroFill,
     required this.heroFillSubtle,
     required this.onHeroFill,
+    required this.avatar,
   });
 
   /// Logo, app icon, decorative marks. Never behind text — too light for
@@ -223,6 +224,12 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
   /// same in both modes, so is this: the light primary tint's ink.
   final Color onHeroFill;
 
+  /// An avatar's initials disc, and the icon disc an `ActionItem` puts in an
+  /// avatar's place, under `onPrimaryContainer` ink. Light:
+  /// `primary/container`. Dark: the mockups' warm brown (#33251B), since
+  /// `primary/container` (#271E16) all but vanishes on a card (1.06:1).
+  final Color avatar;
+
   /// Same in both modes: the logo does not change with the theme.
   static const _brand = Color(0xFFE8964A);
 
@@ -276,6 +283,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     heroFill: Color(0x2EFFFFFF),
     heroFillSubtle: Color(0x1FFFFFFF),
     onHeroFill: Color(0xFF713E0E),
+    avatar: Color(0xFFF2E8DE),
   );
 
   static const dark = LoomiaColors(
@@ -326,6 +334,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     heroFill: Color(0x2EFFFFFF),
     heroFillSubtle: Color(0x1FFFFFFF),
     onHeroFill: Color(0xFF713E0E),
+    avatar: Color(0xFF33251B),
   );
 
   /// Throws if the extension is missing, which only happens outside
@@ -384,6 +393,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
       heroFill: c(heroFill, other.heroFill),
       heroFillSubtle: c(heroFillSubtle, other.heroFillSubtle),
       onHeroFill: c(onHeroFill, other.onHeroFill),
+      avatar: c(avatar, other.avatar),
     );
   }
 }

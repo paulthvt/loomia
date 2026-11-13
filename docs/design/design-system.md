@@ -54,7 +54,7 @@ call-back — never for judgement (guardrail #2).
 | `primary/base` | `#A75C15` | `#A75C15` | The filled hero, primary buttons. **Identical in both modes.** |
 | `primary/hover` | `#8C4C12` | `#B06017` | Pointer hover; also the hero's own progress track. |
 | `primary/text` | `#995413` | `#D38A45` | Primary used as *ink* — this is the token that must flip, since the base fails contrast on dark surfaces. |
-| `primary/container` | `#F2E8DE` | `#271E16` | Tinted blocks, active nav pill, avatar background. |
+| `primary/container` | `#F2E8DE` | `#271E16` | Tinted blocks, active nav pill, avatar background (light; dark avatars take `#33251B`, `LoomiaColors.avatar`). |
 | `primary/on-container` | `#713E0E` | `#E0AB7B` | Ink on `primary/container`. |
 | `primary/muted` | `#F9F5F1` | `#1A140F` | Hover wash, selected row. |
 | `secondary/base` | `#697DAB` | `#909FC1` | Progress bars. The pace colour. |

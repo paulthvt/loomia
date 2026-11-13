@@ -56,15 +56,13 @@ class LoomiaAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
     final diameter = size.diameter;
     final initials = Container(
       width: diameter,
       height: diameter,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: colors.avatar, shape: BoxShape.circle),
       child: Text(
         initialsOf(name),
         style: size._style.copyWith(
