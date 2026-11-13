@@ -84,7 +84,8 @@ class NotificationSettingsForm extends StatelessWidget {
           FormError(peopleFailureCopy(l10n, error)),
           const SizedBox(height: AppSpacing.md),
         ],
-        _Group(
+        SettingsGroup(
+          bold: true,
           children: [
             SwitchListTile(
               title: Text(l10n.notificationsSummary),
@@ -150,7 +151,8 @@ class NotificationSettingsForm extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AppSpacing.md),
-        _Group(
+        SettingsGroup(
+          bold: true,
           children: [
             ListTile(
               enabled: on,
@@ -261,29 +263,6 @@ class NotificationSettingsForm extends StatelessWidget {
       ],
     );
   }
-}
-
-/// A group of the form's rows, their titles bold (Figma).
-class _Group extends StatelessWidget {
-  const _Group({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => SettingsGroup(
-    children: [
-      for (final child in children)
-        ListTileTheme.merge(
-          titleTextStyle: AppTypography.labelLarge.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          subtitleTextStyle: AppTypography.bodySmall.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          child: child,
-        ),
-    ],
-  );
 }
 
 /// The push's bell in a circle: tinted when on, quiet when off.

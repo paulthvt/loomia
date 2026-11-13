@@ -134,34 +134,70 @@ abstract final class AppTheme {
   }
 
   /// The notification days, as a theme for a `Theme` above them: circles,
-  /// the picked ones in primary. The caller sizes the label.
+  /// the picked ones in primary, in the primary tint while disabled. The
+  /// caller sizes the label.
   static ThemeData dayChips(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final chips = theme.chipTheme;
+    bool picked(Set<WidgetState> states) =>
+        states.contains(WidgetState.selected);
+    bool off(Set<WidgetState> states) => states.contains(WidgetState.disabled);
     return theme.copyWith(
       // Seven 48px targets don't fit a phone's card; 40px circles do (Figma).
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       chipTheme: chips.copyWith(
         // surfaceContainer is the card's own colour in dark mode.
-        backgroundColor: scheme.surfaceContainerHigh,
-        disabledColor: scheme.surfaceContainerHigh,
-        selectedColor: scheme.primary,
+        color: WidgetStateProperty.resolveWith(
+          (states) => switch ((picked(states), off(states))) {
+            (true, false) => scheme.primary,
+            (true, true) => scheme.primaryContainer,
+            _ => scheme.surfaceContainerHigh,
+          },
+        ),
         showCheckmark: false,
         labelStyle: AppTypography.label.copyWith(
           color: WidgetStateColor.resolveWith(
-            // White on primary even while disabled: grey on amber is unreadable.
-            (states) => states.contains(WidgetState.selected)
-                ? scheme.onPrimary
-                : states.contains(WidgetState.disabled)
-                ? theme.disabledColor
-                : scheme.onSurfaceVariant,
+            (states) => switch ((picked(states), off(states))) {
+              (true, false) => scheme.onPrimary,
+              (true, true) => scheme.onPrimaryContainer,
+              (false, true) => theme.disabledColor,
+              (false, false) => scheme.onSurfaceVariant,
+            },
           ),
         ),
         padding: EdgeInsets.zero,
         labelPadding: EdgeInsets.zero,
         shape: const CircleBorder(),
       ),
+    );
+  }
+
+  /// A Settings group's rows (`SettingsRow` in Figma), as the theme for its
+  /// `ListTileTheme`: square highlights so they meet the card's edges.
+  /// [bold] titles where a row carries a subtitle of its own (Notifications).
+  static ListTileThemeData settingsRows(
+    BuildContext context, {
+    bool bold = false,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final colors = LoomiaColors.of(context);
+    return ListTileTheme.of(context).copyWith(
+      shape: const RoundedRectangleBorder(),
+      titleTextStyle: bold
+          ? AppTypography.labelLarge.copyWith(color: scheme.onSurface)
+          : theme.textTheme.bodyLarge?.copyWith(color: scheme.onSurface),
+      leadingAndTrailingTextStyle: theme.textTheme.bodyMedium?.copyWith(
+        color: colors.textMuted,
+      ),
+      subtitleTextStyle: bold
+          ? AppTypography.bodySmall.copyWith(color: scheme.onSurfaceVariant)
+          : theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+      selectedTileColor: colors.primaryMuted,
+      selectedColor: scheme.onSurface,
     );
   }
 

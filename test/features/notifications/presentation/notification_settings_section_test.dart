@@ -5,6 +5,7 @@ import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/notifications/domain/notification_settings.dart';
+import 'package:loomia/features/settings/presentation/widgets/settings_group.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../app/app_harness.dart';
@@ -72,7 +73,7 @@ void main() {
     );
     final card = find.ancestor(
       of: find.text('Daily summary'),
-      matching: find.byType(Card),
+      matching: find.byType(SettingsGroup),
     );
     expect(
       find.descendant(of: card, matching: find.byType(Switch)),
@@ -98,6 +99,32 @@ void main() {
       find.text('Notifications come to the Android and iOS app.'),
       findsNothing,
     );
+  });
+
+  testWidgets('a picked day looks quieter while notifications are off', (
+    tester,
+  ) async {
+    Color? fill(int day) =>
+        (tester
+                    .widget<Ink>(
+                      find.descendant(
+                        of: find.byKey(ValueKey('day-$day')),
+                        matching: find.byType(Ink),
+                      ),
+                    )
+                    .decoration!
+                as ShapeDecoration)
+            .color;
+
+    await open(tester, notifications: FakeNotificationsRepository(on));
+    final picked = fill(1);
+    expect(chip(tester, 1).selected, isTrue);
+
+    await tester.tap(find.byType(Switch).first);
+    await tester.pumpAndSettle();
+    expect(chip(tester, 1).onSelected, isNull, reason: 'off');
+    expect(chip(tester, 1).selected, isTrue);
+    expect(fill(1), isNot(picked));
   });
 
   testWidgets('every push switch has the bell, as on a task (#439)', (
