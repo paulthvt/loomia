@@ -63,28 +63,10 @@ class FloatingNavBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    for (final (index, (icon, label)) in tabs.indexed)
-                      if (index == selected)
-                        Flexible(
-                          child: _Tab(
-                            icon: icon,
-                            label: label,
-                            selected: true,
-                            onTap: () => onSelect(index),
-                          ),
-                        )
-                      else
-                        _Tab(
-                          icon: icon,
-                          label: label,
-                          selected: false,
-                          onTap: () => onSelect(index),
-                        ),
-                  ],
+                child: _Tabs(
+                  tabs: tabs,
+                  selected: selected,
+                  onSelect: onSelect,
                 ),
               ),
               if (create != null)
@@ -111,59 +93,142 @@ class FloatingNavBar extends StatelessWidget {
   }
 }
 
-/// A destination: selected, an amber pill holding icon and label; else the
-/// icon alone. Either way the label and the selected state are announced.
+/// The four destinations and one amber pill behind them. The pill sits at
+/// a fractional position `t` that eases toward [selected]; every tab's width
+/// and colour follow its closeness to `t`, so the pill slides and stretches
+/// with the tabs it moves between.
+class _Tabs extends StatelessWidget {
+  const _Tabs({
+    required this.tabs,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final List<(IconData, String)> tabs;
+  final int selected;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return LayoutBuilder(
+      builder: (context, constraints) => TweenAnimationBuilder<double>(
+        // No begin: the first frame is settled, and a change mid-flight
+        // carries on from where the pill is.
+        tween: Tween(end: selected.toDouble()),
+        duration: context.reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 420),
+        curve: Curves.easeInOutCubicEmphasized,
+        builder: (context, t, _) {
+          // n + 1 units: the selected tab takes two, the others one.
+          final unit = constraints.maxWidth / (tabs.length + 1);
+          double presence(int i) => (1 - (t - i).abs()).clamp(0, 1);
+          final boxes = <Rect>[];
+          var left = 0.0;
+          for (var i = 0; i < tabs.length; i++) {
+            final width = unit * (1 + presence(i));
+            boxes.add(Rect.fromLTWH(left, 0, width, constraints.maxHeight));
+            left += width;
+          }
+          final from = t.floor().clamp(0, tabs.length - 1);
+          final to = t.ceil().clamp(0, tabs.length - 1);
+          final pill = Rect.lerp(boxes[from], boxes[to], t - from)!;
+          return Stack(
+            children: [
+              Positioned.fromRect(
+                rect: pill,
+                child: Padding(
+                  padding: _Tab.inset,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: primary,
+                      shape: const StadiumBorder(),
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (index, (icon, label)) in tabs.indexed)
+                    SizedBox(
+                      width: boxes[index].width,
+                      child: _Tab(
+                        icon: icon,
+                        label: label,
+                        selected: index == selected,
+                        presence: presence(index),
+                        onTap: () => onSelect(index),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// A destination: its icon, and its label as it nears the pill. Either way
+/// the label and the selected state are announced.
 class _Tab extends StatelessWidget {
   const _Tab({
     required this.icon,
     required this.label,
     required this.selected,
+    required this.presence,
     required this.onTap,
   });
+
+  /// 44 high in the 52 the + takes.
+  static const inset = EdgeInsets.symmetric(vertical: AppSpacing.xs);
+
+  /// Below this presence the label is hidden; above it, it fades in.
+  static const _labelFrom = 0.45;
 
   final IconData icon;
   final String label;
   final bool selected;
+
+  /// 1 under the settled pill, 0 one tab away or more.
+  final double presence;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final colors = LoomiaColors.of(context);
-    final color = selected ? colors.onChrome : colors.onChromeMuted;
-    return Semantics(
-      container: true,
-      selected: selected,
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: Padding(
-        // 44 high in the 52 the + takes.
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Material(
-          type: selected ? MaterialType.canvas : MaterialType.transparency,
-          color: selected ? scheme.primary : null,
-          shape: const StadiumBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
+    final color = Color.lerp(colors.onChromeMuted, colors.onChrome, presence);
+    final tab = Padding(
+      padding: inset,
+      child: Material(
+        type: MaterialType.transparency,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ClipRect(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: selected ? AppSpacing.md : AppSpacing.ms,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.ms),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 spacing: AppSpacing.sm,
                 children: [
                   Icon(icon, color: color),
-                  if (selected)
+                  if (presence > _labelFrom)
                     Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelLarge
-                            ?.copyWith(color: color),
+                      child: Opacity(
+                        opacity: ((presence - _labelFrom) / (1 - _labelFrom))
+                            .clamp(0, 1),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: color),
+                        ),
                       ),
                     ),
                 ],
@@ -172,6 +237,14 @@ class _Tab extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return Semantics(
+      container: true,
+      selected: selected,
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: selected ? tab : Tooltip(message: label, child: tab),
     );
   }
 }
