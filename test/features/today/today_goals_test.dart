@@ -1,3 +1,4 @@
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
@@ -127,6 +128,22 @@ void main() {
       ),
     );
     expect(find.textContaining('Close September'), findsNothing);
+    // The line is its own button: the greeting and the hero card are not
+    // heard inside it.
+    final semantics = tester.ensureSemantics();
+    final button = tester.getSemantics(line);
+    expect(button.flagsCollection.isButton, isTrue);
+    expect(button.label, '1,800 PV to go · 11 days left');
+    for (
+      SemanticsNode? node = tester.getSemantics(
+        find.text('Good morning, Pauline'),
+      );
+      node != null;
+      node = node.parent
+    ) {
+      expect(node.flagsCollection.isButton, isFalse);
+    }
+    semantics.dispose();
     await tester.tap(line);
     expect(goalsTaps, 1);
   });

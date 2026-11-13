@@ -47,6 +47,8 @@ class GoalLine extends StatelessWidget {
         : l10n.goalLineToGo(model.name, number.format(target - done), days);
 
     return Semantics(
+      // Its own node: it shares the hero with the greeting and the card.
+      container: true,
       button: true,
       onTapHint: l10n.goalLineOpen,
       child: InkWell(

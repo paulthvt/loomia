@@ -859,7 +859,7 @@ class _TodayViewState extends State<TodayView> {
     final Widget? card = switch ((branch, widget.due)) {
       ('done', _) => AllDoneCard(
         done: widget.done!,
-        firstName: widget.firstName.trim(),
+        firstName: widget.firstName,
       ),
       ('due', AsyncData(:final value)) => _hero(l10n, value, tasks),
       _ => null,

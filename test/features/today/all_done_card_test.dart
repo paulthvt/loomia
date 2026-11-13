@@ -6,14 +6,15 @@ import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
-  Future<void> pump(WidgetTester tester) => tester.pumpWidget(
-    MaterialApp(
-      theme: AppTheme.light,
-      localizationsDelegates: localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: const Scaffold(body: AllDoneCard(done: 15, firstName: 'Pauline')),
-    ),
-  );
+  Future<void> pump(WidgetTester tester, {String firstName = 'Pauline'}) =>
+      tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          localizationsDelegates: localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: AllDoneCard(done: 15, firstName: firstName)),
+        ),
+      );
 
   testWidgets('all done shows the badge, title and warm line', (tester) async {
     await pump(tester);
@@ -26,6 +27,18 @@ void main() {
     for (final text in tester.widgetList<Text>(find.byType(Text))) {
       expect(text.data ?? '', isNot(contains(competitive)));
     }
+  });
+
+  testWidgets('no first name: the warm line goes without', (tester) async {
+    await pump(tester, firstName: '');
+
+    expect(
+      find.text(
+        "Congrats — that's everyone and every task. When someone is worth a "
+        "message, they'll show up here.",
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the confetti is hidden from screen readers', (tester) async {

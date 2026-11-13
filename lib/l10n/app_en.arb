@@ -386,6 +386,10 @@
       "firstName": { "type": "String" }
     }
   },
+  "todayAllDoneBodyUnnamed": "Congrats — that's everyone and every task. When someone is worth a message, they'll show up here.",
+  "@todayAllDoneBodyUnnamed": {
+    "description": "todayAllDoneBody for an account without a first name: shows under the all-done title on the Today hero card. Warm, never counts or compares: no streak, score or rank."
+  },
   "todayReminderDetail": "Reminder",
   "@todayReminderDetail": {
     "description": "Quiet line under a reminder on Today, below what the user wrote for themselves: says the row is a reminder they set, not a workflow step."

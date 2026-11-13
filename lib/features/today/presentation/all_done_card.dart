@@ -83,7 +83,9 @@ class AllDoneCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          l10n.todayAllDoneBody(firstName),
+          firstName.trim().isEmpty
+              ? l10n.todayAllDoneBodyUnnamed
+              : l10n.todayAllDoneBody(firstName.trim()),
           textAlign: TextAlign.center,
           style: AppTypography.body.copyWith(color: colors.textMuted),
         ),
