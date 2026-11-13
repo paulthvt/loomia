@@ -120,6 +120,9 @@ class _Starting extends CalendarSelector {
   CalendarSelection build() => start;
 }
 
+/// The bottom padding the shell gives a tab on a phone, for its floating bar.
+const double _barRoom = AppSpacing.xxl * 2.5;
+
 /// The view wired to the real selection, from [start].
 Future<ProviderContainer> _pumpLive(
   WidgetTester tester,
@@ -414,9 +417,11 @@ void main() {
     expect(container.read(calendarSelectionProvider).mode, CalendarMode.week);
   });
 
-  testWidgets('3 days: the last hour scrolls clear of the add button', (
+  testWidgets('3 days: the last hour scrolls clear of the floating bar', (
     tester,
   ) async {
+    // The room the shell leaves under a tab for its floating bar.
+    tester.view.padding = const FakeViewPadding(bottom: _barRoom);
     await _pumpLive(tester, threeDays);
     final hours = tester
         .state<ScrollableState>(
@@ -429,18 +434,17 @@ void main() {
         )
         .position;
 
-    // 8:00 to 22:00 at 52 an hour, and the add button's clearance.
+    // 8:00 to 22:00 at 52 an hour, and the bar's room.
     expect(
       hours.maxScrollExtent,
-      moreOrLessEquals(
-        14 * 52 + AppSpacing.xxxl + AppSpacing.lg - hours.viewportDimension,
-      ),
+      moreOrLessEquals(14 * 52 + _barRoom - hours.viewportDimension),
     );
   });
 
-  testWidgets('week on a phone: the hours fit and end above the add button', (
+  testWidgets('week on a phone: the hours fit and end above the bar', (
     tester,
   ) async {
+    tester.view.padding = const FakeViewPadding(bottom: _barRoom);
     await _pumpLive(tester, week);
     final scrollable = find
         .descendant(
@@ -457,9 +461,7 @@ void main() {
     );
     expect(
       tester.getBottomLeft(column.last).dy,
-      moreOrLessEquals(
-        tester.getBottomLeft(scrollable).dy - AppSpacing.xxxl - AppSpacing.lg,
-      ),
+      moreOrLessEquals(tester.getBottomLeft(scrollable).dy - _barRoom),
     );
   });
 
@@ -651,9 +653,7 @@ void main() {
     expect(opened, _workshop);
   });
 
-  testWidgets('an empty day says so; Add and the button add on it', (
-    tester,
-  ) async {
+  testWidgets('an empty day says so; Add adds on it', (tester) async {
     final added = <DateTime>[];
     await _pump(
       tester,
@@ -672,12 +672,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Event'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Event'));
-    await tester.pumpAndSettle();
 
-    expect(added, [DateTime(2026, 10, 9), DateTime(2026, 10, 9)]);
+    expect(added, [DateTime(2026, 10, 9)]);
   });
 
   testWidgets('a failed load says so', (tester) async {
@@ -1290,7 +1286,7 @@ void main() {
     container.read(routerProvider).go(Routes.calendar);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Add'));
+    await tester.tap(find.byTooltip('New event'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Event'));
     await tester.pumpAndSettle();

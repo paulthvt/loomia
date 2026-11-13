@@ -424,6 +424,26 @@
   "@navToday": {
     "description": "Navigation destination leading to the Today screen, in the sidebar."
   },
+  "createTask": "New task",
+  "@createTask": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Today tab: adds a task for today."
+  },
+  "createEvent": "New event",
+  "@createEvent": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Calendar tab: asks event or task, then adds it on the selected day."
+  },
+  "createPerson": "New person",
+  "@createPerson": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Contacts tab: adds a person to the address book."
+  },
+  "createOrder": "Log my own order",
+  "@createOrder": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Goals tab: logs an order of the user's own, with no person."
+  },
+  "notificationsSubtitle": "When Loomia gives you a nudge, and when it stays quiet.",
+  "@notificationsSubtitle": {
+    "description": "Subtitle under the title in the gradient header of the Notifications screen."
+  },
   "settingsTitle": "Settings",
   "@settingsTitle": {
     "description": "Title of the Settings screen, and the accessible label of the account button that opens it."

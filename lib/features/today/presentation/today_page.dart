@@ -868,7 +868,9 @@ class _TodayViewState extends State<TodayView> {
     ];
 
     return Scaffold(
+      // The list runs under the floating bar, padded by its room.
       body: SafeArea(
+        bottom: false,
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: ConstrainedBox(
@@ -881,12 +883,18 @@ class _TodayViewState extends State<TodayView> {
               child: ListView(
                 // Pull to refresh works on a short list too.
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: desktop
-                    ? const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xxl,
-                        vertical: AppSpacing.xl,
-                      )
-                    : const EdgeInsets.all(AppSpacing.md),
+                padding:
+                    (desktop
+                            ? const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.xxl,
+                                vertical: AppSpacing.xl,
+                              )
+                            : const EdgeInsets.all(AppSpacing.md))
+                        .add(
+                          EdgeInsets.only(
+                            bottom: MediaQuery.paddingOf(context).bottom,
+                          ),
+                        ),
                 children: [
                   ContentColumns.aligned(
                     LoomiaTopBar(
@@ -933,14 +941,18 @@ class _TodayViewState extends State<TodayView> {
     );
   }
 
-  /// The Tasks header, with Add a task, and today's open tasks under it; a
-  /// failed load in their place. Nothing while they load.
+  /// The Tasks header, with Add a task where there is no floating bar's +,
+  /// and today's open tasks under it; a failed load in their place. Nothing
+  /// while they load.
   List<Widget> _tasks(AppLocalizations l10n, List<Task> tasks, DateTime day) =>
       switch (widget.tasks) {
         AsyncData() => [
           SectionHeader(
             title: l10n.todaySectionTasks,
-            actionLabel: l10n.todayAddTask,
+            // ponytail: with a sidebar until it has its own +.
+            actionLabel: context.screenSize.usesSideNavigation
+                ? l10n.todayAddTask
+                : null,
             onAction: widget.onAddTask,
           ),
           // Slots that outlive their task, so a ticked one waits for its

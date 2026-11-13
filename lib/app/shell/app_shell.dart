@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/shell/create_action.dart';
+import 'package:loomia/app/shell/floating_nav_bar.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
@@ -15,9 +19,10 @@ import 'package:material_ui/material_ui.dart';
 /// Chrome around every signed-in screen (`docs/design/components.md` #23).
 ///
 /// Desktop: the 248px sidebar. Tablet: the same sidebar collapsed to a 72px
-/// icon rail. Mobile: a bottom bar with the destinations, except on Settings,
-/// which is reached from [AccountButton] and has its own back button, and on
-/// Contacts while picking several people, whose actions take the bar's place.
+/// icon rail. Mobile: the [FloatingNavBar] on the four tabs only, its +
+/// creating what the tab is about; not on a screen opened from one (back
+/// arrow instead) nor on Contacts while picking several people, whose
+/// actions take the bar's place.
 /// Team returns with the team plan; until then the Contacts `Team` filter
 /// lists the team, and Today its check-ins.
 ///
@@ -30,6 +35,18 @@ class AppShell extends ConsumerWidget {
   /// The current path, to mark the active destination.
   final String location;
   final Widget child;
+
+  /// The phone's tabs, in the bar's order. The bar shows on these paths
+  /// only: a contact, an event or Settings has its back arrow instead.
+  static const _tabs = [
+    Routes.today,
+    Routes.calendar,
+    Routes.contacts,
+    Routes.goals,
+  ];
+
+  /// Under the last row of a tab, above the safe area: clear of the bar.
+  static const double _barRoom = AppSpacing.xxl * 2.5;
 
   /// Back on another tab returns to Today, the home; only Today exits the
   /// app. Pages pushed inside a tab pop first: their navigator is asked
@@ -46,50 +63,37 @@ class AppShell extends ConsumerWidget {
   Widget _chrome(BuildContext context, WidgetRef ref) {
     final size = context.screenSize;
     if (!size.usesSideNavigation) {
+      if (location.startsWith(Routes.settings)) return child;
       final picking =
           location.startsWith(Routes.contacts) &&
           ref.watch(contactsPickingProvider);
-      if (location.startsWith(Routes.settings)) return child;
-      final l10n = AppLocalizations.of(context);
-      const tabs = [
-        Routes.today,
-        Routes.calendar,
-        Routes.contacts,
-        Routes.goals,
-      ];
-      final selected = tabs.lastIndexWhere(
-        (path) => path == Routes.today
-            ? location == Routes.today
-            : location.startsWith(path),
-      );
+      final selected = _tabs.indexOf(location);
+      final bar = selected >= 0 && !picking;
+      final create = createActionFor(location, AppLocalizations.of(context));
+      final media = MediaQuery.of(context);
       return Scaffold(
-        body: child,
-        // Null rather than another tree: the Contacts list keeps its state.
-        bottomNavigationBar: picking
-            ? null
-            : NavigationBar(
-                // A pushed page outside the tabs keeps Today marked, as before.
-                selectedIndex: selected < 0 ? 0 : selected,
-                onDestinationSelected: (index) => context.go(tabs[index]),
-                destinations: [
-                  NavigationDestination(
-                    icon: const Icon(Icons.wb_sunny_outlined),
-                    label: l10n.navToday,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.calendar_month_outlined),
-                    label: l10n.navCalendar,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.people_outline),
-                    label: l10n.navContacts,
-                  ),
-                  NavigationDestination(
-                    icon: const Icon(Icons.flag_outlined),
-                    label: l10n.navGoals,
-                  ),
-                ],
-              ),
+        // The tab's list runs under the bar, the room it needs left as bottom
+        // padding. Always this MediaQuery, only its data changes: the
+        // Contacts list keeps its state.
+        extendBody: true,
+        body: MediaQuery(
+          data: media.copyWith(
+            padding: media.padding.copyWith(
+              bottom: media.padding.bottom + (bar ? _barRoom : 0),
+            ),
+          ),
+          child: child,
+        ),
+        bottomNavigationBar: bar
+            ? FloatingNavBar(
+                selected: selected,
+                onSelect: (index) => context.go(_tabs[index]),
+                create: create,
+                onCreate: create == null
+                    ? null
+                    : (button) => unawaited(create.run(button, ref)),
+              )
+            : null,
       );
     }
     return Row(

@@ -118,13 +118,28 @@ void main() {
       expect(peopleY, lessThan(tasksY));
     });
 
-    testWidgets('Tasks header shows "Add a task" when no tasks due', (
+    testWidgets('Tasks header shows, with no Add a task on a phone', (
       tester,
     ) async {
       await pumpView(tester, due: [_due('Anna')], tasks: const AsyncData([]));
       await tester.pumpAndSettle();
 
       expect(find.text('Tasks'), findsOneWidget);
+      // The floating bar's + adds one.
+      expect(find.text('Add a task'), findsNothing);
+    });
+
+    testWidgets('with a sidebar, the Tasks header keeps Add a task', (
+      tester,
+    ) async {
+      await pumpView(
+        tester,
+        due: [_due('Anna')],
+        tasks: const AsyncData([]),
+        size: const Size(800, 1000),
+      );
+      await tester.pumpAndSettle();
+
       expect(find.text('Add a task'), findsOneWidget);
     });
 
@@ -250,7 +265,8 @@ void main() {
       );
 
       expect(find.text('You are up to date'), findsOneWidget);
-      expect(find.text('Add a task'), findsOneWidget);
+      // The floating bar's + adds one.
+      expect(find.text('Add a task'), findsNothing);
     });
 
     testWidgets('no up to date while the tasks load', (tester) async {
@@ -291,7 +307,8 @@ void main() {
 
       expect(find.text('1 of 1 done'), findsOneWidget);
       expect(find.text('Order flyers'), findsNothing);
-      expect(find.text('Add a task'), findsOneWidget);
+      // The floating bar's + adds one.
+      expect(find.text('Add a task'), findsNothing);
     });
 
     testWidgets('not up to date with tasks', (tester) async {

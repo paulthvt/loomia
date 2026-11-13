@@ -233,13 +233,18 @@ class _ContactListState extends State<ContactList> {
               if (pickedIds.contains(person.id)) person,
           ];
     final actions = picked == null ? null : _actions(l10n, picked);
+    final picksOnPhone = !sideNavigation && actions != null;
+    final bottomRoom = MediaQuery.paddingOf(context).bottom;
 
     final list = RefreshIndicator(
       onRefresh: widget.onRefresh,
       child: ListView(
         // Pull to refresh works on a short list too.
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.all(desktop ? AppSpacing.lg : AppSpacing.md),
+        // Under the last row: the bottom padding (the floating bar's room
+        // on a phone), unless the picked actions take the bar's place.
+        padding: EdgeInsets.all(desktop ? AppSpacing.lg : AppSpacing.md)
+            .add(EdgeInsets.only(bottom: picksOnPhone ? 0 : bottomRoom)),
         children: [
           if (picked != null) ...[
             _PickingHeader(
@@ -310,7 +315,8 @@ class _ContactListState extends State<ContactList> {
                       icon: const Icon(Icons.person_add_alt_1_outlined),
                       label: Text(l10n.contactsAddShort),
                     )
-                  else
+                  // A phone adds from the floating bar's +.
+                  else if (sideNavigation)
                     IconButton.filledTonal(
                       onPressed: widget.onAdd,
                       tooltip: l10n.contactsAdd,
@@ -436,14 +442,15 @@ class _ContactListState extends State<ContactList> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _setPicked(null);
       },
-      child: !sideNavigation && actions != null
-          ? Column(
-              children: [
-                Expanded(child: list),
-                _PickedBar(actions: actions),
-              ],
-            )
-          : list,
+      child: switch (actions) {
+        final actions? when picksOnPhone => Column(
+          children: [
+            Expanded(child: list),
+            SafeArea(top: false, child: _PickedBar(actions: actions)),
+          ],
+        ),
+        _ => list,
+      },
     );
   }
 }

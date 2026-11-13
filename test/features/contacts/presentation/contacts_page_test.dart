@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/shell/floating_nav_bar.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
@@ -239,10 +240,10 @@ void main() {
     expect(find.text("You're offline"), findsNothing);
   });
 
-  testWidgets('Add someone opens the new person', (tester) async {
+  testWidgets('the + opens the new person', (tester) async {
     await openContacts(tester);
 
-    await tester.tap(find.byTooltip('Add someone'));
+    await tester.tap(find.byTooltip('New person'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.descendant(
@@ -789,7 +790,7 @@ void main() {
     await tester.tap(find.text('Lucas Martin'));
     await tester.pumpAndSettle();
     // The picking's actions take the bottom navigation's place.
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(FloatingNavBar), findsNothing);
     await tester.tap(find.text('Move to…'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Team').last);
@@ -801,7 +802,7 @@ void main() {
     expect(people.store['p1']!.stage, Stage.team);
     expect(people.store['p2']!.stage, Stage.team);
     expect(find.text('2 selected'), findsNothing);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(FloatingNavBar), findsOneWidget);
   });
 
   testWidgets('back ends the picking and brings the navigation back', (
@@ -811,12 +812,12 @@ void main() {
 
     await tester.longPress(find.text('Marie Dupont'));
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(FloatingNavBar), findsNothing);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(find.text('1 selected'), findsNothing);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(FloatingNavBar), findsOneWidget);
   });
 
   testWidgets('desktop: deleting the open person empties the pane', (

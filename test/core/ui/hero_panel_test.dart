@@ -11,9 +11,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
-          home: const Scaffold(
-            body: HeroPanel(children: [Text('Test')]),
-          ),
+          home: const Scaffold(body: HeroPanel(children: [Text('Test')])),
         ),
       );
 

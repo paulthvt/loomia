@@ -63,6 +63,37 @@ void openTask(BuildContext context, String id) {
   }
 }
 
+/// The Calendar's + (the floating bar, the sidebar): asks Event or Task in a
+/// menu over [context]'s widget, then adds it on [day].
+Future<void> addOnCalendar(BuildContext context, WidgetRef ref, DateTime day) =>
+    chooseAdd(
+      context,
+      day: day,
+      onEvent: (day) => unawaited(_addEvent(context, ref, day)),
+      onTask: (day) => unawaited(_addTask(context, ref, day)),
+    );
+
+/// Adds an event; the calendar then shows its day.
+Future<void> _addEvent(
+  BuildContext context,
+  WidgetRef ref,
+  DateTime day,
+) async {
+  final saved = await showEventForm(context, day: day);
+  if (saved != null && context.mounted) {
+    ref.read(calendarSelectionProvider.notifier).select(saved.day);
+  }
+}
+
+/// Adds a task; the calendar then shows the day it is due. A task is
+/// edited from its page (#390).
+Future<void> _addTask(BuildContext context, WidgetRef ref, DateTime day) async {
+  final saved = await showTask(context, day: day);
+  if (saved != null && context.mounted) {
+    ref.read(calendarSelectionProvider.notifier).select(saved.dueOn);
+  }
+}
+
 /// The Calendar destination. On desktop it also holds [pane]: an open
 /// event or task, beside the month or week ([paneOpen]); a day opens in a
 /// popover.
@@ -124,22 +155,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           last: last,
         );
         if (day != null) selector.select(day);
-    }
-  }
-
-  Future<void> _add(BuildContext context, WidgetRef ref, DateTime day) async {
-    final saved = await showEventForm(context, day: day);
-    if (saved != null && context.mounted) {
-      ref.read(calendarSelectionProvider.notifier).select(saved.day);
-    }
-  }
-
-  /// Adds a task; the calendar then shows the day it is due. A task is
-  /// edited from its page (#390).
-  Future<void> _task(DateTime day) async {
-    final saved = await showTask(context, day: day);
-    if (saved != null && mounted) {
-      ref.read(calendarSelectionProvider.notifier).select(saved.dueOn);
     }
   }
 
@@ -210,11 +225,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       onMode: selector.setMode,
       onPickTitle: () => unawaited(_pickTitle(context, ref)),
       onOpen: (event) => openEvent(context, event.id),
-      onAdd: (day) => unawaited(_add(context, ref, day)),
+      onAdd: (day) => unawaited(_addEvent(context, ref, day)),
       onToggleTask: (task) => unawaited(_toggleTask(task, withUndo: !desktop)),
       onToggleTaskQuiet: (task) =>
           unawaited(_toggleTask(task, withUndo: false)),
-      onAddTask: (day) => unawaited(_task(day)),
+      onAddTask: (day) => unawaited(_addTask(context, ref, day)),
       onOpenTask: (task) => openTask(context, task.id),
       onRetry: () => ref.invalidate(provider),
       onRefresh: () => _refresh(context, ref),
@@ -445,28 +460,34 @@ class CalendarView extends StatelessWidget {
     return _Latest(
       view: this,
       builder: (context, latest) => Scaffold(
-        floatingActionButton: Builder(
-          builder: (button) => FloatingActionButton(
-            onPressed: () => unawaited(
-              chooseAdd(
-                button,
-                day: selection.day,
-                onEvent: onAdd,
-                onTask: onAddTask,
+        // Phones add from the floating bar's +. ponytail: the tablet keeps
+        // this button until the sidebar has its own +.
+        floatingActionButton: !context.screenSize.usesSideNavigation
+            ? null
+            : Builder(
+                builder: (button) => FloatingActionButton(
+                  onPressed: () => unawaited(
+                    chooseAdd(
+                      button,
+                      day: selection.day,
+                      onEvent: onAdd,
+                      onTask: onAddTask,
+                    ),
+                  ),
+                  tooltip: l10n.calendarAdd,
+                  child: const Icon(Icons.add_rounded),
+                ),
               ),
-            ),
-            tooltip: l10n.calendarAdd,
-            child: const Icon(Icons.add_rounded),
-          ),
-        ),
+        // The lists run under the floating bar, padded by its room.
         body: SafeArea(
+          bottom: false,
           child: LayoutBuilder(
             builder: (context, box) {
               // On its side the phone has no room to hold the calendar
               // still: everything scrolls, and a curved swipe can still miss.
               final pinned = box.maxHeight >= _pinnedMinHeight;
               const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
-              const bottom = _fabClearance;
+              final bottom = _bottomRoom(context);
               Widget scrolling(EdgeInsets padding, List<Widget> children) =>
                   _refreshable(
                     ListView(
@@ -662,7 +683,7 @@ class CalendarView extends StatelessWidget {
       scrolls: scrolls,
       scrollToMinute: scrolls ? _opensAt(days, list) : null,
       // Week ends its hours above the button; the 3 days' scroll past it.
-      bottomInset: scrolls ? _fabClearance : 0,
+      bottomInset: scrolls ? _bottomRoom(context) : 0,
     );
   }
 
@@ -679,8 +700,12 @@ class CalendarView extends StatelessWidget {
     return starts.isEmpty ? null : starts.reduce(math.min);
   }
 
-  /// Under the last row of a list or of the grid's hours: clear of the
-  /// add button.
+  /// Under the last row of a list or of the grid's hours: the bottom
+  /// padding (the floating bar's room on a phone), and on a tablet clear of
+  /// the add button.
+  static double _bottomRoom(BuildContext context) =>
+      MediaQuery.paddingOf(context).bottom +
+      (context.screenSize.usesSideNavigation ? _fabClearance : 0);
   static const double _fabClearance = AppSpacing.xxxl + AppSpacing.lg;
 
   /// The phone grid's hour labels ("8 AM") and its least hour height.
@@ -806,6 +831,8 @@ Future<void> showDaySheet(
   required DateTime day,
 }) => showModalBottomSheet<void>(
   context: context,
+  // Over the floating bar, which the tab's own navigator lies under.
+  useRootNavigator: true,
   isScrollControlled: true,
   showDragHandle: true,
   useSafeArea: true,
@@ -1519,7 +1546,10 @@ Future<void> chooseAdd(
 }) async {
   final l10n = AppLocalizations.of(anchor);
   final box = anchor.findRenderObject()! as RenderBox;
-  final overlay = Overlay.of(anchor).context.findRenderObject()! as RenderBox;
+  // The root's, as the menu: over the floating bar the + sits in.
+  final overlay =
+      Overlay.of(anchor, rootOverlay: true).context.findRenderObject()!
+          as RenderBox;
   final rect = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
   // From the end of the anchor, so the menu sits over its button and the
   // screen's edge pushes it back in. ponytail: LTR only, both locales are.
@@ -1528,6 +1558,7 @@ Future<void> chooseAdd(
       Row(spacing: AppSpacing.ms, children: [Icon(icon), Text(label)]);
   final choice = await showMenu<ValueChanged<DateTime>>(
     context: anchor,
+    useRootNavigator: true,
     position: RelativeRect.fromRect(at, Offset.zero & overlay.size),
     items: [
       PopupMenuItem(

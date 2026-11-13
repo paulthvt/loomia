@@ -37,6 +37,12 @@ void openContact(BuildContext context, String id) {
   }
 }
 
+/// Adds a person (the +, the empty state), then opens them.
+Future<void> addPerson(BuildContext context) async {
+  final person = await showAddPerson(context);
+  if (person != null && context.mounted) openContact(context, person.id);
+}
+
 /// Reloads the book while the old list stays on screen. A failure says so in a
 /// SnackBar instead of replacing the list with the error state.
 Future<void> refreshPeople(BuildContext context, WidgetRef ref) async {
@@ -146,11 +152,6 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
     );
   }
 
-  Future<void> _add() async {
-    final person = await showAddPerson(context);
-    if (person != null && mounted) openContact(context, person.id);
-  }
-
   @override
   Widget build(BuildContext context) {
     final book = peopleProvider(ref.watch(accountProvider)?.email);
@@ -167,7 +168,7 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
       body = ContactList(
         people: list,
         onOpen: (person) => openContact(context, person.id),
-        onAdd: _add,
+        onAdd: () => unawaited(addPerson(context)),
         onImport: kIsWeb
             ? null
             : () => unawaited(context.push(Routes.importContacts)),
@@ -208,7 +209,9 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
     );
 
     return Scaffold(
+      // The list runs under the floating bar, padded by its room.
       body: SafeArea(
+        bottom: false,
         child: pane == null
             ? body
             : Row(

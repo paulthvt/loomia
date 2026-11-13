@@ -116,7 +116,9 @@ class GoalsView extends StatelessWidget {
         ritual != null && (ritual.closes || month.value?.month != ritual.plan);
 
     return Scaffold(
+      // The list runs under the floating bar, padded by its room.
       body: SafeArea(
+        bottom: false,
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: ConstrainedBox(
@@ -128,12 +130,18 @@ class GoalsView extends StatelessWidget {
               onRefresh: onRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: desktop
-                    ? const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xxl,
-                        vertical: AppSpacing.xl,
-                      )
-                    : const EdgeInsets.all(AppSpacing.md),
+                padding:
+                    (desktop
+                            ? const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.xxl,
+                                vertical: AppSpacing.xl,
+                              )
+                            : const EdgeInsets.all(AppSpacing.md))
+                        .add(
+                          EdgeInsets.only(
+                            bottom: MediaQuery.paddingOf(context).bottom,
+                          ),
+                        ),
                 children: [
                   ContentColumns.aligned(
                     LoomiaTopBar(
@@ -303,13 +311,17 @@ class GoalsView extends StatelessWidget {
           l10n.goalPaceNote,
         ),
       ],
-      const SizedBox(height: AppSpacing.md),
-      FilledButton.tonalIcon(
-        onPressed: onLogOrder,
-        style: AppTheme.tonal(context),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(l10n.goalLogOwnOrder),
-      ),
+      // A phone logs one from the floating bar's +. ponytail: with a
+      // sidebar until it has its own +.
+      if (context.screenSize.usesSideNavigation) ...[
+        const SizedBox(height: AppSpacing.md),
+        FilledButton.tonalIcon(
+          onPressed: onLogOrder,
+          style: AppTheme.tonal(context),
+          icon: const Icon(Icons.add_rounded),
+          label: Text(l10n.goalLogOwnOrder),
+        ),
+      ],
       const SizedBox(height: AppSpacing.sm),
       if (!plan.closed)
         Align(

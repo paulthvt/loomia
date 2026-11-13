@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/shell/shell_preview.dart';
 import 'package:loomia/app/theme/theme_preview.dart';
 import 'package:loomia/core/ui/tag_preview.dart';
 import 'package:loomia/core/ui/ui_preview.dart';
@@ -121,6 +122,8 @@ void main() {
     'tokens_spacing': (const Size(420, 700), spacingTokens),
     'tokens_components_light': (const Size(420, 760), componentsLight),
     'tokens_components_dark': (const Size(420, 760), componentsDark),
+    'nav_bar_light': (const Size(390, 120), navBarLight),
+    'nav_bar_dark': (const Size(390, 120), navBarDark),
   };
 
   setUpAll(loadAppFonts);
