@@ -18,6 +18,7 @@
 - Branch on `context.screenSize` only.
 - Copy: English in `lib/l10n/app_en.arb` only, each key with a description; informal register. Only Tasks 4 and 6 touch the ARB (avoids conflicts between parallel tasks).
 - Amber `#A75C15` stays `colorScheme.primary` in both modes and stays the only action colour.
+- Text or icons on a white fill inside a hero (Message, Join, Bell on, selected filter chips, selected segments, selected day) use `LoomiaColors.onHeroFill` (#713E0E in both modes), never `onPrimaryContainer` (light amber in dark mode, unreadable on white).
 - No streaks, scores, ranks or competitive copy anywhere, including the all-done state.
 - Never commit goldens rendered locally. Run `git checkout -- test/goldens` before every commit.
 - Before claiming a task done: `dart format .`, `flutter analyze` ("No issues found!"), `flutter test`.
@@ -252,7 +253,7 @@ git checkout -- test/goldens
 
 **Interfaces:**
 - Consumes: `HeroPanel`, `HeroIconButton`.
-- Produces: identity hero (back, more; 76px avatar with a 3px `onHero` ring; name `AppTypography.headline`, "since" line `onHeroQuiet`; stage chip on `heroFill`; tag chips outlined; Message = white pill with primary icon and `onPrimaryContainer` text; Call = `heroFill` pill). Below: Where it stands chips (selected = `primaryContainer` with check), Next step cards (`AppTheme.card`, icon in a `primaryContainer` circle), Add a reminder as the section action, Info in one card. Desktop pane: `HeroPanel(band)` without back; Info in a 320px column to the right.
+- Produces: identity hero (back, more; 76px avatar with a 3px `onHero` ring; name `AppTypography.headline`, "since" line `onHeroQuiet`; stage chip on `heroFill`; tag chips outlined; Message = white pill with primary icon and `LoomiaColors.onHeroFill` text; Call = `heroFill` pill). Below: Where it stands chips (selected = `primaryContainer` with check), Next step cards (`AppTheme.card`, icon in a `primaryContainer` circle), Add a reminder as the section action, Info in one card. Desktop pane: `HeroPanel(band)` without back; Info in a 320px column to the right.
 
 - [ ] **Step 1: Failing tests:** `Message and Call sit in the identity hero`; `long contact name wraps in the identity hero` (name of 40 characters at width 390, no exception).
 - [ ] **Step 2:** Run → FAIL.
