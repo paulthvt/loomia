@@ -497,10 +497,9 @@ void main() {
         .sizeFactor
         .value;
 
+    // The header's ⋯ scrolls away above History: log from its Add.
     await reveal(tester, find.text('Ordered the cream'));
-    await tester.tap(find.byTooltip('More'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Log something'));
+    await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.descendant(
@@ -1179,6 +1178,10 @@ void main() {
     people.store['p1'] = _marieOn(6);
     await openMarie(tester);
 
+    await reveal(
+      tester,
+      find.widgetWithText(FilledButton, 'Became a customer'),
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Became a customer'));
     await tester.pumpAndSettle();
 
