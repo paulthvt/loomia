@@ -453,6 +453,9 @@ abstract final class AppMotion {
   /// sliding out (and its next one in).
   static const slow = Duration(milliseconds: 320);
 
+  /// The floating bar's pill travelling between tabs, on an emphasized curve.
+  static const emphasized = Duration(milliseconds: 420);
+
   static const standard = Cubic(0.2, 0, 0, 1);
   static const decelerate = Cubic(0, 0, 0, 1);
   static const accelerate = Cubic(0.3, 0, 1, 1);

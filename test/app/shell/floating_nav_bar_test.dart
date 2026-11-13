@@ -68,12 +68,18 @@ void main() {
     expect(_pill(tester).right, to.right);
   });
 
-  testWidgets('reduce motion switches at once', (tester) async {
+  testWidgets('reduce motion uses the short transition', (tester) async {
     await _pump(tester, 0, reduceMotion: true);
+    final from = _tab(tester, 'Today').left;
     await _pump(tester, 2, reduceMotion: true);
-    await tester.pump();
+    await tester.pump(AppMotion.fast ~/ 2);
+    final mid = _pill(tester).left;
 
+    await tester.pump(AppMotion.fast ~/ 2);
+    await tester.pump();
     final to = _tab(tester, 'Contacts');
+    expect(mid, greaterThan(from));
+    expect(mid, lessThan(to.left));
     expect(_pill(tester).left, to.left);
     expect(_pill(tester).right, to.right);
   });

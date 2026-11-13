@@ -116,9 +116,7 @@ class _Tabs extends StatelessWidget {
         // No begin: the first frame is settled, and a change mid-flight
         // carries on from where the pill is.
         tween: Tween(end: selected.toDouble()),
-        duration: context.reduceMotion
-            ? Duration.zero
-            : const Duration(milliseconds: 420),
+        duration: context.motion(AppMotion.emphasized),
         curve: Curves.easeInOutCubicEmphasized,
         builder: (context, t, _) {
           // n + 1 units: the selected tab takes two, the others one.
