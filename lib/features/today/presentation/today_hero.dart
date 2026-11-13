@@ -8,9 +8,9 @@ import 'package:material_ui/material_ui.dart';
 /// Answers "what should I do today?" from arm's length
 /// (`docs/design/components.md` #11).
 ///
-/// The only filled colour block in the product. Its colour is identical in light
-/// and dark, which is why the labels on it can be white at 78% in both modes.
-/// The footer counts today's own list, never a target.
+/// The content of the white card on Today's gradient: the eyebrow as an amber
+/// tint chip, the count beside it, the sentence, the bar. The count is
+/// today's own list, never a target.
 class TodayHero extends StatelessWidget {
   const TodayHero({
     required this.eyebrow,
@@ -31,54 +31,89 @@ class TodayHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final quiet = scheme.onPrimary.withValues(alpha: AppColors.quietOnPrimary);
+    final colors = LoomiaColors.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(AppRadii.xl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            eyebrow.toUpperCase(),
-            style: AppTypography.overline.copyWith(color: quiet),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            headline,
-            style: AppTypography.titleLarge.copyWith(color: scheme.onPrimary),
-          ),
-          if (progress case (:final done, :final total)) ...[
-            const SizedBox(height: AppSpacing.ms),
-            _Progress(done: done, total: total),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _Eyebrow(eyebrow),
+            const Spacer(),
+            if (progress case (:final done, :final total))
+              // Heard on its own, after the sentence's eyebrow.
+              Semantics(
+                container: true,
+                child: Text(
+                  AppLocalizations.of(context).todayDone(done, total),
+                  style: AppTypography.caption.copyWith(
+                    color: colors.textMuted,
+                  ),
+                ),
+              ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          headline,
+          style: AppTypography.titleLarge.copyWith(color: scheme.onSurface),
+        ),
+        if (progress case (:final done, :final total)) ...[
+          const SizedBox(height: AppSpacing.md),
+          // Heard as the count above, once; never as the bar's percentage.
+          ExcludeSemantics(
+            child: LoomiaProgressBar(
+              tone: ProgressTone.primary,
+              value: total == 0 ? 0 : done / total,
+            ),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
 
-class _Progress extends StatelessWidget {
-  const _Progress({required this.done, required this.total});
+/// "• TODAY" on the amber tint.
+class _Eyebrow extends StatelessWidget {
+  const _Eyebrow(this.label);
 
-  final int done;
-  final int total;
+  final String label;
+
+  /// The dot before the label.
+  static const double _dot = 6;
 
   @override
   Widget build(BuildContext context) {
-    final caption = AppLocalizations.of(context).todayDone(done, total);
-    // Heard as the caption, once; never as the indicator's percentage.
-    return Semantics(
-      container: true,
-      label: caption,
-      excludeSemantics: true,
-      child: LoomiaProgressBar(
-        tone: ProgressTone.primary,
-        value: total == 0 ? 0 : done / total,
-        leadingLabel: caption,
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.ms,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.primary,
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox.square(dimension: _dot),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              label.toUpperCase(),
+              style: AppTypography.overline.copyWith(
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -307,10 +307,6 @@
   "@todaySectionTasks": {
     "description": "Section heading above the tasks due today."
   },
-  "todayAddTask": "Add a task",
-  "@todayAddTask": {
-    "description": "Action label in the Tasks section header to create a new task."
-  },
   "todaySectionThisMonth": "This month",
   "@todaySectionThisMonth": {
     "description": "Section heading above the monthly goal card on the Today screen."
@@ -379,9 +375,16 @@
       "total": { "type": "int" }
     }
   },
-  "todayAllDone": "That's everyone for today",
+  "todayAllDone": "You're all done for today",
   "@todayAllDone": {
-    "description": "The Today hero's sentence once everything on today's list was ticked. Calm and plain, not a celebration."
+    "description": "Title of the Today hero card once everything on today's list was ticked, under a check badge. Warm and plain."
+  },
+  "todayAllDoneBody": "Congrats, {firstName} — that's everyone and every task. When someone is worth a message, they'll show up here.",
+  "@todayAllDoneBody": {
+    "description": "Shows under the all-done title on the Today hero card once everything on today's list was ticked. Warm, never counts or compares: no streak, score or rank.",
+    "placeholders": {
+      "firstName": { "type": "String" }
+    }
   },
   "todayReminderDetail": "Reminder",
   "@todayReminderDetail": {
@@ -639,10 +642,6 @@
   "contactsAdd": "Add someone",
   "@contactsAdd": {
     "description": "Button on the Contacts list, and on its empty state, that opens the form to add a person."
-  },
-  "contactsAddShort": "Add",
-  "@contactsAddShort": {
-    "description": "Short label of the button at the top of the Contacts list on desktop, which opens the form to add a person."
   },
   "contactsRefresh": "Refresh",
   "@contactsRefresh": {
@@ -1170,8 +1169,6 @@
   "@logOwnOrderTitle": { "description": "Title of the sheet that logs an order of the user's own, from Goals: no person." },
   "logOwnOrderAmountRequired": "Enter the amount.",
   "@logOwnOrderAmountRequired": { "description": "Error under the amount of an own order, which can't be saved without one." },
-  "goalLogOwnOrder": "Log my own order",
-  "@goalLogOwnOrder": { "description": "Goals button: opens Your own order." },
   "ordersTitle": "Orders in {month}",
   "@ordersTitle": {
     "description": "Title of the sheet listing this month's orders, opened from the own-volume card.",

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goals_controller.dart';
@@ -105,16 +106,23 @@ void main() {
     );
   }
 
-  testWidgets('a planned month: the line under the hero opens Goals', (
-    tester,
-  ) async {
+  testWidgets('a planned month: the line on the gradient, between the '
+      'greeting and the hero card, opens Goals', (tester) async {
     await pump(tester, now: DateTime(2026, 9, 19, 9), goals: _goals());
 
     final line = find.text('1,800 PV to go · 11 days left');
     expect(line, findsOneWidget);
     expect(
+      find.ancestor(of: line, matching: find.byType(HeroPanel)),
+      findsOneWidget,
+    );
+    expect(
       tester.getTopLeft(line).dy,
-      greaterThan(
+      greaterThan(tester.getTopLeft(find.text('Good morning, Pauline')).dy),
+    );
+    expect(
+      tester.getTopLeft(line).dy,
+      lessThan(
         tester.getTopLeft(find.text('One person is worth a message today')).dy,
       ),
     );
@@ -206,7 +214,7 @@ void main() {
       done: 2,
     );
 
-    final body = tester.getTopLeft(find.textContaining('Nothing is waiting'));
+    final body = tester.getTopLeft(find.textContaining("that's everyone"));
     expect(
       body.dy,
       greaterThan(

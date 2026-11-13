@@ -111,7 +111,6 @@
   "teamReasonQuietNothing": "Aucun échange enregistré depuis son arrivée le {date}",
   "contactsTitle": "Contacts",
   "contactsAdd": "Ajouter quelqu’un",
-  "contactsAddShort": "Ajouter",
   "contactsRefresh": "Actualiser",
   "contactsSearchHint": "Rechercher par nom",
   "contactsFilterEveryone": "Tout le monde",
@@ -226,7 +225,6 @@
   "logNote": "Note",
   "logOwnOrderTitle": "Ta propre commande",
   "logOwnOrderAmountRequired": "Indique le montant.",
-  "goalLogOwnOrder": "Noter ma propre commande",
   "ordersTitle": "Commandes en {month}",
   "ordersOwn": "Ta propre commande",
   "ordersEmpty": "Aucune commande ce mois-ci.",
@@ -773,10 +771,6 @@
   "todaySectionTasks": "Tâches",
   "@todaySectionTasks": {
     "description": "Section heading above the tasks due today."
-  },
-  "todayAddTask": "Ajouter une tâche",
-  "@todayAddTask": {
-    "description": "Action label in the Tasks section header to create a new task."
   },
   "todayHeadlineTasks": "{count, plural, =1{Une tâche aujourd’hui} other{{count} tâches aujourd’hui}}",
   "@todayHeadlineTasks": {

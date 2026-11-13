@@ -15,7 +15,8 @@ bool hasGoalLine(GoalsMonth month) {
 }
 
 /// Today's one line about the month: what is left, on pace, or reached,
-/// then the days left. Stated, never judged. Tapping it opens Goals.
+/// then the days left. Stated, never judged. Tapping it opens Goals. It sits
+/// on the hero gradient, in its quiet ink.
 class GoalLine extends StatelessWidget {
   const GoalLine({
     required this.month,
@@ -54,14 +55,15 @@ class GoalLine extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Row(
             children: [
-              Expanded(
+              // The chevron right after the words, as on the mockup.
+              Flexible(
                 child: Text(
                   text,
                   style: Theme.of(context).textTheme.bodyLarge
-                      ?.copyWith(color: colors.textMuted),
+                      ?.copyWith(color: colors.onHeroQuiet),
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: colors.textMuted),
+              Icon(Icons.chevron_right_rounded, color: colors.onHeroQuiet),
             ],
           ),
         ),

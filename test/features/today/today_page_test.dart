@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/presentation/event_page.dart';
@@ -13,6 +14,7 @@ import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/contact_page.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
 import 'package:loomia/features/goals/presentation/goal_line.dart';
+import 'package:loomia/features/today/presentation/today_hero.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
@@ -111,6 +113,22 @@ void main() {
     expect(find.text('Prospect'), findsNWidgets(2));
   });
 
+  testWidgets('today hero sits on the gradient on a phone', (tester) async {
+    await pumpLoomia(
+      tester,
+      size: _phone,
+      people: FakePeopleRepository([_on('p1', 'Anna')]),
+    );
+
+    expect(
+      find.ancestor(
+        of: find.byType(TodayHero),
+        matching: find.byType(HeroPanel),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a tick sends completeStep and the row leaves', (tester) async {
     final people = FakePeopleRepository([_on('p1', 'Anna')]);
     await pumpLoomia(tester, size: _phone, people: people);
@@ -121,7 +139,7 @@ void main() {
     expect(people.calls, contains('completeStep(p1, samples-1)'));
     // The next step is due tomorrow: nothing left, the hero stays, full.
     expect(find.text('Anna'), findsNothing);
-    expect(find.text("That's everyone for today"), findsOneWidget);
+    expect(find.text("You're all done for today"), findsOneWidget);
     expect(find.text('1 of 1 done'), findsOneWidget);
     expect(find.text('You are up to date'), findsNothing);
   });
