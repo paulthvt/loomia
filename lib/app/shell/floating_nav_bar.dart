@@ -199,14 +199,15 @@ class _Tab extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = LoomiaColors.of(context);
     final color = Color.lerp(colors.onChromeMuted, colors.onChrome, presence);
-    final tab = Padding(
-      padding: inset,
-      child: Material(
-        type: MaterialType.transparency,
-        shape: const StadiumBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
+    // The whole 52 takes the tap; the pill shows in the 44 inside.
+    final tab = Material(
+      type: MaterialType.transparency,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: inset,
           child: ClipRect(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.ms),
@@ -241,6 +242,8 @@ class _Tab extends StatelessWidget {
       selected: selected,
       button: true,
       label: label,
+      // excludeSemantics drops the InkWell's tap: give it back.
+      onTap: onTap,
       excludeSemantics: true,
       child: selected ? tab : Tooltip(message: label, child: tab),
     );

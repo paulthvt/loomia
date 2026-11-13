@@ -1,3 +1,4 @@
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/shell/floating_nav_bar.dart';
 import 'package:loomia/app/theme/app_theme.dart';
@@ -99,5 +100,56 @@ void main() {
         expect(tester.takeException(), isNull);
       }
     }
+  });
+
+  testWidgets('a tab is a 52-high target TalkBack can activate', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    var picked = -1;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: AppTheme.light,
+        home: Scaffold(
+          bottomNavigationBar: FloatingNavBar(
+            selected: 0,
+            onSelect: (index) => picked = index,
+            create: null,
+            onCreate: null,
+          ),
+        ),
+      ),
+    );
+
+    final contacts = find.descendant(
+      of: find.byType(FloatingNavBar),
+      matching: find.bySemanticsLabel('Contacts'),
+    );
+    expect(
+      tester.getSemantics(contacts),
+      matchesSemantics(
+        label: 'Contacts',
+        isButton: true,
+        hasTapAction: true,
+        hasSelectedState: true,
+      ),
+    );
+    final node = tester.getSemantics(contacts);
+    node.owner!.performAction(node.id, SemanticsAction.tap);
+    expect(picked, 2);
+
+    // An inactive tab takes the bar's full height, not the 44 of its pill.
+    final rect = tester.getRect(contacts);
+    final inkWell = tester.getRect(
+      find.ancestor(
+        of: find.byIcon(Icons.people_outline),
+        matching: find.byType(InkWell),
+      ),
+    );
+    expect(rect.height, greaterThanOrEqualTo(48));
+    expect(inkWell.height, greaterThanOrEqualTo(48));
+    handle.dispose();
   });
 }
