@@ -5,6 +5,7 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/form_error.dart';
@@ -251,7 +252,7 @@ class _PlanFormState extends State<PlanForm> {
       child: TextFormField(
         controller: controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(
+        decoration: AppTheme.filledField(
           helperText:
               helper ??
               (hint == null ? null : l10n.planSuggestion(number.format(hint))),
@@ -271,7 +272,7 @@ class _PlanFormState extends State<PlanForm> {
             controller: controller,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
+            decoration: AppTheme.filledField(
               helperText: hint == null
                   ? null
                   : l10n.planSuggestion(number.format(hint)),
@@ -424,7 +425,7 @@ class LevelField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final decoration = InputDecoration(helperText: helper);
+    final decoration = AppTheme.filledField(helperText: helper);
     return LabeledField(
       label: label,
       child: model.levels.isEmpty

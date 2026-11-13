@@ -1,5 +1,5 @@
-import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// One group of Settings rows (`SettingsRow` in Figma): a Horizon card, a
@@ -15,22 +15,14 @@ class SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = AppTheme.card(context);
-    // The shadow on a box, the fill and the rows' ink on a Material above it.
-    return DecoratedBox(
-      decoration: card,
-      child: Material(
-        color: card.color,
-        borderRadius: BorderRadius.circular(AppRadii.card),
-        clipBehavior: Clip.antiAlias,
-        child: ListTileTheme(
-          data: AppTheme.settingsRows(context, bold: bold),
-          child: Column(
-            children: ListTile.divideTiles(
-              context: context,
-              tiles: children,
-            ).toList(),
-          ),
+    return LoomiaCard(
+      child: ListTileTheme(
+        data: AppTheme.settingsRows(context, bold: bold),
+        child: Column(
+          children: ListTile.divideTiles(
+            context: context,
+            tiles: children,
+          ).toList(),
         ),
       ),
     );

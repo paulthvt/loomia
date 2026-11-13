@@ -111,13 +111,13 @@ void main() {
     }
   });
 
-  test('quiet hero ink meets AA on primary', () {
-    final primary = AppColors.light.primary;
-    final quiet = Color.alphaBlend(
-      AppColors.light.onPrimary.withValues(alpha: AppColors.quietOnPrimary),
-      primary,
-    );
-    expect(contrast(quiet, primary), greaterThanOrEqualTo(4.5));
+  test('quiet hero ink meets AA where hero text sits', () {
+    // Text sits in the gradient's dark top-left (spec, Hero gradient).
+    for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
+      final under = colors.heroGradient.colors.first;
+      final quiet = Color.alphaBlend(colors.onHeroQuiet, under);
+      expect(contrast(quiet, under), greaterThanOrEqualTo(4.5));
+    }
   });
 
   test('primary ink meets AA on its surface', () {
@@ -187,5 +187,28 @@ void main() {
     final card = AppTheme.card(ctx);
     expect(card.border, isNull);
     expect(card.boxShadow, LoomiaColors.light.cardShadow);
+  });
+
+  testWidgets('cards in dark are surfaceDefault, not the sunken colour', (
+    tester,
+  ) async {
+    late BuildContext ctx;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: Builder(
+          builder: (context) {
+            ctx = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    final card = AppTheme.card(ctx);
+    expect(card.color, const Color(0xFF1E1A15));
+    expect(card.border, isNull);
+    expect(card.boxShadow, LoomiaColors.dark.cardShadow);
+    expect(AppTheme.heroCard(ctx).color, const Color(0xFF1E1A15));
   });
 }

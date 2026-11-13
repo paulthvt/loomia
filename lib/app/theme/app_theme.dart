@@ -26,25 +26,23 @@ abstract final class AppTheme {
     brightness: scheme.brightness,
   );
 
-  /// Standard card decoration (surfaceContainerLowest, soft shadow in light,
-  /// no border).
+  /// Standard card decoration (surfaceDefault, soft shadow in light, no
+  /// border). Widgets use `LoomiaCard`.
   static BoxDecoration card(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final colors = LoomiaColors.of(context);
     return BoxDecoration(
-      color: scheme.surfaceContainerLowest,
+      color: colors.surfaceDefault,
       borderRadius: BorderRadius.circular(AppRadii.card),
       boxShadow: colors.cardShadow,
     );
   }
 
-  /// Hero card decoration (surfaceContainerLowest, deeper shadow, subtle
-  /// border in dark).
+  /// Hero card decoration (surfaceDefault, deeper shadow, subtle border in
+  /// dark).
   static BoxDecoration heroCard(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final colors = LoomiaColors.of(context);
     return BoxDecoration(
-      color: scheme.surfaceContainerLowest,
+      color: colors.surfaceDefault,
       borderRadius: BorderRadius.circular(AppRadii.heroCard),
       boxShadow: colors.heroCardShadow,
       border: Border.all(color: colors.heroCardBorder, width: 1),
@@ -227,6 +225,21 @@ abstract final class AppTheme {
         borderRadius: pill,
         borderSide: BorderSide(color: colors.onHero, width: 2),
       ),
+    );
+  }
+
+  /// A field on the plan and month-end steps (`goals_plan_*`): filled, no
+  /// outline at rest, white on the canvas. Everywhere else fields keep the
+  /// theme's hairline.
+  static InputDecoration filledField({String? helperText}) {
+    final none = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadii.lg),
+      borderSide: BorderSide.none,
+    );
+    return InputDecoration(
+      helperText: helperText,
+      border: none,
+      enabledBorder: none,
     );
   }
 
@@ -428,13 +441,15 @@ abstract final class AppTheme {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.ms,
         ),
+        // A hairline at rest: sheets and dialogs are as white as the field.
+        // The plan and month-end steps drop it (filledField).
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: colors.borderSubtle),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: colors.borderSubtle),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadii.lg),

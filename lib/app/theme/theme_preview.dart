@@ -3,6 +3,7 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Token sheets for `flutter widget-preview start`. This is the visual check on
@@ -383,7 +384,7 @@ class _ComponentSheet extends StatelessWidget {
           TextField(decoration: InputDecoration(hintText: 'Search people')),
         ]),
         _Group('card + chips', [
-          Card(
+          LoomiaCard(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(

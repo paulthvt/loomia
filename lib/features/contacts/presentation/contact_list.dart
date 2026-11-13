@@ -8,6 +8,7 @@ import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/fade_swap.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
@@ -541,8 +542,7 @@ class _PickingHeader extends StatelessWidget {
   }
 }
 
-/// The rows on one white card. Its own Material: a row's selected fill and
-/// ink paint on the card, not under it.
+/// The rows on one white card; a row's selected fill and ink paint on it.
 class _RowsCard extends StatelessWidget {
   const _RowsCard({required this.child});
 
@@ -550,18 +550,14 @@ class _RowsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: AppTheme.card(context),
-      child: Material(
-        type: MaterialType.transparency,
-        child: ListTileTheme.merge(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.lg),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: child,
-          ),
+    return LoomiaCard(
+      child: ListTileTheme.merge(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: child,
         ),
       ),
     );

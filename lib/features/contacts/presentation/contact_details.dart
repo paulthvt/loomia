@@ -10,6 +10,7 @@ import 'package:loomia/core/ui/avatar_control.dart';
 import 'package:loomia/core/ui/fact_row.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
@@ -493,7 +494,7 @@ class ContactDetails extends StatelessWidget {
         style: theme.textTheme.bodyMedium?.copyWith(color: colors.textMuted),
       ),
     );
-    Widget card(List<Widget> children) => Card(
+    Widget card(List<Widget> children) => LoomiaCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,

@@ -5,6 +5,7 @@ import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/domain/week_grid.dart';
@@ -51,27 +52,6 @@ double _lineHeight(BuildContext context, TextStyle style) =>
     MediaQuery.textScalerOf(context).scale(style.fontSize ?? 14) *
     (style.height ?? 1);
 
-/// The desktop month and week's frame: one card.
-class _Board extends StatelessWidget {
-  const _Board({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final card = AppTheme.card(context);
-    return DecoratedBox(
-      decoration: card,
-      child: Material(
-        type: MaterialType.transparency,
-        borderRadius: card.borderRadius,
-        clipBehavior: Clip.antiAlias,
-        child: child,
-      ),
-    );
-  }
-}
-
 /// Desktop month (Figma "Month B"): the weeks fill the card, ruled, each day
 /// listing its tasks, then its events. A day opens its popover; an event
 /// or a task opens itself.
@@ -117,7 +97,7 @@ class DesktopMonth extends StatelessWidget {
       (byDay[event.day] ??= []).add(event);
     }
     const week = DateTime.daysPerWeek;
-    return _Board(
+    return LoomiaCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -756,7 +736,7 @@ class WeekGrid extends StatelessWidget {
     final hourOnly = MediaQuery.alwaysUse24HourFormatOf(context)
         ? DateFormat.H(locale)
         : DateFormat.j(locale);
-    return _Board(
+    return LoomiaCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

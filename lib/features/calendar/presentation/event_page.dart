@@ -13,6 +13,7 @@ import 'package:loomia/core/ui/contact_row.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/load_failed.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/open_external.dart';
 import 'package:loomia/core/ui/pick_day.dart';
@@ -485,7 +486,7 @@ class EventView extends StatelessWidget {
             SectionHeader(title: l10n.eventPrepNotes),
           ],
           if (notes != null)
-            _Card(
+            LoomiaCard(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: Text(
@@ -522,7 +523,7 @@ class EventView extends StatelessWidget {
           if (steps.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             SectionHeader(title: l10n.eventChecklist),
-            _Card(
+            LoomiaCard(
               child: Column(
                 children: [
                   for (final (i, step) in steps.indexed) ...[
@@ -591,7 +592,7 @@ class EventView extends StatelessWidget {
               ),
             )
           else
-            _Card(
+            LoomiaCard(
               child: Column(
                 children: [
                   for (final (i, (:person, :attendee)) in people.indexed) ...[
@@ -675,38 +676,13 @@ class _PreviousReportRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = LoomiaColors.of(context);
-    return _Card(
+    return LoomiaCard(
       child: ListTile(
         onTap: onTap,
         leading: Icon(Icons.history_rounded, color: colors.primaryText),
         title: Text(l10n.eventPreviousReport),
         subtitle: Text(l10n.reportDay(day)),
         trailing: const Icon(Icons.chevron_right_rounded),
-      ),
-    );
-  }
-}
-
-/// One card below the hero: the card's shadow behind a Material that
-/// paints its fill, so the rows' ink shows, as EventRow's.
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final card = AppTheme.card(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: card.borderRadius,
-        boxShadow: card.boxShadow,
-      ),
-      child: Material(
-        color: card.color,
-        shape: RoundedRectangleBorder(borderRadius: card.borderRadius!),
-        clipBehavior: Clip.antiAlias,
-        child: child,
       ),
     );
   }

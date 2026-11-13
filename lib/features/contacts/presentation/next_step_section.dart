@@ -9,6 +9,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/slide_swap.dart';
@@ -494,33 +495,29 @@ class _Panel extends StatelessWidget {
     final heading = title;
     final text = body;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AppSpacing.sm,
-            children: [
-              if (heading != null)
-                Text(heading, style: theme.textTheme.titleMedium),
-              if (text != null)
-                Text(
-                  text,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: LoomiaColors.of(context).textMuted,
-                  ),
+    return LoomiaCard(
+      onTap: onOpen,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppSpacing.sm,
+          children: [
+            if (heading != null)
+              Text(heading, style: theme.textTheme.titleMedium),
+            if (text != null)
+              Text(
+                text,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: LoomiaColors.of(context).textMuted,
                 ),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: actions,
               ),
-            ],
-          ),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: actions,
+            ),
+          ],
         ),
       ),
     );

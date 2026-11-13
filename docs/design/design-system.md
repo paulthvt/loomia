@@ -97,8 +97,8 @@ All body and label pairs clear WCAG AA (4.5:1); `text/muted` on `surface/canvas`
 is 5.1:1 light and 7.2:1 dark. `text/on-primary` on `primary/base` is 5.0:1 in
 both modes, and 4.6:1 on dark `primary/hover`; `primary/text` is 5.8:1 on white
 and 6.2:1 on dark `surface/default`. The hero's secondary labels are white at
-94% opacity (`AppColors.quietOnPrimary`, 4.6:1): ochre leaves less headroom than
-the old forest did, so hierarchy there comes from size and weight, not fading.
+85% (`LoomiaColors.onHeroQuiet`), 5.9:1 light and 9.7:1 dark on the gradient's
+top-left stop, where hero text sits.
 `test/app/theme/app_theme_test.dart` pins all of these.
 
 ---

@@ -14,6 +14,7 @@ import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/load_failed.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_top_bar.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
@@ -273,7 +274,7 @@ class GoalsView extends StatelessWidget {
         ],
       ),
     );
-    Widget note(String line, String below) => Card(
+    Widget note(String line, String below) => LoomiaCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -331,7 +332,7 @@ class GoalsView extends StatelessWidget {
       if (past.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.md),
         SectionHeader(title: l10n.goalPastMonths),
-        Card(
+        LoomiaCard(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(

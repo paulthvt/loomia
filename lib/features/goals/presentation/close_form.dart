@@ -1,11 +1,13 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/form_error.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/domain/activity.dart';
@@ -143,8 +145,8 @@ class _CloseFormState extends State<CloseForm> {
                 const SizedBox(height: AppSpacing.ms),
               ],
               SectionHeader(title: l10n.planFromBook),
-              Card(
-                // Each objective reads on its own, its "Reached" with it.
+              // Each objective reads on its own, its "Reached" with it.
+              LoomiaCard(
                 semanticContainer: false,
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -212,7 +214,7 @@ class _CloseFormState extends State<CloseForm> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: InputDecoration(
+                      decoration: AppTheme.filledField(
                         helperText: teamTarget == null
                             ? null
                             : l10n.closePlanned(number.format(teamTarget)),

@@ -8,6 +8,7 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/load_failed.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -414,8 +415,7 @@ class _ReportFieldsList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (fields.isEmpty) return const SizedBox.shrink();
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
+    return LoomiaCard(
       child: ReorderableListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),

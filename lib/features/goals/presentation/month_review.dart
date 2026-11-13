@@ -7,6 +7,7 @@ import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
+import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/tick_ring.dart';
 import 'package:loomia/features/goals/domain/month_plan.dart';
@@ -99,8 +100,8 @@ class MonthReview extends StatelessWidget {
 
     List<Widget> group(String title, List<GoalResult> goals) => [
       SectionHeader(title: title),
-      Card(
-        // Each objective reads on its own, its "Reached" with it.
+      // Each objective reads on its own, its "Reached" with it.
+      LoomiaCard(
         semanticContainer: false,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
