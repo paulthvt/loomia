@@ -262,7 +262,8 @@ void main() {
   testWidgets('search with the keyboard open keeps the hero clear of the '
       'status bar and the rows in view', (tester) async {
     const statusBar = 24.0;
-    // The keyboard of the user's phone: the field had to scroll up.
+    // The user's phone's keyboard; at 300 the field still fit the doubly
+    // shrunk list without scrolling the hero up.
     const keyboard = 360.0;
     await openContacts(tester);
     final ratio = tester.view.devicePixelRatio;
@@ -281,6 +282,27 @@ void main() {
     final row = tester.getRect(find.text('Marie Dupont'));
     expect(row.bottom, lessThanOrEqualTo(_phone.height - keyboard));
     expect(tester.getBottomLeft(find.byType(TextField)).dy, lessThan(row.top));
+  });
+
+  testWidgets('a SnackBar with the keyboard open sits above it', (
+    tester,
+  ) async {
+    const keyboard = 360.0;
+    await openContacts(tester);
+    await tester.tap(find.byType(TextField));
+    tester.view.viewInsets = FakeViewPadding(
+      bottom: keyboard * tester.view.devicePixelRatio,
+    );
+    await tester.pumpAndSettle();
+
+    ScaffoldMessenger.of(tester.element(find.byType(ContactList)))
+        .showSnackBar(const SnackBar(content: Text('Not saved')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.byType(SnackBar)).bottom,
+      lessThanOrEqualTo(_phone.height - keyboard),
+    );
   });
 
   testWidgets('missing person', (tester) async {
