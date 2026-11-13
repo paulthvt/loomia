@@ -1,6 +1,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/shell/floating_nav_bar.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
@@ -121,12 +122,8 @@ void main() {
 
     testWidgets('every label shows in full at 390px', (tester) async {
       await phone(tester, 1);
-      for (final (index, label) in [
-        'Today',
-        'Calendar',
-        'Contacts',
-        'Goals',
-      ].indexed) {
+      const labels = ['Today', 'Calendar', 'Contacts', 'Goals'];
+      for (final (index, label) in labels.indexed) {
         await _pump(tester, index, withCreate: true);
         await tester.pumpAndSettle();
         final text = find.descendant(
@@ -143,6 +140,24 @@ void main() {
         )..layout();
         expect(paragraph.didExceedMaxLines, isFalse);
         expect(paragraph.size.width, measured.width);
+
+        // The pill hugs icon, gap and label in its padding, as in the
+        // mockup; the other three share the rest evenly.
+        expect(
+          _pill(tester).width,
+          moreOrLessEquals(
+            2 * AppSpacing.ms + 24 + AppSpacing.sm + measured.width,
+          ),
+        );
+        final inactive = [
+          for (final (other, name) in labels.indexed)
+            if (other != index) _tab(tester, name).width,
+        ];
+        for (final width in inactive) {
+          expect(width, moreOrLessEquals(inactive.first));
+          expect(width, greaterThanOrEqualTo(48));
+        }
+        measured.dispose();
       }
     });
 
@@ -168,6 +183,8 @@ void main() {
         ),
         findsOneWidget,
       );
+      // Icon-only, the pill is the 48px target.
+      expect(_pill(tester).width, 48);
       handle.dispose();
     });
   });

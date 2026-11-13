@@ -89,9 +89,8 @@ class FloatingNavBar extends StatelessWidget {
 
 /// The four destinations and one amber pill behind them. The pill sits at
 /// a fractional position `t` that eases toward [selected]; every tab's width
-/// and colour follow its closeness to `t`, so the room the pill covers moves
-/// with it between the tabs. An inactive tab is its icon in the 48px
-/// tap target; the active one takes the rest of the row.
+/// and colour follow its closeness to `t`. The active tab hugs its icon and
+/// label; the others share the rest of the row evenly, never under 48px.
 class _Tabs extends StatelessWidget {
   const _Tabs({
     required this.tabs,
@@ -113,21 +112,22 @@ class _Tabs extends StatelessWidget {
     final iconSize = IconTheme.of(context).size!;
     return LayoutBuilder(
       builder: (context, constraints) {
-        const inactive = kMinInteractiveDimension;
-        final extra = constraints.maxWidth - inactive * tabs.length;
-        // A label shows only if all of it fits the settled pill: never "Cale…".
-        final room = inactive + extra - 2 * _Tab.padding - iconSize - _Tab.gap;
-        bool fits(String label) {
-          final painter = TextPainter(
-            text: TextSpan(text: label, style: style),
-            textScaler: scaler,
-            textDirection: direction,
-            maxLines: 1,
-          )..layout();
-          final width = painter.width;
-          painter.dispose();
-          return width <= room;
-        }
+        final width = constraints.maxWidth;
+        final others = tabs.length - 1;
+        // Icon-only, a tab is its 48px target.
+        final bare = 2 * _Tab.padding + iconSize;
+        // A label shows only if all of it fits with the other tabs at their
+        // 48px minimum: never "Cale…".
+        final room =
+            width - kMinInteractiveDimension * others - bare - _Tab.gap;
+        // What the pill hugs on each tab: its icon, and its label if it fits.
+        final hugs = [
+          for (final (_, label) in tabs)
+            switch (_measure(label, style, scaler, direction)) {
+              final text when text <= room => bare + _Tab.gap + text,
+              _ => bare,
+            },
+        ];
 
         return TweenAnimationBuilder<double>(
           // No begin: the first frame is settled, and a change mid-flight
@@ -136,12 +136,19 @@ class _Tabs extends StatelessWidget {
           duration: context.motion(AppMotion.emphasized),
           curve: Curves.easeInOutCubicEmphasized,
           builder: (context, t, _) {
+            // Between the settled layouts of the two tabs `t` lies between:
+            // the selected tab hugs its content, the others share the rest.
+            final from = t.floor().clamp(0, others);
+            final to = t.ceil().clamp(0, others);
+            final s = t - from;
+            double share(int k) => (width - hugs[k]) / others;
+            double settled(int k, int i) => i == k ? hugs[k] : share(k);
+            double lerp(double a, double b) => a + (b - a) * s;
             double presence(int i) => (1 - (t - i).abs()).clamp(0, 1);
-            // The extra width slides as one piece, so does the pill over it.
             final pill = Rect.fromLTWH(
-              inactive * t,
+              lerp(share(from) * from, share(to) * to),
               0,
-              inactive + extra,
+              lerp(hugs[from], hugs[to]),
               constraints.maxHeight,
             );
             return Stack(
@@ -163,11 +170,11 @@ class _Tabs extends StatelessWidget {
                   children: [
                     for (final (index, (icon, label)) in tabs.indexed)
                       SizedBox(
-                        width: inactive + extra * presence(index),
+                        width: lerp(settled(from, index), settled(to, index)),
                         child: _Tab(
                           icon: icon,
                           label: label,
-                          showLabel: fits(label),
+                          showLabel: hugs[index] > bare,
                           selected: index == selected,
                           presence: presence(index),
                           onTap: () => onSelect(index),
@@ -182,6 +189,24 @@ class _Tabs extends StatelessWidget {
       },
     );
   }
+}
+
+/// [label]'s width on one line, as the bar paints it.
+double _measure(
+  String label,
+  TextStyle style,
+  TextScaler scaler,
+  TextDirection direction,
+) {
+  final painter = TextPainter(
+    text: TextSpan(text: label, style: style),
+    textScaler: scaler,
+    textDirection: direction,
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
 }
 
 /// A destination: its icon, and its label as it nears the pill. Either way
