@@ -209,17 +209,16 @@ class ActionItem extends StatelessWidget {
   }
 }
 
-/// The accent chip an [ActionItem] uses when a real date drives it — kept here
-/// so the "accent means a date" rule lives next to its only caller.
+/// The chip an [ActionItem] uses when a real date drives it — kept here so
+/// the "accent means a date" rule lives next to its only caller. A contact's
+/// next steps tone it by how near the date is (`dueChip`).
 class DateChip extends StatelessWidget {
-  const DateChip(this.label, {super.key});
+  const DateChip(this.label, {this.tone = ChipTone.accent, super.key});
 
   final String label;
+  final ChipTone tone;
 
   @override
-  Widget build(BuildContext context) => LoomiaChip(
-    label: label,
-    tone: ChipTone.accent,
-    icon: Icons.event_rounded,
-  );
+  Widget build(BuildContext context) =>
+      LoomiaChip(label: label, tone: tone, icon: Icons.event_rounded);
 }

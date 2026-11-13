@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/repeat/repeat.dart';
 import 'package:loomia/core/ui/action_item.dart';
+import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/contacts/presentation/next_step_section.dart';
@@ -145,8 +146,32 @@ void main() {
     );
     await _pump(tester, step);
 
-    expect(find.text('3 days late — Keep it short'), findsOneWidget);
+    // The note is the reason; when, the chip.
+    expect(find.text('Keep it short'), findsOneWidget);
+    expect(find.widgetWithText(DateChip, '3 days late'), findsOneWidget);
     expect(find.text('Samples · 1 of 5'), findsOneWidget);
+  });
+
+  testWidgets('when is a chip: accent late, amber today, neutral later', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      onStep(4, _today),
+      person: _sarah(reminders: [_late, _later]),
+    );
+
+    ChipTone tone(String label) => tester
+        .widget<LoomiaChip>(
+          find.descendant(
+            of: find.widgetWithText(DateChip, label),
+            matching: find.byType(LoomiaChip),
+          ),
+        )
+        .tone;
+    expect(tone('2 days late'), ChipTone.accent);
+    expect(tone('Due today'), ChipTone.primary);
+    expect(tone('Due in 5 days'), ChipTone.neutral);
   });
 
   testWidgets('busy: the ring stays filled and takes no second tap', (
@@ -211,7 +236,9 @@ void main() {
   group('reminders', () {
     final reminders = _sarah(reminders: [_late, _later]);
 
-    testWidgets('sorted with the step by day, no date chip', (tester) async {
+    testWidgets('sorted with the step by day, each with its date chip', (
+      tester,
+    ) async {
       await _pump(tester, onStep(4, _today), person: reminders);
 
       final late = tester.getTopLeft(find.text(_late.text)).dy;
@@ -222,7 +249,8 @@ void main() {
       expect(find.text('2 days late'), findsOneWidget);
       expect(find.text('Due in 5 days'), findsOneWidget);
       expect(find.byIcon(Icons.schedule_rounded), findsNWidgets(2));
-      expect(find.byType(DateChip), findsNothing);
+      // The mockup's chips (contact_mobile_*), the step's included.
+      expect(find.byType(DateChip), findsNWidgets(3));
       expect(find.text('Next step'), findsOneWidget);
       expect(find.text('Add a reminder'), findsOneWidget);
     });

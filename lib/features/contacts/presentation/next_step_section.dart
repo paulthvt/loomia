@@ -10,6 +10,7 @@ import 'package:loomia/core/repeat/repeat_fields.dart';
 import 'package:loomia/core/ui/action_item.dart';
 import 'package:loomia/core/ui/animated_rows.dart';
 import 'package:loomia/core/ui/loomia_card.dart';
+import 'package:loomia/core/ui/loomia_chip.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/core/ui/slide_swap.dart';
@@ -386,7 +387,16 @@ class NextStepCard extends StatelessWidget {
     );
   }
 
-  /// No date chip: the reason already says "2 days late", as on the step.
+  /// When, as a chip: accent late, amber due today, neutral later.
+  Widget _dueChip(AppLocalizations l10n, DateTime due) => DateChip(
+    dueLabel(l10n, due, today),
+    tone: switch (daysBetween(today, due)) {
+      < 0 => ChipTone.accent,
+      0 => ChipTone.primary,
+      _ => ChipTone.neutral,
+    },
+  );
+
   Widget _reminder(
     BuildContext context,
     AppLocalizations l10n,
@@ -400,7 +410,7 @@ class NextStepCard extends StatelessWidget {
       icon: Icons.schedule_rounded,
       title: reminder.text,
       tag: repeatBadge(context, reminder.repeat),
-      reason: dueLabel(l10n, reminder.dueOn, today),
+      chip: _dueChip(l10n, reminder.dueOn),
       onOpen: edit == null ? null : () => edit(reminder),
       onResolve: tick == null ? null : () => tick(reminder),
       resolved: busyReminders.contains(reminder.id),
@@ -409,24 +419,23 @@ class NextStepCard extends StatelessWidget {
   }
 
   Widget _step(BuildContext context, AppLocalizations l10n, OnStep on) {
-    final due = dueLabel(l10n, on.due, today);
     final missed = on.isEvent ? missedEvent(person, on.step, events) : null;
-    final when = switch ((missed, on.step.note)) {
-      (final event?, _) => l10n.nextStepMissed(
-        event.title,
-        event.startsAt.toLocal(),
-      ),
-      (null, final note?) => l10n.nextStepWithNote(due, note),
-      (null, null) => due,
-    };
     return SlideSwap(
       child: ActionItem(
         key: ValueKey(on.step.id),
         name: person.name,
         icon: Icons.route_rounded,
         title: on.step.label,
-        reason: when,
+        // Missed says when itself; otherwise the note, and when as a chip.
+        reason: switch (missed) {
+          final event? => l10n.nextStepMissed(
+            event.title,
+            event.startsAt.toLocal(),
+          ),
+          null => on.step.note,
+        },
         detail: l10n.nextStepProgress(on.workflow.name, on.index, on.total),
+        chip: missed == null ? _dueChip(l10n, on.due) : null,
         onOpen: onOpen,
         onResolve: () => onTick(on),
         resolved: busy,
