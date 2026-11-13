@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_colors.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/contact_row.dart';
@@ -57,6 +58,7 @@ Future<void> _pump(
   ValueChanged<bool>? onPickingChanged,
   Size size = _tablet,
   BusinessModel model = BusinessModel.doterra,
+  ThemeData? theme,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -66,7 +68,7 @@ Future<void> _pump(
       locale: const Locale('en'),
       localizationsDelegates: localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: AppTheme.light,
+      theme: theme ?? AppTheme.light,
       home: Scaffold(
         body: ContactList(
           people: people ?? _book,
@@ -267,6 +269,34 @@ void main() {
       _person('3', 'Hélène Petit', Stage.prospect, tags: {'lyon', 'sleep'}),
       _person('4', 'Zoé Roux', Stage.customer),
     ];
+
+    testWidgets('wrapped chip rows keep a gap without padded targets', (
+      tester,
+    ) async {
+      // The web on a computer: chips shrink to their 32px.
+      await _pump(
+        tester,
+        people: [
+          ...book,
+          _person('5', 'Lou', Stage.customer, loyaltySince: DateTime(2026)),
+        ],
+        tags: const [lyon, sleep],
+        size: _phone,
+        theme: AppTheme.light.copyWith(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      );
+
+      final everyone = tester.getRect(
+        find.widgetWithText(ChoiceChip, 'Everyone'),
+      );
+      final loyalty = tester.getRect(find.byType(FilterChip));
+      expect(loyalty.top - everyone.bottom, AppSpacing.sm);
+      expect(
+        tester.getTopLeft(find.byType(TagFilter)).dy - loyalty.bottom,
+        AppSpacing.sm,
+      );
+    });
 
     testWidgets('no tag yet: no tag row', (tester) async {
       await _pump(tester, people: book);

@@ -315,12 +315,14 @@ class _ContactListState extends State<ContactList> {
               onLoyaltyChanged: (on) => setState(() => _loyalty = on),
             ),
           ),
-          if (widget.tags.isNotEmpty)
+          if (widget.tags.isNotEmpty) ...[
+            SizedBox(height: AppTheme.chipRunSpacing(context)),
             TagFilter(
               tags: widget.tags,
               selected: tagFilter,
               onChanged: (tags) => setState(() => _tags = tags),
             ),
+          ],
         ],
       ],
     );

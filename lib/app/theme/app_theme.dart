@@ -275,6 +275,14 @@ abstract final class AppTheme {
     );
   }
 
+  /// Between wrapped rows of Material chips, and under them: a padded tap
+  /// target (touch platforms) already leaves [AppSpacing.sm] clear around
+  /// each chip; a shrunk one (desktop, the web on a computer) leaves none.
+  static double chipRunSpacing(BuildContext context) =>
+      Theme.of(context).materialTapTargetSize == MaterialTapTargetSize.padded
+      ? 0
+      : AppSpacing.sm;
+
   /// The white + on the dark chrome (floating bar, sidebar, rail), for an
   /// `IconButton` or a `FilledButton.icon`. The caller sets its size.
   static ButtonStyle createButton(BuildContext context) {
