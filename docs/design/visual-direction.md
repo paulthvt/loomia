@@ -377,8 +377,8 @@ Direction B's "one filled block" rule worked but felt rigid. Horizon refines it 
 - **Hero components:** `HeroPanel` (band/screenTop), `HeroCard`, `HeroIconButton`, `HeroFormList`, `DetailHero`, `HeroLine`, `HeroBadge`, `HeroEyebrow`. Text is white with a quiet variant at 85%; translucent fills at 18% (buttons), 12% (inputs, switches).
 - **Cards:** white with one soft shadow (`0 2 8 @7%`), no border. Radius 24 standard, 28 hero card, 32 hero bottom corners. `SettingsGroup` became a card.
 - **Section headers:** sentence case as written, 18 bold ("Catch up", "Where it stands"), no overline. The overline token stays for stat tiles and date eyebrows only.
-- **Phone navigation:** floating dark pill bar (`#2A181C`) on the four tabs, sliding amber pill (420 ms emphasized), white **+** for creating (task / event / person / own order per tab). Detail screens: back in the hero, no bar. Replaces "Add a task", Calendar FAB, add-person button, "Log my own order".
-- **Desktop/tablet:** floating dark sidebar, first item the labelled create button (New task / New event / New person / Log my own order); rail shows a **+** circle.
+- **Phone navigation:** floating dark pill bar (`#2A181C`) on the four tabs, sliding amber pill (420 ms emphasized), white **+** for creating (task / event / person / own order per tab). Detail screens: back in the hero, no bar. Replaces "Add a task", Calendar FAB, add-person button, the old "Log my own order" button.
+- **Desktop/tablet:** floating dark sidebar, first item the labelled create button (New task / New event / New person / New order); rail shows a **+** circle.
 - **Today all-done:** gradient check badge, static confetti (hidden from screen readers), "You're all done for today", warm line. No streaks, no scores.
 - **Canvas:** `#F6F2ED` light, `#120F0C` dark (unchanged).
 

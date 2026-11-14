@@ -213,11 +213,11 @@ Horizon restyle (2026-11-13) replaced the flat bottom bar and sidebar with **flo
 
 ### 20. Chrome pill bar (mobile)
 *Anatomy:* Floating dark pill (`LoomiaColors.chrome`, `#2A181C`) on the four tabs only, 120px bottom room · sliding amber pill (420 ms emphasized, reduce motion respects `context.motion`) · white icon and label for active tab · white **+** button on the right for creating (task / event / person / own order, matching the tab).
-*Rules:* the four tabs only (Today, Calendar, Contacts, Goals). Detail screens (contact, event, task, notifications, plan) show a back button in the hero and no bar. Replaces the old BottomNav plus "Add a task", Calendar FAB, add-person button, "Log my own order".
+*Rules:* the four tabs only (Today, Calendar, Contacts, Goals). Detail screens (contact, event, task, notifications, plan) show a back button in the hero and no bar. Replaces the old BottomNav plus "Add a task", Calendar FAB, add-person button, the old "Log my own order" button.
 *Code:* `AppShell`, `lib/app/shell/`.
 
 ### 21. Sidebar (desktop/tablet)
-*Anatomy:* 248px floating dark rail (`LoomiaColors.chrome`) with a subtle hairline · wordmark · first item the labelled create button (New task / New event / New person / Log my own order, changes with the selected tab) · the four destinations · account block pinned to the bottom. Collapses to 72px icon rail (create becomes a **+** circle) below 1100px, replaced by the pill bar below 840px.
+*Anatomy:* 248px floating dark rail (`LoomiaColors.chrome`) with a subtle hairline · wordmark · first item the labelled create button (New task / New event / New person / New order, changes with the selected tab) · the four destinations · account block pinned to the bottom. Collapses to 72px icon rail (create becomes a **+** circle) below 1100px, replaced by the pill bar below 840px.
 *Rules:* active item has `LoomiaColors.onChrome` text; hover washes with white at 8%. The create button is always visible and always matches the selected tab.
 
 ### 22. TopAppBar (detail screens)
