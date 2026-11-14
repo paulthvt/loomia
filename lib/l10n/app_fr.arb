@@ -70,7 +70,7 @@
   "todayGreetingNamed": "{part, select, morning{Bonjour, {name}} afternoon{Bon après-midi, {name}} other{Bonsoir, {name}}}",
   "todayHeadline": "{count, plural, =1{Une personne mérite un message aujourd’hui} other{{count} personnes méritent un message aujourd’hui}}",
   "todayDone": "{done} sur {total} terminés",
-  "todayAllDone": "Tu as vu tout le monde pour aujourd’hui",
+  "todayAllDone": "Tu as tout terminé pour aujourd’hui",
   "todayReminderDetail": "Rappel",
   "todayShowMore": "{count, plural, =1{Et une de plus en attente} other{Et {count} de plus en attente}}",
   "todayLoadFailed": "Impossible de charger ta journée.",
@@ -1973,5 +1973,105 @@
   "eventScopeReportLost": "Cela supprime aussi un compte-rendu que tu as écrit.",
   "@eventScopeReportLost": {
     "description": "Warning in the dialog that asks 'This event' or 'This and following events' (on delete, or on a new repeat or day) when the chosen one removes an event that has a report."
+  },
+  "eventCopyNotes": "Copier sur chaque occurrence",
+  "@eventCopyNotes": {
+    "description": "Checkbox under the notes of a new repeating event. Unticked, the notes go on the first occurrence only; ticked, every occurrence gets them."
+  },
+  "todayReminderRepeats": "Rappel · {repeat}",
+  "@todayReminderRepeats": {
+    "description": "Replaces todayReminderDetail under a repeating reminder on Today (#486): it is a reminder, and how it repeats.",
+    "placeholders": {
+      "repeat": {
+        "type": "String",
+        "example": "Every month on the 3rd"
+      }
+    }
+  },
+  "reminderToday": "Aujourd’hui",
+  "@reminderToday": {
+    "description": "First choice of the day a reminder is due (#486): today. Followed by reminderTomorrow."
+  },
+  "reminderScopeChangeTitle": "Modifier un rappel récurrent",
+  "@reminderScopeChangeTitle": {
+    "description": "Title of the dialog asked before saving a repeating reminder whose day changed: does the new day move only this reminder (postpone) or the schedule too."
+  },
+  "reminderScopeDeleteTitle": "Supprimer un rappel récurrent",
+  "@reminderScopeDeleteTitle": {
+    "description": "Title of the dialog asked before deleting a repeating reminder. Its Delete button confirms, with no second dialog."
+  },
+  "reminderScopeThis": "Ce rappel",
+  "@reminderScopeThis": {
+    "description": "Choice in the reminderScopeChangeTitle / reminderScopeDeleteTitle dialogs: only this reminder changes (or, deleting, it is skipped); the next one still comes on its usual day. Selected by default."
+  },
+  "reminderScopeFollowing": "Ce rappel et les suivants",
+  "@reminderScopeFollowing": {
+    "description": "Choice in the reminderScopeChangeTitle / reminderScopeDeleteTitle dialogs: the schedule moves to the new day, or (delete) the reminder goes and stops repeating."
+  },
+  "reminderScopeRuleChanged": "Une nouvelle récurrence s’applique à ce rappel et aux suivants.",
+  "@reminderScopeRuleChanged": {
+    "description": "Note under the choices of reminderScopeChangeTitle when the repeat changed too: reminderScopeThis is then disabled."
+  },
+  "todayAllDoneBody": "Bravo, {firstName} — tu as fait le tour de tout le monde et de chaque tâche. Dès qu’une personne mérite un message, elle apparaîtra ici.",
+  "@todayAllDoneBody": {
+    "description": "Shows under the all-done title on the Today hero card once everything on today's list was ticked. Warm, never counts or compares: no streak, score or rank.",
+    "placeholders": {
+      "firstName": {
+        "type": "String"
+      }
+    }
+  },
+  "todayAllDoneBodyUnnamed": "Bravo — tu as fait le tour de tout le monde et de chaque tâche. Dès qu’une personne mérite un message, elle apparaîtra ici.",
+  "@todayAllDoneBodyUnnamed": {
+    "description": "todayAllDoneBody for an account without a first name: shows under the all-done title on the Today hero card. Warm, never counts or compares: no streak, score or rank."
+  },
+  "createTask": "Nouvelle tâche",
+  "@createTask": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Today tab: adds a task for today."
+  },
+  "createEvent": "Nouvel événement",
+  "@createEvent": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Calendar tab: asks event or task, then adds it on the selected day."
+  },
+  "createPerson": "Nouvelle personne",
+  "@createPerson": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Contacts tab: adds a person to the address book."
+  },
+  "createOrder": "Enregistrer ma propre commande",
+  "@createOrder": {
+    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Goals tab: logs an order of the user's own, with no person."
+  },
+  "notificationsSubtitle": "Quand Loomia te fait signe, et quand elle reste silencieuse.",
+  "@notificationsSubtitle": {
+    "description": "Subtitle under the title in the gradient header of the Notifications screen."
+  },
+  "contactsCount": "{count, plural, =1{1 personne} other{{count} personnes}}",
+  "@contactsCount": {
+    "description": "Above the Contacts title: how many people are in the book.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskBellOn": "Rappel activé",
+  "@taskBellOn": {
+    "description": "Label of the white pill on a task's time row, on its page, when its bell is on: it notifies at that time."
+  },
+  "taskMarkDone": "Marquer comme terminé",
+  "@taskMarkDone": {
+    "description": "The task page's main button, below the task: ticks it done. No task name inside, the page title already says it."
+  },
+  "taskMarkNotDone": "Marquer comme non terminé",
+  "@taskMarkNotDone": {
+    "description": "The task page's main button once the task is done: unticks it. No task name inside, the page title already says it."
+  },
+  "calendarAddEventHint": "Quelque chose avec une heure et des personnes",
+  "@calendarAddEventHint": {
+    "description": "One-line hint under 'Event' in the sheet that the Calendar's add button opens: what an event is (a workshop, a training, a call at a set time)."
+  },
+  "calendarAddTaskHint": "Quelque chose à faire ce jour-là",
+  "@calendarAddTaskHint": {
+    "description": "One-line hint under 'Task' in the sheet that the Calendar's add button opens: what a task is (something to do, due that day, no set time)."
   }
 }
