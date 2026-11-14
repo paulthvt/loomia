@@ -303,7 +303,9 @@ void main() {
     );
   });
 
-  testWidgets('floating bar survives text scale 1.3', (tester) async {
+  testWidgets('floating bar survives text scale 1.3, icons only', (
+    tester,
+  ) async {
     tester.platformDispatcher.textScaleFactorTestValue = 1.3;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpLoomia(tester, size: const Size(390, 844));
@@ -312,6 +314,13 @@ void main() {
       await tester.tap(_tab(label));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+      expect(
+        find.descendant(
+          of: find.byType(FloatingNavBar),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
     }
   });
 
