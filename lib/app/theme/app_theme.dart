@@ -49,6 +49,17 @@ abstract final class AppTheme {
     );
   }
 
+  /// A translucent panel on the hero gradient (desktop Goals' pace panel):
+  /// the hero's fill, a faint white hairline.
+  static BoxDecoration heroInset(BuildContext context) {
+    final colors = LoomiaColors.of(context);
+    return BoxDecoration(
+      color: colors.heroFill,
+      borderRadius: BorderRadius.circular(AppRadii.card),
+      border: Border.all(color: colors.heroFill),
+    );
+  }
+
   /// The Tonal button (`docs/design/components.md` #2), for
   /// `FilledButton.tonal`. Material's tonal reads `secondaryContainer`; ours is
   /// `primary/container`, which a theme cannot tell apart from Primary.

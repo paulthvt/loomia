@@ -78,6 +78,16 @@ abstract final class AppTypography {
     tabular: true,
   );
 
+  /// The one figure of desktop Goals' band, the own volume (#507): the
+  /// band has no greeting to out-shout.
+  static final numericHero = _style(
+    56,
+    60,
+    _bold,
+    letterSpacing: -1.1,
+    tabular: true,
+  );
+
   /// Goal values.
   static final numeric = _style(
     20,

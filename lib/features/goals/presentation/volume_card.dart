@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/ui/goal_card.dart';
@@ -199,6 +200,146 @@ class OwnVolumeHero extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Desktop Goals' band (#507): [header] (days left, "Goals"), the own volume
+/// in white with its bar and pace; at the end a translucent panel with where
+/// the pace leads and [onPlan]'s white button. When the two would squeeze
+/// the volume under [_volumeMin], the panel drops under it.
+class OwnVolumeBand extends StatelessWidget {
+  const OwnVolumeBand({
+    required this.header,
+    required this.month,
+    required this.today,
+    required this.model,
+    this.onPlan,
+    super.key,
+  });
+
+  final Widget header;
+  final GoalsMonth month;
+  final DateTime today;
+  final BusinessModel model;
+
+  /// "Change the plan"; none once the month is closed.
+  final VoidCallback? onPlan;
+
+  static const double _panelWidth = 360;
+  static const double _volumeMin = 360;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
+    final number = NumberFormat.decimalPattern(l10n.localeName);
+    final done = month.progress;
+    final target = month.plan?.ownVolumeTarget;
+    final hasTarget = target != null && target > 0;
+    final pacing = pace(hasTarget ? target : null, done.ownVolume, today);
+    final daysLeft = DateTime(today.year, today.month + 1, 0).day - today.day;
+    final plan = onPlan;
+
+    final volume = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        header,
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          l10n.goalOwnVolume.toUpperCase(),
+          style: AppTypography.overline.copyWith(color: colors.onHeroQuiet),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        // One paragraph: the suffix wraps as words and sits on the baseline.
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: number.format(done.ownVolume),
+                style: AppTypography.numericHero.copyWith(color: colors.onHero),
+              ),
+              TextSpan(
+                text:
+                    ' ${hasTarget ? l10n.goalVolumeOf(model.name, number.format(target)) : l10n.goalVolumeAlone(model.name)}',
+                // Regular: the figure is what reads first.
+                style: AppTypography.titleLarge.copyWith(
+                  color: colors.onHeroQuiet,
+                  fontWeight: AppTypography.bodyLarge.fontWeight,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (hasTarget) ...[
+          const SizedBox(height: AppSpacing.md),
+          LoomiaProgressBar(
+            value: done.ownVolume / target,
+            tone: ProgressTone.onHero,
+            leadingLabel: [
+              l10n.goalPercentPlanned((done.ownVolume / target * 100).round()),
+              if (pacing != null)
+                pacing.onPace ? l10n.goalOnPace : l10n.goalBehindPace,
+            ].join(' · '),
+            trailingLabel: l10n.goalDaysLeft(daysLeft),
+          ),
+        ],
+      ],
+    );
+
+    final hasPanel = pacing != null || plan != null;
+    final panel = DecoratedBox(
+      decoration: AppTheme.heroInset(context),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (pacing != null) ...[
+              Text(
+                l10n.goalPaceProjection(
+                  model.name,
+                  number.format(pacing.projected.round()),
+                ),
+                style: AppTypography.titleLarge.copyWith(color: colors.onHero),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                l10n.goalPaceNote,
+                style: AppTypography.body.copyWith(color: colors.onHeroQuiet),
+              ),
+            ],
+            if (plan != null) ...[
+              if (pacing != null) const SizedBox(height: AppSpacing.md),
+              FilledButton.icon(
+                onPressed: plan,
+                style: AppTheme.heroPill(context),
+                icon: Icon(Icons.flag_rounded, color: scheme.primary),
+                label: Text(l10n.goalChangePlan),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+
+    if (!hasPanel) return volume;
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.maxWidth < _volumeMin + AppSpacing.lg + _panelWidth
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppSpacing.lg,
+              children: [volume, panel],
+            )
+          : Row(
+              spacing: AppSpacing.lg,
+              children: [
+                Expanded(child: volume),
+                SizedBox(width: _panelWidth, child: panel),
+              ],
+            ),
     );
   }
 }

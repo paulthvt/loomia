@@ -11,6 +11,10 @@ enum ProgressTone {
 
   /// Only on the Today hero card: amber on its amber tint.
   primary,
+
+  /// On the hero gradient itself (desktop Goals' band): white on a
+  /// translucent track, quiet white captions.
+  onHero,
 }
 
 /// A pill track with an optional caption row. The right caption says how much
@@ -33,8 +37,19 @@ class LoomiaProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final colors = LoomiaColors.of(context);
-    final primary = tone == ProgressTone.primary;
-    final track = primary ? scheme.primaryContainer : colors.secondaryTrack;
+    final (track, bar, caption) = switch (tone) {
+      ProgressTone.secondary => (colors.secondaryTrack, null, colors.textMuted),
+      ProgressTone.primary => (
+        scheme.primaryContainer,
+        scheme.primary,
+        colors.textMuted,
+      ),
+      ProgressTone.onHero => (
+        colors.heroFill,
+        colors.onHero,
+        colors.onHeroQuiet,
+      ),
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -49,7 +64,7 @@ class LoomiaProgressBar extends StatelessWidget {
             builder: (context, animated, child) => LinearProgressIndicator(
               value: animated,
               backgroundColor: track,
-              color: primary ? scheme.primary : null,
+              color: bar,
             ),
           ),
         ),
@@ -61,16 +76,12 @@ class LoomiaProgressBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     leadingLabel ?? '',
-                    style: AppTypography.caption.copyWith(
-                      color: colors.textMuted,
-                    ),
+                    style: AppTypography.caption.copyWith(color: caption),
                   ),
                 ),
                 Text(
                   trailingLabel ?? '',
-                  style: AppTypography.caption.copyWith(
-                    color: colors.textMuted,
-                  ),
+                  style: AppTypography.caption.copyWith(color: caption),
                 ),
               ],
             ),
