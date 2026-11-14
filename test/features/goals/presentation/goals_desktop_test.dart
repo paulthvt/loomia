@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
@@ -16,10 +17,15 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../load_fonts.dart';
 import '../../auth/fake_auth_repository.dart';
 import '../../contacts/fake_activity_repository.dart';
 
+/// Where the shell's expanded sidebar ends (232 + its margins).
+const double _sidebar = 264;
+
 void main() {
+  setUpAll(loadAppFonts);
   final september = DateTime(2026, 9);
   final plan = MonthPlan(
     month: september,
@@ -63,27 +69,35 @@ void main() {
           theme: AppTheme.light,
           localizationsDelegates: localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: GoalsView(
-            month: AsyncData((
-              month: september,
-              plan: plan,
-              progress: const Progress(
-                ownVolume: 1840,
-                prospects: 5,
-                customers: 4,
-                teamMembers: 1,
-                loyalty: 2,
+          // The expanded sidebar's room, as in the shell.
+          home: Row(
+            children: [
+              const SizedBox(width: _sidebar),
+              Expanded(
+                child: GoalsView(
+                  month: AsyncData((
+                    month: september,
+                    plan: plan,
+                    progress: const Progress(
+                      ownVolume: 1840,
+                      prospects: 5,
+                      customers: 4,
+                      teamMembers: 1,
+                      loyalty: 2,
+                    ),
+                    forecast: 0,
+                    plans: [plan],
+                  )),
+                  today: DateTime(2026, 9, 19),
+                  model: BusinessModel.doterra,
+                  onPlan: () {},
+                  onRetry: () {},
+                  onRefresh: () async {},
+                  onOrders: () => fail('no sheet on desktop'),
+                  onRitual: () {},
+                ),
               ),
-              forecast: 0,
-              plans: [plan],
-            )),
-            today: DateTime(2026, 9, 19),
-            model: BusinessModel.doterra,
-            onPlan: () {},
-            onRetry: () {},
-            onRefresh: () async {},
-            onOrders: () => fail('no sheet on desktop'),
-            onRitual: () {},
+            ],
           ),
         ),
       ),
@@ -102,8 +116,6 @@ void main() {
       greaterThan(tiles + 600),
     );
     expect(find.text('Order · 100 PV'), findsOneWidget);
-    await tester.tap(find.text('OWN VOLUME'));
-    await tester.pumpAndSettle();
   });
 
   testWidgets('desktop: the band carries the volume, no white card', (
@@ -136,42 +148,82 @@ void main() {
     );
   });
 
-  testWidgets('desktop: the four tiles share one row', (tester) async {
-    await pump(tester);
+  const labels = ['NEW PROSPECTS', 'NEW CUSTOMERS', 'NEW TEAM MEMBERS', 'LRPS'];
 
-    final tops = {
-      for (final label in [
-        'NEW PROSPECTS',
-        'NEW CUSTOMERS',
-        'NEW TEAM MEMBERS',
-        'LRPS',
-      ])
-        tester.getTopLeft(find.text(label)).dy,
-    };
-    expect(tops, hasLength(1));
+  testWidgets(
+    'desktop at 1440: the four tiles in one row, labels on one line',
+    (tester) async {
+      await pump(tester);
+
+      final line =
+          AppTypography.overline.fontSize! * AppTypography.overline.height!;
+      final tops = {
+        for (final label in labels) tester.getTopLeft(find.text(label)).dy,
+      };
+      expect(tops, hasLength(1));
+      for (final label in labels) {
+        expect(tester.getSize(find.text(label)).height, line, reason: label);
+      }
+    },
+  );
+
+  testWidgets('desktop at 1200: two pairs of tiles, the band still a row', (
+    tester,
+  ) async {
+    await pump(tester, size: const Size(1200, 800));
+
+    expect(tester.takeException(), isNull);
+    double top(String label) => tester.getTopLeft(find.text(label)).dy;
+    expect(top('NEW CUSTOMERS'), top('NEW PROSPECTS'));
+    expect(top('NEW TEAM MEMBERS'), greaterThan(top('NEW PROSPECTS')));
+    expect(top('LRPS'), top('NEW TEAM MEMBERS'));
+    // The panel beside the volume, not under it.
+    expect(
+      tester.getTopLeft(find.text('Change the plan')).dx,
+      greaterThan(
+        tester.getTopRight(find.textContaining('1,840', findRichText: true)).dx,
+      ),
+    );
   });
 
-  testWidgets('desktop: a very wide window does not stretch the page', (
+  testWidgets('desktop at 2000: the page stops at its max width', (
     tester,
   ) async {
     await pump(tester, size: const Size(2000, 900));
 
     expect(
       tester.getSize(find.byType(HeroPanel)).width,
-      lessThanOrEqualTo(Breakpoints.maxContentWidth),
+      Breakpoints.maxContentWidth,
     );
     expect(
       tester.getTopRight(find.text('Orders in September')).dx,
-      lessThanOrEqualTo(Breakpoints.maxContentWidth + 2 * AppSpacing.xxl),
+      lessThanOrEqualTo(
+        _sidebar + AppSpacing.xxl + Breakpoints.maxContentWidth,
+      ),
     );
   });
 
-  testWidgets('desktop at 1200: the band wraps without overflow', (
+  testWidgets('desktop: the volume, the bar and the tiles are apart', (
     tester,
   ) async {
-    await pump(tester, size: const Size(1200, 800));
+    final semantics = tester.ensureSemantics();
+    await pump(tester);
 
-    expect(tester.takeException(), isNull);
-    expect(find.text('Change the plan'), findsOneWidget);
+    String label(Finder finder) => tester.getSemantics(finder).label;
+    final volume = label(find.textContaining('1,840', findRichText: true));
+    expect(volume, contains('OWN VOLUME'));
+    expect(volume, contains('1,840 of 2,800 PV'));
+    final bar = label(find.text('66% of what you planned · On pace'));
+    for (final node in [volume, bar]) {
+      expect(node, isNot(contains('NEW PROSPECTS')));
+      expect(node, isNot(contains('Orders in September')));
+    }
+    // The figure once: the caption says it, the bar keeps quiet.
+    expect(tester.getSemantics(find.byType(LinearProgressIndicator)).value, '');
+    expect(
+      tester.getSemantics(find.widgetWithText(FilledButton, 'Change the plan')),
+      isSemantics(label: 'Change the plan', isButton: true),
+    );
+    semantics.dispose();
   });
 }

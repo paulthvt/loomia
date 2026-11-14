@@ -12,6 +12,22 @@ import 'package:loomia/features/goals/presentation/goals_controller.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
+/// The own volume against its plan: the target (null when none, or zero),
+/// where the pace leads, and the days left. One reading for the card, the
+/// hero card and the band.
+({double? target, Pace? pacing, int daysLeft}) _volume(
+  GoalsMonth month,
+  DateTime today,
+) {
+  final target = month.plan?.ownVolumeTarget;
+  final aimed = target != null && target > 0 ? target : null;
+  return (
+    target: aimed,
+    pacing: pace(aimed, month.progress.ownVolume, today),
+    daysLeft: DateTime(today.year, today.month + 1, 0).day - today.day,
+  );
+}
+
 /// The own-volume card: Goals' first card, and Today's on desktop.
 Widget volumeCard(
   BuildContext context, {
@@ -23,10 +39,8 @@ Widget volumeCard(
   final l10n = AppLocalizations.of(context);
   final number = NumberFormat.decimalPattern(l10n.localeName);
   final done = month.progress;
-  final target = month.plan?.ownVolumeTarget;
-  final hasTarget = target != null && target > 0;
-  final pacing = pace(hasTarget ? target : null, done.ownVolume, today);
-  final daysLeft = DateTime(today.year, today.month + 1, 0).day - today.day;
+  final (:target, :pacing, :daysLeft) = _volume(month, today);
+  final hasTarget = target != null;
   return GoalCard(
     title: l10n.goalOwnVolume,
     value: number.format(done.ownVolume),
@@ -77,10 +91,8 @@ class OwnVolumeHero extends StatelessWidget {
     final colors = LoomiaColors.of(context);
     final number = NumberFormat.decimalPattern(l10n.localeName);
     final done = month.progress;
-    final target = month.plan?.ownVolumeTarget;
-    final hasTarget = target != null && target > 0;
-    final pacing = pace(hasTarget ? target : null, done.ownVolume, today);
-    final daysLeft = DateTime(today.year, today.month + 1, 0).day - today.day;
+    final (:target, :pacing, :daysLeft) = _volume(month, today);
+    final hasTarget = target != null;
     final big = AppTypography.numeric.copyWith(color: scheme.onSurface);
     final plan = onPlan;
 
@@ -206,8 +218,9 @@ class OwnVolumeHero extends StatelessWidget {
 
 /// Desktop Goals' band (#507): [header] (days left, "Goals"), the own volume
 /// in white with its bar and pace; at the end a translucent panel with where
-/// the pace leads and [onPlan]'s white button. When the two would squeeze
-/// the volume under [_volumeMin], the panel drops under it.
+/// the pace leads and [onPlan]'s white button. Side by side at every
+/// desktop width: the narrowest (1200, sidebar expanded) still leaves the
+/// volume about 390px.
 class OwnVolumeBand extends StatelessWidget {
   const OwnVolumeBand({
     required this.header,
@@ -227,7 +240,6 @@ class OwnVolumeBand extends StatelessWidget {
   final VoidCallback? onPlan;
 
   static const double _panelWidth = 360;
-  static const double _volumeMin = 360;
 
   @override
   Widget build(BuildContext context) {
@@ -236,10 +248,8 @@ class OwnVolumeBand extends StatelessWidget {
     final colors = LoomiaColors.of(context);
     final number = NumberFormat.decimalPattern(l10n.localeName);
     final done = month.progress;
-    final target = month.plan?.ownVolumeTarget;
-    final hasTarget = target != null && target > 0;
-    final pacing = pace(hasTarget ? target : null, done.ownVolume, today);
-    final daysLeft = DateTime(today.year, today.month + 1, 0).day - today.day;
+    final (:target, :pacing, :daysLeft) = _volume(month, today);
+    final hasTarget = target != null;
     final plan = onPlan;
 
     final volume = Column(
@@ -247,26 +257,38 @@ class OwnVolumeBand extends StatelessWidget {
       children: [
         header,
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          l10n.goalOwnVolume.toUpperCase(),
-          style: AppTypography.overline.copyWith(color: colors.onHeroQuiet),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        // One paragraph: the suffix wraps as words and sits on the baseline.
-        Text.rich(
-          TextSpan(
+        // One node: "Own volume, 1,840 of 2,800 PV".
+        MergeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextSpan(
-                text: number.format(done.ownVolume),
-                style: AppTypography.numericHero.copyWith(color: colors.onHero),
+              Text(
+                l10n.goalOwnVolume.toUpperCase(),
+                style: AppTypography.overline.copyWith(color: colors.onHero),
               ),
-              TextSpan(
-                text:
-                    ' ${hasTarget ? l10n.goalVolumeOf(model.name, number.format(target)) : l10n.goalVolumeAlone(model.name)}',
-                // Regular: the figure is what reads first.
-                style: AppTypography.titleLarge.copyWith(
-                  color: colors.onHeroQuiet,
-                  fontWeight: AppTypography.bodyLarge.fontWeight,
+              const SizedBox(height: AppSpacing.sm),
+              // One paragraph: the suffix wraps as words and sits on the
+              // baseline.
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: number.format(done.ownVolume),
+                      style: AppTypography.numericHero.copyWith(
+                        color: colors.onHero,
+                      ),
+                    ),
+                    TextSpan(
+                      text:
+                          ' ${hasTarget ? l10n.goalVolumeOf(model.name, number.format(target)) : l10n.goalVolumeAlone(model.name)}',
+                      // Regular: the figure is what reads first.
+                      style: AppTypography.titleLarge.copyWith(
+                        color: colors.onHero,
+                        fontWeight: AppTypography.bodyLarge.fontWeight,
+                        fontVariations: AppTypography.bodyLarge.fontVariations,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -307,7 +329,7 @@ class OwnVolumeBand extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 l10n.goalPaceNote,
-                style: AppTypography.body.copyWith(color: colors.onHeroQuiet),
+                style: AppTypography.body.copyWith(color: colors.onHero),
               ),
             ],
             if (plan != null) ...[
@@ -325,21 +347,15 @@ class OwnVolumeBand extends StatelessWidget {
     );
 
     if (!hasPanel) return volume;
-    return LayoutBuilder(
-      builder: (context, constraints) =>
-          constraints.maxWidth < _volumeMin + AppSpacing.lg + _panelWidth
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: AppSpacing.lg,
-              children: [volume, panel],
-            )
-          : Row(
-              spacing: AppSpacing.lg,
-              children: [
-                Expanded(child: volume),
-                SizedBox(width: _panelWidth, child: panel),
-              ],
-            ),
+    return Row(
+      spacing: AppSpacing.lg,
+      children: [
+        Expanded(child: volume),
+        SizedBox(
+          width: _panelWidth,
+          child: Semantics(container: true, child: panel),
+        ),
+      ],
     );
   }
 }

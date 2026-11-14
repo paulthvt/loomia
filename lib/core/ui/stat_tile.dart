@@ -24,6 +24,20 @@ class StatTile extends StatelessWidget {
   final String? note;
   final StatTone tone;
 
+  /// The least width at which [label] stays on one line, at the context's
+  /// font and text size: a row of tiles can tell whether its labels fit.
+  static double widthFor(BuildContext context, String label) {
+    final painter = TextPainter(
+      text: TextSpan(text: label.toUpperCase(), style: AppTypography.overline),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width + 2 * AppSpacing.md;
+    painter.dispose();
+    return width;
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -93,8 +94,9 @@ class GoalsView extends StatelessWidget {
   /// Per `docs/design/responsive-design.md`, as on Today.
   static const double _column = 624;
 
-  /// A stat tile's least width in desktop's row of four.
-  static const double _tileMin = 140;
+  /// Desktop's side column (orders, past months): narrower than the
+  /// default, so the four tiles fit one row at 1440 (#507).
+  static const double _sideWidth = 340;
 
   @override
   Widget build(BuildContext context) {
@@ -153,6 +155,7 @@ class GoalsView extends StatelessWidget {
         AsyncData(:final value) => switch (_dashboard(context, value)) {
           (:final main, :final past) when desktop => [
             ContentColumns(
+              sideWidth: _sideWidth,
               main: main,
               side: [
                 if (showRitual) ...[
@@ -186,36 +189,34 @@ class GoalsView extends StatelessWidget {
               horizontal: AppSpacing.xxl,
               vertical: AppSpacing.xl,
             ).add(EdgeInsets.only(bottom: bottom)),
+            // Each piece capped, so a very wide window does not stretch the
+            // band and the tiles; each its own node for a screen reader.
             children: [
-              // Capped, so a very wide window does not stretch the band
-              // and the tiles.
-              ContentColumns.aligned(
-                maxWidth: Breakpoints.maxContentWidth,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+              for (final piece in [
+                HeroPanel(
+                  shape: HeroShape.band,
+                  padding: const EdgeInsets.all(AppSpacing.xl),
                   children: [
-                    HeroPanel(
-                      shape: HeroShape.band,
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      children: [
-                        switch (month) {
-                          AsyncData(:final value) when plan != null =>
-                            OwnVolumeBand(
-                              header: topBar,
-                              month: value,
-                              today: today,
-                              model: model,
-                              onPlan: plan.closed ? null : onPlan,
-                            ),
-                          _ => topBar,
-                        },
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    ...content,
+                    switch (month) {
+                      AsyncData(:final value) when plan != null =>
+                        OwnVolumeBand(
+                          header: topBar,
+                          month: value,
+                          today: today,
+                          model: model,
+                          onPlan: plan.closed ? null : onPlan,
+                        ),
+                      _ => topBar,
+                    },
                   ],
                 ),
-              ),
+                const SizedBox(height: AppSpacing.lg),
+                ...content,
+              ])
+                ContentColumns.aligned(
+                  maxWidth: Breakpoints.maxContentWidth,
+                  Semantics(container: true, child: piece),
+                ),
             ],
           )
         : ListView(
@@ -308,16 +309,29 @@ class GoalsView extends StatelessWidget {
         if (closed.closed && closed.month != month.month) closed,
     ];
 
+    final labels = (
+      prospects: l10n.goalNewProspects,
+      customers: l10n.goalNewCustomers,
+      teamMembers: l10n.goalNewTeamMembers,
+      loyalty: l10n.goalLoyalty(model.name),
+    );
     final tiles = [
-      count(l10n.goalNewProspects, done.prospects, plan.prospectsTarget),
-      count(l10n.goalNewCustomers, done.customers, plan.customersTarget),
-      count(l10n.goalNewTeamMembers, done.teamMembers, plan.teamMembersTarget),
+      count(labels.prospects, done.prospects, plan.prospectsTarget),
+      count(labels.customers, done.customers, plan.customersTarget),
+      count(labels.teamMembers, done.teamMembers, plan.teamMembersTarget),
       StatTile(
-        label: l10n.goalLoyalty(model.name),
+        label: labels.loyalty,
         value: '${done.loyalty}',
         note: loyaltyNote.isEmpty ? null : loyaltyNote,
       ),
     ];
+    // The widest label on one line, at this locale and text size.
+    final tileMin = [
+      labels.prospects,
+      labels.customers,
+      labels.teamMembers,
+      labels.loyalty,
+    ].map((label) => StatTile.widthFor(context, label)).reduce(math.max);
     Widget row(List<Widget> tiles) => IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -332,12 +346,12 @@ class GoalsView extends StatelessWidget {
     );
 
     final main = <Widget>[
-      // Desktop: the four in one row, unless the column is too narrow for
-      // their labels (a 1200px window); then two pairs, as on a phone.
+      // Desktop: the four in one row while every label keeps one line;
+      // narrower (a 1200px window, a long translation), two pairs.
       if (context.screenSize.isDesktop)
         LayoutBuilder(
           builder: (context, constraints) =>
-              constraints.maxWidth < 4 * _tileMin + 3 * AppSpacing.ms
+              constraints.maxWidth < 4 * tileMin + 3 * AppSpacing.ms
               ? pairs()
               : row(tiles),
         )

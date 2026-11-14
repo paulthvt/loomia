@@ -120,6 +120,18 @@ void main() {
     }
   });
 
+  test("the hero inset's white text meets AA over the gradient's end", () {
+    // The worst case: the panel sits towards the light bottom-right (#507).
+    for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
+      final under = Color.alphaBlend(
+        colors.heroInset,
+        colors.heroGradient.colors.last,
+      );
+      // The title is large text (3:1), the line under it small (4.5:1).
+      expect(contrast(colors.onHero, under), greaterThanOrEqualTo(4.5));
+    }
+  });
+
   test('primary ink meets AA on its surface', () {
     for (final colors in [LoomiaColors.light, LoomiaColors.dark]) {
       expect(

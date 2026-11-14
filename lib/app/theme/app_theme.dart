@@ -49,14 +49,14 @@ abstract final class AppTheme {
     );
   }
 
-  /// A translucent panel on the hero gradient (desktop Goals' pace panel):
-  /// the hero's fill, a faint white hairline.
+  /// A panel set into the hero gradient (desktop Goals' pace panel): the
+  /// dark [LoomiaColors.heroInset] tint, a faint white hairline.
   static BoxDecoration heroInset(BuildContext context) {
     final colors = LoomiaColors.of(context);
     return BoxDecoration(
-      color: colors.heroFill,
+      color: colors.heroInset,
       borderRadius: BorderRadius.circular(AppRadii.card),
-      border: Border.all(color: colors.heroFill),
+      border: Border.all(color: colors.heroFillSubtle),
     );
   }
 

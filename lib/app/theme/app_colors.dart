@@ -119,6 +119,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     required this.onHeroQuiet,
     required this.heroFill,
     required this.heroFillSubtle,
+    required this.heroInset,
     required this.onHeroFill,
     required this.avatar,
   });
@@ -219,6 +220,11 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
   /// Subtle translucent fill on hero (search, switch).
   final Color heroFillSubtle;
 
+  /// A panel set into the hero (desktop Goals' pace panel, #507): chrome at
+  /// 40%, so white text stays AA even over the gradient's light end (a
+  /// white fill there fell to 2.2:1).
+  final Color heroInset;
+
   /// Ink on a white fill on the hero (the Calendar switch's selected
   /// segment, the month's selected day). The hero and the white are the
   /// same in both modes, so is this: the light primary tint's ink.
@@ -282,6 +288,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     onHeroQuiet: Color(0xD9FFFFFF),
     heroFill: Color(0x2EFFFFFF),
     heroFillSubtle: Color(0x1FFFFFFF),
+    heroInset: Color(0x662A181C),
     onHeroFill: Color(0xFF713E0E),
     avatar: Color(0xFFF2E8DE),
   );
@@ -333,6 +340,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
     onHeroQuiet: Color(0xD9FFFFFF),
     heroFill: Color(0x2EFFFFFF),
     heroFillSubtle: Color(0x1FFFFFFF),
+    heroInset: Color(0x662A181C),
     onHeroFill: Color(0xFF713E0E),
     avatar: Color(0xFF33251B),
   );
@@ -392,6 +400,7 @@ class LoomiaColors extends ThemeExtension<LoomiaColors> {
       onHeroQuiet: c(onHeroQuiet, other.onHeroQuiet),
       heroFill: c(heroFill, other.heroFill),
       heroFillSubtle: c(heroFillSubtle, other.heroFillSubtle),
+      heroInset: c(heroInset, other.heroInset),
       onHeroFill: c(onHeroFill, other.onHeroFill),
       avatar: c(avatar, other.avatar),
     );
