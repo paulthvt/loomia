@@ -31,6 +31,10 @@ class LoomiaProgressBar extends StatelessWidget {
 
   final double value;
   final ProgressTone tone;
+
+  /// Must state the figure ("66% of what you planned"): when it is given,
+  /// the bar itself is excluded from semantics, so this is what a screen
+  /// reader hears.
   final String? leadingLabel;
   final String? trailingLabel;
 

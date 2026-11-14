@@ -1,5 +1,9 @@
+import 'dart:math' as math;
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
@@ -226,4 +230,41 @@ void main() {
     );
     semantics.dispose();
   });
+
+  for (final width in [1440.0, 2000.0]) {
+    testWidgets('desktop at $width: the caption ends where white stays AA', (
+      tester,
+    ) async {
+      await pump(tester, size: Size(width, 900));
+
+      expect(find.text('11 days left'), findsNothing);
+      final caption = find.text('66% of what you planned · On pace');
+      final paragraph = tester.renderObject<RenderParagraph>(caption);
+      final glyphs = paragraph.getBoxesForSelection(
+        TextSelection(
+          baseOffset: 0,
+          extentOffset: paragraph.text.toPlainText().length,
+        ),
+      );
+      final end = paragraph.localToGlobal(
+        Offset(glyphs.last.right, glyphs.last.toRect().center.dy),
+      );
+      // The gradient's colour there: topLeft to bottomRight of the band.
+      final band = tester.getRect(find.byType(HeroPanel));
+      final axis = band.bottomRight - band.topLeft;
+      final along = end - band.topLeft;
+      final t =
+          (along.dx * axis.dx + along.dy * axis.dy) /
+          (axis.dx * axis.dx + axis.dy * axis.dy);
+      final gradient = LoomiaColors.light.heroGradient.colors;
+      final under = Color.lerp(gradient.first, gradient.last, t)!;
+      final white = LoomiaColors.light.onHero;
+      final (a, b) = (white.computeLuminance(), under.computeLuminance());
+      expect(
+        (math.max(a, b) + 0.05) / (math.min(a, b) + 0.05),
+        greaterThanOrEqualTo(4.5),
+        reason: 'glyphs end at $end, t = $t',
+      );
+    });
+  }
 }

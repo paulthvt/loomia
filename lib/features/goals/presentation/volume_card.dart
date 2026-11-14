@@ -216,7 +216,8 @@ class OwnVolumeHero extends StatelessWidget {
   }
 }
 
-/// Desktop Goals' band (#507): [header] (days left, "Goals"), the own volume
+/// Desktop Goals' band (#507): [header] (days left, "Goals": the bar does
+/// not repeat them, white small text fails over the light end), the own volume
 /// in white with its bar and pace; at the end a translucent panel with where
 /// the pace leads and [onPlan]'s white button. Side by side at every
 /// desktop width: the narrowest (1200, sidebar expanded) still leaves the
@@ -248,7 +249,7 @@ class OwnVolumeBand extends StatelessWidget {
     final colors = LoomiaColors.of(context);
     final number = NumberFormat.decimalPattern(l10n.localeName);
     final done = month.progress;
-    final (:target, :pacing, :daysLeft) = _volume(month, today);
+    final (:target, :pacing, daysLeft: _) = _volume(month, today);
     final hasTarget = target != null;
     final plan = onPlan;
 
@@ -304,7 +305,6 @@ class OwnVolumeBand extends StatelessWidget {
               if (pacing != null)
                 pacing.onPace ? l10n.goalOnPace : l10n.goalBehindPace,
             ].join(' · '),
-            trailingLabel: l10n.goalDaysLeft(daysLeft),
           ),
         ],
       ],
