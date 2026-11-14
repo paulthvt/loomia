@@ -162,7 +162,11 @@ class AppSidebar extends ConsumerWidget {
                 onPressed: run,
                 style: style,
                 icon: Icon(create.icon),
-                label: Text(create.label),
+                // One line: a long translation shrinks, never wraps.
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(create.label, maxLines: 1, softWrap: false),
+                ),
               )
             : Center(
                 child: IconButton(

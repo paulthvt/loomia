@@ -2037,10 +2037,6 @@
   "@createPerson": {
     "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Contacts tab: adds a person to the address book."
   },
-  "createOrder": "Enregistrer ma propre commande",
-  "@createOrder": {
-    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Goals tab: logs an order of the user's own, with no person."
-  },
   "notificationsSubtitle": "Quand Loomia te fait signe, et quand elle reste silencieuse.",
   "@notificationsSubtitle": {
     "description": "Subtitle under the title in the gradient header of the Notifications screen."

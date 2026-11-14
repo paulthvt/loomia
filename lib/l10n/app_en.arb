@@ -443,9 +443,9 @@
   "@createPerson": {
     "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Contacts tab: adds a person to the address book."
   },
-  "createOrder": "Log my own order",
-  "@createOrder": {
-    "description": "Label of the + button (floating bar on phones, sidebar on desktop) on the Goals tab: logs an order of the user's own, with no person."
+  "newOrder": "New order",
+  "@newOrder": {
+    "description": "Label of the + / sidebar create button on the Goals tab: logs an order of your own."
   },
   "notificationsSubtitle": "When Loomia gives you a nudge, and when it stays quiet.",
   "@notificationsSubtitle": {
