@@ -1,5 +1,21 @@
 # Changelog
 
+## [v2026.11.9](https://github.com/paulthvt/loomia/compare/v2026.11.8...v2026.11.9) (2026-11-14)
+
+### ✨ Features
+
+- **theme:** Horizon — gradient hero, floating navigation, quieter cards (#500) ([7eb19d6](https://github.com/paulthvt/loomia/commit/7eb19d65905ac4eca93ed518679fdecda4205151))
+- **reminders:** Today first, and a reminder can repeat (#498) ([accbeae](https://github.com/paulthvt/loomia/commit/accbeae9f58c56cc8b074d7663945ae8864752f3))
+
+### 🐛 Bug Fixes
+
+- **shell:** the floating bar shows icons only (#502) ([5facf27](https://github.com/paulthvt/loomia/commit/5facf2789a78873560f9fba2ee5d8057f9754276))
+- **calendar:** event form prep notes, chip spacing, notes on a repeating event (#496) ([495ee16](https://github.com/paulthvt/loomia/commit/495ee162fd5970b86a011ba4b7c52980e761acb1))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#503) ([c3178dd](https://github.com/paulthvt/loomia/commit/c3178dd21d7311c35bbadb451a732cdd99825d08))
+
 ## [v2026.11.8](https://github.com/paulthvt/loomia/compare/v2026.11.7...v2026.11.8) (2026-11-10)
 
 ### 🐛 Bug Fixes
