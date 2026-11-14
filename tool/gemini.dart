@@ -3,6 +3,7 @@
 // The key is a free-tier Google AI Studio key: no billing, rate-limited, and
 // Google may use the requests to improve its products. Fine here, the input is
 // public UI copy and commit subjects only.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -16,14 +17,19 @@ const _models = [
   'gemini-3.5-flash-lite',
 ];
 
-// Waits before each retry of an overloaded (503), failing (500) or
-// rate-limited (429) call, on the next model. The free tier does all three; a
-// minute covers the per-minute limit, not the daily one.
+// Waits before each retry of an overloaded (503), failing (500), rate-limited
+// (429), stalled or dropped call, on the next model. The free tier does all of
+// them; a minute covers the per-minute limit, not the daily one.
 const _retries = [
   Duration(seconds: 10),
   Duration(seconds: 30),
   Duration(minutes: 1),
 ];
+
+// How long one call may take. Free-tier calls have hung for 15 minutes before
+// a connection reset; four attempts of this stay well inside the release
+// job's 30 minutes, so the build is still attached.
+const _timeout = Duration(minutes: 3);
 
 /// The JSON Gemini replies with to [prompt] under [system]. Exits on any
 /// failure that survives the retries — quota, error status, cut-off or
@@ -35,54 +41,64 @@ Future<Object?> askGemini(
   required String prompt,
   required String what,
 }) async {
-  late HttpClientResponse response;
+  late int status;
   late String body;
   for (final (attempt, wait) in [..._retries, null].indexed) {
     final model = _models[attempt % _models.length];
-    final request = await client.postUrl(
-      Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
-      ),
-    );
-    request.headers
-      ..set('x-goog-api-key', apiKey)
-      ..contentType = ContentType.json;
-    request.write(
-      jsonEncode({
-        'systemInstruction': {
-          'parts': [
-            {'text': system},
-          ],
-        },
-        'contents': [
-          {
-            'role': 'user',
+    HttpClientRequest? request;
+    try {
+      request = await client
+          .postUrl(
+            Uri.parse(
+              'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
+            ),
+          )
+          .timeout(_timeout);
+      request.headers
+        ..set('x-goog-api-key', apiKey)
+        ..contentType = ContentType.json;
+      request.write(
+        jsonEncode({
+          'systemInstruction': {
             'parts': [
-              {'text': prompt},
+              {'text': system},
             ],
           },
-        ],
-        'generationConfig': {'responseMimeType': 'application/json'},
-      }),
-    );
-    response = await request.close();
-    body = await response.transform(utf8.decoder).join();
-    if (wait == null || !const {429, 500, 503}.contains(response.statusCode)) {
-      break;
+          'contents': [
+            {
+              'role': 'user',
+              'parts': [
+                {'text': prompt},
+              ],
+            },
+          ],
+          'generationConfig': {'responseMimeType': 'application/json'},
+        }),
+      );
+      final response = await request.close().timeout(_timeout);
+      status = response.statusCode;
+      body = await response.transform(utf8.decoder).join().timeout(_timeout);
+    } on Object catch (error) {
+      if (error is! IOException && error is! TimeoutException) rethrow;
+      // A stalled request would otherwise keep the process alive.
+      request?.abort(error);
+      if (wait == null) fail('$what: Gemini unreachable: $error');
+      stderr.writeln('$what: $error, retrying in ${wait.inSeconds}s');
+      await Future<void>.delayed(wait);
+      continue;
     }
-    stderr.writeln(
-      '$what: Gemini ${response.statusCode}, retrying in ${wait.inSeconds}s',
-    );
+    if (wait == null || !const {429, 500, 503}.contains(status)) break;
+    stderr.writeln('$what: Gemini $status, retrying in ${wait.inSeconds}s');
     await Future<void>.delayed(wait);
   }
-  if (response.statusCode == 429) {
+  if (status == 429) {
     fail(
       'Gemini free-tier quota or rate limit reached (429). Wait and re-run the '
       'workflow.\n$body',
     );
   }
-  if (response.statusCode != 200) {
-    fail('Gemini API ${response.statusCode}: $body');
+  if (status != 200) {
+    fail('Gemini API $status: $body');
   }
   final reply = jsonDecode(body) as Map<String, dynamic>;
   final candidates = reply['candidates'] as List<dynamic>? ?? [];
