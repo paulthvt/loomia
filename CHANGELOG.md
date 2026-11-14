@@ -1,5 +1,15 @@
 # Changelog
 
+## [v2026.11.10](https://github.com/paulthvt/loomia/compare/v2026.11.9...v2026.11.10) (2026-11-14)
+
+### ✨ Features
+
+- **goals:** the desktop band carries the volume; sidebar says New order (#508) ([4e296c2](https://github.com/paulthvt/loomia/commit/4e296c24689f3f2404ea754b10ee6eb7748451dc))
+
+### 🐛 Bug Fixes
+
+- **shell:** the bar's tab ripple takes the pill's shape and size (#505) ([ba54ad8](https://github.com/paulthvt/loomia/commit/ba54ad8e5929a58fa6c67ec7ae73547b41a7fb79))
+
 ## [v2026.11.9](https://github.com/paulthvt/loomia/compare/v2026.11.8...v2026.11.9) (2026-11-14)
 
 ### ✨ Features
