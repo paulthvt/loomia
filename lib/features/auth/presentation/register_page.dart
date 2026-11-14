@@ -50,6 +50,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!_form.currentState!.validate()) return;
 
     final email = normalizeEmail(_email.text);
+    final language = Localizations.localeOf(context).languageCode;
     setState(() {
       _busy = true;
       _failure = null;
@@ -61,6 +62,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             email: email,
             password: _password.text,
             firstName: _firstName.text.trim(),
+            language: language,
           );
       if (!mounted) return;
       // Email confirmation is on, so there is no session yet — the next step is
