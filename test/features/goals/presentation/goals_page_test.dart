@@ -297,7 +297,7 @@ void main() {
 
     await tester.tap(find.text('OWN VOLUME'));
     expect(orders, 1);
-    expect(find.text('Log my own order'), findsNothing);
+    expect(find.text('New order'), findsNothing);
   });
 
   testWidgets('the last days: a card to plan next month', (tester) async {

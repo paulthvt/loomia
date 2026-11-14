@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -58,7 +59,8 @@ class GoalsPage extends ConsumerWidget {
 }
 
 /// The screen as a function of its inputs, for tests and previews. One
-/// 624px column on every size, like Today.
+/// 624px column on phone and tablet; on desktop the band carries the volume
+/// above two columns, capped at [Breakpoints.maxContentWidth].
 class GoalsView extends StatelessWidget {
   const GoalsView({
     required this.month,
@@ -92,8 +94,9 @@ class GoalsView extends StatelessWidget {
   /// Per `docs/design/responsive-design.md`, as on Today.
   static const double _column = 624;
 
-  /// The hero card beside the title on desktop, as on Today.
-  static const double _heroCardWidth = 440;
+  /// Desktop's side column (orders, past months): narrower than the
+  /// default, so the four tiles fit one row at 1440 (#507).
+  static const double _sideWidth = 340;
 
   @override
   Widget build(BuildContext context) {
@@ -109,14 +112,14 @@ class GoalsView extends StatelessWidget {
         ritual != null && (ritual.closes || month.value?.month != ritual.plan);
 
     final plan = month.value?.plan;
+    // Desktop's band carries the volume itself (#507): no white card.
     final heroCard = switch (month) {
-      AsyncData(:final value) when plan != null => HeroCard(
+      AsyncData(:final value) when plan != null && !desktop => HeroCard(
         child: OwnVolumeHero(
           month: value,
           today: today,
           model: model,
-          // Desktop lists the orders beside the card already.
-          onTap: desktop ? null : onOrders,
+          onTap: onOrders,
           onPlan: plan.closed ? null : onPlan,
         ),
       ),
@@ -152,6 +155,7 @@ class GoalsView extends StatelessWidget {
         AsyncData(:final value) => switch (_dashboard(context, value)) {
           (:final main, :final past) when desktop => [
             ContentColumns(
+              sideWidth: _sideWidth,
               main: main,
               side: [
                 if (showRitual) ...[
@@ -185,24 +189,34 @@ class GoalsView extends StatelessWidget {
               horizontal: AppSpacing.xxl,
               vertical: AppSpacing.xl,
             ).add(EdgeInsets.only(bottom: bottom)),
+            // Each piece capped, so a very wide window does not stretch the
+            // band and the tiles; each its own node for a screen reader.
             children: [
-              HeroPanel(
-                shape: HeroShape.band,
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: topBar),
-                      if (heroCard != null) ...[
-                        const SizedBox(width: AppSpacing.lg),
-                        SizedBox(width: _heroCardWidth, child: heroCard),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              ...content,
+              for (final piece in [
+                HeroPanel(
+                  shape: HeroShape.band,
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  children: [
+                    switch (month) {
+                      AsyncData(:final value) when plan != null =>
+                        OwnVolumeBand(
+                          header: topBar,
+                          month: value,
+                          today: today,
+                          model: model,
+                          onPlan: plan.closed ? null : onPlan,
+                        ),
+                      _ => topBar,
+                    },
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                ...content,
+              ])
+                ContentColumns.aligned(
+                  maxWidth: Breakpoints.maxContentWidth,
+                  Semantics(container: true, child: piece),
+                ),
             ],
           )
         : ListView(
@@ -264,16 +278,6 @@ class GoalsView extends StatelessWidget {
       value: '$value',
       note: aimed == null ? null : l10n.goalAimedFor(aimed),
     );
-    Widget pair(Widget start, Widget end) => IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: start),
-          const SizedBox(width: AppSpacing.ms),
-          Expanded(child: end),
-        ],
-      ),
-    );
     Widget note(String line, String below) => LoomiaCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -305,24 +309,54 @@ class GoalsView extends StatelessWidget {
         if (closed.closed && closed.month != month.month) closed,
     ];
 
+    final labels = (
+      prospects: l10n.goalNewProspects,
+      customers: l10n.goalNewCustomers,
+      teamMembers: l10n.goalNewTeamMembers,
+      loyalty: l10n.goalLoyalty(model.name),
+    );
+    final tiles = [
+      count(labels.prospects, done.prospects, plan.prospectsTarget),
+      count(labels.customers, done.customers, plan.customersTarget),
+      count(labels.teamMembers, done.teamMembers, plan.teamMembersTarget),
+      StatTile(
+        label: labels.loyalty,
+        value: '${done.loyalty}',
+        note: loyaltyNote.isEmpty ? null : loyaltyNote,
+      ),
+    ];
+    // The widest label on one line, at this locale and text size.
+    final tileMin = [
+      labels.prospects,
+      labels.customers,
+      labels.teamMembers,
+      labels.loyalty,
+    ].map((label) => StatTile.widthFor(context, label)).reduce(math.max);
+    Widget row(List<Widget> tiles) => IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AppSpacing.ms,
+        children: [for (final tile in tiles) Expanded(child: tile)],
+      ),
+    );
+    Widget pairs() => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.ms,
+      children: [row(tiles.sublist(0, 2)), row(tiles.sublist(2))],
+    );
+
     final main = <Widget>[
-      pair(
-        count(l10n.goalNewProspects, done.prospects, plan.prospectsTarget),
-        count(l10n.goalNewCustomers, done.customers, plan.customersTarget),
-      ),
-      const SizedBox(height: AppSpacing.ms),
-      pair(
-        count(
-          l10n.goalNewTeamMembers,
-          done.teamMembers,
-          plan.teamMembersTarget,
-        ),
-        StatTile(
-          label: l10n.goalLoyalty(model.name),
-          value: '${done.loyalty}',
-          note: loyaltyNote.isEmpty ? null : loyaltyNote,
-        ),
-      ),
+      // Desktop: the four in one row while every label keeps one line;
+      // narrower (a 1200px window, a long translation), two pairs.
+      if (context.screenSize.isDesktop)
+        LayoutBuilder(
+          builder: (context, constraints) =>
+              constraints.maxWidth < 4 * tileMin + 3 * AppSpacing.ms
+              ? pairs()
+              : row(tiles),
+        )
+      else
+        pairs(),
       if (declared.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.md),
         note(declared, l10n.goalDeclaredNote),

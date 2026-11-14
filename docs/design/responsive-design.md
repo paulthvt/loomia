@@ -52,7 +52,7 @@ code keeps the size-class edges until the difference shows (`AppShell`).
 
 Desktop is designed, not enlarged:
 
-- **Floating dark sidebar** 232px (`LoomiaColors.chrome`): wordmark, labelled create button (New task / New event / New person / Log my own order, changes with the tab), four destinations, account
+- **Floating dark sidebar** 232px (`LoomiaColors.chrome`): wordmark, labelled create button (New task / New event / New person / New order, changes with the tab), four destinations, account
   pinned to the bottom.
 - **Gradient hero band** at the top (radius 32), one per screen.
 - **Two-column content** on Today, Goals and Team (#171), one shared layout,

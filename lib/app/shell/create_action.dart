@@ -41,7 +41,7 @@ CreateAction? createActionFor(
     run: (context, _) => addPerson(context),
   ),
   Routes.goals => (
-    label: l10n.createOrder,
+    label: l10n.newOrder,
     icon: Icons.add_rounded,
     run: (context, _) {
       // The container, not the context: the sheet may be closing.

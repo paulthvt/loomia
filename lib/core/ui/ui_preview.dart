@@ -168,7 +168,7 @@ class _Gallery extends StatelessWidget {
         const SectionHeader(title: 'Progress', actionLabel: '2'),
         const LoomiaProgressBar(
           value: 0.62,
-          leadingLabel: 'Slightly behind pace',
+          leadingLabel: '62% of what you planned · Slightly behind pace',
           trailingLabel: '11 days left',
         ),
         const SizedBox(height: AppSpacing.lg),

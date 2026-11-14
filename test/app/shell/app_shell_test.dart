@@ -113,6 +113,45 @@ void main() {
     expect(find.byType(LoomiaDialog), findsOneWidget);
   });
 
+  testWidgets('desktop: on Goals the sidebar button says New order', (
+    tester,
+  ) async {
+    final container = await pumpLoomia(tester, size: const Size(1440, 900));
+    container.read(routerProvider).go(Routes.goals);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(AppSidebar),
+        matching: find.text('New order'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('desktop: a long create label shrinks onto one line', (
+    tester,
+  ) async {
+    // Large text stands in for a long translation.
+    tester.platformDispatcher.textScaleFactorTestValue = 2.5;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final container = await pumpLoomia(tester, size: const Size(1440, 900));
+    container.read(routerProvider).go(Routes.goals);
+    await tester.pumpAndSettle();
+
+    final label = find.descendant(
+      of: find.byType(AppSidebar),
+      matching: find.text('New order'),
+    );
+    final button = tester.getRect(
+      find.ancestor(of: label, matching: find.byType(FilledButton)),
+    );
+    final text = tester.getRect(label);
+    expect(button.left <= text.left && text.right <= button.right, isTrue);
+    // Laid out on one line, then scaled down to fit.
+    expect(text.width, lessThan(tester.getSize(label).width));
+  });
+
   testWidgets("tablet: the rail's + is labelled for screen readers", (
     tester,
   ) async {
@@ -196,7 +235,7 @@ void main() {
       (Routes.today, 'New task'),
       (Routes.calendar, 'New event'),
       (Routes.contacts, 'New person'),
-      (Routes.goals, 'Log my own order'),
+      (Routes.goals, 'New order'),
     ]) {
       container.read(routerProvider).go(path);
       await tester.pumpAndSettle();
@@ -454,7 +493,7 @@ void main() {
     await tester.pumpAndSettle();
     final loads = goals.calls.where((call) => call == 'plans()').length;
 
-    await tester.tap(find.byTooltip('Log my own order'));
+    await tester.tap(find.byTooltip('New order'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.descendant(

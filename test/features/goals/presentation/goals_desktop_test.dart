@@ -1,7 +1,16 @@
+import 'dart:math' as math;
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_colors.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
+import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
+import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/contacts/data/activity_repository.dart';
@@ -12,10 +21,15 @@ import 'package:loomia/l10n/app_localizations.dart';
 import 'package:loomia/l10n/localizations_delegates.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../load_fonts.dart';
 import '../../auth/fake_auth_repository.dart';
 import '../../contacts/fake_activity_repository.dart';
 
+/// Where the shell's expanded sidebar ends (232 + its margins).
+const double _sidebar = 264;
+
 void main() {
+  setUpAll(loadAppFonts);
   final september = DateTime(2026, 9);
   final plan = MonthPlan(
     month: september,
@@ -23,11 +37,12 @@ void main() {
     prospectsTarget: 8,
   );
 
-  testWidgets('desktop: dashboard left, orders and past months right', (
-    tester,
-  ) async {
+  Future<void> pump(
+    WidgetTester tester, {
+    Size size = const Size(1440, 900),
+  }) async {
     tester.view
-      ..physicalSize = const Size(1440, 900)
+      ..physicalSize = size
       ..devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final auth = FakeAuthRepository()
@@ -58,32 +73,46 @@ void main() {
           theme: AppTheme.light,
           localizationsDelegates: localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: GoalsView(
-            month: AsyncData((
-              month: september,
-              plan: plan,
-              progress: const Progress(
-                ownVolume: 1840,
-                prospects: 5,
-                customers: 4,
-                teamMembers: 1,
-                loyalty: 2,
+          // The expanded sidebar's room, as in the shell.
+          home: Row(
+            children: [
+              const SizedBox(width: _sidebar),
+              Expanded(
+                child: GoalsView(
+                  month: AsyncData((
+                    month: september,
+                    plan: plan,
+                    progress: const Progress(
+                      ownVolume: 1840,
+                      prospects: 5,
+                      customers: 4,
+                      teamMembers: 1,
+                      loyalty: 2,
+                    ),
+                    forecast: 0,
+                    plans: [plan],
+                  )),
+                  today: DateTime(2026, 9, 19),
+                  model: BusinessModel.doterra,
+                  onPlan: () {},
+                  onRetry: () {},
+                  onRefresh: () async {},
+                  onOrders: () => fail('no sheet on desktop'),
+                  onRitual: () {},
+                ),
               ),
-              forecast: 0,
-              plans: [plan],
-            )),
-            today: DateTime(2026, 9, 19),
-            model: BusinessModel.doterra,
-            onPlan: () {},
-            onRetry: () {},
-            onRefresh: () async {},
-            onOrders: () => fail('no sheet on desktop'),
-            onRitual: () {},
+            ],
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('desktop: dashboard left, orders and past months right', (
+    tester,
+  ) async {
+    await pump(tester);
 
     final tiles = tester.getTopLeft(find.text('NEW PROSPECTS')).dx;
     expect(
@@ -91,7 +120,151 @@ void main() {
       greaterThan(tiles + 600),
     );
     expect(find.text('Order · 100 PV'), findsOneWidget);
-    await tester.tap(find.text('OWN VOLUME'));
-    await tester.pumpAndSettle();
   });
+
+  testWidgets('desktop: the band carries the volume, no white card', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    Finder inBand(Finder finder) =>
+        find.descendant(of: find.byType(HeroPanel), matching: finder);
+    expect(find.byType(HeroCard), findsNothing);
+    expect(
+      inBand(find.textContaining('1,840', findRichText: true)),
+      findsOneWidget,
+    );
+    expect(
+      inBand(find.text('66% of what you planned · On pace')),
+      findsOneWidget,
+    );
+    expect(
+      inBand(find.text('At this pace you finish the month at about 2,905 PV.')),
+      findsOneWidget,
+    );
+    expect(
+      inBand(find.widgetWithText(FilledButton, 'Change the plan')),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<LoomiaProgressBar>(find.byType(LoomiaProgressBar)).tone,
+      ProgressTone.onHero,
+    );
+  });
+
+  const labels = ['NEW PROSPECTS', 'NEW CUSTOMERS', 'NEW TEAM MEMBERS', 'LRPS'];
+
+  testWidgets(
+    'desktop at 1440: the four tiles in one row, labels on one line',
+    (tester) async {
+      await pump(tester);
+
+      final line =
+          AppTypography.overline.fontSize! * AppTypography.overline.height!;
+      final tops = {
+        for (final label in labels) tester.getTopLeft(find.text(label)).dy,
+      };
+      expect(tops, hasLength(1));
+      for (final label in labels) {
+        expect(tester.getSize(find.text(label)).height, line, reason: label);
+      }
+    },
+  );
+
+  testWidgets('desktop at 1200: two pairs of tiles, the band still a row', (
+    tester,
+  ) async {
+    await pump(tester, size: const Size(1200, 800));
+
+    expect(tester.takeException(), isNull);
+    double top(String label) => tester.getTopLeft(find.text(label)).dy;
+    expect(top('NEW CUSTOMERS'), top('NEW PROSPECTS'));
+    expect(top('NEW TEAM MEMBERS'), greaterThan(top('NEW PROSPECTS')));
+    expect(top('LRPS'), top('NEW TEAM MEMBERS'));
+    // The panel beside the volume, not under it.
+    expect(
+      tester.getTopLeft(find.text('Change the plan')).dx,
+      greaterThan(
+        tester.getTopRight(find.textContaining('1,840', findRichText: true)).dx,
+      ),
+    );
+  });
+
+  testWidgets('desktop at 2000: the page stops at its max width', (
+    tester,
+  ) async {
+    await pump(tester, size: const Size(2000, 900));
+
+    expect(
+      tester.getSize(find.byType(HeroPanel)).width,
+      Breakpoints.maxContentWidth,
+    );
+    expect(
+      tester.getTopRight(find.text('Orders in September')).dx,
+      lessThanOrEqualTo(
+        _sidebar + AppSpacing.xxl + Breakpoints.maxContentWidth,
+      ),
+    );
+  });
+
+  testWidgets('desktop: the volume, the bar and the tiles are apart', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await pump(tester);
+
+    String label(Finder finder) => tester.getSemantics(finder).label;
+    final volume = label(find.textContaining('1,840', findRichText: true));
+    expect(volume, contains('OWN VOLUME'));
+    expect(volume, contains('1,840 of 2,800 PV'));
+    final bar = label(find.text('66% of what you planned · On pace'));
+    for (final node in [volume, bar]) {
+      expect(node, isNot(contains('NEW PROSPECTS')));
+      expect(node, isNot(contains('Orders in September')));
+    }
+    // The figure once: the caption says it, the bar keeps quiet.
+    expect(tester.getSemantics(find.byType(LinearProgressIndicator)).value, '');
+    expect(
+      tester.getSemantics(find.widgetWithText(FilledButton, 'Change the plan')),
+      isSemantics(label: 'Change the plan', isButton: true),
+    );
+    semantics.dispose();
+  });
+
+  for (final width in [1440.0, 2000.0]) {
+    testWidgets('desktop at $width: the caption ends where white stays AA', (
+      tester,
+    ) async {
+      await pump(tester, size: Size(width, 900));
+
+      expect(find.text('11 days left'), findsNothing);
+      final caption = find.text('66% of what you planned · On pace');
+      final paragraph = tester.renderObject<RenderParagraph>(caption);
+      final glyphs = paragraph.getBoxesForSelection(
+        TextSelection(
+          baseOffset: 0,
+          extentOffset: paragraph.text.toPlainText().length,
+        ),
+      );
+      final end = paragraph.localToGlobal(
+        Offset(glyphs.last.right, glyphs.last.toRect().center.dy),
+      );
+      // The gradient's colour there: topLeft to bottomRight of the band.
+      final band = tester.getRect(find.byType(HeroPanel));
+      final axis = band.bottomRight - band.topLeft;
+      final along = end - band.topLeft;
+      final t =
+          (along.dx * axis.dx + along.dy * axis.dy) /
+          (axis.dx * axis.dx + axis.dy * axis.dy);
+      final gradient = LoomiaColors.light.heroGradient.colors;
+      final under = Color.lerp(gradient.first, gradient.last, t)!;
+      final white = LoomiaColors.light.onHero;
+      final (a, b) = (white.computeLuminance(), under.computeLuminance());
+      expect(
+        (math.max(a, b) + 0.05) / (math.min(a, b) + 0.05),
+        greaterThanOrEqualTo(4.5),
+        reason: 'glyphs end at $end, t = $t',
+      );
+    });
+  }
 }
