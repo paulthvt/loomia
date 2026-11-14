@@ -206,19 +206,30 @@ class _Tab extends StatelessWidget {
       excludeSemantics: true,
       child: Tooltip(
         message: label,
-        // The whole slot takes the tap; the pill shows in the 44 inside.
-        child: Material(
-          type: MaterialType.transparency,
-          shape: const StadiumBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Icon(
-              icon,
-              color: Color.lerp(
-                colors.onChromeMuted,
-                colors.onChrome,
-                presence,
+        // The whole slot takes the tap, but the ripple, hover and focus
+        // highlight draw in the pill's own shape and size, so pressing a tab
+        // shows the pill it is about to get.
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Center(
+            child: SizedBox.fromSize(
+              size: _Tabs._pill,
+              child: Material(
+                type: MaterialType.transparency,
+                shape: const StadiumBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: onTap,
+                  child: Icon(
+                    icon,
+                    color: Color.lerp(
+                      colors.onChromeMuted,
+                      colors.onChrome,
+                      presence,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
