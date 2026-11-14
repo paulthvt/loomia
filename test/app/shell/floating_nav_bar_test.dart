@@ -157,6 +157,41 @@ void main() {
     }
   });
 
+  testWidgets(
+    'the ripple takes the pill\'s size; the whole tab takes the tap',
+    (tester) async {
+      final picked = <int>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: AppTheme.light,
+          home: Scaffold(
+            bottomNavigationBar: FloatingNavBar(
+              selected: 0,
+              onSelect: picked.add,
+              create: null,
+              onCreate: null,
+            ),
+          ),
+        ),
+      );
+      final inks = find.descendant(
+        of: find.byType(FloatingNavBar),
+        matching: find.byType(InkWell),
+      );
+      expect(inks, findsNWidgets(4));
+      for (final ink in inks.evaluate()) {
+        expect(tester.getSize(find.byWidget(ink.widget)), _pill(tester).size);
+      }
+
+      // The tab's edge, outside the pill-sized ink, still selects it.
+      final calendar = _tab(tester, 'Calendar');
+      await tester.tapAt(Offset(calendar.left + 4, calendar.center.dy));
+      expect(picked, [1]);
+    },
+  );
+
   testWidgets('every tab has a tooltip, selected or not', (tester) async {
     await _pump(tester, 1);
     for (final label in ['Today', 'Calendar', 'Contacts', 'Goals']) {
@@ -217,16 +252,21 @@ void main() {
     node.owner!.performAction(node.id, SemanticsAction.tap);
     expect(picked, 2);
 
-    // An inactive tab takes the bar's full height, not the 44 of its pill.
+    // An inactive tab's tap target takes the bar's full height, not the 44 of
+    // its pill (the ripple stays pill-sized).
     final rect = tester.getRect(contacts);
-    final inkWell = tester.getRect(
-      find.ancestor(
-        of: find.byIcon(Icons.people_outline),
-        matching: find.byType(InkWell),
-      ),
+    final target = tester.getRect(
+      find
+          .ancestor(
+            of: find.byIcon(Icons.people_outline),
+            matching: find.byWidgetPredicate(
+              (widget) => widget is GestureDetector && widget.child is Center,
+            ),
+          )
+          .first,
     );
     expect(rect.height, greaterThanOrEqualTo(48));
-    expect(inkWell.height, greaterThanOrEqualTo(48));
+    expect(target.height, greaterThanOrEqualTo(48));
     handle.dispose();
   });
 
