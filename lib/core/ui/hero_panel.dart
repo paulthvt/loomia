@@ -374,6 +374,7 @@ class HeroFormList extends StatelessWidget {
     this.subtitle,
     this.onClose,
     this.onBack,
+    this.footer,
     super.key,
   });
 
@@ -381,6 +382,9 @@ class HeroFormList extends StatelessWidget {
   final String? eyebrow;
   final String? subtitle;
   final VoidCallback? onClose;
+
+  /// Last in the hero, under the title: Settings' profile.
+  final Widget? footer;
 
   /// Back instead of close, for a screen pushed over another.
   final VoidCallback? onBack;
@@ -393,6 +397,7 @@ class HeroFormList extends StatelessWidget {
     final close = onClose;
     final back = onBack;
     final below = subtitle;
+    final footer = this.footer;
     return ListView(
       padding: desktop
           ? const EdgeInsets.all(AppSpacing.md)
@@ -435,6 +440,7 @@ class HeroFormList extends StatelessWidget {
                   color: colors.onHeroQuiet,
                 ),
               ),
+            ?footer,
           ],
         ),
         const SizedBox(height: AppSpacing.lg),

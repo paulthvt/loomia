@@ -7,6 +7,7 @@ import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/photos/photo_picker.dart';
 import 'package:loomia/core/photos/photo_repository.dart';
 import 'package:loomia/core/ui/avatar_control.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_avatar.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
@@ -87,6 +88,20 @@ void main() {
 
     expect(find.text('Pauline'), findsOneWidget);
     expect(find.text('p@example.com'), findsOneWidget);
+  });
+
+  testWidgets('the account sits in the hero, not in a card below (#511)', (
+    tester,
+  ) async {
+    await _openSettings(tester);
+
+    for (final text in ['Pauline', 'p@example.com']) {
+      expect(
+        find.ancestor(of: find.text(text), matching: find.byType(HeroPanel)),
+        findsOneWidget,
+      );
+    }
+    expect(find.widgetWithText(ListTile, 'Pauline'), findsNothing);
   });
 
   testWidgets('choosing a language saves it and switches the app', (
