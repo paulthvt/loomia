@@ -1,5 +1,21 @@
 # Changelog
 
+## [v2026.11.10](https://github.com/paulthvt/loomia/compare/v2026.11.9...v2026.11.10) (2026-11-15)
+
+### ✨ Features
+
+- **settings:** the profile moves into the hero (#512) ([e3c8891](https://github.com/paulthvt/loomia/commit/e3c889141e34299cdad51cba8b8dc2e0516de5fa))
+- **goals:** the desktop band carries the volume; sidebar says New order (#508) ([4e296c2](https://github.com/paulthvt/loomia/commit/4e296c24689f3f2404ea754b10ee6eb7748451dc))
+
+### 🐛 Bug Fixes
+
+- **release:** retry Gemini on a dropped or stalled call (#510) ([c22fac1](https://github.com/paulthvt/loomia/commit/c22fac1ce5c67b4d6bf19cd1ab71e768b2864f80))
+- **shell:** the bar's tab ripple takes the pill's shape and size (#505) ([ba54ad8](https://github.com/paulthvt/loomia/commit/ba54ad8e5929a58fa6c67ec7ae73547b41a7fb79))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#513) ([f93b6cb](https://github.com/paulthvt/loomia/commit/f93b6cb1a658e871990c56103306f323b11b296b))
+
 ## [v2026.11.9](https://github.com/paulthvt/loomia/compare/v2026.11.8...v2026.11.9) (2026-11-14)
 
 ### ✨ Features
