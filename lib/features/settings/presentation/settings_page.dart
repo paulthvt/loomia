@@ -6,6 +6,7 @@ import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/layout/breakpoints.dart';
 import 'package:loomia/core/ui/form_error.dart';
@@ -119,6 +120,9 @@ class SettingsPage extends StatelessWidget {
                 child: SettingsScroll(
                   hero: true,
                   title: l10n.settingsTitle,
+                  heroFooter: _HeroProfile(
+                    selected: shown == SettingsSection.account,
+                  ),
                   child: _SettingsList(selected: shown),
                 ),
               ),
@@ -160,6 +164,7 @@ class SettingsPage extends StatelessWidget {
                 hero: true,
                 title: l10n.settingsTitle,
                 onBack: canGoBack ? back : null,
+                heroFooter: const _HeroProfile(),
                 child: const _SettingsList(),
               )
             : _Section(
@@ -257,7 +262,82 @@ class _WorkflowPane extends StatelessWidget {
   }
 }
 
-/// Profile, grouped rows, sign out. New settings are new rows in a group.
+/// Whose account this is, on the hero: avatar, name and email in the dark
+/// inset panel (white text on the bare gradient is too faint at its light
+/// end). Opens Account; on desktop, outlined while Account is open beside.
+class _HeroProfile extends ConsumerWidget {
+  const _HeroProfile({this.selected = false});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final account = ref.watch(accountProvider);
+    if (account == null) return const SizedBox.shrink();
+    final colors = LoomiaColors.of(context);
+    final inset = AppTheme.heroInset(context);
+    final radius = BorderRadius.circular(AppRadii.card);
+    return Semantics(
+      selected: selected,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Ink(
+          decoration: selected
+              ? inset.copyWith(
+                  border: Border.all(color: colors.onHero, width: 2),
+                )
+              : inset,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: () => SettingsPage.open(context, SettingsSection.account),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.ms),
+              child: Row(
+                children: [
+                  LoomiaAvatar(
+                    name: account.displayName,
+                    size: AvatarSize.header,
+                    photo: ref.watch(accountPhotoProvider),
+                  ),
+                  const SizedBox(width: AppSpacing.ms),
+                  Expanded(
+                    // One line each: this only says whose account it is; the
+                    // full email is on the Account screen.
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          account.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.title.copyWith(
+                            color: colors.onHero,
+                          ),
+                        ),
+                        if (account.firstName.isNotEmpty)
+                          Text(
+                            account.email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.body.copyWith(
+                              color: colors.onHeroQuiet,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: colors.onHero),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Grouped rows, sign out. New settings are new rows in a group.
 ///
 /// Signing out needs no navigation here: the session ends, and the router's
 /// redirect takes the user to /welcome.
@@ -283,37 +363,6 @@ class _SettingsListState extends ConsumerState<_SettingsList>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (account != null) ...[
-          SettingsGroup(
-            children: [
-              ListTile(
-                selected: selected == SettingsSection.account,
-                leading: LoomiaAvatar(
-                  name: account.displayName,
-                  photo: ref.watch(accountPhotoProvider),
-                ),
-                // One line each: this row only says whose account it is; the
-                // full email is on the Account screen.
-                title: Text(
-                  account.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: account.firstName.isEmpty
-                    ? null
-                    : Text(
-                        account.email,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () =>
-                    SettingsPage.open(context, SettingsSection.account),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-        ],
         SettingsGroup(
           children: [
             ListTile(

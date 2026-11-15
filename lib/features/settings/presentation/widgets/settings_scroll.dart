@@ -14,6 +14,7 @@ class SettingsScroll extends StatelessWidget {
     this.hero = false,
     this.subtitle,
     this.onBack,
+    this.heroFooter,
     super.key,
   });
 
@@ -25,6 +26,9 @@ class SettingsScroll extends StatelessWidget {
   final bool hero;
   final String? subtitle;
   final VoidCallback? onBack;
+
+  /// Under the title on the hero; needs [hero].
+  final Widget? heroFooter;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +42,7 @@ class SettingsScroll extends StatelessWidget {
                 title: title,
                 subtitle: subtitle,
                 onBack: onBack,
+                footer: heroFooter,
                 children: [child],
               )
             : ListView(
