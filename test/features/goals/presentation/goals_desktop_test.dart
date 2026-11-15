@@ -8,7 +8,7 @@ import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/business_model/business_model.dart';
-import 'package:loomia/core/layout/breakpoints.dart';
+import 'package:loomia/core/layout/content_columns.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
@@ -190,20 +190,17 @@ void main() {
     );
   });
 
-  testWidgets('desktop at 2000: the page stops at its max width', (
+  testWidgets('desktop at 3000: the page fills the window, like Today', (
     tester,
   ) async {
-    await pump(tester, size: const Size(2000, 900));
+    await pump(tester, size: const Size(3000, 900));
 
+    const content = 3000 - _sidebar - 2 * AppSpacing.xxl;
+    expect(tester.getSize(find.byType(HeroPanel)).width, content);
+    // The side column ends at the right padding, no blank strip after it.
     expect(
-      tester.getSize(find.byType(HeroPanel)).width,
-      Breakpoints.maxContentWidth,
-    );
-    expect(
-      tester.getTopRight(find.text('Orders in September')).dx,
-      lessThanOrEqualTo(
-        _sidebar + AppSpacing.xxl + Breakpoints.maxContentWidth,
-      ),
+      tester.getTopRight(find.byType(ContentColumns)).dx,
+      3000 - AppSpacing.xxl,
     );
   });
 
