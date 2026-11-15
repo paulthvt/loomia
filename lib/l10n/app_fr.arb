@@ -2069,5 +2069,9 @@
   "calendarAddTaskHint": "Quelque chose à faire ce jour-là",
   "@calendarAddTaskHint": {
     "description": "One-line hint under 'Task' in the sheet that the Calendar's add button opens: what a task is (something to do, due that day, no set time)."
+  },
+  "newOrder": "Nouvelle commande",
+  "@newOrder": {
+    "description": "Label of the + / sidebar create button on the Goals tab: logs an order of your own."
   }
 }
