@@ -60,7 +60,7 @@ class GoalsPage extends ConsumerWidget {
 
 /// The screen as a function of its inputs, for tests and previews. One
 /// 624px column on phone and tablet; on desktop the band carries the volume
-/// above two columns, capped at [Breakpoints.maxContentWidth].
+/// above two columns, across the whole window.
 class GoalsView extends StatelessWidget {
   const GoalsView({
     required this.month,
@@ -189,8 +189,8 @@ class GoalsView extends StatelessWidget {
               horizontal: AppSpacing.xxl,
               vertical: AppSpacing.xl,
             ).add(EdgeInsets.only(bottom: bottom)),
-            // Each piece capped, so a very wide window does not stretch the
-            // band and the tiles; each its own node for a screen reader.
+            // Full width, like Today; each piece its own node for a screen
+            // reader.
             children: [
               for (final piece in [
                 HeroPanel(
@@ -213,10 +213,7 @@ class GoalsView extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 ...content,
               ])
-                ContentColumns.aligned(
-                  maxWidth: Breakpoints.maxContentWidth,
-                  Semantics(container: true, child: piece),
-                ),
+                Semantics(container: true, child: piece),
             ],
           )
         : ListView(
