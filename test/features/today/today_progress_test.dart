@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
+import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/today/domain/due.dart';
@@ -193,6 +195,22 @@ void main() {
     expect(find.byType(AllDoneCard), findsOneWidget);
     expect(find.byType(AllDoneBand), findsNothing);
     expect(find.text('Tasks'), findsNothing);
+  });
+
+  testWidgets('phone done: Catch up sits one gap under the hero, not two', (
+    tester,
+  ) async {
+    await pump(tester, due: const [], done: 2, checkIns: [_lea]);
+
+    final header = find.ancestor(
+      of: find.text('Catch up'),
+      matching: find.byType(SectionHeader),
+    );
+    expect(
+      tester.getTopLeft(header).dy -
+          tester.getBottomLeft(find.byType(HeroPanel)).dy,
+      AppSpacing.lg,
+    );
   });
 }
 

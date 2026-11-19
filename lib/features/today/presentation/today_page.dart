@@ -981,7 +981,10 @@ class _TodayViewState extends State<TodayView> {
             ...content,
             // Desktop has them in the side column.
             if (widget.checkIns.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.lg),
+              // Once all is done, what is above (the hero, the ritual, the
+              // events) already ends with this gap; a nudge doesn't.
+              if (!allDone || nudge != null)
+                const SizedBox(height: AppSpacing.lg),
               ...checkInItems(
                 l10n,
                 widget.checkIns,
