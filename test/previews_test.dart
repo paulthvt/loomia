@@ -41,6 +41,14 @@ void main() {
       const Size(390, 844),
       todayAllDoneMobileDark,
     ),
+    'today_all_done_desktop_light': (
+      const Size(1440, 900),
+      todayAllDoneDesktopLight,
+    ),
+    'today_all_done_desktop_dark': (
+      const Size(1440, 900),
+      todayAllDoneDesktopDark,
+    ),
     'today_events_mobile_light': (const Size(390, 844), todayEventsMobileLight),
     'today_nudge_mobile_light': (const Size(390, 844), todayNudgeMobileLight),
     'today_catch_up_mobile_light': (
