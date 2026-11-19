@@ -725,30 +725,15 @@ class _TodayViewState extends State<TodayView> {
         const SizedBox(height: AppSpacing.lg),
       ],
     ];
-    // Desktop: the month and the team beside the priority list.
-    final side = [
-      if (goals != null && hasGoalLine(goals))
-        volumeCard(
-          context,
-          month: goals,
-          today: day,
-          model: widget.model,
-          onTap: widget.onGoals,
-        ),
-      if (ritual != null) ritualInvitation(ritual, widget.onRitual ?? () {}),
-      // One group: its rows keep their own 12px rhythm.
-      if (widget.checkIns.isNotEmpty)
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: checkInItems(
-            l10n,
-            widget.checkIns,
-            onOpen: widget.onOpen,
-            onCheckIn: widget.onCheckIn ?? (_) {},
-            onNotNow: widget.onNotNow ?? (_) async => false,
-          ),
-        ),
-    ];
+    // Desktop: open, no Show / Hide. Beside the list, or leading it once
+    // everything is done (#518).
+    final catchUp = checkInItems(
+      l10n,
+      widget.checkIns,
+      onOpen: widget.onOpen,
+      onCheckIn: widget.onCheckIn ?? (_) {},
+      onNotNow: widget.onNotNow ?? (_) async => false,
+    );
 
     final eventItems = todayEventItems(
       context,
@@ -798,7 +783,13 @@ class _TodayViewState extends State<TodayView> {
       ),
       AsyncData(:final value)
           when value.isEmpty && tasks.isEmpty && (widget.done ?? 0) > 0 =>
-        ('done', [...ritualCard, ...eventsBlock, ...tasksBlock]),
+        (
+          'done',
+          desktop
+              // No empty Tasks header; what is left worth doing leads.
+              ? [...eventsBlock, ...catchUp]
+              : [...ritualCard, ...eventsBlock, ...tasksBlock],
+        ),
       AsyncData(:final value) when value.isEmpty && tasks.isEmpty => (
         'up-to-date',
         [
@@ -827,6 +818,26 @@ class _TodayViewState extends State<TodayView> {
       ),
       _ => ('loading', loading),
     };
+    final allDone = branch == 'done';
+    // Desktop: the month and the team beside the priority list.
+    final side = [
+      if (goals != null && hasGoalLine(goals))
+        volumeCard(
+          context,
+          month: goals,
+          today: day,
+          model: widget.model,
+          onTap: widget.onGoals,
+        ),
+      if (ritual != null) ritualInvitation(ritual, widget.onRitual ?? () {}),
+      // One group: its rows keep their own 12px rhythm. Once all is done it
+      // leads the main column instead.
+      if (catchUp.isNotEmpty && !allDone)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: catchUp,
+        ),
+    ];
     // The last row ticked away: the done state is under it as its list fades,
     // and the row's check finishes drawing on the way out.
     final listed = [
@@ -856,7 +867,9 @@ class _TodayViewState extends State<TodayView> {
     ];
 
     // The white card on the gradient: what is left, or the all-done moment.
+    // On desktop the band itself carries the moment.
     final Widget? card = switch ((branch, widget.due)) {
+      ('done', _) when desktop => null,
       ('done', _) => AllDoneCard(
         done: widget.done!,
         firstName: widget.firstName,
@@ -903,14 +916,28 @@ class _TodayViewState extends State<TodayView> {
             shape: HeroShape.band,
             padding: const EdgeInsets.all(AppSpacing.xl),
             children: [
-              Row(
-                children: [
-                  Expanded(child: topBar),
-                  if (heroCard != null) ...[
-                    const SizedBox(width: AppSpacing.lg),
-                    SizedBox(width: _heroCardWidth, child: heroCard),
-                  ],
-                ],
+              // The greeting is in both layouts, so it never dims.
+              FadeSwap(
+                duration: AppMotion.slow,
+                child: allDone
+                    ? KeyedSubtree(
+                        key: const ValueKey('band-done'),
+                        child: AllDoneBand(
+                          header: topBar,
+                          done: widget.done!,
+                          firstName: widget.firstName,
+                        ),
+                      )
+                    : Row(
+                        key: const ValueKey('band'),
+                        children: [
+                          Expanded(child: topBar),
+                          if (heroCard != null) ...[
+                            const SizedBox(width: AppSpacing.lg),
+                            SizedBox(width: _heroCardWidth, child: heroCard),
+                          ],
+                        ],
+                      ),
               ),
             ],
           ),

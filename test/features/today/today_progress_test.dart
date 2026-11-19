@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
+import 'package:loomia/features/team/domain/check_in.dart';
 import 'package:loomia/features/today/domain/due.dart';
 import 'package:loomia/features/today/presentation/all_done_card.dart';
 import 'package:loomia/features/today/presentation/today_hero.dart';
@@ -51,6 +53,8 @@ void main() {
     required List<Due> due,
     required int? done,
     Size size = const Size(390, 844),
+    List<CheckIn> checkIns = const [],
+    Locale? locale,
   }) {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -58,6 +62,7 @@ void main() {
     return tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
+        locale: locale,
         localizationsDelegates: localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: TodayView(
@@ -66,6 +71,7 @@ void main() {
           done: done,
           now: _now,
           firstName: 'Pauline',
+          checkIns: checkIns,
           onTick: (_) {},
           onOpen: (_) {},
           onRetry: () {},
@@ -116,17 +122,88 @@ void main() {
     });
   }
 
-  testWidgets('everything done on desktop: the line on the hero card, '
-      'beside the greeting', (tester) async {
-    await pump(tester, due: const [], done: 2, size: const Size(1440, 900));
+  testWidgets('everything done on desktop: the band carries it, no white '
+      'card', (tester) async {
+    await pump(tester, due: const [], done: 2, size: _desktop);
 
+    expect(find.byType(AllDoneBand), findsOneWidget);
+    expect(find.byType(AllDoneCard), findsNothing);
+    expect(find.byType(HeroCard), findsNothing);
     expect(
-      find.ancestor(of: find.text(_body), matching: find.byType(AllDoneCard)),
+      find.ancestor(of: find.text(_body), matching: find.byType(HeroPanel)),
       findsOneWidget,
     );
-    expect(
-      tester.getTopLeft(find.text(_body)).dx,
-      greaterThan(tester.getTopRight(find.text('Good morning, Pauline')).dx),
+  });
+
+  testWidgets('done on desktop: no empty Tasks header', (tester) async {
+    await pump(tester, due: const [], done: 2, size: _desktop);
+
+    expect(find.text('Tasks'), findsNothing);
+  });
+
+  testWidgets('done on desktop: Catch up leads the main column, not the side', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      due: const [],
+      done: 2,
+      size: _desktop,
+      checkIns: [_lea],
     );
+
+    expect(find.text('Catch up'), findsOneWidget);
+    expect(find.text('Léa Moreau'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Catch up')).dx, lessThan(1440 / 2));
+    expect(find.text('Hide'), findsNothing);
+  });
+
+  testWidgets('done on desktop, undone: back to the card', (tester) async {
+    await pump(tester, due: const [], done: 2, size: _desktop);
+    await pump(tester, due: [_due('Anna')], done: 1, size: _desktop);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HeroCard), findsOneWidget);
+    expect(find.byType(AllDoneBand), findsNothing);
+  });
+
+  testWidgets('done band survives French at 1.3x on a 1200 window', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pump(
+      tester,
+      due: const [],
+      done: 2,
+      size: const Size(1200, 900),
+      checkIns: [_lea],
+      locale: const Locale('fr'),
+    );
+
+    expect(find.byType(AllDoneBand), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('phone done is unchanged', (tester) async {
+    await pump(tester, due: const [], done: 2);
+
+    expect(find.byType(AllDoneCard), findsOneWidget);
+    expect(find.byType(AllDoneBand), findsNothing);
+    expect(find.text('Tasks'), findsOneWidget);
   });
 }
+
+const _desktop = Size(1440, 900);
+
+final CheckIn _lea = (
+  person: Person(
+    id: 'lea',
+    name: 'Léa Moreau',
+    stage: Stage.team,
+    stageSince: DateTime.utc(2025, 2),
+  ),
+  reason: CheckInReason.quiet,
+  since: DateTime(2026, 7, 12),
+  days: 92,
+);

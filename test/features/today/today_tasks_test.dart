@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/theme/app_theme.dart';
+import 'package:loomia/core/ui/hero_panel.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/pick_day.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
 import 'package:loomia/features/tasks/domain/task.dart';
 import 'package:loomia/features/today/domain/due.dart';
+import 'package:loomia/features/today/presentation/all_done_card.dart';
 import 'package:loomia/features/today/presentation/today_page.dart';
 import 'package:loomia/features/workflows/domain/progress.dart';
 import 'package:loomia/features/workflows/domain/workflow.dart';
@@ -334,6 +336,33 @@ void main() {
       people: peopleRepo,
       tasks: taskRepo,
     );
+
+    testWidgets('last task ticked on desktop: the row finishes, the band takes '
+        'the moment, Undo brings the card back', (tester) async {
+      peopleRepo = FakePeopleRepository(const []);
+      taskRepo.store['t1'] = _task(
+        id: 't1',
+        title: 'Order flyers',
+        dueOn: _today,
+      );
+      await pumpPage(tester, size: const Size(1440, 900));
+
+      await tester.tap(find.byTooltip('Mark "Order flyers" done'));
+      await tester.pump(const Duration(milliseconds: 50));
+      // Still there while its check is drawn.
+      expect(find.text('Order flyers'), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.text('Order flyers'), findsNothing);
+      expect(find.byType(AllDoneBand), findsOneWidget);
+      expect(find.text('Tasks'), findsNothing);
+
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Order flyers'), findsOneWidget);
+      expect(find.byType(AllDoneBand), findsNothing);
+      expect(find.byType(HeroCard), findsOneWidget);
+    });
 
     testWidgets('tick removes row and shows Undo', (tester) async {
       taskRepo.store['t1'] = _task(
