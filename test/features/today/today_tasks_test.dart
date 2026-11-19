@@ -297,7 +297,9 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('all done keeps the Tasks section', (tester) async {
+    testWidgets('all done: the count, no task row, no Tasks header', (
+      tester,
+    ) async {
       await pumpView(
         tester,
         due: const [],
@@ -309,6 +311,7 @@ void main() {
 
       expect(find.text('1 of 1 done'), findsOneWidget);
       expect(find.text('Order flyers'), findsNothing);
+      expect(find.text('Tasks'), findsNothing);
       // The floating bar's + adds one.
       expect(find.text('Add a task'), findsNothing);
     });
@@ -336,6 +339,30 @@ void main() {
       people: peopleRepo,
       tasks: taskRepo,
     );
+
+    testWidgets('last task ticked on a phone: the row finishes, then the '
+        'card, no Tasks header; Undo brings both back', (tester) async {
+      peopleRepo = FakePeopleRepository(const []);
+      taskRepo.store['t1'] = _task(
+        id: 't1',
+        title: 'Order flyers',
+        dueOn: _today,
+      );
+      await pumpPage(tester);
+
+      await tester.tap(find.byTooltip('Mark "Order flyers" done'));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Order flyers'), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.byType(AllDoneCard), findsOneWidget);
+      expect(find.text('Tasks'), findsNothing);
+
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Order flyers'), findsOneWidget);
+      expect(find.text('Tasks'), findsOneWidget);
+    });
 
     testWidgets('last task ticked on desktop: the row finishes, the band takes '
         'the moment, Undo brings the card back', (tester) async {

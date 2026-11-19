@@ -785,10 +785,11 @@ class _TodayViewState extends State<TodayView> {
           when value.isEmpty && tasks.isEmpty && (widget.done ?? 0) > 0 =>
         (
           'done',
+          // No empty Tasks header (#518). Desktop: what is left worth doing
+          // leads; a phone has Catch up after the list already.
           desktop
-              // No empty Tasks header; what is left worth doing leads.
               ? [...eventsBlock, ...catchUp]
-              : [...ritualCard, ...eventsBlock, ...tasksBlock],
+              : [...ritualCard, ...eventsBlock],
         ),
       AsyncData(:final value) when value.isEmpty && tasks.isEmpty => (
         'up-to-date',
