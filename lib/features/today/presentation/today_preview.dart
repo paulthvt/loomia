@@ -67,6 +67,20 @@ Widget todayAllDoneMobileLight() =>
 Widget todayAllDoneMobileDark() =>
     _app(AppTheme.dark, const [], goals: _goals, done: 3, checkIns: _catchUp);
 
+/// Everything ticked on desktop: the band carries the moment and Catch up
+/// leads the main column (#518).
+@Preview(
+  group: 'Today',
+  name: 'All done desktop — light',
+  size: Size(1440, 900),
+)
+Widget todayAllDoneDesktopLight() =>
+    _app(AppTheme.light, const [], goals: _goals, done: 15, checkIns: _catchUp);
+
+@Preview(group: 'Today', name: 'All done desktop — dark', size: Size(1440, 900))
+Widget todayAllDoneDesktopDark() =>
+    _app(AppTheme.dark, const [], goals: _goals, done: 15, checkIns: _catchUp);
+
 @Preview(group: 'Today', name: 'Events — light', size: Size(390, 844))
 Widget todayEventsMobileLight() => _app(
   AppTheme.light,

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/app/theme/app_typography.dart';
 import 'package:loomia/core/ui/loomia_progress_bar.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -53,7 +54,8 @@ class AllDoneCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                DecoratedBox(
+                _DoneBadge(
+                  size: _badge,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -62,14 +64,7 @@ class AllDoneCard extends StatelessWidget {
                       colors: [scheme.primary, colors.heroGradient.colors.last],
                     ),
                   ),
-                  child: SizedBox.square(
-                    dimension: _badge,
-                    child: Icon(
-                      Icons.check_rounded,
-                      size: _badge / 2,
-                      color: scheme.onPrimary,
-                    ),
-                  ),
+                  ink: scheme.onPrimary,
                 ),
               ],
             ),
@@ -83,9 +78,7 @@ class AllDoneCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          firstName.trim().isEmpty
-              ? l10n.todayAllDoneBodyUnnamed
-              : l10n.todayAllDoneBody(firstName.trim()),
+          _body(l10n, firstName),
           textAlign: TextAlign.center,
           style: AppTypography.body.copyWith(color: colors.textMuted),
         ),
@@ -102,6 +95,161 @@ class AllDoneCard extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The same moment on a desktop band (#518): no white card. The greeting,
+/// then the line and the full bar in a hero inset (white straight on the
+/// gradient falls under 4.5:1 towards its light end), and the badge in its
+/// confetti on the right.
+class AllDoneBand extends StatelessWidget {
+  const AllDoneBand({
+    required this.header,
+    required this.done,
+    required this.firstName,
+    super.key,
+  });
+
+  /// The date and greeting, as on every other state of the band.
+  final Widget header;
+
+  /// Rows ticked today: the whole list.
+  final int done;
+
+  /// Empty when the account has none.
+  final String firstName;
+
+  /// The inset holding the line and the bar, and the confetti layer, for
+  /// tests.
+  static const panelKey = ValueKey('all-done-panel');
+  static const confettiKey = ValueKey('all-done-band-confetti');
+
+  static const double _panelMaxWidth = 520;
+  static const Size _art = Size(300, 200);
+  static const double _badge = 112;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final colors = LoomiaColors.of(context);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              header,
+              const SizedBox(height: AppSpacing.lg),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _panelMaxWidth),
+                // Its own group, after the greeting: the title, the line,
+                // then the count (the bar's caption, never a percentage).
+                child: Semantics(
+                  key: panelKey,
+                  container: true,
+                  child: DecoratedBox(
+                    decoration: AppTheme.heroInset(context),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            l10n.todayAllDone,
+                            style: AppTypography.titleLarge.copyWith(
+                              color: colors.onHero,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            _body(l10n, firstName),
+                            style: AppTypography.body.copyWith(
+                              color: colors.onHero,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          LoomiaProgressBar(
+                            value: 1,
+                            tone: ProgressTone.onHero,
+                            leadingLabel: l10n.todayDone(done, done),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xl),
+        // Decoration only: the panel says it.
+        ExcludeSemantics(
+          child: SizedBox.fromSize(
+            size: _art,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned.fill(
+                  key: confettiKey,
+                  // Colours that hold on either end of the gradient; the
+                  // card's would melt into it.
+                  child: _Confetti(
+                    colors: [
+                      colors.onHero,
+                      colors.onHeroQuiet,
+                      colors.brand,
+                      colors.chrome,
+                      colors.onHero,
+                      colors.onHeroQuiet,
+                    ],
+                  ),
+                ),
+                _DoneBadge(
+                  size: _badge,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.onHero,
+                    boxShadow: colors.heroCardShadow,
+                  ),
+                  ink: scheme.primary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The warm line, with the name when there is one.
+String _body(AppLocalizations l10n, String firstName) =>
+    firstName.trim().isEmpty
+    ? l10n.todayAllDoneBodyUnnamed
+    : l10n.todayAllDoneBody(firstName.trim());
+
+/// The check in its circle.
+class _DoneBadge extends StatelessWidget {
+  const _DoneBadge({
+    required this.size,
+    required this.decoration,
+    required this.ink,
+  });
+
+  final double size;
+  final Decoration decoration;
+  final Color ink;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: decoration,
+    child: SizedBox.square(
+      dimension: size,
+      child: Icon(Icons.check_rounded, size: size / 2, color: ink),
+    ),
+  );
 }
 
 /// A few still pieces around the badge, always in the same places.
