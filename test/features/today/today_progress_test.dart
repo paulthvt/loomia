@@ -185,12 +185,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('phone done is unchanged', (tester) async {
+  testWidgets('phone done: the card, and no empty Tasks header', (
+    tester,
+  ) async {
     await pump(tester, due: const [], done: 2);
 
     expect(find.byType(AllDoneCard), findsOneWidget);
     expect(find.byType(AllDoneBand), findsNothing);
-    expect(find.text('Tasks'), findsOneWidget);
+    expect(find.text('Tasks'), findsNothing);
   });
 }
 

@@ -31,13 +31,13 @@ Phone and tablet don't change.
 | Art | On the right of the band: a white badge (`colors.onHero`, `heroCardShadow`) 112 px wide with an amber check (`scheme.primary`), surrounded by the existing still `_Confetti` at its existing positions, in a fixed 300 × 200 box. Hidden from screen readers. | The badge's amber-on-white check works on either end of the gradient. |
 | Confetti colours | On the band: `onHero`, `onHeroQuiet`, `brand`, `chrome`. On the card (phone) they stay as they are. | The card's colours come from the gradient itself and would disappear on it. The pale gold in the mockup is `brand`. *(My call.)* |
 | Copy | No new copy. Reuses `todayAllDone`, `todayAllDoneBody` / `todayAllDoneBodyUnnamed` and `todayDone`. | |
-| The empty "Tasks" header | Not shown on desktop in the done state. | A header with no rows under it. The ticked task's slide-out happens in the outgoing branch, which `FadeSwap` keeps on screen while it fades. |
+| The empty "Tasks" header | Not shown in the done state, on desktop and on the phone. | A header with no rows under it. The ticked task's slide-out happens in the outgoing branch, which `FadeSwap` keeps on screen while it fades. *(Phone added on Paul's request, 2026-11-19.)* |
 | Catch up | On desktop in the done state, it moves from the side column into the main column, after today's events, open and without Show/Hide (as it is in the side column now). The side column keeps the volume card and the ritual invitation. | It is the next thing worth doing, and it is what the warm line promises ("they'll show up here"). |
 | Nothing to catch up | The main column holds only today's events, or nothing. The columns stay as they are. | No placeholder (working rules). The band already carries the moment. |
 | Transition | Ticking the last row cross-fades the band from the due layout (greeting and white card) to the done layout, through `FadeSwap` at `AppMotion.slow`. The greeting is in both, so it never dims. Undoing the tick goes back the same way. | The same motion the card has now. |
 | Screen readers | The greeting and the all-done panel are separate nodes, in that order. The panel reads its headline, the warm line, then "N of N done". It never reads the bar as a percentage. | Matches the phone card. |
 | Narrow desktop | From 1200 px (`Breakpoints.desktop`) the greeting column is `Expanded`, and the art box is fixed. French text at 1.3× wraps inside the panel and never overflows. | The band is about 850 px wide at 1200. |
-| Phone and tablet | Unchanged: the white all-done card in the hero, the Tasks header and Catch up as they are now. | Out of scope. The phone's empty Tasks header is a separate question. |
+| Phone and tablet | Otherwise unchanged: the white all-done card in the hero, and Catch up as it is now. | Out of scope. |
 
 ## Behaviour
 
