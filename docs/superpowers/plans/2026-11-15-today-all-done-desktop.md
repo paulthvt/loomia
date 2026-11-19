@@ -119,7 +119,7 @@
   'today_all_done_desktop_dark': (const Size(1440, 900), todayAllDoneDesktopDark),
   ```
 - [x] **Step 2:** `flutter test test/previews_test.dart` → PASS off Linux (renders without exception). Visual check both names against the PNGs (see Task 2 Step 6).
-- [ ] **Step 3:** Commit `test(today): all-done desktop previews (#518)`, push the branch, then regenerate through CI (README → *Golden tests*):
+- [x] **Step 3:** Commit `test(today): all-done desktop previews (#518)`, push the branch, then regenerate through CI (README → *Golden tests*):
   ```bash
   gh workflow run CI --ref feature/518-today-all-done-desktop -f update-goldens=true
   gh run list --workflow CI --branch feature/518-today-all-done-desktop --event workflow_dispatch --limit 1
@@ -127,4 +127,4 @@
   rm test/goldens/*.png
   gh run download <run-id> -n goldens -D test/goldens
   ```
-- [ ] **Step 4:** Open the two new PNGs next to the mockups. `git status test/goldens` must show only the two new files: any modified existing golden means the phone or the desktop `due` state changed, so stop and fix it. Commit `test(today): goldens for the all-done desktop band (#518)`.
+- [x] **Step 4:** Open the two new PNGs next to the mockups. `git status test/goldens` must show only the two new files: any modified existing golden means the phone or the desktop `due` state changed, so stop and fix it. Commit `test(today): goldens for the all-done desktop band (#518)`.
