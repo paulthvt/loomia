@@ -46,7 +46,8 @@ class FakeAuthRepository implements AuthRepository {
     required String email,
     required String password,
     required String firstName,
-  }) => _record('signUp($email, $password, $firstName)');
+    required String language,
+  }) => _record('signUp($email, $password, $firstName, $language)');
 
   @override
   Future<void> signInWithGoogle() => _record('signInWithGoogle()');

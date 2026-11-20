@@ -113,7 +113,7 @@ void main() {
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
 
-    expect(fake.calls, ['signUp(pauline@example.com, hunter22, Pauline)']);
+    expect(fake.calls, ['signUp(pauline@example.com, hunter22, Pauline, en)']);
     expect(
       _location(router),
       Routes.checkInboxLocation(

@@ -108,13 +108,36 @@ The rest stays by hand after a merge (one-off `supabase login` and
 ```bash
 supabase functions deploy                   # every function in supabase/functions/
 supabase config diff                        # config.toml vs hosted, read-only
-SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=... SUPABASE_AUTH_EXTERNAL_APPLE_SECRET=... supabase config push
+SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=... SUPABASE_AUTH_EXTERNAL_APPLE_SECRET=... \
+  BREVO_SMTP_LOGIN=... BREVO_SMTP_KEY=... supabase config push
 ```
 
 `config push` shows each change and asks before writing it. `config.toml`
-references both provider secrets through those variables, so set them before
+references these secrets through those variables, so set them all before
 pushing: Google's is in Google Cloud Console, Apple's comes from
-`fastlane apple_auth_secret` (Sign in with Apple above); neither is in this repo.
+`fastlane apple_auth_secret` (Sign in with Apple above), and the Brevo login
+and SMTP key (not the API key) are in Brevo under Settings → SMTP & API. None
+is in this repo.
+
+### Auth emails
+
+Sign-up confirmations, password resets and the "password changed" notice go
+out through Brevo's SMTP relay from `Loomia <hello@getloomia.app>` (#119); the
+DKIM, DMARC and Brevo code records for `getloomia.app` are in Cloudflare DNS.
+Free plan: 300 emails a day; `[auth.rate_limit] email_sent` caps auth at 50 an
+hour.
+
+The templates are `supabase/templates/*.html`, English and French in each file
+(the one exception to Weblate, below). French is picked from the Settings
+language (`locale`), else the language saved at sign-up (`email_locale`).
+`test/supabase/email_templates_test.dart` checks both languages and *tu*.
+
+Locally, `supabase start` would send through Brevo too. To read the emails in
+Mailpit (`http://127.0.0.1:54324`) instead:
+
+```bash
+SUPABASE_AUTH_EMAIL_SMTP_ENABLED=false supabase start
+```
 
 ### Push notifications
 
@@ -278,6 +301,9 @@ and arrives as a pull request.
   Weblate picks up the change from `main`.
 - **Fixing a translation:** in Weblate, not in the ARB. Weblate force-pushes
   `weblate/l10n`, so a commit added there by hand is lost.
+- **Auth emails** are the one exception: their English and French live in
+  `supabase/templates/` (Running → Auth emails), since Weblate only handles
+  the ARB files. A new language there means editing the templates.
 - **Adding a language:** in Weblate, *Start new translation*. The app supports
   it with no code change — `supportedLocales` is generated from the files
   present.

@@ -94,15 +94,19 @@ class AuthRepository {
         () => _auth.signInWithPassword(email: email, password: password),
       );
 
+  /// [language] is the app's language code at sign-up, kept as `email_locale`
+  /// so the auth emails (supabase/templates/) are written in it. A key of its
+  /// own: `locale` stays null, which means "follow the system".
   Future<void> signUp({
     required String email,
     required String password,
     required String firstName,
+    required String language,
   }) => guardAuth(
     () => _auth.signUp(
       email: email,
       password: password,
-      data: {'first_name': firstName.trim()},
+      data: {'first_name': firstName.trim(), 'email_locale': language},
       emailRedirectTo: _redirect,
     ),
   );
