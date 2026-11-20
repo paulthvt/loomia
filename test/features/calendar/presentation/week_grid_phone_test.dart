@@ -270,6 +270,45 @@ void main() {
     expect(bar.start.color, TagColor.sage.dark.ink);
   });
 
+  testWidgets('3 days: a card stands out on the selected column (#516)', (
+    tester,
+  ) async {
+    await pumpGrid(
+      tester,
+      shown: days.sublist(1, 4),
+      threeDays: true,
+      now: DateTime(2026, 10, 21, 8),
+      more: [
+        CalendarEvent(
+          id: 'plain',
+          title: 'Plain event',
+          startsAt: DateTime(2026, 10, 21, 10),
+          endsAt: DateTime(2026, 10, 21, 11),
+        ),
+        CalendarEvent(
+          id: 'sand',
+          title: 'Sand event',
+          startsAt: DateTime(2026, 10, 21, 14),
+          endsAt: DateTime(2026, 10, 21, 15),
+          color: TagColor.sand,
+        ),
+      ],
+    );
+    Material card(String title) => tester.widget<Material>(
+      find
+          .ancestor(of: find.text(title), matching: find.byType(Material))
+          .first,
+    );
+    final colors = AppTheme.light.extension<LoomiaColors>()!;
+    // No type: white, as before #516, not the column's own tint.
+    expect(card('Plain event').color, colors.surfaceDefault);
+    // Sand is all but the column's tint: an outline in its ink keeps it.
+    expect(
+      (card('Sand event').shape! as RoundedRectangleBorder).side.color,
+      TagColor.sand.light.ink.withValues(alpha: 0.3),
+    );
+  });
+
   testWidgets('3 days: an event with no end is quiet once started (#516)', (
     tester,
   ) async {

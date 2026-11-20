@@ -1532,7 +1532,11 @@ class _WeekCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadii.sm),
             side: quiet
                 ? BorderSide(color: colors.borderSubtle)
-                : BorderSide.none,
+                : event.color == null
+                ? BorderSide.none
+                : BorderSide(
+                    color: type.ink.withValues(alpha: eventCardOutline),
+                  ),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(

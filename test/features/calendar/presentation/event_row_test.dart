@@ -106,37 +106,38 @@ void main() {
     },
   );
 
-  testWidgets("eventInk: the type's colours, the accent without one (#516)", (
-    tester,
-  ) async {
-    Future<TagInk> ink(TagColor? color) async {
-      late TagInk result;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.light,
-          home: Builder(
-            builder: (context) {
-              result = eventInk(
-                context,
-                CalendarEvent(
-                  id: 'e1',
-                  title: 'Workshop',
-                  startsAt: DateTime(2026, 10, 8, 9),
-                  color: color,
-                ),
-              );
-              return const SizedBox();
-            },
+  testWidgets(
+    "eventInk: the type's colours; without one, white and the accent (#516)",
+    (tester) async {
+      Future<TagInk> ink(TagColor? color) async {
+        late TagInk result;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            home: Builder(
+              builder: (context) {
+                result = eventInk(
+                  context,
+                  CalendarEvent(
+                    id: 'e1',
+                    title: 'Workshop',
+                    startsAt: DateTime(2026, 10, 8, 9),
+                    color: color,
+                  ),
+                );
+                return const SizedBox();
+              },
+            ),
           ),
-        ),
-      );
-      return result;
-    }
+        );
+        return result;
+      }
 
-    expect(await ink(TagColor.sage), TagColor.sage.light);
-    expect(await ink(null), (
-      container: AppColors.light.primaryContainer,
-      ink: AppColors.light.primary,
-    ));
-  });
+      expect(await ink(TagColor.sage), TagColor.sage.light);
+      expect(await ink(null), (
+        container: AppTheme.light.extension<LoomiaColors>()!.surfaceDefault,
+        ink: AppColors.light.primary,
+      ));
+    },
+  );
 }

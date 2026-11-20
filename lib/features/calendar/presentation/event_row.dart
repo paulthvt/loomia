@@ -6,13 +6,21 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// [event]'s two colours (#516): its type's, or the accent's when it has
-/// none. Every list row, grid card and chip reads them here.
+/// [event]'s two colours (#516): its type's, or, without one, a white card
+/// with the accent's bar: the accent's own pale tint is the selected day's
+/// column, where the card would vanish. Every list row, grid card and chip
+/// reads them here.
 TagInk eventInk(BuildContext context, CalendarEvent event) {
   if (event.color case final color?) return color.of(context);
-  final scheme = Theme.of(context).colorScheme;
-  return (container: scheme.primaryContainer, ink: scheme.primary);
+  return (
+    container: LoomiaColors.of(context).surfaceDefault,
+    ink: Theme.of(context).colorScheme.primary,
+  );
 }
+
+/// An upcoming grid card's outline (#516): its ink at this strength, so a
+/// pale colour (sand) still stands out on the selected day's tint.
+const double eventCardOutline = 0.3;
 
 /// An over event's bar (#516): its colour at half strength, so the type
 /// still shows.
