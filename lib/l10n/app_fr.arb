@@ -2073,5 +2073,9 @@
   "newOrder": "Nouvelle commande",
   "@newOrder": {
     "description": "Label of the + / sidebar create button on the Goals tab: logs an order of your own."
+  },
+  "eventWorkflowColor": "Couleur",
+  "@eventWorkflowColor": {
+    "description": "Label above the colour swatches in the event type editor: the colour its events take in the calendar and on Today."
   }
 }
