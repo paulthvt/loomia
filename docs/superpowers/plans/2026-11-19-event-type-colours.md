@@ -50,21 +50,21 @@
 **Interfaces:**
 - Produces: column `public.event_workflow.color public.tag_color` (nullable, always filled); trigger function `public.event_workflow_default_color()`.
 
-- [ ] **Step 1: Write the failing pgTAP test** `supabase/tests/event_workflow_color_test.sql`, shaped like `tags_test.sql` (two users, `set local role authenticated`, jwt claims):
+- [x] **Step 1: Write the failing pgTAP test** `supabase/tests/event_workflow_color_test.sql`, shaped like `tags_test.sql` (two users, `set local role authenticated`, jwt claims):
   - `has_column('public', 'event_workflow', 'color', ...)`
   - user A inserts `('One')` with no colour → `results_eq` its color is `'stone'`
   - user A inserts `('Two')` → `'sand'`; inserts `('Three', color => 'violet')` → stays `'violet'`
   - user A inserts six more with no colour (`Four` … `Nine`) → `results_eq` on `(name, color)` ordered by `color, name` matches: One stone, Two sand, Four olive, Five sage, Six teal, Seven sky, Eight indigo, Three violet, Nine stone (first unused, all used → stone). Compare by name, not `created_at`: every row in one test transaction has the same `now()`.
   - user B's first type with no colour is `'stone'` (the rule is per owner)
   - `plan(6)`: a third user runs `select public.seed_workflows('en', current_date)` → `(name, color)`: Workshop stone, Wellness check sand, Unboxing call olive, Wellness consultation sage, Mentoring teal (insertion order inside the function)
-- [ ] **Step 2: Run** `supabase test db` — Expected: FAIL, column `color` does not exist.
-- [ ] **Step 3: Write the migration**:
+- [x] **Step 2: Run** `supabase test db` — Expected: FAIL, column `color` does not exist.
+- [x] **Step 3: Write the migration**:
   - `alter table public.event_workflow add column color public.tag_color;` with a comment naming #516.
   - Backfill: per owner, by `created_at, id`, the n-th type (1-based) gets `(enum_range(null::public.tag_color))[n]` for n ≤ 8, else `'stone'` (equal to first-unused when none had a colour). Types seeded in one transaction share a `created_at`, so their order among themselves is arbitrary; they still get distinct colours.
   - `create function public.event_workflow_default_color() returns trigger language plpgsql set search_path = ''`: when `new.color is null`, set it to the first value of `enum_range(null::public.tag_color)` not used by another `event_workflow` of `new.owner_id`, else `'stone'`. Trigger `before insert on public.event_workflow for each row`.
   - No grant change (table-level grants to `authenticated` already cover the column).
-- [ ] **Step 4: Run** `supabase test db` — Expected: PASS, including `schema_rls_test.sql` and `new_defaults_test.sql` / `mentorat_defaults_test.sql`. Run `bash tool/check_migrations.sh supabase/migrations/*_event_workflow_color.sql` — Expected: no output, exit 0.
-- [ ] **Step 5: Commit** `feat(workflows): give every event type a colour (#516)`.
+- [x] **Step 4: Run** `supabase test db` — Expected: PASS, including `schema_rls_test.sql` and `new_defaults_test.sql` / `mentorat_defaults_test.sql`. Run `bash tool/check_migrations.sh supabase/migrations/*_event_workflow_color.sql` — Expected: no output, exit 0.
+- [x] **Step 5: Commit** `feat(workflows): give every event type a colour (#516)`.
 
 ### Task 2: Domain and data — colours on types and events
 
@@ -87,14 +87,14 @@
   - `CalendarEvent.color` (`TagColor?`, null = no type), copied by `withReport`.
   - `_columns` gains `event_workflow(color)`; `eventFromRow` reads `(row['event_workflow'] as Map?)?['color']`.
 
-- [ ] **Step 1: Failing tests**:
+- [x] **Step 1: Failing tests**:
   - `tag_test.dart`: `TagColor.firstFree([])` is `stone`; `firstFree([stone, sand])` is `olive`; `firstFree(TagColor.values)` is `stone`.
   - repository test: `eventWorkflowFromRow({'id': 'w', 'name': 'Workshop', 'color': 'violet'})` has `color == TagColor.violet`; without `'color'` → `stone`.
   - event row mapping: a row with `'event_workflow': {'color': 'sky'}` → `color == TagColor.sky`; `'event_workflow': null` → `null`.
-- [ ] **Step 2: Run** `flutter test test/features/contacts/domain/tag_test.dart test/features/workflows/data test/features/calendar` — Expected: FAIL (undefined `firstFree`, `color`).
-- [ ] **Step 3: Implement** the Produces list. In the fake: `create` assigns `TagColor.firstFree(store.map((w) => w.color))`; add `setColor` recording `setColor($id, ${color.name})`; every `_change` rebuild passes `color: workflow.color` (and `setColor` passes the new one).
-- [ ] **Step 4: Run** `flutter test` — Expected: PASS.
-- [ ] **Step 5: Commit** `feat(workflows): read event type colours (#516)`.
+- [x] **Step 2: Run** `flutter test test/features/contacts/domain/tag_test.dart test/features/workflows/data test/features/calendar` — Expected: FAIL (undefined `firstFree`, `color`).
+- [x] **Step 3: Implement** the Produces list. In the fake: `create` assigns `TagColor.firstFree(store.map((w) => w.color))`; add `setColor` recording `setColor($id, ${color.name})`; every `_change` rebuild passes `color: workflow.color` (and `setColor` passes the new one).
+- [x] **Step 4: Run** `flutter test` — Expected: PASS.
+- [x] **Step 5: Commit** `feat(workflows): read event type colours (#516)`.
 
 ### Task 3: Type editor — the colour row, and the resolver
 
@@ -114,14 +114,14 @@
   - `TagInk eventInk(BuildContext context, CalendarEvent event)` in `event_row.dart`: `event.color?.of(context)`, else `(container: scheme.primaryContainer, ink: scheme.primary)`.
   - ARB key `eventWorkflowColor`: `"Colour"`, description: "Label above the swatches in the event type editor: the colour its events take in the calendar and on Today."
 
-- [ ] **Step 1: Failing tests**:
+- [x] **Step 1: Failing tests**:
   - editor: `'Colour: tapping a swatch saves it'` — open an event type (fake store colour `sky`), the swatch labelled `Violet` (via `tagColorName`) is tapped → fake `calls` contains `setColor(<id>, violet)`, and the `Violet` swatch's semantics is selected after reload.
   - event_row_test: `'eventInk: the type's colours, the accent without one'` — under `AppTheme.light`, an event with `color: TagColor.sage` gets `TagColor.sage.light`; with `color: null` gets `(primaryContainer, primary)` of `AppColors.light`.
   - Existing tags settings tests still pass (picker lifted, not changed).
-- [ ] **Step 2: Run** the two test files — Expected: FAIL.
-- [ ] **Step 3: Implement.** In the editor, put `LabeledField(label: l10n.eventWorkflowColor, child: TagColorPicker(...))` after the name field, `AppSpacing.lg` above it. Run `flutter gen-l10n` if the build does not regenerate.
-- [ ] **Step 4: Run** `flutter test` — Expected: PASS.
-- [ ] **Step 5: Commit** `feat(workflows): pick an event type's colour (#516)`.
+- [x] **Step 2: Run** the two test files — Expected: FAIL.
+- [x] **Step 3: Implement.** In the editor, put `LabeledField(label: l10n.eventWorkflowColor, child: TagColorPicker(...))` after the name field, `AppSpacing.lg` above it. Run `flutter gen-l10n` if the build does not regenerate.
+- [x] **Step 4: Run** `flutter test` — Expected: PASS.
+- [x] **Step 5: Commit** `feat(workflows): pick an event type's colour (#516)`.
 
 ### Task 4: Events in colour — list rows, grid cards, month chips
 
@@ -140,15 +140,15 @@ Behaviour (from the spec's Decisions):
 - `_WeekCard`: `quiet = event.done || (now != null && event.isOver(now))`. Upcoming: `Material.color` = `ink.container`, start bar `ink.ink`, text `onSurface`. Quiet: `Material.color` = `surfaceDefault`, `borderSubtle` side, start bar `ink.ink` at 0.5, title and time in `onSurfaceVariant` (was `textMuted`).
 - `MonthEventChip`: bar `ink.ink`, quiet (same rule) → 0.5; title colour rule unchanged but keyed on quiet.
 
-- [ ] **Step 1: Failing tests**:
+- [x] **Step 1: Failing tests**:
   - event_row_test, extend the over test: an event with `color: TagColor.sky` → upcoming bar `TagColor.sky.light.ink`; over → `TagColor.sky.light.ink.withValues(alpha: 0.5)`. Same event with no colour → `primary` / `primary` at 0.5.
   - week_grid_phone_test `'3 days: a typed event is tinted, quiet once over'`: one `sage` event at 10:00–11:00 and one at 14:00–15:00, `now` 12:00 → the later card's `Material` colour is `TagColor.sage.light.container`, the earlier's is `surfaceDefault` with a `borderSubtle` side. Repeat under `AppTheme.dark` expecting `TagColor.sage.dark.container`.
   - week_grid_phone_test `'3 days: an event with no end is quiet once started'`: no `endsAt`, starts 11:00, `now` 11:30 → `surfaceDefault`.
   - desktop month: a `violet` chip, `now` after it → bar colour `TagColor.violet.light.ink.withValues(alpha: 0.5)`.
-- [ ] **Step 2: Run** those files — Expected: FAIL.
-- [ ] **Step 3: Implement** per Behaviour; thread `now` from `WeekGrid`'s day column (already has `now`) into `_WeekCard`, and from `CalendarView` (has `now`) through `DesktopMonth` to `MonthEventChip`.
-- [ ] **Step 4: Run** `flutter test` — Expected: PASS except goldens that show events (calendar_*, today_*); note which fail.
-- [ ] **Step 5: Commit** `feat(calendar): show event type colours (#516)`.
+- [x] **Step 2: Run** those files — Expected: FAIL.
+- [x] **Step 3: Implement** per Behaviour; thread `now` from `WeekGrid`'s day column (already has `now`) into `_WeekCard`, and from `CalendarView` (has `now`) through `DesktopMonth` to `MonthEventChip`.
+- [x] **Step 4: Run** `flutter test` — Expected: PASS except goldens that show events (calendar_*, today_*); note which fail.
+- [x] **Step 5: Commit** `feat(calendar): show event type colours (#516)`.
 
 ### Task 5: Previews, spec, PR
 
@@ -157,8 +157,8 @@ Behaviour (from the spec's Decisions):
 - Modify: `docs/superpowers/specs/2026-11-19-event-type-colours-design.md` (the rulings above: month dots stay white on the hero, no event page dot, nullable column, `create` sends no colour)
 - Regenerate: goldens through CI (README.md → *Golden tests*)
 
-- [ ] **Step 1:** Set the preview colours; run `flutter test` — Expected: only golden diffs fail.
-- [ ] **Step 2:** Update the spec's Decisions and Behaviour for the four rulings.
-- [ ] **Step 3:** `dart format .`, `flutter analyze` → "No issues found!"; commit `docs(calendar): event colour rulings (#516)` and the preview change `test(calendar): typed events in previews (#516)`.
+- [x] **Step 1:** Set the preview colours; run `flutter test` — Expected: only golden diffs fail.
+- [x] **Step 2:** Update the spec's Decisions and Behaviour for the four rulings.
+- [x] **Step 3:** `dart format .`, `flutter analyze` → "No issues found!"; commit `docs(calendar): event colour rulings (#516)` and the preview change `test(calendar): typed events in previews (#516)`.
 - [ ] **Step 4:** Push `feature/516-event-type-colours`, regenerate goldens through CI as README.md describes, pull the golden commit, `flutter test` → all pass.
 - [ ] **Step 5:** Open the PR: `Closes #516`, Database section as in Global Constraints, link the FigCraft section.
