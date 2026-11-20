@@ -6,6 +6,14 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
+/// [event]'s two colours (#516): its type's, or the accent's when it has
+/// none. Every list row, grid card and chip reads them here.
+TagInk eventInk(BuildContext context, CalendarEvent event) {
+  if (event.color case final color?) return color.of(context);
+  final scheme = Theme.of(context).colorScheme;
+  return (container: scheme.primaryContainer, ink: scheme.primary);
+}
+
 /// [at] as a local time of day, in the device's 12- or 24-hour format.
 String timeLabel(BuildContext context, DateTime at) =>
     MaterialLocalizations.of(context).formatTimeOfDay(

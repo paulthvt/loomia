@@ -1924,6 +1924,10 @@
   "@eventWorkflowNew": {
     "description": "Button under the Events section, and title of the dialog that names a new event workflow (a kind of event, e.g. 'Training')."
   },
+  "eventWorkflowColor": "Colour",
+  "@eventWorkflowColor": {
+    "description": "Label above the colour swatches in the event type editor: the colour its events take in the calendar and on Today."
+  },
   "eventWorkflowGroup": "Several people",
   "@eventWorkflowGroup": {
     "description": "Switch on an event type in Settings: its events gather several people (a workshop), not one (a one-to-one appointment)."

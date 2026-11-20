@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loomia/app/router/back.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/core/ui/empty_state.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
@@ -11,6 +12,7 @@ import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_card.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/section_header.dart';
+import 'package:loomia/core/ui/tag_color_picker.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/presentation/people_copy.dart';
@@ -87,6 +89,10 @@ class EventWorkflowEditor extends ConsumerWidget {
           ref,
           (repository) => repository.setGroup(workflow.id, on),
         ),
+        onColor: (color) => editEventWorkflows(
+          ref,
+          (repository) => repository.setColor(workflow.id, color),
+        ),
         onAddStep: () => unawaited(showEventStepSheet(context, workflow)),
         onOpenStep: (step) =>
             unawaited(showEventStepSheet(context, workflow, step: step)),
@@ -117,7 +123,7 @@ class EventWorkflowEditor extends ConsumerWidget {
   }
 }
 
-enum _Control { name, group, reportFields, delete }
+enum _Control { name, color, group, reportFields, delete }
 
 /// The editor, fed the saved workflow and callbacks per write; each write
 /// callback throws `PeopleFailure`.
@@ -127,6 +133,7 @@ class EventWorkflowEditorView extends StatefulWidget {
     required this.workflows,
     required this.onRename,
     required this.onGroup,
+    required this.onColor,
     required this.onAddStep,
     required this.onOpenStep,
     required this.onDelete,
@@ -141,6 +148,9 @@ class EventWorkflowEditorView extends StatefulWidget {
 
   /// Several people per event, or one.
   final Future<void> Function(bool on) onGroup;
+
+  /// The colour its events show (#516).
+  final Future<void> Function(TagColor color) onColor;
 
   final VoidCallback onAddStep;
   final ValueChanged<EventWorkflowStep> onOpenStep;
@@ -312,6 +322,22 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.done,
           ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        // Not a LabeledField: its MergeSemantics would fold the eight
+        // swatches into one node, so none could be picked by a reader.
+        Text(
+          l10n.eventWorkflowColor,
+          style: theme.inputDecorationTheme.labelStyle,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TagColorPicker(
+          selected: workflow.color,
+          onPick: _busy.contains(_Control.color)
+              ? null
+              : (color) => unawaited(
+                  _run(_Control.color, () => widget.onColor(color)),
+                ),
         ),
         const SizedBox(height: AppSpacing.lg),
         SectionHeader(

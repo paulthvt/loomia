@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/router/routes.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
@@ -118,6 +119,29 @@ void main() {
     expect(eventWorkflows.calls, contains('setGroup(workshop, false)'));
     expect(_workshop(eventWorkflows).isGroup, isFalse);
     expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+  });
+
+  testWidgets('Colour: tapping a swatch saves it (#516)', (tester) async {
+    final eventWorkflows = FakeEventWorkflowRepository(
+      FakeEventWorkflowRepository.samples(),
+    );
+    await _openWorkshop(tester, eventWorkflows);
+    final violet = find.bySemanticsLabel('Violet');
+    expect(
+      tester.getSemantics(violet),
+      isSemantics(label: 'Violet', isSelected: false),
+    );
+
+    await tester.ensureVisible(violet);
+    await tester.tap(violet);
+    await tester.pumpAndSettle();
+
+    expect(eventWorkflows.calls, contains('setColor(workshop, violet)'));
+    expect(_workshop(eventWorkflows).color, TagColor.violet);
+    expect(
+      tester.getSemantics(violet),
+      isSemantics(label: 'Violet', isSelected: true),
+    );
   });
 
   testWidgets('desktop: typed name saved when go() tears down the editor', (
