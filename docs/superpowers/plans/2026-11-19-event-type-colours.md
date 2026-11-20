@@ -160,5 +160,5 @@ Behaviour (from the spec's Decisions):
 - [x] **Step 1:** Set the preview colours; run `flutter test` — Expected: only golden diffs fail.
 - [x] **Step 2:** Update the spec's Decisions and Behaviour for the four rulings.
 - [x] **Step 3:** `dart format .`, `flutter analyze` → "No issues found!"; commit `docs(calendar): event colour rulings (#516)` and the preview change `test(calendar): typed events in previews (#516)`.
-- [ ] **Step 4:** Push `feature/516-event-type-colours`, regenerate goldens through CI as README.md describes, pull the golden commit, `flutter test` → all pass.
-- [ ] **Step 5:** Open the PR: `Closes #516`, Database section as in Global Constraints, link the FigCraft section.
+- [x] **Step 4:** Push `feature/516-event-type-colours`, regenerate goldens through CI as README.md describes, pull the golden commit, `flutter test` → all pass.
+- [x] **Step 5:** Open the PR: `Closes #516`, Database section as in Global Constraints, link the FigCraft section.
