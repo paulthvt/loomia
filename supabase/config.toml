@@ -224,8 +224,10 @@ web3 = 30
 # secret = ""
 
 [auth.email]
-# Allow/disallow new user signups via email to your project.
-enable_signup = false
+# The email provider itself: off locks out every email account. New sign-ups
+# stay closed through `[auth] enable_signup` above (#479). CLI 3 reads the old
+# `enable_signup` key here as this switch, which is how it got turned off.
+enabled = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
