@@ -1,3 +1,4 @@
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/features/calendar/domain/event_report.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
@@ -75,6 +76,7 @@ class CalendarEvent {
     this.attendees = const [],
     this.doneAt,
     this.eventWorkflowId,
+    this.color,
     this.stepsDone = const {},
     this.series,
     this.report,
@@ -102,6 +104,9 @@ class CalendarEvent {
 
   /// The event's workflow: its checklist and what the people there start.
   final String? eventWorkflowId;
+
+  /// Its type's colour (#516), read with the event; null without a type.
+  final TagColor? color;
 
   /// Step id → the day it was ticked.
   final Map<String, DateTime> stepsDone;
@@ -144,6 +149,7 @@ class CalendarEvent {
     attendees: attendees,
     doneAt: doneAt,
     eventWorkflowId: eventWorkflowId,
+    color: color,
     stepsDone: stepsDone,
     series: series,
     report: report,

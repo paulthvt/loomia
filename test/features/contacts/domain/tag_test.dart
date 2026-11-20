@@ -23,6 +23,15 @@ void main() {
   const sleep = Tag(id: 'sleep', name: 'Sleep', color: TagColor.sand);
   const lea = Tag(id: 'lea', name: 'Lea', color: TagColor.olive);
 
+  test('TagColor.firstFree: the first unused key; all used, the first', () {
+    expect(TagColor.firstFree(const []), TagColor.stone);
+    expect(
+      TagColor.firstFree(const [TagColor.stone, TagColor.sand]),
+      TagColor.olive,
+    );
+    expect(TagColor.firstFree(TagColor.values), TagColor.stone);
+  });
+
   group('nextTagColor', () {
     test('none used: the first', () {
       expect(nextTagColor(const []), TagColor.stone);

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
 
@@ -43,9 +44,27 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
       id: 'new-${++_next}',
       name: name,
       steps: const [],
+      // The insert trigger's rule (#516).
+      color: TagColor.firstFree(store.map((workflow) => workflow.color)),
     );
     store.add(workflow);
     return workflow;
+  }
+
+  @override
+  Future<void> setColor(String id, TagColor color) async {
+    await _record('setColor($id, ${color.name})');
+    _change(
+      id,
+      (workflow) => EventWorkflow(
+        id: workflow.id,
+        name: workflow.name,
+        isGroup: workflow.isGroup,
+        reportFields: workflow.reportFields,
+        color: color,
+        steps: workflow.steps,
+      ),
+    );
   }
 
   @override
@@ -58,6 +77,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         name: name,
         isGroup: workflow.isGroup,
         reportFields: workflow.reportFields,
+        color: workflow.color,
         steps: workflow.steps,
       ),
     );
@@ -73,6 +93,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         name: workflow.name,
         isGroup: on,
         reportFields: workflow.reportFields,
+        color: workflow.color,
         steps: workflow.steps,
       ),
     );
@@ -88,6 +109,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         name: workflow.name,
         isGroup: workflow.isGroup,
         reportFields: fields,
+        color: workflow.color,
         steps: workflow.steps,
       ),
     );
@@ -114,6 +136,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         name: workflow.name,
         isGroup: workflow.isGroup,
         reportFields: workflow.reportFields,
+        color: workflow.color,
         steps: [
           ...workflow.steps,
           EventWorkflowStep(
@@ -173,6 +196,7 @@ class FakeEventWorkflowRepository implements EventWorkflowRepository {
         name: workflow.name,
         isGroup: workflow.isGroup,
         reportFields: workflow.reportFields,
+        color: workflow.color,
         steps: [
           for (final step in workflow.steps)
             if (step.id != stepId) step else ?change(step),
