@@ -2,6 +2,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -58,6 +59,7 @@ void main() {
     List<CalendarEvent> more = const [],
     List<Task> tasks = const [],
     PeopleAhead people = const PeopleAhead.none(),
+    ThemeData? theme,
   }) async {
     tester.view
       ..physicalSize = size
@@ -72,7 +74,7 @@ void main() {
         locale: locale,
         localizationsDelegates: localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        theme: AppTheme.light,
+        theme: theme ?? AppTheme.light,
         home: WeekGrid(
           days: shown ?? days,
           events: [...events, ...more],
@@ -198,6 +200,93 @@ void main() {
   testWidgets('mobile week at text scale 2: nothing overflows', (tester) async {
     await pumpGrid(tester, textScale: 2);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('3 days: a typed event is tinted, quiet once over (#516)', (
+    tester,
+  ) async {
+    final now = DateTime(2026, 10, 21, 12);
+    final typed = [
+      CalendarEvent(
+        id: 'earlier',
+        title: 'Morning consult',
+        startsAt: DateTime(2026, 10, 21, 10),
+        endsAt: DateTime(2026, 10, 21, 11),
+        color: TagColor.sage,
+      ),
+      CalendarEvent(
+        id: 'later',
+        title: 'Afternoon consult',
+        startsAt: DateTime(2026, 10, 21, 14),
+        endsAt: DateTime(2026, 10, 21, 15),
+        color: TagColor.sage,
+      ),
+    ];
+    Material card(String title) => tester.widget<Material>(
+      find
+          .ancestor(of: find.text(title), matching: find.byType(Material))
+          .first,
+    );
+
+    await pumpGrid(
+      tester,
+      shown: days.sublist(1, 4),
+      threeDays: true,
+      now: now,
+      more: typed,
+    );
+    final colors = AppTheme.light.extension<LoomiaColors>()!;
+    expect(card('Afternoon consult').color, TagColor.sage.light.container);
+    expect(card('Morning consult').color, colors.surfaceDefault);
+    expect(
+      (card('Morning consult').shape! as RoundedRectangleBorder).side.color,
+      colors.borderSubtle,
+    );
+
+    await pumpGrid(
+      tester,
+      shown: days.sublist(1, 4),
+      threeDays: true,
+      now: now,
+      more: typed,
+      theme: AppTheme.dark,
+    );
+    expect(card('Afternoon consult').color, TagColor.sage.dark.container);
+  });
+
+  testWidgets('3 days: an event with no end is quiet once started (#516)', (
+    tester,
+  ) async {
+    await pumpGrid(
+      tester,
+      shown: days.sublist(1, 4),
+      threeDays: true,
+      now: DateTime(2026, 10, 21, 11, 30),
+      more: [
+        CalendarEvent(
+          id: 'call',
+          title: 'Quick call',
+          startsAt: DateTime(2026, 10, 21, 11),
+          color: TagColor.sky,
+        ),
+      ],
+    );
+    final card = tester.widget<Material>(
+      find
+          .ancestor(
+            of: find.text('Quick call'),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(
+      card.color,
+      AppTheme.light.extension<LoomiaColors>()!.surfaceDefault,
+    );
+    expect(
+      (card.shape! as RoundedRectangleBorder).side.color,
+      AppTheme.light.extension<LoomiaColors>()!.borderSubtle,
+    );
   });
 
   testWidgets('3 days: three equal columns, opened at an hour before now', (

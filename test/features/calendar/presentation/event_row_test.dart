@@ -38,62 +38,73 @@ void main() {
     );
   });
 
-  testWidgets('an event that is over steps back: no fill, a neutral bar', (
-    tester,
-  ) async {
-    final event = CalendarEvent(
-      id: 'e1',
-      title: 'Workshop',
-      startsAt: DateTime(2026, 10, 8, 9),
-      endsAt: DateTime(2026, 10, 8, 10),
-    );
-    Future<(Color?, Color?)> row(DateTime? now) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.light,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          home: Scaffold(
-            body: EventRow(event: event, now: now, onTap: () {}),
-          ),
-        ),
-      );
-      final fill = tester
-          .widget<Material>(
-            find
-                .descendant(
-                  of: find.byType(EventRow),
-                  matching: find.byType(Material),
-                )
-                .first,
-          )
-          .color;
-      final bar = tester
-          .widgetList<DecoratedBox>(
-            find.descendant(
-              of: find.byType(EventRow),
-              matching: find.byType(DecoratedBox),
+  testWidgets(
+    'an event that is over steps back: no fill, its bar faded (#516)',
+    (tester) async {
+      Future<(Color?, Color?)> row(DateTime? now, {TagColor? color}) async {
+        final event = CalendarEvent(
+          id: 'e1',
+          title: 'Workshop',
+          startsAt: DateTime(2026, 10, 8, 9),
+          endsAt: DateTime(2026, 10, 8, 10),
+          color: color,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(
+              body: EventRow(event: event, now: now, onTap: () {}),
             ),
-          )
-          .map((box) => (box.decoration as BoxDecoration).color)
-          .whereType<Color>()
-          .first;
-      return (fill, bar);
-    }
+          ),
+        );
+        final fill = tester
+            .widget<Material>(
+              find
+                  .descendant(
+                    of: find.byType(EventRow),
+                    matching: find.byType(Material),
+                  )
+                  .first,
+            )
+            .color;
+        final bar = tester
+            .widgetList<DecoratedBox>(
+              find.descendant(
+                of: find.byType(EventRow),
+                matching: find.byType(DecoratedBox),
+              ),
+            )
+            .map((box) => (box.decoration as BoxDecoration).color)
+            .whereType<Color>()
+            .first;
+        return (fill, bar);
+      }
 
-    final colors = AppTheme.light.extension<LoomiaColors>()!;
-    expect(await row(DateTime(2026, 10, 8, 9, 30)), (
-      colors.surfaceDefault,
-      AppTheme.light.colorScheme.primary,
-    ));
-    expect(await row(null), (
-      colors.surfaceDefault,
-      AppTheme.light.colorScheme.primary,
-    ));
-    expect(await row(DateTime(2026, 10, 8, 11)), (
-      Colors.transparent,
-      colors.borderStrong,
-    ));
-  });
+      final colors = AppTheme.light.extension<LoomiaColors>()!;
+      expect(await row(DateTime(2026, 10, 8, 9, 30)), (
+        colors.surfaceDefault,
+        AppTheme.light.colorScheme.primary,
+      ));
+      expect(await row(null), (
+        colors.surfaceDefault,
+        AppTheme.light.colorScheme.primary,
+      ));
+      expect(await row(DateTime(2026, 10, 8, 11)), (
+        Colors.transparent,
+        AppTheme.light.colorScheme.primary.withValues(alpha: 0.5),
+      ));
+      final sky = TagColor.sky.light.ink;
+      expect(await row(DateTime(2026, 10, 8, 9, 30), color: TagColor.sky), (
+        colors.surfaceDefault,
+        sky,
+      ));
+      expect(await row(DateTime(2026, 10, 8, 11), color: TagColor.sky), (
+        Colors.transparent,
+        sky.withValues(alpha: 0.5),
+      ));
+    },
+  );
 
   testWidgets("eventInk: the type's colours, the accent without one (#516)", (
     tester,

@@ -811,6 +811,7 @@ class CalendarView extends StatelessWidget {
                               onOpenTask: onOpenTask,
                               onDay: openDay,
                               people: people,
+                              now: now,
                             ),
                     ),
                   ],

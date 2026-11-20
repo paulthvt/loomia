@@ -67,6 +67,7 @@ class DesktopMonth extends StatelessWidget {
     this.tasks = const [],
     this.onOpenTask,
     this.people = const PeopleAhead.none(),
+    this.now,
     super.key,
   });
 
@@ -87,6 +88,9 @@ class DesktopMonth extends StatelessWidget {
   final void Function(CalendarEvent event) onOpen;
   final void Function(Task task)? onOpenTask;
   final OpenDay onDay;
+
+  /// What its chips are over by (#516).
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -141,6 +145,7 @@ class DesktopMonth extends StatelessWidget {
                         onOpen: onOpen,
                         onOpenTask: onOpenTask,
                         onDay: onDay,
+                        now: now,
                       ),
                     ),
                 ],
@@ -168,6 +173,7 @@ class _MonthCell extends StatelessWidget {
     required this.onOpenTask,
     required this.onDay,
     this.people = 0,
+    this.now,
   });
 
   static const double _badge = 26;
@@ -190,6 +196,7 @@ class _MonthCell extends StatelessWidget {
   final void Function(CalendarEvent event) onOpen;
   final void Function(Task task)? onOpenTask;
   final OpenDay onDay;
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +219,7 @@ class _MonthCell extends StatelessWidget {
       for (final event in events)
         (
           (width) => MonthEventChip.heightFor(context, event, width),
-          MonthEventChip(event: event, onTap: () => onOpen(event)),
+          MonthEventChip(event: event, now: now, onTap: () => onOpen(event)),
         ),
     ];
     final rule = BorderSide(color: colors.borderSubtle);
@@ -325,7 +332,12 @@ class _MonthCell extends StatelessWidget {
 /// An event inside a desktop month day (Figma `MonthEventChip`): a bar, its
 /// start time, its title on up to two lines. Done: greyed.
 class MonthEventChip extends StatelessWidget {
-  const MonthEventChip({required this.event, required this.onTap, super.key});
+  const MonthEventChip({
+    required this.event,
+    required this.onTap,
+    this.now,
+    super.key,
+  });
 
   static const double _bar = 2;
   static const double _vertical = 3;
@@ -333,6 +345,9 @@ class MonthEventChip extends StatelessWidget {
 
   final CalendarEvent event;
   final VoidCallback onTap;
+
+  /// Once the event is over by it, or done, the chip steps back (#516).
+  final DateTime? now;
 
   static TextStyle? _timeStyle(BuildContext context) =>
       Theme.of(context).textTheme.labelSmall;
@@ -367,8 +382,9 @@ class MonthEventChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final colors = LoomiaColors.of(context);
-    final done = event.done;
+    final at = now;
+    final done = event.done || (at != null && event.isOver(at));
+    final bar = eventInk(context, event).ink;
     return MergeSemantics(
       child: Semantics(
         button: true,
@@ -388,7 +404,7 @@ class MonthEventChip extends StatelessWidget {
                 children: [
                   DecoratedBox(
                     decoration: BoxDecoration(
-                      color: done ? colors.textMuted : scheme.primary,
+                      color: done ? bar.withValues(alpha: eventOverBar) : bar,
                       borderRadius: BorderRadius.circular(AppRadii.pill),
                     ),
                     child: const SizedBox(width: _bar),
@@ -1301,6 +1317,7 @@ class _DayColumn extends StatelessWidget {
                         final event as CalendarEvent => _WeekCard(
                           event: event,
                           onTap: () => onOpen(event),
+                          now: now,
                           compact: compact,
                           narrow: thin(item.lanes),
                         ),
@@ -1420,6 +1437,7 @@ class _WeekCard extends StatelessWidget {
   const _WeekCard({
     required this.event,
     required this.onTap,
+    this.now,
     this.compact = false,
     this.narrow = false,
   });
@@ -1431,6 +1449,9 @@ class _WeekCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool compact;
   final bool narrow;
+
+  /// Once the event is over by it, or done, the card steps back.
+  final DateTime? now;
 
   static TextStyle _timeStyle(BuildContext context) =>
       (Theme.of(context).textTheme.labelSmall ?? AppTypography.caption)
@@ -1485,8 +1506,12 @@ class _WeekCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = LoomiaColors.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final done = event.done;
-    final ink = done ? colors.textMuted : null;
+    // Quiet once over, as the lists (#451), or done; tinted in its type's
+    // colour until then (#516).
+    final at = now;
+    final quiet = event.done || (at != null && event.isOver(at));
+    final type = eventInk(context, event);
+    final ink = quiet ? scheme.onSurfaceVariant : null;
     final time = timeLabel(context, event.startsAt);
     final timeStyle = _timeStyle(context).copyWith(color: ink);
     final titleStyle = _titleStyle(context).copyWith(color: ink);
@@ -1502,10 +1527,10 @@ class _WeekCard extends StatelessWidget {
               )
             : null,
         child: Material(
-          color: colors.surfaceDefault,
+          color: quiet ? colors.surfaceDefault : type.container,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.sm),
-            side: done
+            side: quiet
                 ? BorderSide(color: colors.borderSubtle)
                 : BorderSide.none,
           ),
@@ -1513,13 +1538,16 @@ class _WeekCard extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             child: Container(
-              decoration: done
-                  ? null
-                  : BoxDecoration(
-                      border: BorderDirectional(
-                        start: BorderSide(color: scheme.primary, width: _bar),
-                      ),
-                    ),
+              decoration: BoxDecoration(
+                border: BorderDirectional(
+                  start: BorderSide(
+                    color: quiet
+                        ? type.ink.withValues(alpha: eventOverBar)
+                        : type.ink,
+                    width: _bar,
+                  ),
+                ),
+              ),
               // A 40 dp column's title needs every point it can get.
               padding: EdgeInsets.symmetric(
                 horizontal: narrow ? 0 : AppSpacing.sm,

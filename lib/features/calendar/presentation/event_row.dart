@@ -14,6 +14,10 @@ TagInk eventInk(BuildContext context, CalendarEvent event) {
   return (container: scheme.primaryContainer, ink: scheme.primary);
 }
 
+/// An over event's bar (#516): its colour at half strength, so the type
+/// still shows.
+const double eventOverBar = 0.5;
+
 /// [at] as a local time of day, in the device's 12- or 24-hour format.
 String timeLabel(BuildContext context, DateTime at) =>
     MaterialLocalizations.of(context).formatTimeOfDay(
@@ -98,6 +102,7 @@ class EventRow extends StatelessWidget {
     // Over: the ink one step down, so the times and title stay readable.
     final ink = over ? scheme.onSurfaceVariant : scheme.onSurface;
     final quiet = over ? colors.textMuted : scheme.onSurfaceVariant;
+    final bar = eventInk(context, event).ink;
 
     // A card; over, an outline with no fill or shadow.
     return LoomiaCard(
@@ -131,7 +136,8 @@ class EventRow extends StatelessWidget {
               ),
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: over ? colors.borderStrong : scheme.primary,
+                  // Its type's colour (#516), faded once over (#451).
+                  color: over ? bar.withValues(alpha: eventOverBar) : bar,
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
                 child: const SizedBox(width: _bar),
