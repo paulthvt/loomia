@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loomia/app/router/app_router.dart';
@@ -142,6 +143,12 @@ void main() {
       tester.getSemantics(violet),
       isSemantics(label: 'Violet', isSelected: true),
     );
+    // The swatches are read as one group named by the label.
+    SemanticsNode? group = tester.getSemantics(violet).parent;
+    while (group != null && group.label.isEmpty) {
+      group = group.parent;
+    }
+    expect(group?.label, 'Colour');
   });
 
   testWidgets('desktop: typed name saved when go() tears down the editor', (

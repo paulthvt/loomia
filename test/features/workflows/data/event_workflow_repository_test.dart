@@ -58,5 +58,10 @@ void main() {
       eventWorkflowFromRow({'id': 'w2', 'name': 'Training'}).color,
       TagColor.stone,
     );
+    // A palette key a later release adds: stone, not a failed load.
+    expect(
+      eventWorkflowFromRow({'id': 'w3', 'name': 'X', 'color': 'coral'}).color,
+      TagColor.stone,
+    );
   });
 }

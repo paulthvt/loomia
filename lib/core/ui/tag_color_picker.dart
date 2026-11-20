@@ -58,6 +58,7 @@ class _Swatch extends StatelessWidget {
     final tag = color.of(context);
     return Semantics(
       button: true,
+      enabled: onTap != null,
       selected: selected,
       label: label,
       child: InkResponse(

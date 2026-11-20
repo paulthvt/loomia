@@ -3,7 +3,7 @@
 -- Run with `supabase test db`.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(6);
+select plan(7);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@example.com'),
@@ -66,6 +66,16 @@ select results_eq(
             ('Unboxing call', 'olive'), ('Wellness consultation', 'sage'),
             ('Mentoring', 'teal') $$,
   'the seeded types get colours in the order they are added'
+);
+
+-- Two inserts by one owner at once would read the same used colours: the
+-- trigger serialises them on a lock per owner, held to the end of the
+-- transaction.
+select ok(
+  exists (select 1 from pg_locks
+          where locktype = 'advisory' and classid = 516 and objsubid = 2
+            and pid = pg_backend_pid()),
+  'an insert holds its owner''s lock until commit'
 );
 
 select * from finish();

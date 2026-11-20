@@ -20,11 +20,14 @@ update public.event_workflow w
   where w.id = ranked.id;
 
 -- A type inserted without a colour takes the first its owner doesn't use;
--- all used, stone (nextTagColor's rule).
+-- all used, stone (nextTagColor's rule). Inserts by one owner take a lock
+-- per owner (key 516, the issue) until commit, so two at once don't read
+-- the same used colours.
 create function public.event_workflow_default_color() returns trigger
 language plpgsql set search_path = '' as $$
 begin
   if new.color is null then
+    perform pg_advisory_xact_lock(516, hashtext(new.owner_id::text));
     new.color := coalesce(
       (select key from unnest(enum_range(null::public.tag_color))
          with ordinality as palette(key, position)

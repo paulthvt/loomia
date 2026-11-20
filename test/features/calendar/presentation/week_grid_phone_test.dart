@@ -252,6 +252,22 @@ void main() {
       theme: AppTheme.dark,
     );
     expect(card('Afternoon consult').color, TagColor.sage.dark.container);
+    final bar = tester
+        .widgetList<Container>(
+          find.descendant(
+            of: find.ancestor(
+              of: find.text('Afternoon consult'),
+              matching: find.byType(Material),
+            ),
+            matching: find.byType(Container),
+          ),
+        )
+        .map((box) => box.decoration)
+        .whereType<BoxDecoration>()
+        .map((decoration) => decoration.border)
+        .whereType<BorderDirectional>()
+        .first;
+    expect(bar.start.color, TagColor.sage.dark.ink);
   });
 
   testWidgets('3 days: an event with no end is quiet once started (#516)', (

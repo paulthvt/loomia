@@ -314,7 +314,7 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
   ],
   eventWorkflowId: row['event_workflow_id'] as String?,
   color: switch (row['event_workflow']) {
-    {'color': final String name} => TagColor.values.byName(name),
+    {'color': final String name} => TagColor.values.asNameMap()[name],
     _ => null,
   },
   stepsDone: {

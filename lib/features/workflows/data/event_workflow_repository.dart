@@ -102,9 +102,10 @@ EventWorkflow eventWorkflowFromRow(Map<String, dynamic> row) => EventWorkflow(
   name: row['name'] as String,
   isGroup: row['is_group'] as bool? ?? true,
   reportFields: (row['report_fields'] as List?)?.cast<String>() ?? const [],
-  // Never null once #516's migration ran; stone if it ever is.
+  // Never null once #516's migration ran; stone if it ever is, or for a
+  // palette key a later release adds.
   color: switch (row['color']) {
-    final String name => TagColor.values.byName(name),
+    final String name => TagColor.values.asNameMap()[name] ?? TagColor.stone,
     _ => TagColor.stone,
   },
   steps: [

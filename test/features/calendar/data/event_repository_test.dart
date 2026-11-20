@@ -130,6 +130,8 @@ void main() {
 
     expect(eventFromRow(row({'color': 'sky'})).color, TagColor.sky);
     expect(eventFromRow(row(null)).color, isNull);
+    // A palette key a later release adds: the accent, not a failed load.
+    expect(eventFromRow(row({'color': 'coral'})).color, isNull);
   });
 
   test('writes the event workflow, and no stage mapping (#318)', () {

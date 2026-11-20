@@ -325,19 +325,26 @@ class _EventWorkflowEditorViewState extends State<EventWorkflowEditorView> {
         ),
         const SizedBox(height: AppSpacing.lg),
         // Not a LabeledField: its MergeSemantics would fold the eight
-        // swatches into one node, so none could be picked by a reader.
-        Text(
-          l10n.eventWorkflowColor,
-          style: theme.inputDecorationTheme.labelStyle,
+        // swatches into one node. The label names the group instead.
+        ExcludeSemantics(
+          child: Text(
+            l10n.eventWorkflowColor,
+            style: theme.inputDecorationTheme.labelStyle,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        TagColorPicker(
-          selected: workflow.color,
-          onPick: _busy.contains(_Control.color)
-              ? null
-              : (color) => unawaited(
-                  _run(_Control.color, () => widget.onColor(color)),
-                ),
+        Semantics(
+          container: true,
+          explicitChildNodes: true,
+          label: l10n.eventWorkflowColor,
+          child: TagColorPicker(
+            selected: workflow.color,
+            onPick: _busy.contains(_Control.color)
+                ? null
+                : (color) => unawaited(
+                    _run(_Control.color, () => widget.onColor(color)),
+                  ),
+          ),
         ),
         const SizedBox(height: AppSpacing.lg),
         SectionHeader(
