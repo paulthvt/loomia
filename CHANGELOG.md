@@ -1,5 +1,22 @@
 # Changelog
 
+## [v2026.11.11](https://github.com/paulthvt/loomia/compare/v2026.11.10...v2026.11.11) (2026-11-20)
+
+### ✨ Features
+
+- **calendar:** colour events by their type (#524) ([f476237](https://github.com/paulthvt/loomia/commit/f476237763e57ee786a1e2dfa0b2dc4df18d7bcf))
+- **today:** on desktop the band is the all-done moment (#519) ([e98471b](https://github.com/paulthvt/loomia/commit/e98471b7a6e9d8c1796ca90e7dd274140685fabd))
+
+### 🐛 Bug Fixes
+
+- **today:** one gap above Catch up once all is done on a phone (#523) ([dc32b8d](https://github.com/paulthvt/loomia/commit/dc32b8d6f2e325d99607768aaaced0ad56b35197))
+- **today:** no empty Tasks header once all is done on a phone (#521) ([ef748d3](https://github.com/paulthvt/loomia/commit/ef748d3b679244dd6fb9b1f0d41bb164f36fd568))
+- **goals:** fill the window on desktop (#515) ([2a34745](https://github.com/paulthvt/loomia/commit/2a34745942903eaaba2006351978da6c9a796b10))
+
+### 🔧 Miscellaneous
+
+- **l10n:** sync translations (#525) ([6c33827](https://github.com/paulthvt/loomia/commit/6c338279543e484d3ee4f06b720ce1a91fa952cb))
+
 ## [v2026.11.10](https://github.com/paulthvt/loomia/compare/v2026.11.9...v2026.11.10) (2026-11-15)
 
 ### ✨ Features
