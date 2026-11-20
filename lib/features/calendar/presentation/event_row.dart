@@ -6,6 +6,26 @@ import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
+/// [event]'s two colours (#516): its type's, or, without one, a white card
+/// with the accent's bar: the accent's own pale tint is the selected day's
+/// column, where the card would vanish. Every list row, grid card and chip
+/// reads them here.
+TagInk eventInk(BuildContext context, CalendarEvent event) {
+  if (event.color case final color?) return color.of(context);
+  return (
+    container: LoomiaColors.of(context).surfaceDefault,
+    ink: Theme.of(context).colorScheme.primary,
+  );
+}
+
+/// An upcoming grid card's outline (#516): its ink at this strength, so a
+/// pale colour (sand) still stands out on the selected day's tint.
+const double eventCardOutline = 0.3;
+
+/// An over event's bar (#516): its colour at half strength, so the type
+/// still shows.
+const double eventOverBar = 0.5;
+
 /// [at] as a local time of day, in the device's 12- or 24-hour format.
 String timeLabel(BuildContext context, DateTime at) =>
     MaterialLocalizations.of(context).formatTimeOfDay(
@@ -90,6 +110,7 @@ class EventRow extends StatelessWidget {
     // Over: the ink one step down, so the times and title stay readable.
     final ink = over ? scheme.onSurfaceVariant : scheme.onSurface;
     final quiet = over ? colors.textMuted : scheme.onSurfaceVariant;
+    final bar = eventInk(context, event).ink;
 
     // A card; over, an outline with no fill or shadow.
     return LoomiaCard(
@@ -123,7 +144,8 @@ class EventRow extends StatelessWidget {
               ),
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: over ? colors.borderStrong : scheme.primary,
+                  // Its type's colour (#516), faded once over (#451).
+                  color: over ? bar.withValues(alpha: eventOverBar) : bar,
                   borderRadius: BorderRadius.circular(AppRadii.pill),
                 ),
                 child: const SizedBox(width: _bar),

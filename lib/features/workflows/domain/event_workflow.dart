@@ -1,3 +1,5 @@
+import 'package:loomia/app/theme/app_colors.dart';
+
 /// A step around an event: [days] from its day, signed. −1 is the day
 /// before, 0 the day of, 1 the day after.
 class EventWorkflowStep {
@@ -22,6 +24,7 @@ class EventWorkflow {
     required List<EventWorkflowStep> steps,
     this.isGroup = true,
     this.reportFields = const [],
+    this.color = TagColor.stone,
   }) : steps = byDays(steps);
 
   final String id;
@@ -35,6 +38,9 @@ class EventWorkflow {
 
   /// Report field labels; empty when no report.
   final List<String> reportFields;
+
+  /// What its events show in the calendar and on Today (#516).
+  final TagColor color;
 
   bool get hasReport => !isGroup && reportFields.isNotEmpty;
 }

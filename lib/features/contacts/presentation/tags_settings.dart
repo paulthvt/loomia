@@ -9,6 +9,7 @@ import 'package:loomia/core/ui/labeled_field.dart';
 import 'package:loomia/core/ui/load_failed.dart';
 import 'package:loomia/core/ui/loomia_dialog.dart';
 import 'package:loomia/core/ui/tag_chip.dart';
+import 'package:loomia/core/ui/tag_color_picker.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/contacts/domain/people_failure.dart';
 import 'package:loomia/features/contacts/domain/person.dart';
@@ -219,73 +220,11 @@ class _TagEditorState extends ConsumerState<_TagEditor> {
               ),
             ),
           ),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              for (final key in TagColor.values)
-                _Swatch(
-                  color: key,
-                  selected: key == color,
-                  label: tagColorName(l10n, key),
-                  onTap: () => setState(() => _color = key),
-                ),
-            ],
+          TagColorPicker(
+            selected: color,
+            onPick: (key) => setState(() => _color = key),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// One palette colour, ringed when picked.
-class _Swatch extends StatelessWidget {
-  const _Swatch({
-    required this.color,
-    required this.selected,
-    required this.label,
-    required this.onTap,
-  });
-
-  final TagColor color;
-  final bool selected;
-  final String label;
-  final VoidCallback onTap;
-
-  static const double _size = 32;
-
-  @override
-  Widget build(BuildContext context) {
-    final tag = color.of(context);
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: InkResponse(
-        onTap: onTap,
-        radius: kMinInteractiveDimension / 2,
-        child: SizedBox.square(
-          dimension: kMinInteractiveDimension,
-          child: Center(
-            child: Container(
-              width: _size,
-              height: _size,
-              decoration: BoxDecoration(
-                color: tag.container,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected
-                      ? Theme.of(context).colorScheme.onSurface
-                      : tag.ink,
-                  width: selected ? 3 : 1,
-                ),
-              ),
-              child: selected
-                  ? Icon(Icons.check_rounded, size: 18, color: tag.ink)
-                  : null,
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/features/calendar/data/event_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 
@@ -117,6 +118,20 @@ void main() {
 
     expect(event.attendees, isEmpty);
     expect(event.done, isFalse);
+  });
+
+  test("reads its type's colour; no type, none (#516)", () {
+    Map<String, dynamic> row(Object? type) => {
+      'id': 'e1',
+      'title': 'Workshop',
+      'starts_at': '2026-10-08T17:00:00+00:00',
+      'event_workflow': type,
+    };
+
+    expect(eventFromRow(row({'color': 'sky'})).color, TagColor.sky);
+    expect(eventFromRow(row(null)).color, isNull);
+    // A palette key a later release adds: the accent, not a failed load.
+    expect(eventFromRow(row({'color': 'coral'})).color, isNull);
   });
 
   test('writes the event workflow, and no stage mapping (#318)', () {

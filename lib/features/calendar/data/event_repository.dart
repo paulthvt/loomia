@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/event_report.dart';
@@ -19,7 +20,8 @@ class EventRepository {
   static const String _columns =
       '*, event_attendee(person_id, came, going, invited_on, followed_up_on, '
       'follow_up_on), event_step_done(step_id, done_on), '
-      'event_series(id, every_weeks, first_on, until_on)';
+      'event_series(id, every_weeks, first_on, until_on), '
+      'event_workflow(color)';
 
   /// Every event, earliest first, once every series is generated up to a
   /// year after [today] (the device's).
@@ -311,6 +313,10 @@ CalendarEvent eventFromRow(Map<String, dynamic> row) => CalendarEvent(
       ),
   ],
   eventWorkflowId: row['event_workflow_id'] as String?,
+  color: switch (row['event_workflow']) {
+    {'color': final String name} => TagColor.values.asNameMap()[name],
+    _ => null,
+  },
   stepsDone: {
     for (final done in (row['event_step_done'] as List?) ?? const [])
       (done as Map<String, dynamic>)['step_id'] as String: DateTime.parse(

@@ -18,13 +18,8 @@ class Tag {
 
 /// The colour a new tag gets: the first palette key no tag uses; all used,
 /// the first.
-TagColor nextTagColor(Iterable<Tag> tags) {
-  final used = {for (final tag in tags) tag.color};
-  return TagColor.values.firstWhere(
-    (color) => !used.contains(color),
-    orElse: () => TagColor.values.first,
-  );
-}
+TagColor nextTagColor(Iterable<Tag> tags) =>
+    TagColor.firstFree(tags.map((tag) => tag.color));
 
 /// Whether a tag other than [except] already has [name], ignoring case,
 /// accents and surrounding spaces.

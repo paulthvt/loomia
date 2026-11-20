@@ -450,6 +450,16 @@ enum TagColor {
 
   const TagColor({required this.light, required this.dark});
 
+  /// The first key not in [used], in palette order; all used, the first.
+  /// New tags and event types (#516) take their colour by it.
+  static TagColor firstFree(Iterable<TagColor> used) {
+    final taken = used.toSet();
+    return values.firstWhere(
+      (color) => !taken.contains(color),
+      orElse: () => values.first,
+    );
+  }
+
   final TagInk light;
   final TagInk dark;
 

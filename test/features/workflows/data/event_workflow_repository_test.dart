@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/features/workflows/data/event_workflow_repository.dart';
 
 void main() {
@@ -44,6 +45,23 @@ void main() {
     expect(
       eventWorkflowFromRow({'id': 'w2', 'name': 'Training'}).reportFields,
       isEmpty,
+    );
+  });
+
+  test('reads its colour; missing is stone (#516)', () {
+    expect(
+      eventWorkflowFromRow({'id': 'w1', 'name': 'Workshop', 'color': 'violet'})
+          .color,
+      TagColor.violet,
+    );
+    expect(
+      eventWorkflowFromRow({'id': 'w2', 'name': 'Training'}).color,
+      TagColor.stone,
+    );
+    // A palette key a later release adds: stone, not a failed load.
+    expect(
+      eventWorkflowFromRow({'id': 'w3', 'name': 'X', 'color': 'coral'}).color,
+      TagColor.stone,
     );
   });
 }

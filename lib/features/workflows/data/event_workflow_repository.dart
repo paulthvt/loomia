@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/contacts/data/people_repository.dart';
 import 'package:loomia/features/workflows/domain/event_workflow.dart';
@@ -39,6 +40,13 @@ class EventWorkflowRepository {
 
   Future<void> setGroup(String id, bool on) => guardPeople(() async {
     await _client.from('event_workflow').update({'is_group': on}).eq('id', id);
+  });
+
+  Future<void> setColor(String id, TagColor color) => guardPeople(() async {
+    await _client
+        .from('event_workflow')
+        .update({'color': color.name})
+        .eq('id', id);
   });
 
   /// Its steps go with it; its events keep their title, without a checklist.
@@ -94,6 +102,12 @@ EventWorkflow eventWorkflowFromRow(Map<String, dynamic> row) => EventWorkflow(
   name: row['name'] as String,
   isGroup: row['is_group'] as bool? ?? true,
   reportFields: (row['report_fields'] as List?)?.cast<String>() ?? const [],
+  // Never null once #516's migration ran; stone if it ever is, or for a
+  // palette key a later release adds.
+  color: switch (row['color']) {
+    final String name => TagColor.values.asNameMap()[name] ?? TagColor.stone,
+    _ => TagColor.stone,
+  },
   steps: [
     for (final step
         in ((row['event_workflow_step'] as List?) ?? const [])

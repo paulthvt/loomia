@@ -1,5 +1,6 @@
 import 'package:flutter/widget_previews.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
@@ -174,6 +175,7 @@ final _call = CalendarEvent(
       'this month',
   attendees: const [Attendee(personId: 'p1')],
   eventWorkflowId: 'mentorat',
+  color: TagColor.sky,
   report: const [
     (
       label: 'Topics covered',
@@ -192,6 +194,7 @@ final _previousCall = CalendarEvent(
   startsAt: DateTime(2026, 10, 8, 18),
   attendees: const [Attendee(personId: 'p1', came: true)],
   eventWorkflowId: 'mentorat',
+  color: TagColor.sky,
   doneAt: DateTime(2026, 10, 8, 19),
   report: const [
     (
@@ -369,6 +372,7 @@ final _events = [
       ),
     ],
     eventWorkflowId: 'workshop',
+    color: TagColor.violet,
     stepsDone: {'remind': DateTime(2026, 10, 7)},
   ),
   CalendarEvent(
