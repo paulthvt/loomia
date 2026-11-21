@@ -19,7 +19,8 @@ Future<String> solveTurnstile() async {
   final options = JSObject()
     ..['sitekey'] = turnstileSiteKey.toJS
     ..['retry'] = 'never'.toJS
-    ..['refresh-expired'] = 'manual'.toJS
+    // Invisible mode only takes 'auto' or 'never'; Captcha replaces old tokens.
+    ..['refresh-expired'] = 'never'.toJS
     ..['callback'] = ((JSString t) {
       if (!answer.isCompleted) answer.complete(t.toDart);
     }).toJS
