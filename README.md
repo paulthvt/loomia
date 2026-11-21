@@ -132,6 +132,11 @@ DKIM, DMARC and Brevo code records for `getloomia.app` are in Cloudflare DNS.
 Free plan: 300 emails a day; `[auth.rate_limit] email_sent` caps auth at 50 an
 hour.
 
+Brevo's "authorized IP addresses" filter must stay **off** (Settings →
+Security): Supabase sends from addresses it doesn't publish, so a filter
+blocks every email and sign-up fails with "Error sending confirmation email"
+(a 500). The SMTP key is the only guard, so rotate it if it ever leaks.
+
 The templates are `supabase/templates/*.html`, English and French in each file
 (the one exception to Weblate, below). French is picked from the Settings
 language (`locale`), else the language saved at sign-up (`email_locale`).
