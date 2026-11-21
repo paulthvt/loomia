@@ -207,6 +207,9 @@ void main() {
     expect(auth.account!.businessModel, BusinessModel.doterra);
     expect(auth.account!.onboarded, isFalse);
     expect(find.text('Invite code'), findsOneWidget);
+    // The step says what it's for (#538).
+    expect(find.text('Got an invite code?'), findsOneWidget);
+    expect(find.textContaining('share your goals'), findsOneWidget);
     expect(find.text(_question), findsNothing);
   });
 
