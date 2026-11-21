@@ -76,8 +76,13 @@ Future<void> main() async {
         // without hierarchical logging all loggers share the root stream.
         debug: false,
         // A breadcrumb per request. Failures are reported by the repository
-        // guards, with more context than a status code.
-        httpClient: SentryHttpClient(captureFailedRequests: false),
+        // guards, with more context than a status code. Release only: with
+        // the SDK off (debug, empty DSN), tracePropagationTargets.clear()
+        // above doesn't apply, and `sentry-trace` breaks every Edge Function
+        // call from the web on CORS.
+        httpClient: kReleaseMode
+            ? SentryHttpClient(captureFailedRequests: false)
+            : null,
       );
       // Id only, so a report can be matched to rows; never the email.
       Supabase.instance.client.auth.onAuthStateChange
