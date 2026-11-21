@@ -391,11 +391,16 @@ class FirstRunInviteStep extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final text = Theme.of(context).textTheme;
     final myShare = ref.watch(myShareProvider);
 
     return AuthScaffold(
       onBack: onBack,
       children: [
+        Text(l10n.firstRunInviteTitle, style: text.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
+        Text(l10n.firstRunInviteBody, style: text.bodyMedium),
+        const SizedBox(height: AppSpacing.lg),
         myShare.when(
           data: (share) => share == null
               ? AcceptInvite(
