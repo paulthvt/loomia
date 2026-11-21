@@ -30,6 +30,13 @@ On a real iPhone and Android phone, the page loaded by `loadHtmlString` with
 3–4 s; the failing key reported `600010`, then Turnstile retried on its own
 every ~12 s. No `Podfile` appeared; iOS built through SPM.
 
+With the real Loomia site key (`0x4AAAAAAGLbJD8LJpK6Xhx9`, invisible), both
+phones got a real token: iPhone in 2.8 s, Android in 5 s. Cloudflare accepts
+the `getloomia.app` origin `loadHtmlString` gives the page, so no page is
+hosted. Android's console fills with Turnstile's own probe noise
+(Permissions-Policy, CSP on `data:`, one unresolved challenge host): harmless,
+and the production page forwards no console messages.
+
 ## Decisions
 
 | Question | Decision | Reason |
@@ -45,7 +52,7 @@ every ~12 s. No `Podfile` appeared; iOS built through SPM.
 | Widget hostnames (Cloudflare) | `getloomia.app`, `app.getloomia.app`, the web preview host, `localhost`. | Every place the app or its page runs; `localhost` for `flutter run -d chrome`. |
 | Debug builds | Use the real site key. | They talk to the hosted project, which checks with the real secret. |
 | Rollout | PR 1: the app sends a token, `[auth.captcha]` stays off (Supabase ignores the token). Release, Paul updates his phones and his wife's, check no build is in Apple review. PR 2: `[auth.captcha] enabled = true` and `[auth] enable_signup = true`, then `config push`. | A build without the token can no longer sign in with email once it is on. No outside testers yet. |
-| Before PR 2 | Check the real site key with `loadHtmlString` on a phone (the test key accepts any hostname). If Cloudflare rejects the `baseUrl` origin, host the same page at `getloomia.app/captcha` in `loomia-site` and load it by URL instead. | The one thing the spike couldn't prove. |
+| Before PR 2 | Sign up, sign in, reset and resend once on each platform from the release build, captcha still off, to see the token flow end to end. | The spike proved the token; this proves the wiring. |
 | Privacy policy | `loomia-site`, EN and FR: Cloudflare's line gains "and checks that sign-ups come from a person (Turnstile)", with a link to Cloudflare's [Turnstile Privacy Addendum](https://www.cloudflare.com/turnstile-privacy-policy/). Live before PR 1's release. | Cloudflare requires the addendum reference for invisible mode; the check runs on devices from PR 1 on, even while Supabase ignores it. |
 | Pre-clearance ("Skip future security rule challenges") | Off. | It sets a `cf_clearance` cookie to skip Cloudflare WAF challenges; the zone has none for app users, and the policy promises no cookies beyond the session. |
 
