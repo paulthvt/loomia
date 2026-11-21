@@ -109,15 +109,20 @@ The rest stays by hand after a merge (one-off `supabase login` and
 supabase functions deploy                   # every function in supabase/functions/
 supabase config diff                        # config.toml vs hosted, read-only
 SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=... SUPABASE_AUTH_EXTERNAL_APPLE_SECRET=... \
-  BREVO_SMTP_LOGIN=... BREVO_SMTP_KEY=... supabase config push
+  BREVO_SMTP_LOGIN=... BREVO_SMTP_KEY=... TURNSTILE_SECRET_KEY=... supabase config push
 ```
 
 `config push` shows each change and asks before writing it. `config.toml`
 references these secrets through those variables, so set them all before
 pushing: Google's is in Google Cloud Console, Apple's comes from
-`fastlane apple_auth_secret` (Sign in with Apple above), and the Brevo login
-and SMTP key (not the API key) are in Brevo under Settings → SMTP & API. None
+`fastlane apple_auth_secret` (Sign in with Apple above), the Brevo login
+and SMTP key (not the API key) are in Brevo under Settings → SMTP & API, and
+the Turnstile secret is on the Loomia widget in Cloudflare → Turnstile. None
 is in this repo.
+
+With `[auth.captcha]` on, every email sign-up, sign-in, reset and resend needs
+a Turnstile token (#529). A build older than the one that sends it can no
+longer sign in with email; Google and Apple are unaffected.
 
 ### Auth emails
 
