@@ -22,7 +22,7 @@ function go() {
   turnstile.render('#c', {
     sitekey: '$turnstileSiteKey',
     retry: 'never',
-    'refresh-expired': 'manual',
+    'refresh-expired': 'never',
     callback: function (t) { Captcha.postMessage('token:' + t); },
     'error-callback': function (e) { Captcha.postMessage('error:' + e); return true; },
     'timeout-callback': function () { Captcha.postMessage('error:timeout'); },

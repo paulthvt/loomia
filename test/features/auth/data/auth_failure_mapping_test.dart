@@ -74,6 +74,20 @@ void main() {
     );
   });
 
+  // gotrue reports a 5xx as "retryable" too (an SMTP failure at sign-up is a
+  // 500); the server answered, so the connection is fine.
+  test('a server error is unknown, not the connection', () {
+    expect(
+      authFailureFrom(
+        AuthRetryableFetchException(
+          message: '{"msg":"Error sending confirmation email"}',
+          statusCode: '500',
+        ),
+      ),
+      AuthFailure.unknown,
+    );
+  });
+
   test('a socket failure maps to network', () {
     expect(
       authFailureFrom(const SocketException('no route to host')),
@@ -115,6 +129,19 @@ void main() {
     test('a lost connection is info only', () async {
       await guard(AuthRetryableFetchException(), AuthFailure.network);
       expect(records.map((r) => r.level), [Level.INFO]);
+    });
+
+    test('a server error is severe, without its body', () async {
+      await guard(
+        AuthRetryableFetchException(
+          message: 'Error sending confirmation email to pauline@example.com',
+          statusCode: '500',
+        ),
+        AuthFailure.unknown,
+      );
+      expect(records.map((r) => r.level), [Level.SEVERE]);
+      expect(records.single.message, 'server 500');
+      expect(records.single.error, isNull);
     });
 
     test('a refusal is a warning with its code, never severe', () async {

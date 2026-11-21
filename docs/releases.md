@@ -72,7 +72,8 @@ The store listings themselves change only when asked:
 3. **Before launch, outside the stores:** the auto-entrepreneur business
    (then the site's legal notice, the Play payments profile and developer
    details), the trademark (#415), the in-app privacy and support links
-   (#418), subscriptions (#105) if paid from day one.
+   (#418), auth emails from a provider without tracking (#534),
+   subscriptions (#105) if paid from day one.
 4. **Launch:** `track=production`. Play and the web are public the same day;
    iOS is public once Apple approves, usually within a day or two.
 
