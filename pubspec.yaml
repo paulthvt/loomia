@@ -70,6 +70,13 @@ dependencies:
   # Opens the dialer, SMS, email and Instagram from Message / Call. Nothing in
   # the SDK launches another app.
   url_launcher: ^6.3.2
+  # Turnstile on the web (#529): the script and its hidden widget through
+  # dart:js_interop. Already in the lock through Flutter's web plugins.
+  web: 1.1.2
+  # Turnstile on Android and iOS (#529): the invisible challenge runs in a
+  # web view. Flutter's own plugin, and SPM on iOS; cloudflare_turnstile
+  # would bring CocoaPods back (docs/superpowers/specs/2026-11-21-turnstile-design.md).
+  webview_flutter: 4.14.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0

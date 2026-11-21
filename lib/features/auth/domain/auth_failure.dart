@@ -13,6 +13,9 @@ enum AuthFailure {
   /// The server rejected the password itself — breached or too easy.
   weakPassword,
   rateLimited,
+
+  /// Turnstile gave no token (#529), or Supabase refused it.
+  captcha,
   network,
   unknown,
 }

@@ -53,6 +53,15 @@ void main() {
     expect(authFailureFrom(error), AuthFailure.rateLimited);
   });
 
+  test('a refused captcha token maps to captcha', () {
+    const error = AuthApiException(
+      'captcha protection: request disallowed',
+      code: 'captcha_failed',
+      statusCode: '400',
+    );
+    expect(authFailureFrom(error), AuthFailure.captcha);
+  });
+
   test('any 429 maps to rateLimited even without a known code', () {
     const error = AuthApiException('slow down', statusCode: '429');
     expect(authFailureFrom(error), AuthFailure.rateLimited);

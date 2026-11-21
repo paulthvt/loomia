@@ -5,6 +5,8 @@ import 'package:loomia/core/business_model/business_model.dart';
 import 'package:loomia/core/supabase/supabase_config.dart';
 import 'package:loomia/core/supabase/supabase_provider.dart';
 import 'package:loomia/features/auth/data/auth_failure_mapping.dart';
+import 'package:loomia/features/auth/data/captcha.dart';
+import 'package:loomia/features/auth/data/captcha_solver.dart';
 import 'package:loomia/features/auth/domain/account.dart';
 import 'package:loomia/features/auth/domain/auth_change.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,9 +18,13 @@ import 'package:url_launcher/url_launcher.dart';
 /// `supabase_flutter` type. Callers pass an already-normalised email
 /// (`normalizeEmail`).
 class AuthRepository {
-  AuthRepository(this._client);
+  AuthRepository(this._client, this._captcha);
 
   final SupabaseClient _client;
+
+  /// A Turnstile token for each email call Supabase checks (#529). Google
+  /// and Apple never ask for one.
+  final Captcha _captcha;
 
   GoTrueClient get _auth => _client.auth;
 
@@ -91,7 +97,11 @@ class AuthRepository {
 
   Future<void> signIn({required String email, required String password}) =>
       guardAuth(
-        () => _auth.signInWithPassword(email: email, password: password),
+        () async => _auth.signInWithPassword(
+          email: email,
+          password: password,
+          captchaToken: await _captcha.token(),
+        ),
       );
 
   /// [language] is the app's language code at sign-up, kept as `email_locale`
@@ -103,11 +113,12 @@ class AuthRepository {
     required String firstName,
     required String language,
   }) => guardAuth(
-    () => _auth.signUp(
+    () async => _auth.signUp(
       email: email,
       password: password,
       data: {'first_name': firstName.trim(), 'email_locale': language},
       emailRedirectTo: _redirect,
+      captchaToken: await _captcha.token(),
     ),
   );
 
@@ -122,14 +133,19 @@ class AuthRepository {
   );
 
   Future<void> sendPasswordReset(String email) => guardAuth(
-    () => _auth.resetPasswordForEmail(email, redirectTo: _redirect),
+    () async => _auth.resetPasswordForEmail(
+      email,
+      redirectTo: _redirect,
+      captchaToken: await _captcha.token(),
+    ),
   );
 
   Future<void> resendConfirmation(String email) => guardAuth(
-    () => _auth.resend(
+    () async => _auth.resend(
       type: OtpType.signup,
       email: email,
       emailRedirectTo: _redirect,
+      captchaToken: await _captcha.token(),
     ),
   );
 
@@ -209,8 +225,15 @@ bool needsNameFrom(Map<String, dynamic> metadata) =>
 bool bugReporterFrom(Map<String, dynamic>? appMetadata) =>
     appMetadata?['bug_reporter'] == true;
 
+/// One for the app, so a token fetched ahead on one auth screen serves the
+/// next.
+final captchaProvider = Provider<Captcha>((ref) => Captcha(solveTurnstile));
+
 final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => AuthRepository(ref.watch(supabaseClientProvider)),
+  (ref) => AuthRepository(
+    ref.watch(supabaseClientProvider),
+    ref.watch(captchaProvider),
+  ),
 );
 
 /// The signed-in user, re-read on every auth change (sign-in, sign-out, a

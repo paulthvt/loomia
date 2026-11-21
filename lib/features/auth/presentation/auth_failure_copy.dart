@@ -13,6 +13,7 @@ String authFailureCopy(AppLocalizations l10n, AuthFailure failure) =>
       AuthFailure.samePassword => l10n.authFailureSamePassword,
       AuthFailure.weakPassword => l10n.authFailureWeakPassword,
       AuthFailure.rateLimited => l10n.authFailureRateLimited,
+      AuthFailure.captcha => l10n.authFailureCaptcha,
       AuthFailure.network => l10n.authFailureNetwork,
       AuthFailure.unknown => l10n.authFailureUnknown,
     };
