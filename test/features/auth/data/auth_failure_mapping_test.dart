@@ -76,6 +76,16 @@ void main() {
 
   // gotrue reports a 5xx as "retryable" too (an SMTP failure at sign-up is a
   // 500); the server answered, so the connection is fine.
+  // functions.invoke throws this for any non-2xx answer: the function ran.
+  test('an Edge Function error is unknown, not the connection', () {
+    expect(
+      authFailureFrom(
+        const FunctionException(status: 500, details: {'error': 'x'}),
+      ),
+      AuthFailure.unknown,
+    );
+  });
+
   test('a server error is unknown, not the connection', () {
     expect(
       authFailureFrom(
@@ -133,15 +143,22 @@ void main() {
 
     test('a server error is severe, without its body', () async {
       await guard(
+        const FunctionException(
+          status: 500,
+          details: {'error': 'delete_failed', 'email': 'pauline@example.com'},
+        ),
+        AuthFailure.unknown,
+      );
+      await guard(
         AuthRetryableFetchException(
           message: 'Error sending confirmation email to pauline@example.com',
           statusCode: '500',
         ),
         AuthFailure.unknown,
       );
-      expect(records.map((r) => r.level), [Level.SEVERE]);
-      expect(records.single.message, 'server 500');
-      expect(records.single.error, isNull);
+      expect(records.map((r) => r.message), ['function 500', 'server 500']);
+      expect(records.map((r) => r.level), everyElement(Level.SEVERE));
+      expect(records.map((r) => r.error), everyElement(isNull));
     });
 
     test('a refusal is a warning with its code, never severe', () async {

@@ -13,6 +13,8 @@ AuthFailure authFailureFrom(Object error) {
   if (error is AuthRetryableFetchException) {
     return error.statusCode == null ? AuthFailure.network : AuthFailure.unknown;
   }
+  // functions.invoke throws this for any non-2xx answer: the function ran.
+  if (error is FunctionException) return AuthFailure.unknown;
   if (error is AuthException) {
     if (error.statusCode == '429') return AuthFailure.rateLimited;
     switch (error.code) {
@@ -63,6 +65,10 @@ Future<void> guardAuth(Future<void> Function() call) async {
       // event. The body is server copy and may quote the email, so it stays.
       case final AuthRetryableFetchException e:
         _log.severe('server ${e.statusCode}', null, stack);
+      // An Edge Function failed (delete-account, report-bug). Its details
+      // may hold personal data, so only the status goes.
+      case final FunctionException e:
+        _log.severe('function ${e.status}', null, stack);
       // Wrong passwords, rate limits, "email exists": expected. The message
       // is server copy and may quote the email, so only the code goes.
       case final AuthException e:
