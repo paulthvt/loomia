@@ -10,6 +10,9 @@ void main() => runApp(const MaterialApp(home: _Spike()));
 
 /// Cloudflare's test site keys: work on any domain.
 const _keys = {
+  // The real Loomia widget (invisible): proves Cloudflare accepts the
+  // getloomia.app origin that loadHtmlString gives the page.
+  'Real Loomia key': '0x4AAAAAAGLbJD8LJpK6Xhx9',
   'Invisible, always passes': '1x00000000000000000000BB',
   'Forces an interactive challenge': '3x00000000000000000000FF',
   'Always fails': '2x00000000000000000000AB',
