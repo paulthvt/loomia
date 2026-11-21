@@ -1,5 +1,16 @@
 # Changelog
 
+## [v2026.11.12](https://github.com/paulthvt/loomia/compare/v2026.11.11...v2026.11.12) (2026-11-21)
+
+### ✨ Features
+
+- **auth:** send a Turnstile token with every email auth call (#530) ([8c88600](https://github.com/paulthvt/loomia/commit/8c886003027902645c9a7198012c9d157b89d4a3))
+- **auth:** auth emails from getloomia.app, in EN and FR (#460) ([d880ea3](https://github.com/paulthvt/loomia/commit/d880ea34e72d59891c7411232ccf8911727433ef))
+
+### 🐛 Bug Fixes
+
+- **auth:** keep the email provider on under Supabase CLI 3 (#528) ([d3c1c19](https://github.com/paulthvt/loomia/commit/d3c1c1962e6c3ceb89aec1b1d4fe9bff5284f3cc))
+
 ## [v2026.11.11](https://github.com/paulthvt/loomia/compare/v2026.11.10...v2026.11.11) (2026-11-20)
 
 ### ✨ Features
