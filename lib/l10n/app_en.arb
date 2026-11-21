@@ -61,6 +61,10 @@
   "@authFailureUnknown": {
     "description": "Fallback error for a failure with no specific cause."
   },
+  "authFailureCaptcha": "We couldn't check this device. Try again, or continue with Google or Apple.",
+  "@authFailureCaptcha": {
+    "description": "Error under a sign-in, sign-up or password-reset form when the invisible anti-bot check (Cloudflare Turnstile) gave no answer. Google and Apple are the sign-in buttons on the same screen, which skip the check."
+  },
   "authWelcomeHeadline": "Weave your network. Tend every thread.",
   "@authWelcomeHeadline": {
     "description": "Slogan on the signed-out welcome screen, under the Loomia wordmark."

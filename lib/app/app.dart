@@ -6,6 +6,7 @@ import 'package:loomia/app/router/app_router.dart';
 import 'package:loomia/app/theme/app_theme.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/auth/domain/account.dart';
+import 'package:loomia/features/auth/presentation/captcha_host.dart';
 import 'package:loomia/features/bug_reports/presentation/bug_report_overlay.dart';
 import 'package:loomia/features/bug_reports/presentation/bug_report_sheet.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -49,7 +50,9 @@ class LoomiaApp extends ConsumerWidget {
           localizationsDelegates: localizationsDelegates,
           localeOverride: Localizations.localeOf(context),
           feedbackBuilder: bugReportSheet,
-          child: BugReportOverlay(child: LaunchSplash(child: child!)),
+          child: BugReportOverlay(
+            child: LaunchSplash(child: CaptchaHost(child: child!)),
+          ),
         ),
       ),
       theme: AppTheme.light,

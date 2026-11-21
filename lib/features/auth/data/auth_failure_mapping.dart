@@ -24,6 +24,8 @@ AuthFailure authFailureFrom(Object error) {
       case 'over_email_send_rate_limit':
       case 'over_request_rate_limit':
         return AuthFailure.rateLimited;
+      case 'captcha_failed':
+        return AuthFailure.captcha;
       case 'user_already_exists':
       case 'email_exists':
         // Deliberately not surfaced as its own failure: telling the user the
