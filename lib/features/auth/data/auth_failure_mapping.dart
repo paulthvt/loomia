@@ -8,7 +8,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// notice.
 AuthFailure authFailureFrom(Object error) {
   if (error is AuthFailure) return error;
-  if (error is AuthRetryableFetchException) return AuthFailure.network;
+  // gotrue throws "retryable" for a 5xx too: the server answered, so it is
+  // not the connection (an SMTP failure at sign-up is a 500).
+  if (error is AuthRetryableFetchException) {
+    return error.statusCode == null ? AuthFailure.network : AuthFailure.unknown;
+  }
   if (error is AuthException) {
     if (error.statusCode == '429') return AuthFailure.rateLimited;
     switch (error.code) {
@@ -55,6 +59,10 @@ Future<void> guardAuth(Future<void> Function() call) async {
         break;
       case _ when failure == AuthFailure.network:
         _log.info('offline', error);
+      // The server failed (an SMTP error at sign-up is a 500): a Sentry
+      // event. The body is server copy and may quote the email, so it stays.
+      case final AuthRetryableFetchException e:
+        _log.severe('server ${e.statusCode}', null, stack);
       // Wrong passwords, rate limits, "email exists": expected. The message
       // is server copy and may quote the email, so only the code goes.
       case final AuthException e:
