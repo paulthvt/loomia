@@ -2077,5 +2077,9 @@
   "eventWorkflowColor": "Couleur",
   "@eventWorkflowColor": {
     "description": "Label above the colour swatches in the event type editor: the colour its events take in the calendar and on Today."
+  },
+  "authFailureCaptcha": "Nous n’avons pas pu vérifier cet appareil. Réessaie, ou continue avec Google ou Apple.",
+  "@authFailureCaptcha": {
+    "description": "Error under a sign-in, sign-up or password-reset form when the invisible anti-bot check (Cloudflare Turnstile) gave no answer. Google and Apple are the sign-in buttons on the same screen, which skip the check."
   }
 }
