@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 2026.11.12 # x-yeet-version
 
 environment:
-  sdk: ^3.13.0
+  sdk: ^3.14.0
 
 dependencies:
   # The iOS date wheel: system pickers follow the platform
