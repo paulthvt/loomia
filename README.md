@@ -263,6 +263,17 @@ Open the PNGs and check them before committing — `--update-goldens` accepts
 whatever renders. When the PR's CI fails on a golden, the diff images are in the
 run's `golden-failures` artifact.
 
+The committed goldens are English. To check that longer translations still fit,
+render the previews in another app language:
+
+```bash
+flutter test test/previews_test.dart --dart-define=GOLDEN_LOCALE=fr
+```
+
+The PNGs land in `build/review/goldens_fr/` on any OS; nothing is compared and
+`test/goldens/` is untouched. Sample data stays English, only the UI copy
+switches.
+
 ### App icons
 
 Every launcher icon, the favicon and the web icons are rendered from one
