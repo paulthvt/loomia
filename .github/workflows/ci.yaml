@@ -182,4 +182,8 @@ jobs:
 
       - run: flutter pub get
 
+      - run: |
+          ls -d /Applications/Xcode*.app; xcodebuild -version
+          latest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1); echo "selecting $latest"
+          sudo xcode-select -s "$latest"; xcodebuild -version
       - run: flutter build ios --release --no-codesign
