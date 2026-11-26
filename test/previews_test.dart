@@ -12,6 +12,7 @@ import 'package:loomia/features/notifications/presentation/notifications_preview
 import 'package:loomia/features/onboarding/presentation/first_run_preview.dart';
 import 'package:loomia/features/today/presentation/today_preview.dart';
 import 'package:loomia/features/workflows/presentation/workflows_preview.dart';
+import 'package:loomia/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'load_fonts.dart';
@@ -26,6 +27,13 @@ import 'load_fonts.dart';
 /// Pixels are compared on Linux only. Antialiasing differs per OS, and the
 /// committed PNGs come from CI (see the `update-goldens` input in ci.yaml).
 /// Elsewhere the previews still have to render without an exception.
+///
+/// Locale review: `flutter test test/previews_test.dart
+/// --dart-define=GOLDEN_LOCALE=fr` renders every preview in that language and
+/// writes the PNGs to `build/review/goldens_fr/` instead of comparing them, on
+/// any OS. For eyeballing long translations; never commit them.
+const reviewLocale = String.fromEnvironment('GOLDEN_LOCALE');
+
 void main() {
   final previews = <String, (Size, Widget Function())>{
     'today_mobile_light': (const Size(390, 844), todayMobileLight),
@@ -149,12 +157,28 @@ void main() {
 
   setUpAll(loadAppFonts);
 
+  if (reviewLocale.isNotEmpty) {
+    if (!AppLocalizations.supportedLocales.contains(Locale(reviewLocale))) {
+      throw ArgumentError.value(
+        reviewLocale,
+        'GOLDEN_LOCALE',
+        'not an app locale',
+      );
+    }
+    autoUpdateGoldenFiles = true;
+  }
+
   for (final MapEntry(key: name, value: (size, preview)) in previews.entries) {
     testWidgets(name, (tester) async {
       tester.view
         ..physicalSize = size
         ..devicePixelRatio = 1;
       addTearDown(tester.view.reset);
+      // The previews' MaterialApps follow the device language.
+      if (reviewLocale.isNotEmpty) {
+        tester.platformDispatcher.localesTestValue = [Locale(reviewLocale)];
+        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      }
 
       await tester.pumpWidget(preview());
       // Photos decode outside the fake clock.
@@ -168,7 +192,13 @@ void main() {
       expect(tester.takeException(), isNull);
       // Local renders (RENDER_PREVIEWS=1) are for visual checking only, never
       // commit them. Only CI-generated goldens (Linux) are committed.
-      if (Platform.isLinux || Platform.environment['RENDER_PREVIEWS'] == '1') {
+      if (reviewLocale.isNotEmpty) {
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('../build/review/goldens_$reviewLocale/$name.png'),
+        );
+      } else if (Platform.isLinux ||
+          Platform.environment['RENDER_PREVIEWS'] == '1') {
         await expectLater(
           find.byType(MaterialApp),
           matchesGoldenFile('goldens/$name.png'),
