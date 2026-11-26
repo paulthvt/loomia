@@ -86,6 +86,12 @@ already-installed packages first.
   test for domain logic. Every `@Preview` has a golden in `test/goldens/`,
   compared on Linux only; after a visual change, regenerate them through CI —
   procedure in README.md → *Golden tests*. Never commit locally made goldens.
+- **Check long translations**: after any UI change, render the previews in
+  French (the longest app language; add German etc. as they ship) and open
+  the PNGs of the screens you touched: `flutter test test/previews_test.dart
+  --dart-define=GOLDEN_LOCALE=fr`, output in `build/review/goldens_fr/`.
+  Look for overflow, truncation, mid-word breaks and clipped buttons. Fix the
+  layout, not the copy. These renders are never committed.
 - **Copy**: English in `lib/l10n/app_en.arb` only, every key with a
   description; other languages come from Weblate via the `weblate/l10n`
   pull request. Informal register everywhere — French is *tu*,
