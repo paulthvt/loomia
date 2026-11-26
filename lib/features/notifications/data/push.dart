@@ -71,6 +71,9 @@ class Push {
       )) {
         return;
       }
+      // The FCM token API: send-daily-summary targets tokens, and its
+      // successor register() gives installation IDs instead (#547).
+      // ignore: deprecated_member_use
       _refresh ??= messaging.onTokenRefresh.listen(_save);
       // iOS hands out an FCM token only once APNs has given one; until then
       // onTokenRefresh catches up.
@@ -78,6 +81,7 @@ class Push {
           await messaging.getAPNSToken() == null) {
         return;
       }
+      // ignore: deprecated_member_use
       final token = await messaging.getToken();
       if (token != null) await _save(token);
     } on Object catch (error) {
@@ -103,6 +107,8 @@ class Push {
     await _refresh?.cancel();
     _refresh = null;
     try {
+      // The token API, as in register() (#547).
+      // ignore: deprecated_member_use
       await FirebaseMessaging.instance.deleteToken();
     } on Object catch (error) {
       _log.info('token not deleted', error);
