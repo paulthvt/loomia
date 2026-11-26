@@ -2081,5 +2081,13 @@
   "authFailureCaptcha": "Nous n’avons pas pu vérifier cet appareil. Réessaie, ou continue avec Google ou Apple.",
   "@authFailureCaptcha": {
     "description": "Error under a sign-in, sign-up or password-reset form when the invisible anti-bot check (Cloudflare Turnstile) gave no answer. Google and Apple are the sign-in buttons on the same screen, which skip the check."
+  },
+  "firstRunInviteTitle": "Tu as un code d’invitation ?",
+  "@firstRunInviteTitle": {
+    "description": "Title of the optional onboarding step, after the company step, where the user can enter an invite code someone sent them."
+  },
+  "firstRunInviteBody": "Si une personne avec qui tu travailles t’a envoyé un code, saisis-le pour partager tes objectifs avec elle. Tu peux aussi le faire plus tard dans les Paramètres.",
+  "@firstRunInviteBody": {
+    "description": "Under the invite-code title during onboarding. Sharing lets the person who sent the code see the user's goals; Skip moves on, and the code can be entered later in Settings → Sharing."
   }
 }
