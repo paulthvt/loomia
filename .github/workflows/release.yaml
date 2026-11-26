@@ -183,7 +183,7 @@ jobs:
 
       - name: Build web
         run: |
-          flutter build web --release
+          flutter build web --release --no-deprecated-js-interop
           (cd build/web && zip -qr "../../loomia-web.zip" .)
 
       # One Gemini call. Failing only costs the notes, the build still ships.

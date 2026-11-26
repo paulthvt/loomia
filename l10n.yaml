@@ -6,3 +6,7 @@ output-localization-file: app_localizations.dart
 # Non-nullable so call sites carry no `!`.
 nullable-getter: false
 untranslated-messages-file: l10n_missing.json
+# Flutter 3.50's gen-l10n still lists flutter_localizations' deprecated
+# delegates in the generated localizationsDelegates. The app never uses that
+# list (lib/l10n/localizations_delegates.dart), so the generated files may.
+header: "// ignore_for_file: deprecated_member_use"
