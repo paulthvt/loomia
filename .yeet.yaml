@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/monkescience/yeet/v0.17.1/yeet.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/monkescience/yeet/v0.18.4/yeet.schema.json
 # Releases: README.md → Releases. Versions are YYYY.MM.MICRO (#306).
 
 branch: main
