@@ -1,5 +1,29 @@
 # Changelog
 
+## [v2026.11.13](https://github.com/paulthvt/loomia/compare/v2026.11.12...v2026.11.13) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+- **onboarding:** say what the invite step is for (#539) ([4f90634](https://github.com/paulthvt/loomia/commit/4f90634495207d89b381cd706f088e7c9c613c46))
+- **auth:** an Edge Function error isn't the connection (#537) ([dcee637](https://github.com/paulthvt/loomia/commit/dcee637fb770c7801eb182a0c6a78d48e0dfb6a0))
+- **auth:** a server error isn't the connection (#533) ([a10adf4](https://github.com/paulthvt/loomia/commit/a10adf49bcbf1f9be55383b4331464b4954c9561))
+
+### 🔄 CI/CD
+
+- cache Gradle dependencies (#555) ([000bed2](https://github.com/paulthvt/loomia/commit/000bed2601cffd4a8e6513b284efa0e4cfe7e45e))
+
+### 🔧 Miscellaneous
+
+- **deps:** update dependency ruby to v4.0.10 (#549) ([f4a72aa](https://github.com/paulthvt/loomia/commit/f4a72aacab399fbc6e34abb9acd4b5f3691196ce))
+- **deps:** update dependency fastlane to v2.242.0 (#550) ([2a43c9b](https://github.com/paulthvt/loomia/commit/2a43c9bc1ade3ba5bee0cd0a7fd8092059a0b184))
+- **deps:** update github actions (#351) ([08f812b](https://github.com/paulthvt/loomia/commit/08f812b5686e9ae92e92be0cfca45ba6f9d43d5e))
+- local setup with fvm (#552) ([c3356ac](https://github.com/paulthvt/loomia/commit/c3356ace62e4ceaa62e9d7f1a108ef02561d76e7))
+- **android:** built-in Kotlin, with the Firebase and Sentry majors (#548) ([6267914](https://github.com/paulthvt/loomia/commit/6267914075f5c73ba1b297f8f13776aade698c74))
+- upgrade Flutter to 3.50.1 (#545) ([812ce51](https://github.com/paulthvt/loomia/commit/812ce5184416b1c9a50d551e3a2fdd4f607f9348))
+- **test:** render previews in French to check long translations (#543) ([8430e30](https://github.com/paulthvt/loomia/commit/8430e30555bcca95916e99bc3c9bc0c462e8810e))
+- **l10n:** sync translations (#541) ([194a87a](https://github.com/paulthvt/loomia/commit/194a87a33a1b135822c5845378152d5b7a602bc9))
+- **l10n:** sync translations (#540) ([b49874e](https://github.com/paulthvt/loomia/commit/b49874ec27d4746cac93236f89927e29f3ac5a4e))
+
 ## [v2026.11.12](https://github.com/paulthvt/loomia/compare/v2026.11.11...v2026.11.12) (2026-11-21)
 
 ### ✨ Features
