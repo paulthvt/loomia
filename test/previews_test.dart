@@ -91,6 +91,10 @@ void main() {
       const Size(390, 844),
       calendarMonthFoldedLight,
     ),
+    'calendar_month_folded_large_text_light': (
+      const Size(390, 844),
+      calendarMonthFoldedLargeTextLight,
+    ),
     'calendar_three_days_light': (const Size(390, 844), calendarThreeDaysLight),
     'calendar_week_light': (const Size(390, 844), calendarWeekLight),
     'calendar_week_desktop_light': (

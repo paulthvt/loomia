@@ -35,6 +35,24 @@ Widget calendarDesktopLight() => _app(AppTheme.light, _calendar(desktop: true));
 Widget calendarMonthFoldedLight() =>
     _app(AppTheme.light, _calendar(folded: true));
 
+/// A large system font (#561): the numbers shrink in their circles, the
+/// folded week keeps its 48 dp row.
+@Preview(
+  group: 'Calendar',
+  name: 'Month folded, 1.3× text — light',
+  size: Size(390, 844),
+)
+Widget calendarMonthFoldedLargeTextLight() => _app(
+  AppTheme.light,
+  Builder(
+    builder: (context) => MediaQuery(
+      data: MediaQuery.of(context)
+          .copyWith(textScaler: const TextScaler.linear(1.3)),
+      child: _calendar(folded: true),
+    ),
+  ),
+);
+
 @Preview(group: 'Calendar', name: '3 days — light', size: Size(390, 844))
 Widget calendarThreeDaysLight() =>
     _app(AppTheme.light, _calendar(mode: CalendarMode.threeDays));
