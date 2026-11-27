@@ -58,9 +58,8 @@ finger stops; a swipe lost to the fold.
   The ink stays on the number circle.
 - The rows carry no gap between them beyond the square; the weekday names
   keep their `AppSpacing.xs` gap above the first row.
-- The desktop week's column headings, which also use `DayCell`, keep their
-  current size: the compact layout is the month grid's, not the cell's
-  default.
+- `DayCell` is only the mobile and tablet month's (the desktop month is
+  `DesktopMonth`), so the compact square replaces its layout outright.
 - At 1.3× text, the number scales down inside its circle (`FittedBox`,
   `scaleDown`) rather than growing the row.
 
@@ -153,8 +152,8 @@ At `t = 1` the grid's single row is a week pager:
 - Tapping a day selects it and stays folded.
 - Today (the calendar icon) selects today, stays folded, and turns to
   today's week.
-- Tapping the title opens the day picker as now; the picked day's week
-  shows, still folded.
+- Tapping the title opens the month picker as now; the picked month's
+  first selected day (its 1st, or today) shows its week, still folded.
 - Unfolding shows the selected day's month with that day's row in place,
   so the week opens out of itself: `s` is recomputed for that month before
   the first unfold frame.

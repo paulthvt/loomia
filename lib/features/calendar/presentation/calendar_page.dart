@@ -20,6 +20,7 @@ import 'package:loomia/core/ui/section_header.dart';
 import 'package:loomia/features/auth/data/auth_repository.dart';
 import 'package:loomia/features/calendar/domain/calendar_event.dart';
 import 'package:loomia/features/calendar/domain/day_timeline.dart';
+import 'package:loomia/features/calendar/domain/month_fold.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/features/calendar/domain/week_grid.dart';
@@ -223,6 +224,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         if (desktop && paneOpen) context.go(Routes.calendar);
       },
       onShift: (delta) => selector.shift(delta, firstDayOfWeek: firstDay),
+      folded: ref.watch(monthFoldedProvider),
+      onFold: ref.read(monthFoldedProvider.notifier).set,
       onToday: selector.toToday,
       onMode: selector.setMode,
       onPickTitle: () => unawaited(_pickTitle(context, ref)),
@@ -282,6 +285,8 @@ class CalendarView extends StatelessWidget {
     this.people = const PeopleAhead.none(),
     this.model = BusinessModel.other,
     this.onOpenPerson,
+    this.folded = false,
+    this.onFold,
     super.key,
   });
 
@@ -350,6 +355,13 @@ class CalendarView extends StatelessWidget {
   /// Top-bar entry to Settings, where there is no sidebar to hold it.
   final Widget? accountAction;
 
+  /// The phone month folded into the selected day's week (#561).
+  final bool folded;
+
+  /// Folds (true) or unfolds the phone month. None: the month never folds
+  /// (previews of the open month, desktop).
+  final ValueChanged<bool>? onFold;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -397,9 +409,17 @@ class CalendarView extends StatelessWidget {
       style: AppTheme.heroButton(context),
       child: Text(l10n.calendarToday),
     );
+    // The folded phone month (#561) turns weeks.
+    final byWeek =
+        mode == CalendarMode.week ||
+        (mode == CalendarMode.month &&
+            folded &&
+            onFold != null &&
+            context.screenSize.isMobile);
     final previous = HeroIconButton(
       onPressed: () => turn(-1),
       tooltip: switch (mode) {
+        _ when byWeek => l10n.calendarPreviousWeek,
         CalendarMode.month => l10n.calendarPreviousMonth,
         CalendarMode.threeDays => l10n.calendarPreviousDays,
         CalendarMode.week => l10n.calendarPreviousWeek,
@@ -409,6 +429,7 @@ class CalendarView extends StatelessWidget {
     final next = HeroIconButton(
       onPressed: () => turn(1),
       tooltip: switch (mode) {
+        _ when byWeek => l10n.calendarNextWeek,
         CalendarMode.month => l10n.calendarNextMonth,
         CalendarMode.threeDays => l10n.calendarNextDays,
         CalendarMode.week => l10n.calendarNextWeek,
@@ -480,15 +501,19 @@ class CalendarView extends StatelessWidget {
                   _pinnedMinHeight;
               const sides = EdgeInsets.symmetric(horizontal: AppSpacing.md);
               final bottom = _bottomRoom(context);
-              Widget scrolling(EdgeInsets padding, List<Widget> children) =>
-                  _refreshable(
-                    ListView(
-                      // Pull to refresh works on a short list too.
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: padding,
-                      children: children,
-                    ),
-                  );
+              Widget scrolling(
+                EdgeInsets padding,
+                List<Widget> children, {
+                bool refreshes = true,
+              }) => _refreshable(
+                ListView(
+                  // Pull to refresh works on a short list too.
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: padding,
+                  children: children,
+                ),
+                refreshes: refreshes,
+              );
               // From the screen's top edge, under the status bar.
               Widget hero(Widget? grid) => HeroPanel(
                 gap: 0,
@@ -573,6 +598,7 @@ class CalendarView extends StatelessWidget {
               final counts = eventsPerDay(events.value ?? const []);
               final taskCounts = openTasksPerDay(tasks);
               final pager = _SwipePager(
+                key: const ValueKey('month'),
                 anchor: selection.month,
                 onShift: onShift,
                 builder: (delta) => MonthGrid(
@@ -624,17 +650,86 @@ class CalendarView extends StatelessWidget {
               }
               // Held still, the month has no vertical drag to lose a swipe
               // to (#369); only the list below scrolls and pulls.
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  hero(pager),
-                  Expanded(
-                    child: scrolling(
-                      sides.copyWith(top: AppSpacing.lg, bottom: bottom),
-                      [below],
+              final foldable = onFold != null && context.screenSize.isMobile;
+              final list = scrolling(
+                sides.copyWith(top: AppSpacing.lg, bottom: bottom),
+                [below],
+                // Folded, a pull at the top unfolds instead (#561).
+                refreshes: !(foldable && folded),
+              );
+              if (!foldable) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    hero(pager),
+                    Expanded(child: list),
+                  ],
+                );
+              }
+              final weekStart = weekDays(selection.day, firstDay).first;
+              final weekPager = _SwipePager(
+                key: const ValueKey('week'),
+                anchor: weekStart,
+                onShift: onShift,
+                builder: (delta) {
+                  final day = DateTime(
+                    selection.day.year,
+                    selection.day.month,
+                    selection.day.day + DateTime.daysPerWeek * delta,
+                  );
+                  return MonthGrid(
+                    month: DateTime(day.year, day.month),
+                    week: day,
+                    selected: selection.day,
+                    today: today,
+                    counts: counts,
+                    taskCounts: taskCounts,
+                    people: people,
+                    onSelect: onSelect,
+                    onHero: true,
+                  );
+                },
+              );
+              return _Folding(
+                folded: folded,
+                onFold: onFold!,
+                list: list,
+                hero: (fold, fade, weekShown) {
+                  final Widget grid = weekShown
+                      ? weekPager
+                      : fold == 0
+                      ? pager
+                      // Moving: no swipe, no tap until it lands.
+                      : IgnorePointer(
+                          child: MonthGrid(
+                            month: selection.month,
+                            selected: selection.day,
+                            today: today,
+                            counts: counts,
+                            taskCounts: taskCounts,
+                            people: people,
+                            onSelect: onSelect,
+                            onHero: true,
+                            fold: fold,
+                            fade: fade,
+                          ),
+                        );
+                  return _FoldHandle(
+                    opacity: weekShown ? 1 : MonthFold.handleOpacity(fade),
+                    onTap: () => onFold!(false),
+                    child: hero(
+                      context.reduceMotion
+                          ? FadeSwap(
+                              duration: AppMotion.fast,
+                              child: KeyedSubtree(
+                                key: ValueKey(weekShown),
+                                child: grid,
+                              ),
+                            )
+                          : grid,
                     ),
-                  ),
-                ],
+                  );
+                },
               );
             },
           ),
@@ -836,11 +931,19 @@ class CalendarView extends StatelessWidget {
     );
   }
 
-  Widget _refreshable(Widget list) {
+  /// Pull to refresh around [list]. Not [refreshes], it stays in the tree
+  /// (the list keeps its scroll position) and takes no pull.
+  Widget _refreshable(Widget list, {bool refreshes = true}) {
     final refresh = onRefresh;
     return refresh == null
         ? list
-        : RefreshIndicator(onRefresh: refresh, child: list);
+        : RefreshIndicator(
+            onRefresh: refresh,
+            notificationPredicate: refreshes
+                ? defaultScrollNotificationPredicate
+                : (_) => false,
+            child: list,
+          );
   }
 }
 
@@ -1001,6 +1104,189 @@ class _TitleButton extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+/// The phone month's fold (#561): [hero] over [list], the month folding into
+/// the selected day's week as one eased animation (spec §2). A 24 dp drag
+/// up on [list] folds it; folded, a 24 dp pull down at the list's top or a
+/// drag down on the hero unfolds it. Started, it always lands; only the
+/// opposite gesture turns it back, from where it is.
+class _Folding extends StatefulWidget {
+  const _Folding({
+    required this.folded,
+    required this.onFold,
+    required this.hero,
+    required this.list,
+  });
+
+  final bool folded;
+  final ValueChanged<bool> onFold;
+
+  /// The hero for the fold's eased value, its raw time, and whether the
+  /// fold has landed (the one week shows instead of the month).
+  final Widget Function(double fold, double fade, bool weekShown) hero;
+  final Widget list;
+
+  @override
+  State<_Folding> createState() => _FoldingState();
+}
+
+class _FoldingState extends State<_Folding>
+    with SingleTickerProviderStateMixin {
+  /// About half a row: never a tap, never a sideways swipe's wobble.
+  static const double _trigger = 24;
+
+  late final _fold = AnimationController(
+    vsync: this,
+    value: widget.folded ? 1 : 0,
+  );
+
+  /// The current drag's run, in one direction: + up, − down.
+  double _run = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fold.duration = context.motion(AppMotion.emphasized);
+  }
+
+  @override
+  void didUpdateWidget(_Folding old) {
+    super.didUpdateWidget(old);
+    if (widget.folded == old.folded) return;
+    final target = widget.folded ? 1.0 : 0.0;
+    if (context.reduceMotion) {
+      _fold.value = target;
+    } else if (widget.folded) {
+      unawaited(_fold.forward());
+    } else {
+      unawaited(_fold.reverse());
+    }
+  }
+
+  @override
+  void dispose() {
+    _fold.dispose();
+    super.dispose();
+  }
+
+  /// Adds [delta] to the run, a change of direction starting a new one.
+  void _drag(double delta, {required bool atTop}) {
+    if (delta == 0) return;
+    if (_run != 0 && _run.sign != delta.sign) _run = 0;
+    _run += delta;
+    if (!widget.folded && _run >= _trigger) {
+      widget.onFold(true);
+    } else if (widget.folded && atTop && _run <= -_trigger) {
+      widget.onFold(false);
+    }
+  }
+
+  /// Only what the finger moves counts: a bounce back or a fling's tail
+  /// never folds or unfolds.
+  bool _onList(ScrollNotification n) {
+    if (n.depth != 0) return false;
+    final metrics = n.metrics;
+    final atTop = metrics.pixels <= metrics.minScrollExtent;
+    switch (n) {
+      case ScrollStartNotification():
+        _run = 0;
+      case ScrollUpdateNotification(:final dragDetails?, :final scrollDelta?):
+        if (dragDetails.primaryDelta != 0) _drag(scrollDelta, atTop: atTop);
+      case OverscrollNotification(:final dragDetails?, :final overscroll):
+        if (dragDetails.primaryDelta != 0) _drag(overscroll, atTop: atTop);
+      default:
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      GestureDetector(
+        // Folded only: the open month keeps no vertical drag (#369). A drag
+        // that leans sideways is the week pager's (`_SidewaysDrag`).
+        onVerticalDragStart: widget.folded ? (_) => _run = 0 : null,
+        onVerticalDragUpdate: widget.folded
+            ? (details) => _drag(-(details.primaryDelta ?? 0), atTop: true)
+            : null,
+        child: AnimatedBuilder(
+          animation: _fold,
+          builder: (context, _) => widget.hero(
+            Curves.easeInOutCubicEmphasized.transform(_fold.value),
+            _fold.value,
+            widget.folded && _fold.isCompleted,
+          ),
+        ),
+      ),
+      Expanded(
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _onList,
+          child: widget.list,
+        ),
+      ),
+    ],
+  );
+}
+
+/// [child] (the folded month's hero) with its handle (#561) in its bottom
+/// padding: a hint that it unfolds, and a button that does.
+class _FoldHandle extends StatelessWidget {
+  const _FoldHandle({
+    required this.opacity,
+    required this.onTap,
+    required this.child,
+  });
+
+  static const Size _bar = Size(32, 4);
+  static const double _tapWidth = 64;
+
+  final double opacity;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      child,
+      if (opacity > 0)
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: AppSpacing.lg,
+          child: Center(
+            child: Semantics(
+              button: true,
+              label: AppLocalizations.of(context).calendarShowMonth,
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                child: SizedBox(
+                  width: _tapWidth,
+                  height: AppSpacing.lg,
+                  child: Center(
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Container(
+                        width: _bar.width,
+                        height: _bar.height,
+                        decoration: BoxDecoration(
+                          color: LoomiaColors.of(context).onHeroQuiet,
+                          borderRadius: BorderRadius.circular(AppRadii.pill),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+    ],
   );
 }
 
