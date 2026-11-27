@@ -226,9 +226,11 @@ Restrained. Motion explains what moved, it never celebrates.
 | 180ms | Chip/toggle state, small fades. |
 | 240ms | List reorder, tab change. |
 | 320ms | Sheet and dialog present/dismiss; a completed card sliding out. |
+| 420ms | A large surface changing shape: the month folding to a week, the nav pill travelling between tabs. |
 
 Easing: standard `cubic(0.2, 0, 0, 1)`, decelerate `cubic(0, 0, 0, 1)` for
-entering, accelerate `cubic(0.3, 0, 1, 1)` for leaving.
+entering, accelerate `cubic(0.3, 0, 1, 1)` for leaving, emphasized
+(`Curves.easeInOutCubicEmphasized`) for the 420ms shape changes only.
 
 Rules: no bounce or overshoot; no scale above 1.02; completing an action is a
 check drawn in the ring (240ms) and held whole for a beat (320ms), then the
@@ -240,7 +242,7 @@ has closed), and a list that appears for the first time does not; no looping
 animation except an indeterminate loader; all of it respects "reduce motion"
 by collapsing to a 120ms opacity change.
 
-Fluidity comes from every screen using the same four durations and three curves,
+Fluidity comes from every screen using the same five durations and four curves,
 not from springs. If a new interaction does not fit the table below, the
 interaction is wrong before the table is.
 
@@ -261,6 +263,8 @@ interaction is wrong before the table is.
 | One thing replacing another in place (spinner → content, another day, done state) | 180–320ms | decelerate in, accelerate out | `FadeSwap` (`lib/core/ui/fade_swap.dart`): the new one is there at once, the old fades over it |
 | Show / Hide of a folded section | 240ms | standard | `FoldBody` (`check_in_items.dart`), an `AnimatedSize` |
 | List reorder, tab change | 240ms | standard | `AnimatedSize` / `AnimatedList` |
+| Nav pill travelling to the new tab | 420ms | emphasized | `TweenAnimationBuilder` in `floating_nav_bar.dart` |
+| Month folding to the selected week, and back (#561) | 420ms | emphasized | `AnimationController` in the month hero, values from `MonthFold`; set off by a gesture, never held mid-way, reversed only by the opposite gesture |
 | Page transition | platform | platform | a plain `MaterialPage` — the platform's own transition |
 | Sheet, dialog | 320ms | standard | Material defaults from the component themes |
 
