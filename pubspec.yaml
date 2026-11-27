@@ -63,7 +63,7 @@ dependencies:
   # Turns `logging` records into Sentry breadcrumbs, logs and events (#265).
   # Pinned to sentry_flutter's exact version: they release together and must
   # match.
-  sentry_logging: 10.6.0
+  sentry_logging: 10.7.0
   # Auth, session persistence and email/OAuth deep links in one package, so
   # this feature needs no app_links, shared_preferences or provider SDKs.
   supabase_flutter: ^2.17.2
