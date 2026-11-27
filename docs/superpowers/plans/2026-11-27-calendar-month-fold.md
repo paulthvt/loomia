@@ -73,6 +73,6 @@
 ### Task 5: Previews and docs
 
 - [x] Preview `calendar_month_folded_light` (folded, Oct 8 week), registered in `test/previews_test.dart`.
-- [ ] Goldens through CI.
+- [x] Goldens through CI (run 46042468505).
 - [x] French render check of the touched screens (`--dart-define=GOLDEN_LOCALE=fr`).
 - [ ] Tick #561's boxes.
