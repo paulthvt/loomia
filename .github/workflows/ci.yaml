@@ -164,6 +164,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+          # Maven Central rate-limits (429) runners that download everything each time (#553).
+          cache: gradle
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
