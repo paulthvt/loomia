@@ -2889,6 +2889,10 @@
   "@calendarNextWeek": {
     "description": "Tooltip of the Calendar's button that shows the week after, in week view."
   },
+  "calendarShowMonth": "Show the whole month",
+  "@calendarShowMonth": {
+    "description": "Screen-reader label of the small handle under the phone Calendar's month once it has folded into one week; tapping it opens the whole month again."
+  },
   "calendarViewMonth": "Month",
   "@calendarViewMonth": {
     "description": "Calendar screen: the switch segment that shows a whole month as a grid."

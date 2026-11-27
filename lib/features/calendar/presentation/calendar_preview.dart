@@ -31,6 +31,10 @@ Widget calendarMobileDark() => _app(AppTheme.dark, _calendar());
 @Preview(group: 'Calendar', name: 'Desktop — light', size: Size(1440, 900))
 Widget calendarDesktopLight() => _app(AppTheme.light, _calendar(desktop: true));
 
+@Preview(group: 'Calendar', name: 'Month folded — light', size: Size(390, 844))
+Widget calendarMonthFoldedLight() =>
+    _app(AppTheme.light, _calendar(folded: true));
+
 @Preview(group: 'Calendar', name: '3 days — light', size: Size(390, 844))
 Widget calendarThreeDaysLight() =>
     _app(AppTheme.light, _calendar(mode: CalendarMode.threeDays));
@@ -517,6 +521,7 @@ final _workshopSteps = [
 Widget _calendar({
   bool desktop = false,
   CalendarMode mode = CalendarMode.month,
+  bool folded = false,
 }) => CalendarView(
   events: AsyncData(_events),
   tasks: _tasks,
@@ -551,6 +556,9 @@ Widget _calendar({
   onOpenTask: (_) {},
   onRetry: () {},
   desktop: desktop,
+  // The month folded to the selected week (#561).
+  folded: folded,
+  onFold: folded ? (_) {} : null,
 );
 
 Widget _app(ThemeData theme, Widget home) {

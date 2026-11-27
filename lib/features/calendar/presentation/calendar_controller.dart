@@ -325,6 +325,20 @@ DateTime shiftedDay(
 final calendarSelectionProvider =
     NotifierProvider<CalendarSelector, CalendarSelection>(CalendarSelector.new);
 
+/// The phone month folded into the selected day's week (#561). UI state
+/// beside the selection: a mode change and a restart open it again.
+final monthFoldedProvider = NotifierProvider<MonthFolded, bool>(
+  MonthFolded.new,
+);
+
+class MonthFolded extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  // ignore: use_setters_to_change_properties
+  void set(bool folded) => state = folded;
+}
+
 class CalendarSelector extends Notifier<CalendarSelection> {
   @override
   CalendarSelection build() => _on(today(), CalendarMode.month);
@@ -353,11 +367,25 @@ class CalendarSelector extends Notifier<CalendarSelection> {
     }
   }
 
-  /// Month, 3 days, or week; the selected day stays.
-  void setMode(CalendarMode mode) => state = _on(state.day, mode);
+  /// Month, 3 days, or week; the selected day stays. Month opens unfolded.
+  void setMode(CalendarMode mode) {
+    ref.read(monthFoldedProvider.notifier).set(false);
+    state = _on(state.day, mode);
+  }
 
-  /// The page [delta] away: see [shiftedDay].
+  /// The page [delta] away: see [shiftedDay]. The folded month (#561) pages
+  /// by weeks, with the Week view's rule.
   void shift(int delta, {int firstDayOfWeek = 0}) {
+    if (state.mode == CalendarMode.month && ref.read(monthFoldedProvider)) {
+      final asWeek = (
+        mode: CalendarMode.week,
+        month: state.month,
+        day: state.day,
+        from: state.from,
+      );
+      select(shiftedDay(asWeek, delta, today(), firstDayOfWeek));
+      return;
+    }
     if (state.mode == CalendarMode.threeDays) {
       final newFrom = DateTime(
         state.from.year,

@@ -179,6 +179,56 @@ void main() {
       expect(container.read(calendarSelectionProvider).day, now);
     });
 
+    group('folded month (#561)', () {
+      test('starts open, and a mode change opens it again', () {
+        final container = ProviderContainer.test();
+        expect(container.read(monthFoldedProvider), isFalse);
+        container.read(monthFoldedProvider.notifier).set(true);
+        container
+            .read(calendarSelectionProvider.notifier)
+            .setMode(CalendarMode.week);
+        expect(container.read(monthFoldedProvider), isFalse);
+      });
+
+      test('pages by weeks, keeping the weekday or landing on today', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier);
+        final now = today();
+        final later = DateTime(now.year, now.month, now.day + 21);
+        selector.select(later);
+        container.read(monthFoldedProvider.notifier).set(true);
+
+        selector.shift(1);
+        expect(
+          container.read(calendarSelectionProvider).day,
+          DateTime(later.year, later.month, later.day + 7),
+        );
+        expect(
+          container.read(calendarSelectionProvider).mode,
+          CalendarMode.month,
+        );
+
+        selector
+          ..shift(-1)
+          ..shift(-1)
+          ..shift(-1)
+          ..shift(-1);
+        // Back on today's week: today, whatever its weekday.
+        expect(container.read(calendarSelectionProvider).day, now);
+      });
+
+      test('open, it still pages by months', () {
+        final container = ProviderContainer.test();
+        final selector = container.read(calendarSelectionProvider.notifier);
+        final now = today();
+        selector.shift(1);
+        expect(
+          container.read(calendarSelectionProvider).day,
+          DateTime(now.year, now.month + 1),
+        );
+      });
+    });
+
     group('shiftedDay in week view', () {
       // Monday October 19, 2026.
       final now = DateTime(2026, 10, 19);

@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:loomia/app/theme/app_colors.dart';
 import 'package:loomia/app/theme/app_spacing.dart';
+import 'package:loomia/features/calendar/domain/month_fold.dart';
 import 'package:loomia/features/calendar/domain/month_grid.dart';
 import 'package:loomia/features/calendar/domain/people_ahead.dart';
 import 'package:loomia/l10n/app_localizations.dart';
@@ -10,6 +11,11 @@ import 'package:material_ui/material_ui.dart';
 /// neighbouring months' days dimmed, up to three dots for a day's events and
 /// open tasks, a ring on today, the selected day filled. Any day can be tapped, one of a
 /// neighbouring month too.
+///
+/// On a phone it folds into the row holding [selected] (#561): [fold] is the
+/// fold's eased value, [fade] its raw time, both 0 open and 1 folded. Folded,
+/// [week] (a day of it) replaces the month by that one week, its days of
+/// another month than [month] dimmed.
 class MonthGrid extends StatelessWidget {
   const MonthGrid({
     required this.month,
@@ -20,6 +26,9 @@ class MonthGrid extends StatelessWidget {
     this.taskCounts = const {},
     this.people = const PeopleAhead.none(),
     this.onHero = false,
+    this.fold = 0,
+    this.fade = 0,
+    this.week,
     super.key,
   });
 
@@ -42,21 +51,30 @@ class MonthGrid extends StatelessWidget {
   /// selected day filled in white.
   final bool onHero;
 
+  final double fold;
+  final double fade;
+  final DateTime? week;
+
   @override
-  Widget build(BuildContext context) => _DayRows(
-    days: monthDays(
-      month,
-      MaterialLocalizations.of(context).firstDayOfWeekIndex,
-    ),
-    inMonth: (day) => day.month == month.month,
-    selected: selected,
-    today: today,
-    counts: counts,
-    taskCounts: taskCounts,
-    people: people,
-    onSelect: onSelect,
-    onHero: onHero,
-  );
+  Widget build(BuildContext context) {
+    final firstDay = MaterialLocalizations.of(context).firstDayOfWeekIndex;
+    final shown = week;
+    return _DayRows(
+      days: shown == null
+          ? monthDays(month, firstDay)
+          : weekDays(shown, firstDay),
+      inMonth: (day) => day.month == month.month,
+      selected: selected,
+      today: today,
+      counts: counts,
+      taskCounts: taskCounts,
+      people: people,
+      onSelect: onSelect,
+      onHero: onHero,
+      fold: shown == null ? fold : 0,
+      fade: shown == null ? fade : 0,
+    );
+  }
 }
 
 /// [days], whole weeks, as rows of [DayCell]s under the weekday names.
@@ -71,6 +89,8 @@ class _DayRows extends StatelessWidget {
     required this.people,
     required this.onSelect,
     required this.onHero,
+    required this.fold,
+    required this.fade,
   });
 
   final List<DateTime> days;
@@ -82,6 +102,8 @@ class _DayRows extends StatelessWidget {
   final PeopleAhead people;
   final ValueChanged<DateTime> onSelect;
   final bool onHero;
+  final double fold;
+  final double fade;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +112,45 @@ class _DayRows extends StatelessWidget {
     final style = Theme.of(context).textTheme.labelSmall
         ?.copyWith(color: onHero ? colors.onHeroQuiet : colors.textMuted);
     const week = DateTime.daysPerWeek;
+    final rows = days.length ~/ week;
+    final selectedRow = (days.indexOf(selected) ~/ week).clamp(0, rows - 1);
+    final geometry = MonthFold(
+      rows: rows,
+      selectedRow: selectedRow,
+      rowHeight: DayCell.size,
+    );
+    final others = MonthFold.othersOpacity(fade);
+
+    Widget row(int index) {
+      final start = index * week;
+      final cells = Row(
+        children: [
+          for (final day in days.sublist(start, start + week))
+            Expanded(
+              child: DayCell(
+                day: day,
+                inMonth: inMonth(day),
+                selected: day == selected,
+                today: day == today,
+                past: day.isBefore(today),
+                count: counts[day] ?? 0,
+                taskCount: taskCounts[day] ?? 0,
+                people: people.count(day),
+                onTap: () => onSelect(day),
+                onHero: onHero,
+              ),
+            ),
+        ],
+      );
+      return index == selectedRow || others == 1
+          ? cells
+          : Opacity(opacity: others, child: cells);
+    }
+
+    final grid = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [for (var i = 0; i < rows; i++) row(i)],
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -110,33 +171,33 @@ class _DayRows extends StatelessWidget {
             ],
           ),
         ),
-        for (var start = 0; start < days.length; start += week)
-          Row(
-            children: [
-              for (final day in days.sublist(start, start + week))
-                Expanded(
-                  child: DayCell(
-                    day: day,
-                    inMonth: inMonth(day),
-                    selected: day == selected,
-                    today: day == today,
-                    past: day.isBefore(today),
-                    count: counts[day] ?? 0,
-                    taskCount: taskCounts[day] ?? 0,
-                    people: people.count(day),
-                    onTap: () => onSelect(day),
-                    onHero: onHero,
-                  ),
+        if (fold == 0)
+          grid
+        else
+          // Folding: the rows move up as one block, clipped under the
+          // weekday names, while the room for them shrinks.
+          ClipRect(
+            child: SizedBox(
+              height: geometry.height(fold),
+              child: OverflowBox(
+                alignment: Alignment.topCenter,
+                minHeight: 0,
+                maxHeight: double.infinity,
+                child: Transform.translate(
+                  offset: Offset(0, geometry.offset(fold)),
+                  // A row the fold hides takes no tap.
+                  child: IgnorePointer(ignoring: fold < 1, child: grid),
                 ),
-            ],
+              ),
+            ),
           ),
       ],
     );
   }
 }
 
-/// A day of the month grid and the desktop week's column
-/// headings: its number in a circle (filled when selected, ringed today),
+/// A day of the month grid: its number in a circle (filled when selected,
+/// ringed today),
 /// up to three dots: its events', then hollow ones for its open tasks.
 class DayCell extends StatelessWidget {
   const DayCell({
@@ -153,12 +214,15 @@ class DayCell extends StatelessWidget {
     super.key,
   });
 
-  static const double _circle = 40;
+  /// The cell's square, and so a month row's height (#561).
+  static const double size = kMinInteractiveDimension;
+  static const double _circle = 36;
+  static const double _gap = 2;
   static const double _ring = 1.5;
   static const double _dot = 6;
   static const int _maxDots = 3;
 
-  /// The people marker (Figma "PeopleMarker"): 12 × 2, 2 under the dots.
+  /// The people marker (Figma "PeopleMarker"): 12 × 2, under the dots.
   static const double _marker = 12;
   static const double _markerThickness = 2;
 
@@ -220,17 +284,19 @@ class DayCell extends StatelessWidget {
       selected: selected,
       label: daySemantics(l10n, day, count, taskCount, people),
       excludeSemantics: true,
-      // The ink only on the number, so hover and splash centre on it; the
-      // square is the minimum tap size, and has the number's spacing.
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox.square(
-            dimension: kMinInteractiveDimension,
-            child: InkWell(
-              onTap: onTap,
-              customBorder: const CircleBorder(),
-              child: Center(
+      // One 48 dp square holds the number, its dots and the people line
+      // (#561), and takes a tap anywhere in it; the ink stays on the
+      // number, so hover and splash centre on it.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox.square(
+          dimension: size,
+          child: Column(
+            children: [
+              InkWell(
+                onTap: onTap,
+                customBorder: const CircleBorder(),
                 child: Container(
                   width: _circle,
                   height: _circle,
@@ -242,64 +308,65 @@ class DayCell extends StatelessWidget {
                         ? Border.all(color: fill, width: _ring)
                         : null,
                   ),
-                  child: Text(
-                    '${day.day}',
-                    style: number?.copyWith(color: ink),
+                  // A large system font shrinks the number, never the row.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '${day.day}',
+                      style: number?.copyWith(color: ink),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          SizedBox(
-            height: _dot,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              spacing: AppSpacing.xs,
-              children: [
-                for (var i = 0; i < events; i++)
-                  Container(
-                    width: _dot,
-                    height: _dot,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: dot,
-                    ),
-                  ),
-                // Hollow, so a day with only tasks reads apart from one
-                // with an event.
-                for (var i = 0; i < tasks; i++)
-                  Container(
-                    width: _dot,
-                    height: _dot,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: dot, width: _ring),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // People due (#378): one quiet line in the space under the
-          // dots, so the cell keeps its height.
-          SizedBox(
-            height: AppSpacing.xs,
-            child: people > 0 && !past
-                ? Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      key: const ValueKey('people-marker'),
-                      width: _marker,
-                      height: _markerThickness,
-                      // Round ends: Figma's 1 px radius on a 2 px line.
-                      decoration: BoxDecoration(
-                        color: onHero ? colors.onHero : colors.textMuted,
-                        borderRadius: BorderRadius.circular(AppRadii.pill),
+              const SizedBox(height: _gap),
+              SizedBox(
+                height: _dot,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: AppSpacing.xs,
+                  children: [
+                    for (var i = 0; i < events; i++)
+                      Container(
+                        width: _dot,
+                        height: _dot,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: dot,
+                        ),
                       ),
-                    ),
-                  )
-                : null,
+                    // Hollow, so a day with only tasks reads apart from one
+                    // with an event.
+                    for (var i = 0; i < tasks; i++)
+                      Container(
+                        width: _dot,
+                        height: _dot,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: dot, width: _ring),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: _gap),
+              // People due (#378): one quiet line under the dots.
+              SizedBox(
+                height: _markerThickness,
+                child: people > 0 && !past
+                    ? Container(
+                        key: const ValueKey('people-marker'),
+                        width: _marker,
+                        // Round ends: Figma's 1 px radius on a 2 px line.
+                        decoration: BoxDecoration(
+                          color: onHero ? colors.onHero : colors.textMuted,
+                          borderRadius: BorderRadius.circular(AppRadii.pill),
+                        ),
+                      )
+                    : null,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
