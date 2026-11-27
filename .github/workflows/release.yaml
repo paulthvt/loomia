@@ -36,6 +36,7 @@ jobs:
   # the migrations it would not survive out of main. A push with nothing
   # pending is a no-op. Setup: README.md → Database and project config.
   database:
+    name: Database
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -56,6 +57,7 @@ jobs:
       - run: supabase db push --yes
 
   yeet:
+    name: Release tag
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -95,6 +97,7 @@ jobs:
           echo "tag=$(comm -13 "$RUNNER_TEMP/before" "$RUNNER_TEMP/after" | tail -1)" >> "$GITHUB_OUTPUT"
 
   artifacts:
+    name: Android and web
     # The schema first: a build never ships ahead of its migrations.
     needs: [yeet, database]
     if: needs.yeet.outputs.tag != ''
@@ -235,6 +238,7 @@ jobs:
   # notes it attached. Signing and upload are fastlane (ios/fastlane/Fastfile);
   # setup: README.md → Releases → iOS.
   ios:
+    name: iOS
     needs: [yeet, artifacts]
     if: needs.yeet.outputs.tag != ''
     runs-on: macos-latest
