@@ -17,7 +17,11 @@ screen on sample data. No product data model yet.
 
 ## Requirements
 
-- Flutter 3.47+ / Dart 3.13+
+- Flutter 3.50 / Dart 3.14, the version pinned in `.fvmrc` (CI reads it too).
+  With [fvm](https://fvm.app): `fvm install`, then prefix commands with `fvm`
+  (`fvm flutter run`) and point the IDE's Flutter SDK at `.fvm/flutter_sdk`.
+- pub.dev as the package host. A `PUB_HOSTED_URL` pointing at a mirror rewrites
+  every entry in `pubspec.lock`, which CI rejects: unset it for this project.
 
 ## Running
 

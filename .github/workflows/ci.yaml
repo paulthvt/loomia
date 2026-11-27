@@ -67,6 +67,15 @@ jobs:
           flutter-version-file: .fvmrc
           cache: true
 
+      # A global PUB_HOSTED_URL (a company mirror) rewrites every package's
+      # url in the lock. Checked before pub get, which would quietly fix it.
+      - name: Lock file points at pub.dev
+        run: |
+          if grep -n 'url: ' pubspec.lock | grep -v '"https://pub.dev"'; then
+            echo "::error file=pubspec.lock::Not pub.dev: run pub get with PUB_HOSTED_URL=https://pub.dev"
+            exit 1
+          fi
+
       - run: flutter pub get
 
       # Generated l10n is not committed, and analyze does not generate it.
