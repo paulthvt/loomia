@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2026.11.14](https://github.com/paulthvt/loomia/compare/v2026.11.13...v2026.11.14) (2026-11-27)
+
+### ✨ Features
+
+- **calendar:** fold the phone month to the selected week (#564) ([2c8eac3](https://github.com/paulthvt/loomia/commit/2c8eac3ad9e3cef377175952baac1fec252ee3cb))
+
+### 📚 Documentation
+
+- **calendar:** spec the month fold on phones (#563) ([24d93c4](https://github.com/paulthvt/loomia/commit/24d93c4801abff986cae2abe3bf00561b5d5e433))
+
+### 🔧 Miscellaneous
+
+- **deps:** update dependency sentry_logging to v10.7.0 (#556) ([2323549](https://github.com/paulthvt/loomia/commit/23235498deda212707c630b5695b5f6a2d9f8081))
+- **release:** name the Release jobs, yeet schema 0.18.4 (#559) ([e369381](https://github.com/paulthvt/loomia/commit/e369381e9c7810c95be753b8a47c7a6a05258f3c))
+
 ## [v2026.11.13](https://github.com/paulthvt/loomia/compare/v2026.11.12...v2026.11.13) (2026-11-27)
 
 ### 🐛 Bug Fixes
